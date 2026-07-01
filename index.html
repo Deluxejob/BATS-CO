@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BATS.CO — Benchmark Asset and Trend Scenarios</title>
+  <meta name="description" content="BATS — Benchmark Asset and Trend Scenarios. A clear, plain-English read on whether the US stock market is oversold, neutral, or bullish, using public data." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Live ticker tape across the top (free TradingView widget) -->
+  <div class="ticker-bar">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
+          {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"},
+          {"proName": "FOREXCOM:DJI", "title": "Dow Jones"},
+          {"proName": "CBOE:VIX", "title": "VIX"},
+          {"proName": "AMEX:SPY", "title": "SPY"},
+          {"proName": "AMEX:QQQ", "title": "QQQ"},
+          {"proName": "TVC:GOLD", "title": "Gold"},
+          {"proName": "TVC:US10Y", "title": "10Y Yield"}
+        ],
+        "showSymbolLogo": true,
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "colorTheme": "dark",
+        "locale": "en"
+      }
+      </script>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="brand">
+      <h1>BATS<span class="dot">.</span>CO</h1>
+      <p class="fullname">Benchmark Asset and Trend Scenarios</p>
+      <p class="tagline">Is now a good time to buy stocks?</p>
+    </div>
+    <nav class="site-nav">
+      <a href="#gauge">Score</a>
+      <a href="#components">Components</a>
+      <a href="#backtest">Backtest</a>
+      <a href="markets.html">Markets</a>
+      <a href="#about">About</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- THE BIG GAUGE — the BATS -->
+    <section class="hero" id="gauge">
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 400 260" class="gauge" id="sentimentGauge" aria-label="Market sentiment gauge"></svg>
+        <div class="gauge-readout">
+          <div class="reading-label" id="readingLabel">Neutral</div>
+          <div class="reading-value"><span id="readingValue">50</span><span class="reading-suffix">/100</span></div>
+          <div class="updated" id="gaugeDateNote">Loading latest close…</div>
+        </div>
+      </div>
+      <div class="historical-context" id="historicalContext"></div>
+      <div class="scale-legend" id="scaleLegend"></div>
+      <p class="hero-blurb">
+        The <strong>BATS</strong> blends widely-used public market indicators into a single,
+        easy-to-read score. Higher = more bullish. Lower = more oversold. It is <em>not</em> investment
+        advice — just a clear snapshot of where market sentiment sits right now.
+      </p>
+    </section>
+
+    <!-- COMPONENTS GRID -->
+    <section class="components" id="components">
+      <div class="section-head">
+        <h2>What goes into the BATS</h2>
+        <p>Each card below is one ingredient. We blend the live components together, weighted by their historical strength, to produce the BATS.</p>
+        <p class="composition-line">Currently blending: <span id="compositionChips">Loading…</span></p>
+      </div>
+      <div class="components-grid" id="componentsGrid"></div>
+    </section>
+
+    <!-- BLENDED BATS BACKTEST — "does the BATS work?" -->
+    <section class="backtest" id="backtest">
+      <div class="section-head">
+        <h2>Does the BATS work? — Historical backtest</h2>
+        <p>
+          For every trading day since 2003, we compute the blended BATS from that day's
+          VIX and Breadth (using the same weights shown above), then measure how the
+          S&P 500 actually performed 6 and 12 months later. This is the honest test of
+          whether the combined signal earns its keep.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="about" id="about">
+      <div class="section-head">
+        <h2>About the BATS</h2>
+      </div>
+      <div class="about-content">
+        <p>
+          <strong>BATS</strong> stands for <strong>Benchmark Asset and Trend Scenarios</strong>.
+          The BATS combines several well-known market indicators into one number from
+          <strong>0 (very oversold)</strong> to <strong>100 (very bullish)</strong>. Each ingredient
+          is publicly available data — volatility, breadth, momentum, options activity, and more —
+          and we explain on each component's page exactly how it contributes.
+        </p>
+        <p>
+          The blending logic itself is proprietary: we choose which indicators to include, how to
+          weight them (weights reflect each component's historical predictive power), and how to
+          translate the raw numbers into a single signal.
+        </p>
+        <p class="disclaimer">
+          <strong>Important:</strong> Nothing on this site is investment advice. Markets are
+          unpredictable. This is a sentiment thermometer, not a crystal ball. Always do your
+          own research or talk to a financial professional before investing.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = 'data/';
+    window.BATS_BACKTEST_KIND = 'blended';
+  </script>
+  <script src="app.js"></script>
+  <script src="backtest.js"></script>
+</body>
+</html>

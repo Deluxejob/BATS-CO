@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sS -A \"Mozilla/5.0\" \"https://stooq.com/q/d/l/?s=^vix&d1=20000101&d2=20260630&i=d\" -o \"C:/Users/whisk/BATS.CO/data/vix.csv\")",
+      "Bash(curl -sS -A \"Mozilla/5.0\" \"https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS\" -o \"C:/Users/whisk/BATS.CO/data/vix.csv\")",
+      "WebFetch(domain:fred.stlouisfed.org)",
+      "WebFetch(domain:stooq.com)",
+      "WebSearch",
+      "Bash(curl -sS -A \"Mozilla/5.0\" \"https://raw.githubusercontent.com/datasets/finance-vix/main/data/vix-daily.csv\" -o \"C:/Users/whisk/BATS.CO/data/vix.csv\")",
+      "Bash(curl -sS -A \"Mozilla/5.0\" \"https://raw.githubusercontent.com/datasets/s-and-p-500/main/data/data.csv\" -o \"/tmp/spx-test1.csv\")",
+      "Read(//tmp/**)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/repos/vijinho/sp500/contents/csv\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://raw.githubusercontent.com/vijinho/sp500/master/csv/sp500.csv\" -o \"/tmp/spx-test2.csv\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/repos/datasets/finance-vix/contents/data\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/search/repositories?q=sp500+daily+CSV+2025+in:name\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/search/repositories?q=SPY+daily+historical+data+in:name&sort=updated&order=desc&per_page=8\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/search/repositories?q=SPY+historical+daily&sort=updated&order=desc&per_page=6\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/search/repositories?q=GSPC+historical+daily+csv&sort=updated&order=desc&per_page=5\")",
+      "Bash(cp \"/tmp/spx-test2.csv\" \"C:/Users/whisk/BATS.CO/data/spx.csv\")",
+      "Bash(rm -f \"/tmp/spx-test1.csv\" \"/tmp/spx-test2.csv\")",
+      "Bash(python \"C:\\\\Users\\\\whisk\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-whisk-BATS-CO\\\\10e44926-09a5-4078-8ddd-fab36371c678\\\\scratchpad\\\\verify_backtest.py\")",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/search/repositories?q=SPX+daily+data+updated+2025+in:description&sort=updated&order=desc&per_page=10\")",
+      "Bash(grep -oE '\"full_name\":\"[^\"]+\"|\"pushed_at\":\"[^\"]+\"|\"description\":\"[^\"]{0,80}' /tmp/spxsearch.json | head -30)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/search/repositories?q=SPY+historical+daily+csv+in:description&sort=updated&order=desc&per_page=10\" -o /tmp/s2.json)",
+      "Bash(grep -oE '\"full_name\":\"[^\"]+\"|\"pushed_at\":\"[^\"]+\"|\"description\":\"[^\"]{0,100}' /tmp/s2.json)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://api.github.com/search/repositories?q=historical+market+data+github+actions+daily+CSV&sort=updated&order=desc&per_page=8\" -o /tmp/s3.json)",
+      "Bash(grep -oE '\"full_name\":\"[^\"]+\"|\"description\":\"[^\"]{0,100}\"|\"pushed_at\":\"[^\"]+\"' /tmp/s3.json)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=10y&interval=1d\" -o /tmp/yahoo.json)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=max&interval=1d\" -o /tmp/gspc_max.json)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=631152000&period2=1782950400&interval=1d\" -o /tmp/gspc_daily.json)",
+      "Bash(python -c ' *)",
+      "Bash(awk '-F\\\\t' 'BEGIN{print \"Date,Close\"} *)",
+      "Bash(awk -F, ' *)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://query1.finance.yahoo.com/v8/finance/chart/RSP?period1=1051660800&period2=1782950400&interval=1d\" -o /tmp/rsp.json)",
+      "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1=1051660800&period2=1782950400&interval=1d\" -o /tmp/spy.json)",
+      "Bash(wait)",
+      "Bash(awk 'BEGIN{b=0; p=0; s=0} { *)"
+    ]
+  }
+}

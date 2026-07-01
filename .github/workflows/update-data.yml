@@ -1,0 +1,45 @@
+name: Update market data
+
+# Fetches fresh VIX, SPX, SPY, RSP daily closes and commits them so Vercel
+# redeploys with today's numbers. Runs weekdays after US market close, plus
+# a late fallback in case the first run finds Yahoo still lagging.
+#
+# Manual trigger available from the Actions tab (workflow_dispatch).
+
+on:
+  schedule:
+    - cron: '30 23 * * 1-5'   # 23:30 UTC weekdays  (~7:30pm ET EDT / 6:30pm ET EST)
+    - cron: '30  3 * * 2-6'   # 03:30 UTC next day  (safety catch-up)
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed for the bot to push updated CSVs back
+
+concurrency:
+  group: update-market-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch fresh market data
+        run: |
+          chmod +x scripts/update-data.sh
+          bash scripts/update-data.sh
+
+      - name: Commit and push if anything changed
+        run: |
+          if [ -n "$(git status --porcelain data/)" ]; then
+            git config user.name  "BATS.CO Update Bot"
+            git config user.email "bot@bats.co"
+            git add data/
+            git commit -m "chore: refresh market data $(date -u +'%Y-%m-%d')"
+            git push
+            echo "::notice::Pushed refreshed market data."
+          else
+            echo "::notice::No data changes today; nothing to commit."
+          fi

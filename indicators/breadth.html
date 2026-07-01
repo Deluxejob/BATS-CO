@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Breadth — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO uses market breadth (RSP vs SPY spread) as a component of the BATS, and what 23 years of history tell us about it." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <h1>BATS<span class="dot">.</span>CO</h1>
+        <p class="fullname">Benchmark Asset and Trend Scenarios</p>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../index.html#components">Components</a>
+      <a href="../index.html#backtest">Backtest</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #02</p>
+      <h1>Market Breadth — is the average stock keeping up?</h1>
+      <p class="lede">
+        Breadth measures whether the whole market is participating in a move, or
+        whether a handful of mega-caps are dragging the index around. <strong>23 years
+        of data</strong> reveal a surprising "smile" — extremes on <em>both</em> sides
+        predict strong forward returns.
+      </p>
+    </section>
+
+    <section id="whatis">
+      <h2>What is market breadth?</h2>
+      <p>
+        The S&P 500 is a <em>cap-weighted</em> index — bigger companies count more.
+        A small handful of mega-caps (Apple, Microsoft, Nvidia, etc.) can push the
+        whole index higher even when most stocks are flat or falling. That's called
+        a "narrow" rally, and it's historically fragile.
+      </p>
+      <p>
+        "Breadth" measures whether the average stock is participating. When breadth
+        is broad, the rally is healthy. When breadth is narrow, the market is
+        vulnerable — the mega-caps holding up the index can't do it forever.
+      </p>
+      <p>
+        BATS uses a fast, robust proxy: the <strong>RSP vs SPY spread</strong>.
+      </p>
+      <div class="key-thresholds card">
+        <h3>The RSP vs SPY spread — how it works</h3>
+        <ul>
+          <li><span class="range">RSP</span> Invesco S&P 500 Equal-Weight ETF — every stock gets equal weight, so it tracks the <strong>average</strong> stock's performance.</li>
+          <li><span class="range">SPY</span> The classic S&P 500 ETF — cap-weighted, so it reflects the giants.</li>
+          <li><span class="range">Spread</span> <code>20-day return of RSP</code> minus <code>20-day return of SPY</code>. Positive = average stock is winning (broad). Negative = giants are winning (narrow).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses breadth</h2>
+      <p>
+        Breadth is <strong>confirmatory</strong>, not contrarian: broad breadth
+        confirms a healthy uptrend, narrow breadth warns that the rally may be
+        running on fumes. The scoring is linear and centered on zero:
+      </p>
+      <p><code>BATS points = 50 + (spread × 10)</code>, clamped to 5–95.</p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>Spread range</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Above +4.5%</td><td class="num">95</td><td><span class="bucket-dot" style="background:var(--s6)"></span>Very Bullish</td></tr>
+            <tr><td>+2.5% to +4.5%</td><td class="num">75 &ndash; 95</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish</td></tr>
+            <tr><td>+0.8% to +2.5%</td><td class="num">58 &ndash; 75</td><td><span class="bucket-dot" style="background:var(--s4)"></span>Slightly Bullish</td></tr>
+            <tr><td>&minus;0.8% to +0.8%</td><td class="num">42 &ndash; 58</td><td><span class="bucket-dot" style="background:var(--s3)"></span>Neutral</td></tr>
+            <tr><td>&minus;2.5% to &minus;0.8%</td><td class="num">25 &ndash; 42</td><td><span class="bucket-dot" style="background:var(--s2)"></span>Slightly Bearish</td></tr>
+            <tr><td>&minus;4.5% to &minus;2.5%</td><td class="num">5 &ndash; 25</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Oversold</td></tr>
+            <tr><td>Below &minus;4.5%</td><td class="num">5</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="backtest" class="backtest">
+      <div class="section-head">
+        <h2>Does it work? — Historical backtest (2003&ndash;2026)</h2>
+        <p>
+          For every trading day since RSP's April 2003 inception, we compute the
+          breadth component of the BATS and measure how the S&P 500 actually
+          performed 6 and 12 months later.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>
+        Three findings jump out of the 23-year breadth backtest &mdash; and one of
+        them is genuinely surprising:
+      </p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>The "smile" &mdash; both extremes are bullish.</h3>
+          <p>
+            <strong>Very Oversold</strong> breadth (narrow leadership at its extreme):
+            <strong>+27.7%</strong> avg 12mo return, <strong>99%</strong> positive.
+            <strong>Very Bullish</strong> breadth (broad participation at its extreme):
+            <strong>+21.4%</strong> avg 12mo, <strong>93%</strong> positive.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Extreme readings in either direction have
+            historically preceded strong forward returns &mdash; for different reasons
+            (mean reversion after narrow rallies; trend confirmation after broad ones).
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">2</div>
+          <h3>The middle is baseline &mdash; nothing special.</h3>
+          <p>
+            When breadth sits near zero (average stock keeping pace with the index),
+            forward returns track the baseline of roughly <strong>+10% at 12mo</strong>.
+            Neither a strong signal nor a warning.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Breadth is most useful when it's at an extreme.
+            Middle readings are noise &mdash; look to other indicators.
+          </p>
+        </div>
+
+        <div class="finding finding-pos">
+          <div class="finding-num">3</div>
+          <h3>Complementary to the VIX.</h3>
+          <p>
+            The VIX only fires as a strong buy signal at one extreme (high VIX / panic).
+            Breadth fires at <em>both</em> extremes. That means the two indicators light
+            up in different market conditions and cover each other's blind spots.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Combining VIX with breadth captures more of the
+            forward-return signal than either indicator alone.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <p>
+        Market breadth is famous for what it reveals about rally quality. Here's how
+        to read the BATS breadth signal in a balanced way:
+      </p>
+      <ol class="usage-list">
+        <li>
+          <strong>Extreme readings matter most.</strong>
+          The "smile" pattern is very real: extremes in either direction have historically
+          preceded strong forward returns. Pay attention when the spread pushes past ±3%.
+        </li>
+        <li>
+          <strong>Narrow rallies aren't automatically doomed.</strong>
+          A negative spread means the giants are pulling the index; it doesn't mean the
+          index is about to crash. Historically, extreme narrow rallies have often
+          resolved with a broadening rally &mdash; mean reversion favors the average stock.
+        </li>
+        <li>
+          <strong>Broad rallies confirm a trend.</strong>
+          When the average stock is outrunning the mega-caps, the rally is healthy.
+          Trend continuation is more likely from here.
+        </li>
+        <li>
+          <strong>Pair with the VIX.</strong>
+          Breadth and volatility measure different things and light up at different times.
+          The BATS blends them so each can filter the other's noise.
+        </li>
+        <li>
+          <strong>Middle readings are just noise.</strong>
+          When the spread is near zero, breadth isn't telling you much. Look to other
+          components (or wait for a clearer signal).
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns
+        are not guarantees. Always do your own research or talk to a financial professional
+        before investing.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = '../data/';
+    window.BATS_BACKTEST_KIND = 'breadth';
+  </script>
+  <script src="../app.js"></script>
+  <script src="../backtest.js"></script>
+</body>
+</html>

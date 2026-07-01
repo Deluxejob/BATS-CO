@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPY 14-day RSI — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO uses the SPY 14-day RSI as a momentum component of the BATS, and what 23 years of history tell us about it." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <h1>BATS<span class="dot">.</span>CO</h1>
+        <p class="fullname">Benchmark Asset and Trend Scenarios</p>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../index.html#components">Components</a>
+      <a href="../index.html#backtest">Backtest</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #03</p>
+      <h1>SPY 14-day RSI &mdash; momentum, stretched or exhausted</h1>
+      <p class="lede">
+        RSI (Relative Strength Index) measures how strong recent price momentum has been.
+        It's simple, universally-watched, and has a signature caveat every trader learns:
+        <strong>markets can stay overbought or oversold for a long time.</strong>
+      </p>
+    </section>
+
+    <section id="whatis">
+      <h2>What is the 14-day RSI?</h2>
+      <p>
+        The RSI is a 0&ndash;100 momentum oscillator invented by J. Welles Wilder in 1978.
+        It compares the size of recent gains to the size of recent losses over a lookback
+        window (BATS uses the classic 14-day period on SPY).
+      </p>
+      <p>
+        <strong>Formula intuition:</strong> If almost every day of the last 14 was up, the RSI
+        will be near 100. If almost every day was down, it'll be near 0. Fifty is neutral.
+      </p>
+      <div class="key-thresholds card">
+        <h3>Universally-watched thresholds</h3>
+        <ul>
+          <li><span class="range">Below 20</span> Extremely oversold &mdash; strong contrarian bullish setup</li>
+          <li><span class="range">Below 30</span> Oversold &mdash; sold off hard, potential bounce</li>
+          <li><span class="range">30 &ndash; 45</span> Weakening momentum</li>
+          <li><span class="range">45 &ndash; 55</span> Neutral / balanced</li>
+          <li><span class="range">55 &ndash; 70</span> Rising momentum, healthy</li>
+          <li><span class="range">Above 70</span> Overbought &mdash; rally is stretched</li>
+          <li><span class="range">Above 80</span> Extremely overbought &mdash; bearish setup, but can persist</li>
+        </ul>
+      </div>
+      <p class="disclaimer" style="margin-top:1rem">
+        <strong>The famous RSI caveat:</strong> markets can stay overbought or oversold for
+        weeks or even months. RSI tells you the odds have shifted &mdash; not when they'll pay off.
+      </p>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses RSI</h2>
+      <p>
+        RSI moves in the same direction as market state: low RSI = oversold market, high RSI =
+        overbought market. So BATS maps it straight through &mdash; low RSI drops the BATS toward
+        the Very Oversold end (buy signal), high RSI pushes it toward Very Bullish (careful).
+      </p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>RSI range</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Below 15</td><td class="num">5</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold</td></tr>
+            <tr><td>15 &ndash; 30</td><td class="num">5 &ndash; 25</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Oversold</td></tr>
+            <tr><td>30 &ndash; 50</td><td class="num">25 &ndash; 50</td><td><span class="bucket-dot" style="background:var(--s2)"></span>Slightly Bearish &rarr; Neutral</td></tr>
+            <tr><td>50 &ndash; 70</td><td class="num">50 &ndash; 75</td><td><span class="bucket-dot" style="background:var(--s4)"></span>Neutral &rarr; Bullish</td></tr>
+            <tr><td>70 &ndash; 85</td><td class="num">75 &ndash; 95</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish &rarr; Very Bullish</td></tr>
+            <tr><td>Above 85</td><td class="num">95</td><td><span class="bucket-dot" style="background:var(--s6)"></span>Very Bullish</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="backtest" class="backtest">
+      <div class="section-head">
+        <h2>Does it work? &mdash; Historical backtest (2003&ndash;2026)</h2>
+        <p>
+          For every trading day since RSP's 2003 inception (matched to VIX/Breadth backtest window),
+          we compute the SPY 14-day RSI and measure how the S&P 500 actually performed 6 and 12
+          months later.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>Three findings jump out of the 23-year RSI backtest:</p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>Extreme oversold RSI is powerful &mdash; but rare.</h3>
+          <p>
+            When RSI dropped below 15 (only <strong>11 days</strong> in 23 years), the S&P 500 was
+            up <strong>+24.6%</strong> on average 12 months later, and positive <strong>100% of
+            the time</strong> &mdash; every single instance.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> When the crowd panics badly enough to push RSI below 15,
+            history says the odds are extraordinary. It just doesn't happen often.
+          </p>
+        </div>
+
+        <div class="finding finding-neg">
+          <div class="finding-num">2</div>
+          <h3>Extreme overbought RSI weakens forward returns.</h3>
+          <p>
+            When RSI pushed above 85 (35 days), forward 12-month returns dropped to <strong>+7.1%</strong>
+            with only a <strong>62% hit rate</strong> &mdash; noticeably worse than baseline (+10%, 82% hit).
+            This is a signal <em>neither VIX nor Breadth</em> captured.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Extreme overbought is a genuine warning &mdash; not
+            "sell everything," but "risk/reward here is worse than usual."
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">3</div>
+          <h3>The middle is noise.</h3>
+          <p>
+            When RSI sat between 30 and 70 (the vast majority of days), forward returns matched
+            the baseline of <strong>~+10% at 12mo</strong>. Nothing to see.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> RSI is a specialist. It fires at extremes and stays quiet
+            in the middle. That's fine &mdash; it's designed to complement the other components.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <p>
+        RSI is famous both for how simple it is and for how easy it is to misread. Here's how
+        the BATS interpretation stays balanced:
+      </p>
+      <ol class="usage-list">
+        <li>
+          <strong>Respect the caveat: markets can stay stretched.</strong>
+          RSI over 70 doesn't mean a top today &mdash; strong rallies can keep RSI overbought for weeks
+          or months. RSI under 30 doesn't mean the bottom is in today, either. It just shifts the odds.
+        </li>
+        <li>
+          <strong>Extremes matter, middle doesn't.</strong>
+          Focus on RSI when it's below 20 or above 80. The middle is baseline noise for forward
+          returns and shouldn't drive decisions.
+        </li>
+        <li>
+          <strong>Use it to confirm, not to lead.</strong>
+          RSI's biggest value in the BATS is confirming other indicators. When RSI is oversold
+          <em>and</em> VIX is spiking, that's a much stronger signal than either alone.
+        </li>
+        <li>
+          <strong>The overbought warning is unique.</strong>
+          Neither VIX nor Breadth flags "extreme overbought is bearish for forward returns."
+          RSI catches it. That's why it's in the blend even at just 20% weight.
+        </li>
+        <li>
+          <strong>Rare signals earn their keep at rare moments.</strong>
+          Extreme RSI readings happen a few times per decade. That's not a bug &mdash; that's a
+          feature. When they fire, listen.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns are not
+        guarantees. Always do your own research or talk to a financial professional before
+        investing.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = '../data/';
+    window.BATS_BACKTEST_KIND = 'rsi';
+  </script>
+  <script src="../app.js"></script>
+  <script src="../backtest.js"></script>
+</body>
+</html>

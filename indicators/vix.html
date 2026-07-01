@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The VIX — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO scores the VIX (volatility index), and what 36 years of history tell us about using it to time the market." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <h1>BATS<span class="dot">.</span>CO</h1>
+        <p class="fullname">Benchmark Asset and Trend Scenarios</p>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../index.html#components">Components</a>
+      <a href="../index.html#backtest">Backtest</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #01</p>
+      <h1>The VIX — the market's "fear gauge"</h1>
+      <p class="lede">
+        How BATS interprets the VIX, and what <strong>36 years of daily history</strong>
+        tell us about using it to answer <em>"is now a good time to buy stocks?"</em>
+      </p>
+    </section>
+
+    <section id="whatis">
+      <h2>What is the VIX?</h2>
+      <p>
+        The VIX is a real-time number published by the Chicago Board Options Exchange (Cboe).
+        It estimates how much investors expect the S&P 500 to move over the next 30 days,
+        based on the prices they're paying for S&P 500 options.
+      </p>
+      <p>
+        Traders call it the <strong>"fear gauge"</strong> because it tends to spike when the
+        market is falling and investors are rushing to buy options for protection.
+      </p>
+      <div class="key-thresholds card">
+        <h3>Key VIX thresholds traders watch</h3>
+        <ul>
+          <li><span class="range">Under 12</span> Extreme calm, market is confident</li>
+          <li><span class="range">12 &ndash; 15</span> Calm, "bull market" zone</li>
+          <li><span class="range">15 &ndash; 20</span> Long-term average / baseline</li>
+          <li><span class="range">20 &ndash; 25</span> Slightly elevated, cautious</li>
+          <li><span class="range">25 &ndash; 35</span> Nervous market</li>
+          <li><span class="range">35 &ndash; 45</span> Heavy fear</li>
+          <li><span class="range">Over 45</span> Panic; historically a strong contrarian buy signal</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses the VIX</h2>
+      <p>
+        The VIX is a <strong>contrarian</strong> indicator. When the crowd is scared (high VIX),
+        history says stocks are usually cheap. When the crowd is complacent (low VIX), stocks
+        are typically climbing calmly.
+      </p>
+      <p>
+        BATS converts the raw VIX value into a 0&ndash;100 sentiment score using a piecewise
+        linear scale, then maps that score into one of the seven sentiment buckets:
+      </p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>VIX range</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Under 12</td><td class="num">85 &ndash; 92</td><td><span class="bucket-dot" style="background:var(--s6)"></span>Very Bullish</td></tr>
+            <tr><td>12 &ndash; 15</td><td class="num">67 &ndash; 86</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish &rarr; Slightly Bullish</td></tr>
+            <tr><td>15 &ndash; 20</td><td class="num">43 &ndash; 67</td><td><span class="bucket-dot" style="background:var(--s3)"></span>Baseline / Neutral</td></tr>
+            <tr><td>20 &ndash; 25</td><td class="num">28 &ndash; 43</td><td><span class="bucket-dot" style="background:var(--s2)"></span>Slightly Bearish</td></tr>
+            <tr><td>25 &ndash; 35</td><td class="num">14 &ndash; 28</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Oversold</td></tr>
+            <tr><td>35 &ndash; 45</td><td class="num">5 &ndash; 14</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold</td></tr>
+            <tr><td>Over 45</td><td class="num">2 &ndash; 5</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold (panic)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="backtest" class="backtest">
+      <div class="section-head">
+        <h2>Does it work? — Historical backtest (1990&ndash;2026)</h2>
+        <p>
+          For every trading day since 1990, we compute the VIX component of the BATS
+          from that day's VIX reading and measure how the S&P 500 actually performed 6 and
+          12 months later.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>Three findings jump out of the 36-year backtest &mdash; some validating conventional wisdom, some challenging it:</p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>The contrarian thesis works &mdash; dramatically.</h3>
+          <p>
+            When BATS reads <strong>Very Oversold</strong> (VIX above 35), the S&P 500 was up an
+            average of <strong>+28%</strong> over the next 12 months, and positive
+            <strong>93% of the time</strong>. That's roughly triple the baseline forward return of ~+10%.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> When the crowd is truly panicking, history says the odds
+            heavily favor patient buyers.
+          </p>
+        </div>
+
+        <div class="finding finding-neg">
+          <div class="finding-num">2</div>
+          <h3>"Slightly Bearish" is a dud zone.</h3>
+          <p>
+            When the VIX sits in the 20&ndash;25 range &mdash; nervous but not panicked &mdash;
+            forward 12-month returns average only <strong>+5%</strong>, worse than any other bucket.
+            Elevated fear without full capitulation has historically been the weakest window to buy.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Wait for either a full flush (VIX above 25) or a return to
+            baseline (VIX under 20) &mdash; the middle can be a trap.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">3</div>
+          <h3>Low VIX is not, by itself, a sell signal.</h3>
+          <p>
+            Very Bullish readings (VIX under 12) delivered <strong>+10%</strong> average 12-month
+            returns &mdash; right at baseline. The old wisdom that "complacency means take profits"
+            is <strong>not supported</strong> by 36 years of data. Sustained calm has coincided with
+            continued bull markets.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Don't sell just because things are calm. Look for
+            confirmation from other indicators before drawing conclusions.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <p>
+        The VIX is a powerful tool, but no single indicator should drive an investment
+        decision. Here's how to read the BATS VIX signal in a balanced way:
+      </p>
+      <ol class="usage-list">
+        <li>
+          <strong>Treat extreme readings as significant.</strong>
+          When the VIX spikes above 35, history is heavily on the side of patient buyers over
+          the next 6&ndash;12 months. That doesn't mean the market can't fall further first &mdash;
+          bottoms are rarely single-day events.
+        </li>
+        <li>
+          <strong>Be patient in the 20&ndash;25 zone.</strong>
+          When the market is nervous but hasn't fully panicked, forward returns have been the
+          weakest. Wait for capitulation or a return to baseline before committing capital.
+        </li>
+        <li>
+          <strong>Don't sell just because things are calm.</strong>
+          Low VIX doesn't predict a top on its own. The one caveat: pair it with other
+          indicators (breadth, momentum, valuation) before drawing conclusions.
+        </li>
+        <li>
+          <strong>Combine, don't isolate.</strong>
+          The VIX is one signal. BATS is designed to blend it with other indicators so each
+          can filter the others' false alarms. The main gauge on the dashboard is the blended view.
+        </li>
+        <li>
+          <strong>Match your time horizon.</strong>
+          These returns are 6 and 12 months forward. If you're trading day-to-day or
+          week-to-week, the same signal looks much noisier.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns are
+        not guarantees. Always do your own research or talk to a financial professional before
+        investing.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <!-- Configure data-base for the backtest, then load the shared app + backtest -->
+  <script>window.BATS_DATA_BASE = '../data/';</script>
+  <script src="../app.js"></script>
+  <script src="../backtest.js"></script>
+</body>
+</html>

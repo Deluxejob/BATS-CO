@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markets — BATS.CO</title>
+  <meta name="description" content="Live charts, technical indicators, and market news — BATS.CO markets hub." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Live ticker tape across the top -->
+  <div class="ticker-bar">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
+          {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"},
+          {"proName": "FOREXCOM:DJI", "title": "Dow Jones"},
+          {"proName": "CBOE:VIX", "title": "VIX"},
+          {"proName": "AMEX:SPY", "title": "SPY"},
+          {"proName": "AMEX:QQQ", "title": "QQQ"},
+          {"proName": "TVC:GOLD", "title": "Gold"},
+          {"proName": "TVC:US10Y", "title": "10Y Yield"}
+        ],
+        "showSymbolLogo": true,
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "colorTheme": "dark",
+        "locale": "en"
+      }
+      </script>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <h1>BATS<span class="dot">.</span>CO</h1>
+        <p class="fullname">Benchmark Asset and Trend Scenarios</p>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="index.html#components">Components</a>
+      <a href="index.html#backtest">Backtest</a>
+      <a href="markets.html">Markets</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="explainer-hero">
+      <p class="eyebrow">MARKETS HUB</p>
+      <h1>Charts, indicators, and headlines</h1>
+      <p class="lede">
+        Live delayed data from TradingView — the same tools the pros use, embedded for free.
+        Use the chart below to explore any ticker, timeframe, or indicator you want.
+      </p>
+    </section>
+
+    <!-- LIVE CHART -->
+    <section class="chart-section" id="chart">
+      <div class="section-head">
+        <h2>Interactive chart</h2>
+        <p>Defaults to SPY. Change the symbol, timeframe, and add your own indicators.</p>
+      </div>
+      <div class="tradingview-widget-container chart-widget">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+        {
+          "autosize": true,
+          "symbol": "AMEX:SPY",
+          "interval": "D",
+          "timezone": "America/New_York",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "withdateranges": true,
+          "allow_symbol_change": true,
+          "details": true,
+          "hotlist": true,
+          "calendar": true,
+          "studies": ["STD;RSI", "STD;SMA"],
+          "support_host": "https://www.tradingview.com"
+        }
+        </script>
+      </div>
+    </section>
+
+    <!-- TECHNICAL INDICATORS + MARKET OVERVIEW -->
+    <section class="technicals">
+      <div class="section-head">
+        <h2>At-a-glance indicators</h2>
+        <p>Common technical signals everyone watches — moving averages, oscillators, pivots.</p>
+      </div>
+      <div class="technicals-grid">
+        <div class="card">
+          <h3>Technical Summary — SPY</h3>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+            {
+              "interval": "1D",
+              "width": "100%",
+              "isTransparent": true,
+              "height": 450,
+              "symbol": "AMEX:SPY",
+              "showIntervalTabs": true,
+              "locale": "en",
+              "colorTheme": "dark"
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Market Overview</h3>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+            {
+              "colorTheme": "dark",
+              "dateRange": "12M",
+              "showChart": true,
+              "locale": "en",
+              "width": "100%",
+              "height": "450",
+              "largeChartUrl": "",
+              "isTransparent": true,
+              "showSymbolLogo": true,
+              "showFloatingTooltip": true,
+              "tabs": [
+                {
+                  "title": "Indices",
+                  "symbols": [
+                    {"s": "FOREXCOM:SPXUSD", "d": "S&P 500"},
+                    {"s": "FOREXCOM:NSXUSD", "d": "Nasdaq 100"},
+                    {"s": "FOREXCOM:DJI", "d": "Dow 30"},
+                    {"s": "INDEX:RUT", "d": "Russell 2000"},
+                    {"s": "CBOE:VIX", "d": "VIX"}
+                  ]
+                },
+                {
+                  "title": "Bonds",
+                  "symbols": [
+                    {"s": "TVC:US10Y", "d": "10Y Yield"},
+                    {"s": "TVC:US02Y", "d": "2Y Yield"},
+                    {"s": "AMEX:HYG", "d": "High Yield"},
+                    {"s": "NASDAQ:TLT", "d": "20+ Year Treasury"}
+                  ]
+                },
+                {
+                  "title": "Commodities",
+                  "symbols": [
+                    {"s": "TVC:GOLD", "d": "Gold"},
+                    {"s": "TVC:SILVER", "d": "Silver"},
+                    {"s": "TVC:USOIL", "d": "Oil"},
+                    {"s": "TVC:DXY", "d": "US Dollar"}
+                  ]
+                }
+              ]
+            }
+            </script>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEWS -->
+    <section class="news" id="news">
+      <div class="section-head">
+        <h2>Market News</h2>
+        <p>Headlines moving the market right now.</p>
+      </div>
+      <div class="tradingview-widget-container news-widget">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+        {
+          "feedMode": "all_symbols",
+          "isTransparent": true,
+          "displayMode": "regular",
+          "width": "100%",
+          "height": 550,
+          "colorTheme": "dark",
+          "locale": "en"
+        }
+        </script>
+      </div>
+    </section>
+
+    <!-- COMING SOON -->
+    <section class="coming-soon">
+      <div class="section-head">
+        <h2>Coming soon to this page</h2>
+      </div>
+      <div class="components-grid">
+        <div class="comp-card">
+          <h3>Index dashboards <span class="pill soon">Coming Soon</span></h3>
+          <div class="desc">Side-by-side charts for SPY, QQQ, and Dow with quick-switch timeframes.</div>
+        </div>
+        <div class="comp-card">
+          <h3>S&P 500 heatmap <span class="pill soon">Coming Soon</span></h3>
+          <div class="desc">Sector- and market-cap-weighted visualization of what's moving today.</div>
+        </div>
+        <div class="comp-card">
+          <h3>Ticker lookup <span class="pill soon">Coming Soon</span></h3>
+          <div class="desc">Type any stock symbol to get its chart, key stats, and current headlines.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the BATS</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

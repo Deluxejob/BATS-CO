@@ -1,0 +1,33 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor junk
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (in case tooling is added later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs & temp
+*.log
+tmp/
+temp/
+
+# Vercel build artifacts
+.vercel/
+
+# Claude Code scratch
+scratchpad/
