@@ -472,6 +472,47 @@ function buildGauge() {
     cursor = segEnd - gap;
   });
 
+  // Speedometer-style tick marks + numeric labels around the outside.
+  // Major labels at 0/25/50/75/100 (quartiles). Minor tick marks every 10.
+  const MAJOR_TICKS = [0, 25, 50, 75, 100];
+  const MINOR_TICKS = [10, 20, 30, 40, 60, 70, 80, 90];
+
+  function tickAngle(v) { return 180 - (v / 100) * 180; }
+
+  function drawTick(v, len, strokeWidth) {
+    const a = tickAngle(v);
+    const p1 = polarToXY(GAUGE.cx, GAUGE.cy, GAUGE.rOuter + 2,   a);
+    const p2 = polarToXY(GAUGE.cx, GAUGE.cy, GAUGE.rOuter + 2 + len, a);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', p1.x);
+    line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x);
+    line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke', '#8b95a8');
+    line.setAttribute('stroke-width', strokeWidth);
+    line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+  }
+
+  MINOR_TICKS.forEach(v => drawTick(v, 4, 1));
+  MAJOR_TICKS.forEach(v => drawTick(v, 8, 2));
+
+  MAJOR_TICKS.forEach(v => {
+    const a = tickAngle(v);
+    const pos = polarToXY(GAUGE.cx, GAUGE.cy, GAUGE.rOuter + 24, a);
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', pos.x);
+    text.setAttribute('y', pos.y);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('fill', '#b8c1d1');
+    text.setAttribute('font-family', "'JetBrains Mono', ui-monospace, monospace");
+    text.setAttribute('font-size', '12');
+    text.setAttribute('font-weight', '700');
+    text.textContent = v;
+    svg.appendChild(text);
+  });
+
   // Needle (centered pivot circle + line)
   const needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   needle.setAttribute('id', 'gaugeNeedle');
