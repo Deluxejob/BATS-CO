@@ -63,37 +63,56 @@ h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); }
 .site-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   padding: 1.75rem 2rem 1rem;
   max-width: 1280px;
   margin: 0 auto;
 }
+.brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .1rem 1.1rem;
+}
+.brand-link,
+.brand-content {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  text-decoration: none;
+  color: inherit;
+}
+.brand-link:hover { text-decoration: none; }
+
+/* The logo image is stark black-on-white line art; invert it so the black
+   elements become white on our dark navy background, and boost contrast a
+   touch so the light-gray fills read cleanly. */
+.brand-logo {
+  height: 68px;
+  width: auto;
+  flex-shrink: 0;
+  filter: invert(1) contrast(1.15) brightness(1.05);
+}
+.brand-text { display: flex; flex-direction: column; }
 .brand h1 {
-  font-size: 2.4rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
   background: linear-gradient(90deg, #6ee7ff, #22d39a);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   margin: 0;
 }
-.brand .dot { color: var(--warn); -webkit-text-fill-color: var(--warn); }
-.brand .fullname {
-  margin: .15rem 0 0;
-  color: var(--text-faint);
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-}
 .brand .tagline {
-  margin: .35rem 0 0;
+  margin: .3rem 0 0;
   color: var(--text-dim);
-  font-size: 1rem;
+  font-size: .95rem;
 }
+.brand .breadcrumb { flex-basis: 100%; margin: .35rem 0 0; }
 .site-nav { display: flex; gap: 1.25rem; }
 .site-nav a {
   color: var(--text-dim);
@@ -735,7 +754,9 @@ main.explainer .disclaimer {
 @media (max-width: 720px) {
   .site-header { padding: 1.25rem 1rem .5rem; }
   main { padding: .5rem 1rem 2rem; }
-  .brand h1 { font-size: 1.9rem; }
+  .brand-logo { height: 52px; }
+  .brand h1 { font-size: 1.05rem; }
+  .brand .tagline { font-size: .85rem; }
   .reading-label { font-size: 1.5rem; }
   .hero { padding: 1.25rem; }
   .site-nav { width: 100%; justify-content: space-between; gap: .5rem; }
