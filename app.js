@@ -499,15 +499,15 @@ function buildGauge() {
 
   MAJOR_TICKS.forEach(v => {
     const a = tickAngle(v);
-    const pos = polarToXY(GAUGE.cx, GAUGE.cy, GAUGE.rOuter + 24, a);
+    const pos = polarToXY(GAUGE.cx, GAUGE.cy, GAUGE.rOuter + 28, a);
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('x', pos.x);
     text.setAttribute('y', pos.y);
     text.setAttribute('text-anchor', 'middle');
     text.setAttribute('dominant-baseline', 'middle');
-    text.setAttribute('fill', '#b8c1d1');
+    text.setAttribute('fill', '#e6edf6');
     text.setAttribute('font-family', "'JetBrains Mono', ui-monospace, monospace");
-    text.setAttribute('font-size', '12');
+    text.setAttribute('font-size', '19');
     text.setAttribute('font-weight', '700');
     text.textContent = v;
     svg.appendChild(text);
