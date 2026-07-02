@@ -170,6 +170,15 @@ section { margin: 2.5rem 0; }
   box-shadow: var(--shadow);
   text-align: center;
 }
+.hero-eyebrow {
+  margin: 0 0 1.25rem;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: .85;
+}
 .gauge-wrap {
   position: relative;
   max-width: 520px;
