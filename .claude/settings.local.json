@@ -34,7 +34,12 @@
       "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://query1.finance.yahoo.com/v8/finance/chart/RSP?period1=1051660800&period2=1782950400&interval=1d\" -o /tmp/rsp.json)",
       "Bash(curl -sSL -A \"Mozilla/5.0\" \"https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1=1051660800&period2=1782950400&interval=1d\" -o /tmp/spy.json)",
       "Bash(wait)",
-      "Bash(awk 'BEGIN{b=0; p=0; s=0} { *)"
+      "Bash(awk 'BEGIN{b=0; p=0; s=0} { *)",
+      "WebFetch(domain:bats-co.vercel.app)",
+      "Bash(curl -sSL \"https://bats-co.vercel.app/index.html\")",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Add Junk Bond Demand as 4th component \\(HYG/LQD 20-day spread\\) *)",
+      "Bash(git push *)"
     ]
   }
 }

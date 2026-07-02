@@ -193,21 +193,71 @@ async function runRsiBacktest() {
 }
 
 // ============================================================
+// JUNK BOND DEMAND BACKTEST — HYG - LQD 20-day return spread
+// ============================================================
+async function runJunkBacktest() {
+  const [hygText, lqdText, spxText] = await Promise.all([
+    fetchText(DATA_BASE + 'hyg.csv'),
+    fetchText(DATA_BASE + 'lqd.csv'),
+    fetchText(DATA_BASE + 'spx.csv'),
+  ]);
+  const hyg = parseDateClose(hygText);
+  const lqd = parseDateClose(lqdText);
+  const spx = parseDateClose(spxText);
+
+  const lqdByDate = new Map();
+  lqd.forEach((r, i) => lqdByDate.set(r.date, i));
+  const spxByDate = new Map();
+  spx.forEach((r, i) => spxByDate.set(r.date, i));
+
+  const trades = [];
+  for (let i = BREADTH_LOOKBACK; i < hyg.length; i++) {
+    const d = hyg[i].date;
+    const li = lqdByDate.get(d);
+    const xi = spxByDate.get(d);
+    if (li == null || li < BREADTH_LOOKBACK || xi == null) continue;
+
+    const hygRet = (hyg[i].close  / hyg[i - BREADTH_LOOKBACK].close  - 1) * 100;
+    const lqdRet = (lqd[li].close / lqd[li - BREADTH_LOOKBACK].close - 1) * 100;
+    const spread = hygRet - lqdRet;
+    const score  = scoreJunkDemand(spread);
+    if (score == null) continue;
+
+    const spxNow = spx[xi].close;
+    const spx6   = spx[xi + TRADING_DAYS_6MO];
+    const spx12  = spx[xi + TRADING_DAYS_12MO];
+    trades.push({
+      date: d,
+      raw: spread,
+      score,
+      bucket: bucketOf(score),
+      ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
+      ret12mo: spx12 ? (spx12.close / spxNow - 1) * 100 : null,
+    });
+  }
+  return summarize(trades);
+}
+
+// ============================================================
 // BLENDED BATS BACKTEST — weighted average of every LIVE component
-// (VIX, Breadth, SPY RSI) using whatever weights are currently set in
-// COMPONENTS (app.js). This is the actual product: the BATS itself.
+// (VIX, Breadth, SPY RSI, Junk Bond Demand) using whatever weights
+// are currently set in COMPONENTS (app.js). This is the actual product.
 // ============================================================
 async function runBlendedBacktest() {
-  const [vixText, rspText, spyText, spxText] = await Promise.all([
+  const [vixText, rspText, spyText, spxText, hygText, lqdText] = await Promise.all([
     fetchText(DATA_BASE + 'vix.csv'),
     fetchText(DATA_BASE + 'rsp.csv'),
     fetchText(DATA_BASE + 'spy.csv'),
     fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + 'hyg.csv'),
+    fetchText(DATA_BASE + 'lqd.csv'),
   ]);
   const vix = parseVIX(vixText);
   const rsp = parseDateClose(rspText);
   const spy = parseDateClose(spyText);
   const spx = parseDateClose(spxText);
+  const hyg = parseDateClose(hygText);
+  const lqd = parseDateClose(lqdText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
 
   const vixByDate = new Map();
@@ -216,13 +266,16 @@ async function runBlendedBacktest() {
   spy.forEach((r, i) => spyByDate.set(r.date, i));
   const spxByDate = new Map();
   spx.forEach((r, i) => spxByDate.set(r.date, i));
+  const hygByDate = new Map();
+  hyg.forEach((r, i) => hygByDate.set(r.date, i));
+  const lqdByDate = new Map();
+  lqd.forEach((r, i) => lqdByDate.set(r.date, i));
 
-  // Weights come from COMPONENTS so retuning weights in app.js retunes
-  // the entire dashboard AND this backtest with no other changes.
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')     || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth') || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI;
+  const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
+  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
+  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
+  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wJunk;
   if (wTotal <= 0) throw new Error('No live weights configured');
 
   const trades = [];
@@ -231,19 +284,26 @@ async function runBlendedBacktest() {
     const si = spyByDate.get(d);
     const xi = spxByDate.get(d);
     const vi = vixByDate.get(d);
+    const hi = hygByDate.get(d);
+    const li = lqdByDate.get(d);
     if (si == null || si < BREADTH_LOOKBACK || xi == null || vi == null) continue;
+    if (hi == null || hi < BREADTH_LOOKBACK || li == null || li < BREADTH_LOOKBACK) continue;
     if (rsi[si] == null) continue;
 
     const rspRet = (rsp[i].close / rsp[i - BREADTH_LOOKBACK].close - 1) * 100;
     const spyRet = (spy[si].close / spy[si - BREADTH_LOOKBACK].close - 1) * 100;
     const spread = rspRet - spyRet;
+    const hygRet = (hyg[hi].close / hyg[hi - BREADTH_LOOKBACK].close - 1) * 100;
+    const lqdRet = (lqd[li].close / lqd[li - BREADTH_LOOKBACK].close - 1) * 100;
+    const junkSpread = hygRet - lqdRet;
 
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
     const rs = scoreRSI(rsi[si]);
-    if (vs == null || bs == null || rs == null) continue;
+    const js = scoreJunkDemand(junkSpread);
+    if (vs == null || bs == null || rs == null || js == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -387,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const kind = (typeof window !== 'undefined' && window.BATS_BACKTEST_KIND) || 'vix';
   const runner = kind === 'breadth' ? runBreadthBacktest
                : kind === 'rsi'     ? runRsiBacktest
+               : kind === 'junk'    ? runJunkBacktest
                : kind === 'blended' ? runBlendedBacktest
                : runVixBacktest;
   runner()

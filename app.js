@@ -98,6 +98,42 @@ function rsiAdvisory(rsi) {
   return                { tone: 'opportunity', text: 'Extremely oversold. Very strong contrarian buy signal historically (+25% avg forward 12mo, 100% positive in 11 historical instances). Rare but potent.' };
 }
 
+// ---- Junk Bond Demand — HYG/LQD 20-day spread ----
+//
+// Measures the credit market's risk appetite. HYG holds high-yield ("junk")
+// corporate bonds. LQD holds investment-grade corporates. When investors are
+// hungry for yield they chase HYG, and HYG outperforms LQD (positive spread).
+// When they get scared they flee to quality (LQD > HYG, negative spread).
+//
+// CONFIRMATORY, not contrarian (like Breadth):
+//   Positive spread -> risk-on -> BULLISH sentiment -> HIGH BATS score
+//   Negative spread -> flight to safety -> OVERSOLD -> LOW BATS score
+//
+// Distribution 2007-2026: median ~0, 90th ±2%, extremes ±14% (2008 crisis).
+// Score = 50 + spread * 10, clamped to [5, 95] — same shape as Breadth.
+//
+// Backtest 2007-2026 (4,816 days):
+//   Very Oversold (spread < -4.5%): +18.3% avg 12mo, 87% hit  (n=259)
+//   Very Bullish  (spread > +4.5%): +14.8% avg 12mo, 84% hit  (n=131)
+// Modest on its own, but adding at 10% weight to the 4-way blend pushes the
+// blended Very Oversold bucket to 100% hit rate.
+function scoreJunkDemand(spread) {
+  if (spread == null || isNaN(spread)) return null;
+  const score = 50 + spread * 10;
+  return Math.max(5, Math.min(95, score));
+}
+
+function junkDemandAdvisory(spread) {
+  if (spread == null || isNaN(spread)) return null;
+  if (spread <= -5)   return { tone: 'opportunity', text: 'Extreme flight to safety — credit stress. Historically a strong contrarian buy signal (+18% avg forward 12mo returns, 87% positive).' };
+  if (spread <= -2)   return { tone: 'watch',       text: 'Investors fleeing risky bonds — credit markets stressed. Bearish confirmation, watch other indicators.' };
+  if (spread <= -0.5) return { tone: 'info',        text: 'Mild flight to quality — credit markets slightly cautious.' };
+  if (spread <   0.5) return { tone: 'info',        text: 'Balanced — credit markets neutral.' };
+  if (spread <   2)   return { tone: 'info',        text: 'Mild risk-on — investors slightly favor high-yield bonds.' };
+  if (spread <   5)   return { tone: 'info',        text: 'Broad risk appetite — credit markets healthy. Bullish confirmation.' };
+  return                      { tone: 'opportunity', text: 'Extreme risk appetite — investors chasing high-yield bonds aggressively. Strong bullish confirmation historically (+15% avg forward 12mo).' };
+}
+
 // Wilder's 14-day RSI from a chronological array of closes.
 // Returns the RSI value for the last close, or null if not enough data.
 function computeRSI(closes, period = 14) {
@@ -185,7 +221,7 @@ const COMPONENTS = [
     key: 'vix',
     name: 'VIX (Volatility)',
     desc: 'The "fear gauge." Contrarian: high VIX often means a buying opportunity; low VIX means complacency.',
-    weight: 50,
+    weight: 45,
     status: 'live',
     raw: 22.5,
     value: '22.5 (demo)',
@@ -197,7 +233,7 @@ const COMPONENTS = [
     key: 'breadth',
     name: 'Market Breadth',
     desc: 'How many stocks are participating. Confirmatory: broad participation is bullish, narrow rallies are fragile.',
-    weight: 30,
+    weight: 25,
     status: 'live',
     raw: -0.8,
     value: '−0.8% (demo)',
@@ -218,9 +254,21 @@ const COMPONENTS = [
     explainer: 'indicators/rsi.html',
   },
   {
+    key: 'junk_demand',
+    name: 'Junk Bond Demand',
+    desc: 'Credit-market risk appetite: HYG vs LQD 20-day return spread. Confirmatory: positive = investors chasing yield = bullish.',
+    weight: 10,
+    status: 'live',
+    raw: 0,
+    value: '0.00% (loading)',
+    signal: scoreJunkDemand(0),
+    advisory: junkDemandAdvisory(0),
+    explainer: 'indicators/junk-bond-demand.html',
+  },
+  {
     key: 'putcall',
     name: 'Put/Call Ratio',
-    desc: 'Bets on stocks falling vs rising. High = bearish crowd = contrarian bullish.',
+    desc: 'Bets on stocks falling vs rising. High = bearish crowd = contrarian bullish. (Historical data source blocked; parked for now.)',
     weight: 0,
     status: 'soon',
     signal: null,
@@ -230,15 +278,6 @@ const COMPONENTS = [
     key: 'ma_spread',
     name: 'SPY vs 200-day MA',
     desc: 'How far above/below its long-term trend the market is trading.',
-    weight: 0,
-    status: 'soon',
-    signal: null,
-    value: '—',
-  },
-  {
-    key: 'junk_demand',
-    name: 'Junk Bond Demand (HYG/LQD)',
-    desc: 'When investors chase risky bonds, they\'re hungry. Risk-on signal.',
     weight: 0,
     status: 'soon',
     signal: null,
@@ -524,46 +563,60 @@ function computeRsiSeriesLive(closes, period = 14) {
 }
 
 async function loadLiveData() {
-  const [vixText, rspText, spyText] = await Promise.all([
+  const [vixText, rspText, spyText, hygText, lqdText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + 'vix.csv'),
     fetchCSVText(APP_DATA_BASE + 'rsp.csv'),
     fetchCSVText(APP_DATA_BASE + 'spy.csv'),
+    fetchCSVText(APP_DATA_BASE + 'hyg.csv'),
+    fetchCSVText(APP_DATA_BASE + 'lqd.csv'),
   ]);
   const vix = parseVIXLive(vixText);
   const rsp = parseDateCloseLive(rspText);
   const spy = parseDateCloseLive(spyText);
+  const hyg = parseDateCloseLive(hygText);
+  const lqd = parseDateCloseLive(lqdText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));
 
   // Build date -> index maps for cross-alignment
   const vixByDate = new Map(); vix.forEach((r, i) => vixByDate.set(r.date, i));
   const spyByDate = new Map(); spy.forEach((r, i) => spyByDate.set(r.date, i));
+  const hygByDate = new Map(); hyg.forEach((r, i) => hygByDate.set(r.date, i));
+  const lqdByDate = new Map(); lqd.forEach((r, i) => lqdByDate.set(r.date, i));
 
-  // Compute BATS score for a given RSP row index (needs matching VIX+SPY+RSI on same date)
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')     || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth') || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI;
+  const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
+  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
+  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
+  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wJunk;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
     const d = rsp[rspRowIdx].date;
     const si = spyByDate.get(d);
     const vi = vixByDate.get(d);
+    const hi = hygByDate.get(d);
+    const li = lqdByDate.get(d);
     if (si == null || si < 20 || vi == null || rsi[si] == null) return null;
+    if (hi == null || hi < 20 || li == null || li < 20) return null;
     const rspRet = (rsp[rspRowIdx].close / rsp[rspRowIdx - 20].close - 1) * 100;
     const spyRet = (spy[si].close        / spy[si - 20].close        - 1) * 100;
     const spread = rspRet - spyRet;
+    const hygRet = (hyg[hi].close        / hyg[hi - 20].close        - 1) * 100;
+    const lqdRet = (lqd[li].close        / lqd[li - 20].close        - 1) * 100;
+    const junkSpread = hygRet - lqdRet;
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
     const rs = scoreRSI(rsi[si]);
-    if (vs == null || bs == null || rs == null || wTotal <= 0) return null;
+    const js = scoreJunkDemand(junkSpread);
+    if (vs == null || bs == null || rs == null || js == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
       spread,
       rsiVal: rsi[si],
-      vs, bs, rs,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI) / wTotal,
+      junkSpread,
+      vs, bs, rs, js,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk) / wTotal,
     };
   }
 
@@ -588,9 +641,10 @@ async function loadLiveData() {
 }
 
 function updateComponentsWithLatest(current) {
-  const vixComp = COMPONENTS.find(c => c.key === 'vix');
-  const brComp  = COMPONENTS.find(c => c.key === 'breadth');
-  const rsiComp = COMPONENTS.find(c => c.key === 'spy_rsi');
+  const vixComp  = COMPONENTS.find(c => c.key === 'vix');
+  const brComp   = COMPONENTS.find(c => c.key === 'breadth');
+  const rsiComp  = COMPONENTS.find(c => c.key === 'spy_rsi');
+  const junkComp = COMPONENTS.find(c => c.key === 'junk_demand');
 
   if (vixComp) {
     vixComp.raw = current.vix;
@@ -610,6 +664,13 @@ function updateComponentsWithLatest(current) {
     rsiComp.value = current.rsiVal.toFixed(1);
     rsiComp.signal = current.rs;
     rsiComp.advisory = rsiAdvisory(current.rsiVal);
+  }
+  if (junkComp) {
+    junkComp.raw = current.junkSpread;
+    const sign = current.junkSpread >= 0 ? '+' : '';
+    junkComp.value = `${sign}${current.junkSpread.toFixed(2)}%`;
+    junkComp.signal = current.js;
+    junkComp.advisory = junkDemandAdvisory(current.junkSpread);
   }
 }
 
