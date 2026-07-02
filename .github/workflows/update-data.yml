@@ -31,6 +31,17 @@ jobs:
           chmod +x scripts/update-data.sh
           bash scripts/update-data.sh
 
+      - name: Set up Python for AAII refresh
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install xlrd for parsing the AAII XLS
+        run: pip install --quiet xlrd
+
+      - name: Refresh AAII (weekly — tolerant of no-new-data)
+        run: python scripts/update-aaii.py
+
       - name: Commit and push if anything changed
         run: |
           if [ -n "$(git status --porcelain data/)" ]; then

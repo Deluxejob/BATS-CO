@@ -208,6 +208,68 @@ function computeSmaSeriesBacktest(closes, period = SMA_PERIOD) {
   return sma;
 }
 
+// Parser for the weekly AAII CSV (Date,Bullish,Neutral,Bearish,BullBearSpread).
+function parseAAII(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const spread = parseFloat(parts[4]);
+    if (parts[0] && !isNaN(spread)) rows.push({ date: parts[0], spread });
+  }
+  return rows;
+}
+
+// Given a sorted-by-date AAII array, return the row whose date is the latest
+// one ≤ targetDate (i.e. the reading in effect on that day).
+function aaiiOnOrBefore(aaiiRows, targetDate) {
+  for (let i = aaiiRows.length - 1; i >= 0; i--) {
+    if (aaiiRows[i].date <= targetDate) return aaiiRows[i];
+  }
+  return null;
+}
+
+// ============================================================
+// AAII BACKTEST — weekly Bull-Bear spread vs SPX forward returns.
+// Uses each AAII reading date (not carried forward — we sample at the source).
+// ============================================================
+async function runAaiiBacktest() {
+  const [aaiiText, spxText] = await Promise.all([
+    fetchText(DATA_BASE + 'aaii.csv'),
+    fetchText(DATA_BASE + 'spx.csv'),
+  ]);
+  const aaii = parseAAII(aaiiText);
+  const spx = parseDateClose(spxText);
+  const spxByDate = new Map();
+  spx.forEach((r, i) => spxByDate.set(r.date, i));
+
+  const trades = [];
+  for (const a of aaii) {
+    // Find the SPX close on the AAII reading date, or the next trading day.
+    let xi = spxByDate.get(a.date);
+    if (xi == null) {
+      for (let i = 0; i < spx.length; i++) {
+        if (spx[i].date >= a.date) { xi = i; break; }
+      }
+    }
+    if (xi == null) continue;
+    const score = scoreAAII(a.spread);
+    if (score == null) continue;
+    const spxNow = spx[xi].close;
+    const spx6   = spx[xi + TRADING_DAYS_6MO];
+    const spx12  = spx[xi + TRADING_DAYS_12MO];
+    trades.push({
+      date: a.date,
+      raw: a.spread,
+      score,
+      bucket: bucketOf(score),
+      ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
+      ret12mo: spx12 ? (spx12.close / spxNow - 1) * 100 : null,
+    });
+  }
+  return summarize(trades);
+}
+
 // ============================================================
 // SPX vs 200-day MA BACKTEST — distance from long-term trend
 // ============================================================
@@ -289,13 +351,14 @@ async function runJunkBacktest() {
 // are currently set in COMPONENTS (app.js). This is the actual product.
 // ============================================================
 async function runBlendedBacktest() {
-  const [vixText, rspText, spyText, spxText, hygText, lqdText] = await Promise.all([
+  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText] = await Promise.all([
     fetchText(DATA_BASE + 'vix.csv'),
     fetchText(DATA_BASE + 'rsp.csv'),
     fetchText(DATA_BASE + 'spy.csv'),
     fetchText(DATA_BASE + 'spx.csv'),
     fetchText(DATA_BASE + 'hyg.csv'),
     fetchText(DATA_BASE + 'lqd.csv'),
+    fetchText(DATA_BASE + 'aaii.csv'),
   ]);
   const vix = parseVIX(vixText);
   const rsp = parseDateClose(rspText);
@@ -303,6 +366,7 @@ async function runBlendedBacktest() {
   const spx = parseDateClose(spxText);
   const hyg = parseDateClose(hygText);
   const lqd = parseDateClose(lqdText);
+  const aaii = parseAAII(aaiiText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
   const sma200 = computeSmaSeriesBacktest(spx.map(r => r.close), SMA_PERIOD);
 
@@ -322,8 +386,13 @@ async function runBlendedBacktest() {
   const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
   const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk;
+  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII;
   if (wTotal <= 0) throw new Error('No live weights configured');
+
+  // Rolling pointer for AAII carry-forward across the sequential trading-day
+  // iteration below (O(n) instead of O(n²)).
+  let aaiiPtr = -1;
 
   const trades = [];
   for (let i = BREADTH_LOOKBACK; i < rsp.length; i++) {
@@ -337,6 +406,10 @@ async function runBlendedBacktest() {
     if (hi == null || hi < BREADTH_LOOKBACK || li == null || li < BREADTH_LOOKBACK) continue;
     if (rsi[si] == null || sma200[xi] == null) continue;
 
+    // Advance AAII pointer to the most recent reading ≤ this trading day.
+    while (aaiiPtr + 1 < aaii.length && aaii[aaiiPtr + 1].date <= d) aaiiPtr++;
+    if (aaiiPtr < 0) continue;
+
     const rspRet = (rsp[i].close / rsp[i - BREADTH_LOOKBACK].close - 1) * 100;
     const spyRet = (spy[si].close / spy[si - BREADTH_LOOKBACK].close - 1) * 100;
     const spread = rspRet - spyRet;
@@ -344,15 +417,17 @@ async function runBlendedBacktest() {
     const lqdRet = (lqd[li].close / lqd[li - BREADTH_LOOKBACK].close - 1) * 100;
     const junkSpread = hygRet - lqdRet;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
+    const aaiiSpread = aaii[aaiiPtr].spread;
 
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
     const rs = scoreRSI(rsi[si]);
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
-    if (vs == null || bs == null || rs == null || js == null || ms == null) continue;
+    const as_ = scoreAAII(aaiiSpread);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -498,6 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
                : kind === 'rsi'     ? runRsiBacktest
                : kind === 'junk'    ? runJunkBacktest
                : kind === 'ma200'   ? runMa200Backtest
+               : kind === 'aaii'    ? runAaiiBacktest
                : kind === 'blended' ? runBlendedBacktest
                : runVixBacktest;
   runner()

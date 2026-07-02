@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AAII Retail Sentiment — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO uses the AAII Investor Sentiment Survey — the longest-running weekly retail sentiment poll — and what 39 years of data actually show." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <h1>BATS<span class="dot">.</span>CO</h1>
+        <p class="fullname">Benchmark Asset and Trend Scenarios</p>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../index.html#components">Components</a>
+      <a href="../index.html#backtest">Backtest</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #06</p>
+      <h1>AAII Retail Sentiment &mdash; when the crowd tells you what to do</h1>
+      <p class="lede">
+        Every week since July 1987, the American Association of Individual Investors
+        has asked its members a simple question: are you bullish, bearish, or neutral
+        on the market over the next six months? Nearly 40 years of data reveal a
+        striking pattern &mdash; <strong>retail investors are famously wrong at extremes.</strong>
+      </p>
+    </section>
+
+    <section id="whatis">
+      <h2>What is the AAII Sentiment Survey?</h2>
+      <p>
+        The AAII survey is the longest-running weekly poll of individual (retail)
+        investor sentiment in the United States. Each week, thousands of members
+        answer the same question. Results are published every Thursday. The three
+        percentages (Bullish, Neutral, Bearish) always sum to 100%.
+      </p>
+      <p>
+        The single most-watched metric is the <strong>Bull-Bear Spread</strong>:
+        <code>Bullish % &minus; Bearish %</code>. High spread = crowd is optimistic.
+        Low spread = crowd is scared.
+      </p>
+      <div class="key-thresholds card">
+        <h3>Historical distribution (1987&ndash;2026)</h3>
+        <ul>
+          <li><span class="range">Median</span> +7% (retail is mildly bullish on average)</li>
+          <li><span class="range">10th pct</span> &minus;17% (unusually bearish)</li>
+          <li><span class="range">90th pct</span> +28% (unusually bullish)</li>
+          <li><span class="range">Extreme low</span> below &minus;30% (deep pessimism)</li>
+          <li><span class="range">Extreme high</span> above +30% (euphoria)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses AAII</h2>
+      <p>
+        AAII is treated as a <strong>contrarian</strong> indicator. When the crowd is
+        extremely bearish, forward returns have historically been strong (they were
+        wrong to sell). When the crowd is euphoric, forward returns have historically
+        been weak (they were wrong to be greedy).
+      </p>
+      <p>
+        Same direction convention as our other components: <strong>extreme retail
+        bearishness &rarr; LOW BATS</strong> (buy signal), <strong>extreme retail
+        bullishness &rarr; HIGH BATS</strong> (careful).
+      </p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>Bull-Bear Spread</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Below &minus;30%</td><td class="num">5</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold</td></tr>
+            <tr><td>&minus;30% to &minus;15%</td><td class="num">5 &ndash; 25</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Oversold</td></tr>
+            <tr><td>&minus;15% to 0%</td><td class="num">25 &ndash; 50</td><td><span class="bucket-dot" style="background:var(--s2)"></span>Slightly Bearish &rarr; Neutral</td></tr>
+            <tr><td>0% to +15%</td><td class="num">50 &ndash; 70</td><td><span class="bucket-dot" style="background:var(--s4)"></span>Neutral &rarr; Slightly Bullish</td></tr>
+            <tr><td>+15% to +30%</td><td class="num">70 &ndash; 90</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish</td></tr>
+            <tr><td>Above +30%</td><td class="num">95</td><td><span class="bucket-dot" style="background:var(--s6)"></span>Very Bullish</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="disclaimer" style="margin-top:1rem">
+        <strong>Note:</strong> AAII is a <em>weekly</em> survey. The BATS dashboard
+        carries the most recent reading forward each day until a new one arrives
+        (typically Thursday afternoons).
+      </p>
+    </section>
+
+    <section id="backtest" class="backtest">
+      <div class="section-head">
+        <h2>Does it work? &mdash; Historical backtest (1987&ndash;2026)</h2>
+        <p>
+          For every weekly AAII reading since 1987, we compute the AAII component of
+          the BATS and measure how the S&P 500 actually performed 6 and 12 months
+          later. 2,000+ readings across every major market regime.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>Three findings from the 39-year backtest &mdash; and one is the classic contrarian confirmation:</p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>Extreme bearishness = buying opportunity.</h3>
+          <p>
+            When the Bull-Bear spread was below &minus;30 (retail investors deeply
+            pessimistic), the S&P was up an average of <strong>+13.0%</strong> over
+            the next 12 months, <strong>77%</strong> positive (n=117). When it was
+            between &minus;30 and &minus;15, forward returns were +12.4%, 80% positive
+            (n=181). Both above the +9% baseline.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> The crowd's fear is your opportunity &mdash;
+            not on any given day, but reliably over the following year.
+          </p>
+        </div>
+
+        <div class="finding finding-neg">
+          <div class="finding-num">2</div>
+          <h3>Extreme euphoria = the worst returns.</h3>
+          <p>
+            When the spread was above +30 (retail extremely bullish), forward
+            12-month returns averaged just <strong>+4.5%</strong> with only
+            <strong>69%</strong> positive (n=244). That's dramatically worse than the
+            +9% / 75% baseline &mdash; <strong>the worst bucket of any indicator we track.</strong>
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> When your neighbor is bragging about their
+            stock picks, the market is often close to a top.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">3</div>
+          <h3>Middle of the range is noise.</h3>
+          <p>
+            When retail sentiment sits in its normal range (spread between &minus;15
+            and +30, which is where it lives 80% of the time), forward returns track
+            the baseline. Nothing to see here.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> AAII is a specialist &mdash; it earns its keep
+            only at extremes. When it fires, listen. When it doesn't, look elsewhere.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>Watch the extremes, ignore the middle.</strong>
+          Bull-Bear spread inside &plusmn;15 is noise. Outside &plusmn;15 is worth
+          paying attention to. Outside &plusmn;30 is unusually significant.
+        </li>
+        <li>
+          <strong>Not a timing tool.</strong>
+          "Retail is euphoric &rarr; sell tomorrow" doesn't work. Retail extremes
+          can persist for months. The signal is about the next 6&ndash;12 months, not
+          the next week.
+        </li>
+        <li>
+          <strong>Confirm with other components.</strong>
+          When AAII flags retail bearishness AND the VIX is elevated AND breadth is
+          narrow, the case is far stronger than any single signal.
+        </li>
+        <li>
+          <strong>Weekly data means slow updates.</strong>
+          AAII publishes each Thursday. The BATS dashboard shows the most recent
+          reading, holding it steady between updates. Don't expect this component
+          to change day-to-day.
+        </li>
+        <li>
+          <strong>The "meaning" of extremes drifts.</strong>
+          Retail participation has grown dramatically since 2020. What used to be
+          an extreme reading may not carry quite the same signal today &mdash; but
+          the historical pattern remains a useful baseline.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns
+        are not guarantees. Always do your own research or talk to a financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = '../data/';
+    window.BATS_BACKTEST_KIND = 'aaii';
+  </script>
+  <script src="../app.js"></script>
+  <script src="../backtest.js"></script>
+</body>
+</html>

@@ -98,6 +98,52 @@ function rsiAdvisory(rsi) {
   return                { tone: 'opportunity', text: 'Extremely oversold. Very strong contrarian buy signal historically (+25% avg forward 12mo, 100% positive in 11 historical instances). Rare but potent.' };
 }
 
+// ---- AAII Investor Sentiment Survey — Bull-Bear Spread ----
+//
+// AAII (American Association of Individual Investors) has run a weekly survey
+// of retail investors since 1987 asking whether they're Bullish, Bearish, or
+// Neutral about the next 6 months. The Bull-Bear Spread (Bullish% - Bearish%)
+// is a widely-watched CONTRARIAN indicator.
+//
+// Direction of BATS mapping — CONTRARIAN:
+//   Retail extremely BEARISH (very negative spread) -> LOW BATS (buy signal)
+//   Retail extremely BULLISH (very positive spread) -> HIGH BATS (careful)
+//
+// Distribution 1987-2026 (~2,025 weekly readings):
+//   min -54, 10th -17, median +7, 90th +28, max +63
+//   Note the positive median: retail is slightly bullish on average.
+//
+// Backtest 1987-2026:
+//   Very Oversold (spread ≤ -30):  +13.0% avg 12mo, 77% hit (n=117)
+//   Oversold      (spread -30 to -15): +12.4% avg 12mo, 80% hit (n=181)
+//   Very Bullish  (spread ≥ +30): +4.5% avg 12mo, 69% hit (n=244)  <- WORST bucket
+// The classic contrarian pattern holds: extremes fire on both sides, retail
+// is famously wrong at optimism extremes.
+//
+// Data is WEEKLY — the live dashboard carries the most recent reading forward.
+function scoreAAII(bbs) {
+  if (bbs == null || isNaN(bbs)) return null;
+  let s;
+  if (bbs <= -30)      s = 5;
+  else if (bbs <= -15) s = 5  + (bbs + 30) * 20 / 15;
+  else if (bbs <=   0) s = 25 + (bbs + 15) * 25 / 15;
+  else if (bbs <=  15) s = 50 + (bbs)      * 20 / 15;
+  else if (bbs <=  30) s = 70 + (bbs - 15) * 20 / 15;
+  else                 s = 95;
+  return Math.max(2, Math.min(98, s));
+}
+
+function aaiiAdvisory(bbs) {
+  if (bbs == null || isNaN(bbs)) return null;
+  if (bbs <= -30) return { tone: 'opportunity', text: 'Extreme retail bearishness — historically a contrarian buy signal. When AAII spread dropped below -30, S&P 500 was up +13% avg over next 12 months (77% positive).' };
+  if (bbs <= -15) return { tone: 'opportunity', text: 'Retail investors are unusually bearish — contrarian bullish. Forward 12mo returns have averaged +12.4% from this zone (80% positive).' };
+  if (bbs <=  -5) return { tone: 'info',        text: 'Retail slightly bearish. Sentiment is cautious but not extreme.' };
+  if (bbs <=   5) return { tone: 'info',        text: 'Balanced retail sentiment — neither too bullish nor too bearish.' };
+  if (bbs <=  15) return { tone: 'info',        text: 'Retail moderately bullish. Within normal range.' };
+  if (bbs <=  30) return { tone: 'info',        text: 'Retail solidly bullish. Getting toward the upper end of normal.' };
+  return                { tone: 'watch',        text: 'Extreme retail bullishness — historically a contrarian warning. Forward 12mo returns have averaged just +4.5% from this zone (only 69% positive) — the worst bucket we track.' };
+}
+
 // ---- S&P 500 vs 200-day Moving Average ----
 //
 // Classic trend indicator. Above the 200-day MA = market in uptrend. Below =
@@ -279,7 +325,7 @@ const COMPONENTS = [
     key: 'vix',
     name: 'VIX (Volatility)',
     desc: 'The "fear gauge." Contrarian: high VIX often means a buying opportunity; low VIX means complacency.',
-    weight: 40,
+    weight: 35,
     status: 'live',
     raw: 22.5,
     value: '22.5 (demo)',
@@ -303,7 +349,7 @@ const COMPONENTS = [
     key: 'spy_rsi',
     name: 'SPY 14-day RSI',
     desc: 'Momentum. Below 30 = oversold (bullish); above 70 = overbought (bearish). Markets can stay stretched.',
-    weight: 15,
+    weight: 10,
     status: 'live',
     raw: 42,
     value: '42 (demo)',
@@ -322,6 +368,18 @@ const COMPONENTS = [
     signal: scoreMA200(0),
     advisory: ma200Advisory(0),
     explainer: 'indicators/ma200.html',
+  },
+  {
+    key: 'aaii',
+    name: 'AAII Retail Sentiment',
+    desc: 'Weekly retail investor survey (Bullish% − Bearish%). Contrarian: retail extremes are historically wrong. Very positive = careful; very negative = buy signal.',
+    weight: 10,
+    status: 'live',
+    raw: 0,
+    value: '0.00% (loading)',
+    signal: scoreAAII(0),
+    advisory: aaiiAdvisory(0),
+    explainer: 'indicators/aaii.html',
   },
   {
     key: 'junk_demand',
@@ -600,6 +658,27 @@ function parseDateCloseLive(text) {
   return rows;
 }
 
+// AAII: Date,Bullish,Neutral,Bearish,BullBearSpread (weekly, since 1987)
+function parseAAIILive(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const spread = parseFloat(parts[4]);
+    if (parts[0] && !isNaN(spread)) rows.push({ date: parts[0], spread });
+  }
+  return rows;
+}
+
+// Find the most recent AAII reading on or before `targetDate` (YYYY-MM-DD).
+// AAII rows are chronologically sorted, so walk from the end.
+function findAaiiOnOrBefore(aaiiRows, targetDate) {
+  for (let i = aaiiRows.length - 1; i >= 0; i--) {
+    if (aaiiRows[i].date <= targetDate) return aaiiRows[i];
+  }
+  return null;
+}
+
 // Wilder RSI series aligned with input closes (element i = RSI at row i,
 // null for i < period).
 function computeRsiSeriesLive(closes, period = 14) {
@@ -624,13 +703,14 @@ function computeRsiSeriesLive(closes, period = 14) {
 }
 
 async function loadLiveData() {
-  const [vixText, rspText, spyText, hygText, lqdText, spxText] = await Promise.all([
+  const [vixText, rspText, spyText, hygText, lqdText, spxText, aaiiText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + 'vix.csv'),
     fetchCSVText(APP_DATA_BASE + 'rsp.csv'),
     fetchCSVText(APP_DATA_BASE + 'spy.csv'),
     fetchCSVText(APP_DATA_BASE + 'hyg.csv'),
     fetchCSVText(APP_DATA_BASE + 'lqd.csv'),
     fetchCSVText(APP_DATA_BASE + 'spx.csv'),
+    fetchCSVText(APP_DATA_BASE + 'aaii.csv'),
   ]);
   const vix = parseVIXLive(vixText);
   const rsp = parseDateCloseLive(rspText);
@@ -638,6 +718,7 @@ async function loadLiveData() {
   const hyg = parseDateCloseLive(hygText);
   const lqd = parseDateCloseLive(lqdText);
   const spx = parseDateCloseLive(spxText);
+  const aaii = parseAAIILive(aaiiText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));
   const sma200 = computeSmaSeries(spx.map(r => r.close), 200);
 
@@ -652,7 +733,8 @@ async function loadLiveData() {
   const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
   const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk;
+  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -665,6 +747,8 @@ async function loadLiveData() {
     if (si == null || si < 20 || vi == null || rsi[si] == null) return null;
     if (hi == null || hi < 20 || li == null || li < 20) return null;
     if (xi == null || sma200[xi] == null) return null;
+    const aaiiRec = findAaiiOnOrBefore(aaii, d);
+    if (!aaiiRec) return null;
     const rspRet = (rsp[rspRowIdx].close / rsp[rspRowIdx - 20].close - 1) * 100;
     const spyRet = (spy[si].close        / spy[si - 20].close        - 1) * 100;
     const spread = rspRet - spyRet;
@@ -677,7 +761,8 @@ async function loadLiveData() {
     const rs = scoreRSI(rsi[si]);
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || wTotal <= 0) return null;
+    const as_ = scoreAAII(aaiiRec.spread);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -685,8 +770,10 @@ async function loadLiveData() {
       rsiVal: rsi[si],
       junkSpread,
       ma200Dist,
-      vs, bs, rs, js, ms,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA) / wTotal,
+      aaiiSpread: aaiiRec.spread,
+      aaiiDate: aaiiRec.date,
+      vs, bs, rs, js, ms, as_,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII) / wTotal,
     };
   }
 
@@ -716,6 +803,7 @@ function updateComponentsWithLatest(current) {
   const rsiComp  = COMPONENTS.find(c => c.key === 'spy_rsi');
   const maComp   = COMPONENTS.find(c => c.key === 'ma200');
   const junkComp = COMPONENTS.find(c => c.key === 'junk_demand');
+  const aaiiComp = COMPONENTS.find(c => c.key === 'aaii');
 
   if (vixComp) {
     vixComp.raw = current.vix;
@@ -749,6 +837,13 @@ function updateComponentsWithLatest(current) {
     junkComp.value = `${sign}${current.junkSpread.toFixed(2)}%`;
     junkComp.signal = current.js;
     junkComp.advisory = junkDemandAdvisory(current.junkSpread);
+  }
+  if (aaiiComp) {
+    aaiiComp.raw = current.aaiiSpread;
+    const sign = current.aaiiSpread >= 0 ? '+' : '';
+    aaiiComp.value = `${sign}${current.aaiiSpread.toFixed(1)}% (${current.aaiiDate})`;
+    aaiiComp.signal = current.as_;
+    aaiiComp.advisory = aaiiAdvisory(current.aaiiSpread);
   }
 }
 
