@@ -14,9 +14,10 @@ Live at **[bats.co](https://bats.co)**.
 
 | Component | Weight | Direction | Data source |
 |---|---|---|---|
-| VIX | 45% | Contrarian: high fear = buying opportunity | datasets/finance-vix |
+| VIX | 40% | Contrarian: high fear = buying opportunity | datasets/finance-vix |
 | Market Breadth (RSP/SPY spread) | 25% | Confirmatory: broad participation is bullish | Yahoo Finance `RSP`, `SPY` |
-| SPY 14-day RSI | 20% | Contrarian: extreme momentum reverts | Computed from Yahoo `SPY` closes |
+| SPY 14-day RSI | 15% | Contrarian: extreme momentum reverts | Computed from Yahoo `SPY` closes |
+| S&P vs 200-day MA | 10% | State: far below = buy zone; far above = strong trend | Computed from Yahoo `^GSPC` |
 | Junk Bond Demand (HYG/LQD spread) | 10% | Confirmatory: risk-on credit = bullish | Yahoo Finance `HYG`, `LQD` |
 
 ## Files

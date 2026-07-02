@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S&P vs 200-day MA — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO uses the S&P 500's distance from its 200-day moving average, and what 36 years of history tell us — including a surprise finding." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <h1>BATS<span class="dot">.</span>CO</h1>
+        <p class="fullname">Benchmark Asset and Trend Scenarios</p>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../index.html#components">Components</a>
+      <a href="../index.html#backtest">Backtest</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #05</p>
+      <h1>S&P vs 200-day MA &mdash; the trend line everyone watches</h1>
+      <p class="lede">
+        The 200-day moving average is the most-watched trend line in finance.
+        But the data reveals something the folklore gets wrong &mdash;
+        <strong>far above the 200-day is NOT the same as overbought.</strong>
+      </p>
+    </section>
+
+    <section id="whatis">
+      <h2>What is the 200-day moving average?</h2>
+      <p>
+        The 200-day moving average is exactly what it sounds like: the average
+        of the S&P 500's closing prices over the last 200 trading days
+        (roughly a full calendar year of trading). Because it smooths out
+        day-to-day noise, it's used as a rough marker of the long-term trend.
+      </p>
+      <ul class="key-thresholds card"><li>
+        <strong>Above the 200-day MA</strong> &mdash; the market is generally
+        considered to be in an <em>uptrend</em>.<br>
+        <strong>Below the 200-day MA</strong> &mdash; the market is generally
+        considered to be in a <em>downtrend</em>.<br>
+        <strong>Distance from the MA</strong> tells us how "stretched" the
+        market is &mdash; either extended in a rally, or crashed below trend.
+      </li></ul>
+      <p>
+        <strong>An important quirk:</strong> the S&P 500 has an upward long-term
+        drift, so it spends most of its time <em>above</em> its 200-day MA.
+        Over 1990&ndash;2026, the median distance is <strong>+4.7%</strong> above the
+        MA. "Zero distance" is not neutral &mdash; it's actually mildly bearish.
+      </p>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses it</h2>
+      <p>
+        Same direction convention as our other components: <strong>far below the
+        MA = LOW BATS</strong> (oversold buy signal), <strong>far above the MA = HIGH
+        BATS</strong>. The scoring is piecewise linear and centered on the historical
+        median (+5%) rather than zero, so the "Neutral" bucket matches what a
+        healthy uptrend actually looks like.
+      </p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>Distance from 200-day MA</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Below &minus;15%</td><td class="num">5</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold</td></tr>
+            <tr><td>&minus;15% to &minus;5%</td><td class="num">5 &ndash; 30</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Oversold</td></tr>
+            <tr><td>&minus;5% to +5%</td><td class="num">30 &ndash; 50</td><td><span class="bucket-dot" style="background:var(--s2)"></span>Slightly Bearish &rarr; Neutral</td></tr>
+            <tr><td>+5% to +10%</td><td class="num">50 &ndash; 70</td><td><span class="bucket-dot" style="background:var(--s4)"></span>Slightly Bullish</td></tr>
+            <tr><td>+10% to +15%</td><td class="num">70 &ndash; 90</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish</td></tr>
+            <tr><td>Above +15%</td><td class="num">95</td><td><span class="bucket-dot" style="background:var(--s6)"></span>Very Bullish</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="backtest" class="backtest">
+      <div class="section-head">
+        <h2>Does it work? &mdash; Historical backtest (1990&ndash;2026)</h2>
+        <p>
+          For every trading day since 1990 with a full 200-day window behind it,
+          we compute the S&P's distance from its 200-day MA and measure how the
+          S&P 500 actually performed 6 and 12 months later.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>Three findings from the 36-year backtest &mdash; and finding #2 is a big one:</p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>Deep below the MA = buying opportunity.</h3>
+          <p>
+            When the S&P was more than 12% below its 200-day MA (n=381), forward
+            12-month returns averaged <strong>+18.7%</strong>, with <strong>81%</strong> positive.
+            This bucket includes the 2008 crash lows, the 2020 COVID panic, and other
+            major mean-reversion setups.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> When the market has fallen well below trend,
+            history says the odds favor patient buyers.
+          </p>
+        </div>
+
+        <div class="finding finding-pos">
+          <div class="finding-num">2</div>
+          <h3>Far ABOVE the MA is NOT overbought.</h3>
+          <p>
+            When the S&P was more than 12% above its 200-day MA (n=334), forward
+            12-month returns averaged <strong>+14.5%</strong>, with a stunning
+            <strong>98% hit rate</strong> &mdash; the highest of any bucket on any component
+            we've backtested. Extreme uptrends have historically <em>continued</em>,
+            not reversed.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> The old rule "far above the 200-day = time
+            to sell" is <strong>not</strong> supported by the data. Strong trends
+            deserve respect, not skepticism.
+          </p>
+        </div>
+
+        <div class="finding finding-neg">
+          <div class="finding-num">3</div>
+          <h3>The real warning zone is "somewhat below."</h3>
+          <p>
+            When the S&P sat between 6% and 12% below its 200-day MA &mdash; falling,
+            but not yet a crash &mdash; forward 12-month returns averaged only
+            <strong>+2.0%</strong>, with just <strong>53%</strong> positive. This is
+            the worst forward-return bucket we've found on any component.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> A moderately broken uptrend is a much
+            worse setup than a full crash. Either wait for capitulation
+            (below &minus;12%) or a return to trend (above the MA).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>Respect strong trends.</strong>
+          When the S&P is far above its 200-day, don't sell just because it feels
+          "extended." History says extreme uptrends have continued 98% of the time
+          over the next 12 months.
+        </li>
+        <li>
+          <strong>Look for the deep-below signal.</strong>
+          Buying when the S&P is 12%+ below its 200-day has historically been
+          rewarded &mdash; +19% average forward 12mo. But it's rare (only ~4% of days),
+          so you'll wait a long time between opportunities.
+        </li>
+        <li>
+          <strong>Beware the "moderately down" zone.</strong>
+          When the S&P is 6&ndash;12% below its 200-day, the forward-return odds
+          are the worst of any zone. This is not a buying opportunity yet &mdash;
+          it's a warning that the downtrend may still have room to run.
+        </li>
+        <li>
+          <strong>Combine with other components.</strong>
+          MA200 is a trend measure. Blended with VIX (fear), Breadth (participation),
+          RSI (momentum), and Junk Bond Demand (credit), the BATS captures more
+          of the picture than any single indicator alone.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns
+        are not guarantees. Always do your own research or talk to a financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = '../data/';
+    window.BATS_BACKTEST_KIND = 'ma200';
+  </script>
+  <script src="../app.js"></script>
+  <script src="../backtest.js"></script>
+</body>
+</html>

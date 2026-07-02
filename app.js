@@ -98,6 +98,64 @@ function rsiAdvisory(rsi) {
   return                { tone: 'opportunity', text: 'Extremely oversold. Very strong contrarian buy signal historically (+25% avg forward 12mo, 100% positive in 11 historical instances). Rare but potent.' };
 }
 
+// ---- S&P 500 vs 200-day Moving Average ----
+//
+// Classic trend indicator. Above the 200-day MA = market in uptrend. Below =
+// downtrend. Distance from the MA measures how "stretched" the market is.
+//
+// Direction of BATS mapping — SAME as market state:
+//   Far below MA  = market crashed / oversold  -> LOW BATS score (buy signal)
+//   Far above MA  = market extended / uptrend  -> HIGH BATS score
+//
+// Distribution 1990-2026: distance is SKEWED POSITIVE (median ≈ +5%,
+// mean ≈ +3.6%) because the S&P spends more time above its 200-day than
+// below (long-term uptrend). We center the neutral zone around +5%, not 0.
+//
+// Backtest 1990-2026 (8,992 days) — TWO surprising findings:
+//   Very Oversold (dist ≤ -12%): +18.7% avg 12mo, 81% hit  (n=381)
+//   Very Bullish  (dist ≥ +12%): +14.5% avg 12mo, 98% hit  (n=334) — NOT overbought!
+//   Oversold zone (dist -12% to -6%): +2%, only 53% hit — historically a DUD.
+// Extreme uptrends have historically CONTINUED (98% hit), contradicting the
+// "far above = time to sell" narrative. The real warning zone is moderately
+// below the MA (falling but not capitulating).
+function scoreMA200(distPct) {
+  if (distPct == null || isNaN(distPct)) return null;
+  let s;
+  if (distPct <= -15)      s = 5;
+  else if (distPct <= -5)  s = 5  + (distPct + 15) * (30 - 5)  / 10;
+  else if (distPct <=  5)  s = 30 + (distPct +  5) * (50 - 30) / 10;
+  else if (distPct <= 10)  s = 50 + (distPct -  5) * (70 - 50) / 5;
+  else if (distPct <= 15)  s = 70 + (distPct - 10) * (90 - 70) / 5;
+  else                     s = 95;
+  return Math.max(2, Math.min(98, s));
+}
+
+function ma200Advisory(distPct) {
+  if (distPct == null || isNaN(distPct)) return null;
+  if (distPct <= -15) return { tone: 'opportunity', text: 'Deep below the 200-day MA — historically a strong buy zone (+19% avg forward 12mo, 81% positive). Includes the 2008 and 2020 crash lows.' };
+  if (distPct <=  -6) return { tone: 'watch',       text: 'Moderately below the 200-day MA — historically the WEAKEST forward-return zone (only +2% avg 12mo, 53% positive). Not yet capitulation.' };
+  if (distPct <=  -1) return { tone: 'info',        text: 'Just below the 200-day MA — market in a shallow downtrend. Mildly bearish.' };
+  if (distPct <=   3) return { tone: 'info',        text: 'Right around the 200-day MA — market at trend inflection.' };
+  if (distPct <=   7) return { tone: 'info',        text: 'Above the 200-day MA — market in a normal uptrend (this is the median historical zone).' };
+  if (distPct <=  12) return { tone: 'info',        text: 'Well above the 200-day MA — strong uptrend. Historically forward returns still solid (~+13% avg 12mo).' };
+  return                      { tone: 'info',        text: 'Far above the 200-day MA — but history shows extreme uptrends have CONTINUED (+14.5% avg forward 12mo, 98% positive). Not automatically overbought.' };
+}
+
+// Compute the simple moving average over a chronological array of closes.
+// Returns an array where element i is the trailing period-day SMA (null for i<period-1).
+function computeSmaSeries(closes, period = 200) {
+  const sma = new Array(closes.length).fill(null);
+  if (closes.length < period) return sma;
+  let sum = 0;
+  for (let i = 0; i < period; i++) sum += closes[i];
+  sma[period - 1] = sum / period;
+  for (let i = period; i < closes.length; i++) {
+    sum += closes[i] - closes[i - period];
+    sma[i] = sum / period;
+  }
+  return sma;
+}
+
 // ---- Junk Bond Demand — HYG/LQD 20-day spread ----
 //
 // Measures the credit market's risk appetite. HYG holds high-yield ("junk")
@@ -221,7 +279,7 @@ const COMPONENTS = [
     key: 'vix',
     name: 'VIX (Volatility)',
     desc: 'The "fear gauge." Contrarian: high VIX often means a buying opportunity; low VIX means complacency.',
-    weight: 45,
+    weight: 40,
     status: 'live',
     raw: 22.5,
     value: '22.5 (demo)',
@@ -245,13 +303,25 @@ const COMPONENTS = [
     key: 'spy_rsi',
     name: 'SPY 14-day RSI',
     desc: 'Momentum. Below 30 = oversold (bullish); above 70 = overbought (bearish). Markets can stay stretched.',
-    weight: 20,
+    weight: 15,
     status: 'live',
     raw: 42,
     value: '42 (demo)',
     signal: scoreRSI(42),
     advisory: rsiAdvisory(42),
     explainer: 'indicators/rsi.html',
+  },
+  {
+    key: 'ma200',
+    name: 'S&P vs 200-day MA',
+    desc: 'How far above or below its long-term trend the market sits. Far below = crash zone (bullish); far above = strong uptrend (also bullish, not overbought).',
+    weight: 10,
+    status: 'live',
+    raw: 0,
+    value: '0.00% (loading)',
+    signal: scoreMA200(0),
+    advisory: ma200Advisory(0),
+    explainer: 'indicators/ma200.html',
   },
   {
     key: 'junk_demand',
@@ -269,15 +339,6 @@ const COMPONENTS = [
     key: 'putcall',
     name: 'Put/Call Ratio',
     desc: 'Bets on stocks falling vs rising. High = bearish crowd = contrarian bullish. (Historical data source blocked; parked for now.)',
-    weight: 0,
-    status: 'soon',
-    signal: null,
-    value: '—',
-  },
-  {
-    key: 'ma_spread',
-    name: 'SPY vs 200-day MA',
-    desc: 'How far above/below its long-term trend the market is trading.',
     weight: 0,
     status: 'soon',
     signal: null,
@@ -563,31 +624,35 @@ function computeRsiSeriesLive(closes, period = 14) {
 }
 
 async function loadLiveData() {
-  const [vixText, rspText, spyText, hygText, lqdText] = await Promise.all([
+  const [vixText, rspText, spyText, hygText, lqdText, spxText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + 'vix.csv'),
     fetchCSVText(APP_DATA_BASE + 'rsp.csv'),
     fetchCSVText(APP_DATA_BASE + 'spy.csv'),
     fetchCSVText(APP_DATA_BASE + 'hyg.csv'),
     fetchCSVText(APP_DATA_BASE + 'lqd.csv'),
+    fetchCSVText(APP_DATA_BASE + 'spx.csv'),
   ]);
   const vix = parseVIXLive(vixText);
   const rsp = parseDateCloseLive(rspText);
   const spy = parseDateCloseLive(spyText);
   const hyg = parseDateCloseLive(hygText);
   const lqd = parseDateCloseLive(lqdText);
+  const spx = parseDateCloseLive(spxText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));
+  const sma200 = computeSmaSeries(spx.map(r => r.close), 200);
 
-  // Build date -> index maps for cross-alignment
   const vixByDate = new Map(); vix.forEach((r, i) => vixByDate.set(r.date, i));
   const spyByDate = new Map(); spy.forEach((r, i) => spyByDate.set(r.date, i));
   const hygByDate = new Map(); hyg.forEach((r, i) => hygByDate.set(r.date, i));
   const lqdByDate = new Map(); lqd.forEach((r, i) => lqdByDate.set(r.date, i));
+  const spxByDate = new Map(); spx.forEach((r, i) => spxByDate.set(r.date, i));
 
   const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
   const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
   const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
+  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wJunk;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -596,27 +661,32 @@ async function loadLiveData() {
     const vi = vixByDate.get(d);
     const hi = hygByDate.get(d);
     const li = lqdByDate.get(d);
+    const xi = spxByDate.get(d);
     if (si == null || si < 20 || vi == null || rsi[si] == null) return null;
     if (hi == null || hi < 20 || li == null || li < 20) return null;
+    if (xi == null || sma200[xi] == null) return null;
     const rspRet = (rsp[rspRowIdx].close / rsp[rspRowIdx - 20].close - 1) * 100;
     const spyRet = (spy[si].close        / spy[si - 20].close        - 1) * 100;
     const spread = rspRet - spyRet;
     const hygRet = (hyg[hi].close        / hyg[hi - 20].close        - 1) * 100;
     const lqdRet = (lqd[li].close        / lqd[li - 20].close        - 1) * 100;
     const junkSpread = hygRet - lqdRet;
+    const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
     const rs = scoreRSI(rsi[si]);
     const js = scoreJunkDemand(junkSpread);
-    if (vs == null || bs == null || rs == null || js == null || wTotal <= 0) return null;
+    const ms = scoreMA200(ma200Dist);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
       spread,
       rsiVal: rsi[si],
       junkSpread,
-      vs, bs, rs, js,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk) / wTotal,
+      ma200Dist,
+      vs, bs, rs, js, ms,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA) / wTotal,
     };
   }
 
@@ -644,6 +714,7 @@ function updateComponentsWithLatest(current) {
   const vixComp  = COMPONENTS.find(c => c.key === 'vix');
   const brComp   = COMPONENTS.find(c => c.key === 'breadth');
   const rsiComp  = COMPONENTS.find(c => c.key === 'spy_rsi');
+  const maComp   = COMPONENTS.find(c => c.key === 'ma200');
   const junkComp = COMPONENTS.find(c => c.key === 'junk_demand');
 
   if (vixComp) {
@@ -664,6 +735,13 @@ function updateComponentsWithLatest(current) {
     rsiComp.value = current.rsiVal.toFixed(1);
     rsiComp.signal = current.rs;
     rsiComp.advisory = rsiAdvisory(current.rsiVal);
+  }
+  if (maComp) {
+    maComp.raw = current.ma200Dist;
+    const sign = current.ma200Dist >= 0 ? '+' : '';
+    maComp.value = `${sign}${current.ma200Dist.toFixed(2)}%`;
+    maComp.signal = current.ms;
+    maComp.advisory = ma200Advisory(current.ma200Dist);
   }
   if (junkComp) {
     junkComp.raw = current.junkSpread;

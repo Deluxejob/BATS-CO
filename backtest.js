@@ -192,6 +192,51 @@ async function runRsiBacktest() {
   return summarize(trades);
 }
 
+// Compute a rolling simple moving average series (element i = SMA over
+// closes[i-period+1 .. i]; null for i < period-1).
+const SMA_PERIOD = 200;
+function computeSmaSeriesBacktest(closes, period = SMA_PERIOD) {
+  const sma = new Array(closes.length).fill(null);
+  if (closes.length < period) return sma;
+  let sum = 0;
+  for (let i = 0; i < period; i++) sum += closes[i];
+  sma[period - 1] = sum / period;
+  for (let i = period; i < closes.length; i++) {
+    sum += closes[i] - closes[i - period];
+    sma[i] = sum / period;
+  }
+  return sma;
+}
+
+// ============================================================
+// SPX vs 200-day MA BACKTEST — distance from long-term trend
+// ============================================================
+async function runMa200Backtest() {
+  const spxText = await fetchText(DATA_BASE + 'spx.csv');
+  const spx = parseDateClose(spxText);
+  const sma200 = computeSmaSeriesBacktest(spx.map(r => r.close), SMA_PERIOD);
+
+  const trades = [];
+  for (let i = SMA_PERIOD - 1; i < spx.length; i++) {
+    if (sma200[i] == null) continue;
+    const dist = (spx[i].close / sma200[i] - 1) * 100;
+    const score = scoreMA200(dist);
+    if (score == null) continue;
+    const spxNow = spx[i].close;
+    const spx6   = spx[i + TRADING_DAYS_6MO];
+    const spx12  = spx[i + TRADING_DAYS_12MO];
+    trades.push({
+      date: spx[i].date,
+      raw: dist,
+      score,
+      bucket: bucketOf(score),
+      ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
+      ret12mo: spx12 ? (spx12.close / spxNow - 1) * 100 : null,
+    });
+  }
+  return summarize(trades);
+}
+
 // ============================================================
 // JUNK BOND DEMAND BACKTEST — HYG - LQD 20-day return spread
 // ============================================================
@@ -259,6 +304,7 @@ async function runBlendedBacktest() {
   const hyg = parseDateClose(hygText);
   const lqd = parseDateClose(lqdText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
+  const sma200 = computeSmaSeriesBacktest(spx.map(r => r.close), SMA_PERIOD);
 
   const vixByDate = new Map();
   vix.forEach((r, i) => vixByDate.set(r.date, i));
@@ -274,8 +320,9 @@ async function runBlendedBacktest() {
   const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
   const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
   const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
+  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wJunk;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk;
   if (wTotal <= 0) throw new Error('No live weights configured');
 
   const trades = [];
@@ -288,7 +335,7 @@ async function runBlendedBacktest() {
     const li = lqdByDate.get(d);
     if (si == null || si < BREADTH_LOOKBACK || xi == null || vi == null) continue;
     if (hi == null || hi < BREADTH_LOOKBACK || li == null || li < BREADTH_LOOKBACK) continue;
-    if (rsi[si] == null) continue;
+    if (rsi[si] == null || sma200[xi] == null) continue;
 
     const rspRet = (rsp[i].close / rsp[i - BREADTH_LOOKBACK].close - 1) * 100;
     const spyRet = (spy[si].close / spy[si - BREADTH_LOOKBACK].close - 1) * 100;
@@ -296,14 +343,16 @@ async function runBlendedBacktest() {
     const hygRet = (hyg[hi].close / hyg[hi - BREADTH_LOOKBACK].close - 1) * 100;
     const lqdRet = (lqd[li].close / lqd[li - BREADTH_LOOKBACK].close - 1) * 100;
     const junkSpread = hygRet - lqdRet;
+    const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
 
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
     const rs = scoreRSI(rsi[si]);
     const js = scoreJunkDemand(junkSpread);
-    if (vs == null || bs == null || rs == null || js == null) continue;
+    const ms = scoreMA200(ma200Dist);
+    if (vs == null || bs == null || rs == null || js == null || ms == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -448,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const runner = kind === 'breadth' ? runBreadthBacktest
                : kind === 'rsi'     ? runRsiBacktest
                : kind === 'junk'    ? runJunkBacktest
+               : kind === 'ma200'   ? runMa200Backtest
                : kind === 'blended' ? runBlendedBacktest
                : runVixBacktest;
   runner()
