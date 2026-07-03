@@ -190,11 +190,12 @@
         <h2>Market News</h2>
         <p>Headlines moving the market right now.</p>
       </div>
-      <div class="tradingview-widget-container news-widget">
+      <div class="tradingview-widget-container news-widget" id="newsWidget">
         <div class="tradingview-widget-container__widget"></div>
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
         {
-          "feedMode": "all_symbols",
+          "feedMode": "market",
+          "market": "stock",
           "isTransparent": true,
           "displayMode": "regular",
           "width": "100%",
@@ -204,6 +205,27 @@
         }
         </script>
       </div>
+      <script>
+      // Auto-refresh the TradingView news widget every 15 minutes so an open
+      // tab doesn't go stale. Browsers won't re-execute an existing <script>
+      // tag from a plain innerHTML swap — we have to clone it into a fresh
+      // element so the widget script re-fetches TradingView's feed.
+      (function () {
+        const container = document.getElementById('newsWidget');
+        if (!container) return;
+        const originalHtml = container.innerHTML;
+        setInterval(function () {
+          container.innerHTML = originalHtml;
+          const oldScript = container.querySelector('script');
+          if (!oldScript) return;
+          const newScript = document.createElement('script');
+          newScript.src = oldScript.src;
+          newScript.async = true;
+          newScript.text = oldScript.textContent;
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        }, 15 * 60 * 1000);
+      })();
+      </script>
     </section>
 
     <!-- COMING SOON -->
