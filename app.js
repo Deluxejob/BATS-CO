@@ -1117,6 +1117,45 @@ function renderHistoricalContext(history) {
 // Renders only when the concentration.html page is loaded (detected by
 // presence of the #concentrationTable element).
 // ============================================================
+
+// 7-bucket concentration scale. Left (low score) = megacaps winning
+// (narrow, concentrated market — a warning sign). Right (high score) =
+// broad participation (healthy). Palette mirrors the BATS gauge colors
+// but the semantic direction is different — this is about market shape,
+// not sentiment.
+const CONC_BUCKETS = [
+  { label: 'Very Concentrated',     color: 'var(--s0)' },
+  { label: 'Concentrated',          color: 'var(--s1)' },
+  { label: 'Slightly Concentrated', color: 'var(--s2)' },
+  { label: 'Balanced',              color: 'var(--s3)' },
+  { label: 'Slightly Broad',        color: 'var(--s4)' },
+  { label: 'Broad',                 color: 'var(--s5)' },
+  { label: 'Very Broad',            color: 'var(--s6)' },
+];
+
+// Gap = top10 − broad. Positive gap (megacaps winning) → LOW score.
+// Negative gap (broad winning) → HIGH score. Full-scale at ±10%.
+function scoreConcentration(gap) {
+  if (gap == null || isNaN(gap)) return null;
+  const score = 50 - gap * 4.5;
+  return Math.max(5, Math.min(95, score));
+}
+
+function setConcentrationGauge(gap) {
+  const marker = document.getElementById('concGaugeMarker');
+  const reading = document.getElementById('concGaugeReading');
+  const valueEl = document.getElementById('concGaugeValue');
+  if (gap == null || !marker) return;
+  const score = scoreConcentration(gap);
+  marker.style.left = score + '%';
+  const bucketIdx = Math.min(CONC_BUCKETS.length - 1, Math.floor((score / 100) * CONC_BUCKETS.length));
+  if (reading) reading.textContent = CONC_BUCKETS[bucketIdx].label;
+  if (valueEl) {
+    const sign = gap >= 0 ? '+' : '';
+    valueEl.textContent = `1-month Top 10 gap: ${sign}${gap.toFixed(2)}%`;
+  }
+}
+
 const CONC_WINDOWS = [
   { key: 'd1',  days: 1,   label: '1 Day' },
   { key: 'w1',  days: 5,   label: '1 Week' },
@@ -1175,8 +1214,12 @@ async function renderConcentration() {
       : null;
     const broadRet = returnOver(broad, window);
     const gap = (topAvg != null && broadRet != null) ? topAvg - broadRet : null;
-    return { label: window.label, topAvg, broadRet, gap };
+    return { label: window.label, key: window.key, topAvg, broadRet, gap };
   });
+
+  // Point the concentration gauge at the 1-month gap
+  const oneMonth = rows.find(r => r.key === 'm1');
+  if (oneMonth) setConcentrationGauge(oneMonth.gap);
 
   function fmt(x, digits = 2) {
     if (x == null) return '<span class="text-dim">—</span>';

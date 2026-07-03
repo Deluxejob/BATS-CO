@@ -759,6 +759,79 @@ main.explainer .disclaimer {
   margin-top: 1rem;
 }
 
+/* Concentration gauge — horizontal thermometer, "concentrated ← → broad" */
+.conc-gauge-wrap {
+  max-width: 620px;
+  margin: 1rem auto 2.5rem;
+  padding: 1.25rem 1.5rem 1.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.conc-gauge-readout {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.conc-gauge-reading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.2;
+}
+.conc-gauge-value {
+  margin-top: .25rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: .9rem;
+  color: var(--text-dim);
+  min-height: 1.3em;
+}
+.conc-gauge-bar {
+  position: relative;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--s0) 0%,
+    var(--s1) 16.67%,
+    var(--s2) 33.33%,
+    var(--s3) 50%,
+    var(--s4) 66.67%,
+    var(--s5) 83.33%,
+    var(--s6) 100%
+  );
+  overflow: visible;
+  margin: 0 8px;
+}
+.conc-gauge-marker {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 4px;
+  background: #ffffff;
+  border-radius: 3px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 12px rgba(255,255,255,.55), 0 0 3px rgba(0,0,0,.6);
+  transition: left 1.2s cubic-bezier(.22, 1, .36, 1);
+}
+.conc-gauge-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: .75rem 8px 0;
+  color: var(--text-dim);
+  font-size: .85rem;
+  font-weight: 600;
+}
+.conc-gauge-ends small {
+  display: block;
+  font-size: .72rem;
+  font-weight: 400;
+  color: var(--text-faint);
+  margin-top: .1rem;
+}
+
 /* Ticker chips on the concentration page */
 .ticker-chips {
   display: flex;
