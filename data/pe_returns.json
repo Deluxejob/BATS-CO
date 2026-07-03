@@ -1,0 +1,42 @@
+{
+  "index_name": "Cambridge Associates US Private Equity Index",
+  "return_type": "Calendar year, net of fees, pooled time-weighted return",
+  "last_updated": "2026-07-03",
+  "note": "Cambridge Associates does not publish this data set publicly for free. The values below are compiled from publicly available secondary references: Bain & Company's Global Private Equity Report (annual, 2016-2026 editions), academic papers by Kaplan, Sensoy, Harris, and Robinson, and financial press coverage (WSJ, Bloomberg, Institutional Investor). Numbers should be treated as widely-cited approximations, not authoritative. For definitive figures, subscribe to Cambridge Associates or consult a Bain, Bloomberg, or Preqin data feed.",
+  "sources": [
+    "Bain & Company — Global Private Equity Report 2026",
+    "Bain & Company — Global Private Equity Report 2024, 2022, 2020, 2018, 2016",
+    "Kaplan, S. & Sensoy, B. — 'Private Equity Performance: A Survey' (Annual Review of Financial Economics, 2015)",
+    "Harris, R., Jenkinson, T. & Kaplan, S. — 'How Do Private Equity Investments Perform Compared to Public Equity?' (Journal of Investment Management, 2016)",
+    "Financial press coverage (Wall Street Journal, Financial Times, Bloomberg, Institutional Investor)"
+  ],
+  "returns_pct": {
+    "2001": -15.7,
+    "2002": -6.5,
+    "2003": 22.4,
+    "2004": 20.9,
+    "2005": 27.5,
+    "2006": 28.9,
+    "2007": 25.4,
+    "2008": -23.9,
+    "2009": 13.4,
+    "2010": 19.7,
+    "2011": 11.4,
+    "2012": 13.6,
+    "2013": 21.4,
+    "2014": 14.6,
+    "2015": 9.4,
+    "2016": 12.4,
+    "2017": 17.5,
+    "2018": 13.5,
+    "2019": 14.4,
+    "2020": 27.5,
+    "2021": 41.3,
+    "2022": -3.2,
+    "2023": 8.6,
+    "2024": 9.5,
+    "2025": 8.8
+  },
+  "ytd_2026_note": "PE returns are reported at a one-quarter lag. YTD 2026 figures are not yet available at time of last update.",
+  "since_inception_note": "The CA US PE Index dates back to 1986. Since-inception net returns are widely cited at approximately 13-14% annualized. This page shows returns from 2001 onward to keep the comparison aligned with the ^SP500TR series (which begins in 2000)."
+}

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Private Equity vs S&P 500 — BATS.CO</title>
+  <meta name="description" content="How has actual private equity performed against the S&P 500? Yearly returns, average annual returns across YTD, 1, 3, 5, 10 years and since inception. Uses Cambridge Associates US Private Equity Index compiled from public references." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Page-specific tweaks — winner cell coloring for PE vs S&P comparisons */
+    .pe-win  { color: var(--s5); font-weight: 700; }
+    .spx-win { color: #64d3ff; font-weight: 700; }
+    .tie     { color: var(--text); }
+    .num-neg { color: var(--s0); }
+    .num-pos { color: var(--s5); }
+    /* Big headline stats */
+    .pe-hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .pe-hero-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+    }
+    .pe-hero-stat .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      display: block;
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+    .pe-hero-stat .label {
+      font-size: 0.8rem;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .pe-hero-stat.pe  .num { color: var(--s5); }
+    .pe-hero-stat.spx .num { color: var(--accent, #64d3ff); }
+    .source-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--s2);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      font-size: 0.9rem;
+      color: var(--dim);
+      margin: 1.5rem 0;
+    }
+    .source-card strong { color: var(--text); }
+    .source-card ul { margin: 0.5rem 0 0 1.25rem; padding: 0; }
+    .source-card li  { margin: 0.25rem 0; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="index.html#components">Components</a>
+      <a href="index.html#backtest">Backtest</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="markets.html">Markets</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">PRIVATE EQUITY vs THE STOCK MARKET</p>
+      <h1>Does private equity really beat the S&P 500?</h1>
+      <p class="lede">
+        Private equity has spent 30 years marketing itself as the smart-money escape
+        hatch from public markets &mdash; higher returns, lower volatility, "uncorrelated"
+        alpha. The pitch is powerful. The reality, once you line up the numbers,
+        is <strong>more complicated than the sales deck</strong>.
+      </p>
+    </section>
+
+    <section id="headline">
+      <div class="section-head">
+        <h2>The 25-year scoreboard (2001&ndash;2025)</h2>
+        <p>
+          Both series are net-of-fees, calendar-year, in USD. PE is the Cambridge Associates
+          US Private Equity Index. Stocks are the S&P 500 Total Return (dividends reinvested).
+        </p>
+      </div>
+      <div class="pe-hero-stats" id="peHeroStats">
+        <div class="pe-hero-stat pe">
+          <span class="num" id="heroPeAnn">&ndash;</span>
+          <span class="label">PE annualized, 2001&ndash;2025</span>
+        </div>
+        <div class="pe-hero-stat spx">
+          <span class="num" id="heroSpxAnn">&ndash;</span>
+          <span class="label">S&P 500 TR annualized</span>
+        </div>
+        <div class="pe-hero-stat">
+          <span class="num" id="heroGap">&ndash;</span>
+          <span class="label">PE outperformance (per year)</span>
+        </div>
+        <div class="pe-hero-stat">
+          <span class="num" id="heroWinYears">&ndash;</span>
+          <span class="label">Years PE beat stocks</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="averages">
+      <div class="section-head">
+        <h2>Average annual returns by lookback</h2>
+        <p>
+          Compound annualized returns across the standard institutional windows.
+          "Since inception" here means since 2001 (the earliest full year both
+          series cover); the CA US PE Index itself dates to 1986.
+        </p>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="peAveragesTable" class="backtest-table"></table>
+      </div>
+    </section>
+
+    <section id="yearly">
+      <div class="section-head">
+        <h2>Year-by-year returns</h2>
+        <p>
+          Calendar-year returns. Green cells win the year; red cells lose. The pattern
+          is more interesting than any single average.
+        </p>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="peYearlyTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="peYearlyMeta">Loading&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>
+        The headline &mdash; "PE has beaten stocks by roughly 3&ndash;4% per year
+        over 25 years" &mdash; is technically true. But the composition tells a
+        very different story:
+      </p>
+
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>PE crushed the crisis years.</h3>
+          <p>
+            2001&ndash;2002 dot-com bust and 2008 GFC: PE drew down materially but
+            far less than the S&P 500. In 2001&ndash;2002 the S&P TR lost roughly
+            <strong>34% cumulative</strong> while CA US PE lost about
+            <strong>21%</strong>. In 2008, S&P TR was <strong>&minus;37%</strong>
+            vs. PE at <strong>&minus;24%</strong>.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> A big share of PE's headline outperformance
+            comes from having <em>less-bad crisis years</em>, not from getting rich
+            in the good ones. Some of this is real (better companies, active
+            management); some is <em>smoothing</em> from private valuations that
+            update quarterly rather than in real time.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">2</div>
+          <h3>2015&ndash;2024 was a coin flip.</h3>
+          <p>
+            Over the last decade of "peak PE" fundraising, PE didn't clearly win.
+            In several years (2013, 2019, 2020, 2023, 2024) the S&P 500 TR
+            outperformed the CA US PE Index &mdash; sometimes by wide margins
+            (2023: <strong>+26% S&P</strong> vs. <strong>+9% PE</strong>;
+            2024: <strong>+25% S&P</strong> vs. <strong>+10% PE</strong>).
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> The recent decade of the "PE premium" has
+            been mostly public-market strength. Bain's own 2026 Global PE Report
+            notes: <em>"US stocks have outperformed US buyouts over the past
+            10 years."</em>
+          </p>
+        </div>
+
+        <div class="finding finding-neg">
+          <div class="finding-num">3</div>
+          <h3>The 2021 blow-off top was real &mdash; and it's still unwinding.</h3>
+          <p>
+            2021 posted PE's biggest calendar-year return on record:
+            <strong>+41.3%</strong>. That number was <em>marked</em>, not
+            <em>realized</em> &mdash; ZIRP-era valuations on illiquid holdings.
+            Since then, distributions have collapsed (Bain 2026: DPI at
+            multi-decade lows), and the 2022&ndash;2025 returns show the digestion.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> When you buy a PE fund today at NAV, you
+            are partly buying <em>2021 marks</em> that haven't been tested by
+            an exit market. This is why "the number on paper" and "the number
+            in your pocket" have diverged so sharply in recent years.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="caveats">
+      <h2>Three things this comparison does <em>not</em> capture</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>Illiquidity.</strong> If you buy the S&P 500 you can sell
+          Monday morning. A PE fund locks capital for 10&ndash;12 years. Institutional
+          investors accept illiquidity in exchange for a "premium." Individual
+          investors rarely price that trade-off correctly.
+        </li>
+        <li>
+          <strong>Smoothing.</strong> PE fund NAVs are marked quarterly,
+          slowly, off private-comps. The reported <em>volatility</em> of PE
+          is roughly half that of the S&P 500 &mdash; but that's an accounting
+          artifact, not economics. When you mark to market properly, PE is
+          about as volatile as public equity.
+        </li>
+        <li>
+          <strong>Access.</strong> The <em>average</em> CA PE Index number
+          includes top-quartile Blackstone/KKR funds
+          <em>and</em> bottom-quartile also-rans. Institutional LPs work
+          hard to be in the top half. Retail products (BDCs, semi-liquid
+          interval funds) often can't buy the top funds &mdash; you get a
+          different, generally worse, return distribution.
+        </li>
+      </ol>
+    </section>
+
+    <section id="method">
+      <h2>Methodology &amp; data sources</h2>
+      <div class="source-card">
+        <p>
+          <strong>Private equity series:</strong> Cambridge Associates US
+          Private Equity Index &mdash; calendar-year, net-of-fees, pooled
+          time-weighted return.
+        </p>
+        <p>
+          Cambridge Associates does not publish this data set publicly for free.
+          The values shown here are <strong>compiled from publicly available
+          secondary references</strong>, primarily:
+        </p>
+        <ul>
+          <li>Bain &amp; Company &mdash; Global Private Equity Report (annual editions 2016&ndash;2026)</li>
+          <li>Kaplan &amp; Sensoy &mdash; "Private Equity Performance: A Survey" (<em>Annual Review of Financial Economics</em>, 2015)</li>
+          <li>Harris, Jenkinson &amp; Kaplan &mdash; "How Do Private Equity Investments Perform Compared to Public Equity?" (<em>Journal of Investment Management</em>, 2016)</li>
+          <li>Financial press coverage: <em>Wall Street Journal</em>, <em>Financial Times</em>, <em>Bloomberg</em>, <em>Institutional Investor</em></li>
+        </ul>
+        <p>
+          Treat the PE numbers as <strong>widely-cited approximations</strong>,
+          not authoritative. For definitive figures, consult a Cambridge Associates
+          subscription, Bloomberg, or Preqin data feed. This page is manually
+          refreshed when new Bain Global PE Reports are released
+          (typically each March).
+        </p>
+        <p>
+          <strong>S&P 500 series:</strong> Yahoo Finance <code>^SP500TR</code>
+          &mdash; S&P 500 Total Return Index, calendar-year change (year-end
+          close vs. prior year-end close). Refreshes daily via our GitHub Actions
+          workflow.
+        </p>
+        <p>
+          <strong>YTD 2026 note:</strong> PE returns are reported at a one-quarter
+          lag; full-year 2026 PE data will not be available until early 2027.
+          The S&P 500 YTD line uses the most recent close in <code>data/sp500tr.csv</code>.
+        </p>
+      </div>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Past performance
+        is not indicative of future results. Historical benchmarks are not the same
+        thing as any specific fund or product you might actually invest in. Always
+        do your own research or talk to a financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+  (async function () {
+    const $ = (id) => document.getElementById(id);
+    const fmtPct = (v, opts = {}) => {
+      if (v == null || !isFinite(v)) return '&ndash;';
+      const sign = v > 0 ? '+' : '';
+      return `${sign}${v.toFixed(opts.digits ?? 2)}%`;
+    };
+    const cellClassForRet = (v) => v == null ? '' : v < 0 ? 'num num-neg' : 'num num-pos';
+
+    // Footer year
+    $('footerYear').textContent = new Date().getFullYear();
+
+    // --- Load PE returns ---
+    let peData;
+    try {
+      const res = await fetch('data/pe_returns.json', { cache: 'no-store' });
+      peData = await res.json();
+    } catch (e) {
+      $('peYearlyMeta').textContent = 'Failed to load PE returns.';
+      return;
+    }
+    const peReturns = peData.returns_pct;  // { "2001": -15.7, ... }
+
+    // --- Load S&P TR daily and compute calendar year returns + YTD ---
+    let spTxt;
+    try {
+      const res = await fetch('data/sp500tr.csv', { cache: 'no-store' });
+      spTxt = await res.text();
+    } catch (e) {
+      $('peYearlyMeta').textContent = 'Failed to load S&P 500 TR data.';
+      return;
+    }
+    const lines = spTxt.trim().split(/\r?\n/).slice(1); // drop header
+    // Track last close per calendar year
+    const lastCloseByYear = new Map();
+    let latestDate = null, latestClose = null;
+    for (const ln of lines) {
+      const [date, close] = ln.split(',');
+      const px = parseFloat(close);
+      if (!isFinite(px)) continue;
+      const y = parseInt(date.slice(0, 4), 10);
+      lastCloseByYear.set(y, { date, px });
+      latestDate = date; latestClose = px;
+    }
+    // Compute year-over-year returns using the last close of each year
+    const spReturns = {};
+    const years = [...lastCloseByYear.keys()].sort((a, b) => a - b);
+    for (let i = 1; i < years.length; i++) {
+      const yPrev = years[i - 1], yCur = years[i];
+      const prev = lastCloseByYear.get(yPrev).px;
+      const cur = lastCloseByYear.get(yCur).px;
+      spReturns[yCur] = (cur / prev - 1) * 100;
+    }
+    // Special YTD handling: the current year's spReturns[y] as computed above
+    // uses the *latest available* close vs the prior year-end — which IS the YTD.
+    const currentYear = new Date().getFullYear();
+    const isYtd = latestDate && latestDate.startsWith(String(currentYear));
+
+    // --- Build yearly table ---
+    const yearlyYears = Object.keys(peReturns).map(Number).sort((a, b) => a - b);
+    // Include current year YTD row if we have a partial-year S&P value
+    const yearsToShow = [...yearlyYears];
+    if (isYtd && !yearsToShow.includes(currentYear)) yearsToShow.push(currentYear);
+
+    let peWinCount = 0, comparableYears = 0;
+    let yhtml = '<thead><tr><th>Year</th><th class="num">PE (CA US PE Index)</th><th class="num">S&P 500 TR</th><th class="num">Difference</th><th>Winner</th></tr></thead><tbody>';
+    for (const y of yearsToShow) {
+      const pe = peReturns[y];
+      const sp = spReturns[y];
+      const ytdMark = (y === currentYear && isYtd) ? ` <span style="color:var(--dim);font-size:0.85em;">(YTD)</span>` : '';
+      let diff, winnerCell, peCell, spCell;
+      if (pe != null && sp != null && !(y === currentYear && isYtd)) {
+        diff = pe - sp;
+        comparableYears++;
+        if (pe > sp) {
+          peWinCount++;
+          peCell = `<td class="num pe-win">${fmtPct(pe)}</td>`;
+          spCell = `<td class="num">${fmtPct(sp)}</td>`;
+          winnerCell = `<td class="pe-win">PE</td>`;
+        } else if (sp > pe) {
+          peCell = `<td class="num">${fmtPct(pe)}</td>`;
+          spCell = `<td class="num spx-win">${fmtPct(sp)}</td>`;
+          winnerCell = `<td class="spx-win">S&P 500</td>`;
+        } else {
+          peCell = `<td class="num tie">${fmtPct(pe)}</td>`;
+          spCell = `<td class="num tie">${fmtPct(sp)}</td>`;
+          winnerCell = `<td class="tie">Tie</td>`;
+        }
+      } else {
+        // YTD row or missing data
+        peCell = pe != null
+          ? `<td class="num">${fmtPct(pe)}</td>`
+          : `<td class="num" style="color:var(--dim)">n/a (lag)</td>`;
+        spCell = sp != null
+          ? `<td class="num">${fmtPct(sp)}</td>`
+          : `<td class="num" style="color:var(--dim)">&ndash;</td>`;
+        diff = (pe != null && sp != null) ? pe - sp : null;
+        winnerCell = `<td style="color:var(--dim)">&ndash;</td>`;
+      }
+      const diffCell = diff != null
+        ? `<td class="${cellClassForRet(diff)}">${fmtPct(diff)}</td>`
+        : `<td class="num" style="color:var(--dim)">&ndash;</td>`;
+
+      yhtml += `<tr><td><strong>${y}</strong>${ytdMark}</td>${peCell}${spCell}${diffCell}${winnerCell}</tr>`;
+    }
+    yhtml += '</tbody>';
+    $('peYearlyTable').innerHTML = yhtml;
+
+    // --- Compute geometric annualized returns for a set of years ---
+    // Include partial-year YTD in "YTD" only, not in 1Y/3Y/etc.
+    const annualize = (yrs, series) => {
+      const vals = yrs.map(y => series[y]).filter(v => v != null);
+      if (vals.length === 0) return null;
+      let cum = 1;
+      for (const v of vals) cum *= (1 + v / 100);
+      return (Math.pow(cum, 1 / vals.length) - 1) * 100;
+    };
+
+    // Years fully reported for PE
+    const fullPeYears = yearlyYears.filter(y => peReturns[y] != null);
+    const latestFullPeYear = fullPeYears[fullPeYears.length - 1];
+
+    const lastN = (n) => {
+      // last N *completed* years ending at latestFullPeYear
+      const arr = [];
+      for (let i = 0; i < n; i++) arr.unshift(latestFullPeYear - i);
+      return arr;
+    };
+
+    // YTD row uses current year's partial return (from S&P latest close)
+    const spYtd = spReturns[currentYear];  // computed above with latest close
+    // PE has no YTD; show n/a
+
+    const avgRows = [
+      { label: 'YTD (' + (isYtd ? latestDate : String(currentYear)) + ')',
+        pe: null, sp: spYtd, ytd: true },
+      { label: `1 year (${latestFullPeYear})`,
+        pe: peReturns[latestFullPeYear], sp: spReturns[latestFullPeYear] },
+      { label: `3 years (${lastN(3)[0]}&ndash;${latestFullPeYear})`,
+        pe: annualize(lastN(3), peReturns), sp: annualize(lastN(3), spReturns) },
+      { label: `5 years (${lastN(5)[0]}&ndash;${latestFullPeYear})`,
+        pe: annualize(lastN(5), peReturns), sp: annualize(lastN(5), spReturns) },
+      { label: `10 years (${lastN(10)[0]}&ndash;${latestFullPeYear})`,
+        pe: annualize(lastN(10), peReturns), sp: annualize(lastN(10), spReturns) },
+      { label: `Since 2001 (${fullPeYears.length} yrs, ann.)`,
+        pe: annualize(fullPeYears, peReturns), sp: annualize(fullPeYears, spReturns) }
+    ];
+
+    let ahtml = '<thead><tr><th>Lookback</th><th class="num">PE (annualized)</th><th class="num">S&P 500 TR (annualized)</th><th class="num">Difference</th></tr></thead><tbody>';
+    for (const r of avgRows) {
+      const pe = r.pe, sp = r.sp;
+      const diff = (pe != null && sp != null) ? pe - sp : null;
+      let peCell, spCell;
+      if (pe == null) {
+        peCell = `<td class="num" style="color:var(--dim)">n/a (reporting lag)</td>`;
+      } else if (sp != null && pe > sp) {
+        peCell = `<td class="num pe-win">${fmtPct(pe)}</td>`;
+      } else {
+        peCell = `<td class="num">${fmtPct(pe)}</td>`;
+      }
+      if (sp == null) {
+        spCell = `<td class="num" style="color:var(--dim)">&ndash;</td>`;
+      } else if (pe != null && sp > pe) {
+        spCell = `<td class="num spx-win">${fmtPct(sp)}</td>`;
+      } else {
+        spCell = `<td class="num">${fmtPct(sp)}</td>`;
+      }
+      const diffCell = diff != null
+        ? `<td class="${cellClassForRet(diff)}">${fmtPct(diff)}</td>`
+        : `<td class="num" style="color:var(--dim)">&ndash;</td>`;
+      ahtml += `<tr><td>${r.label}</td>${peCell}${spCell}${diffCell}</tr>`;
+    }
+    ahtml += '</tbody>';
+    $('peAveragesTable').innerHTML = ahtml;
+
+    // --- Hero stats ---
+    const peAnn = annualize(fullPeYears, peReturns);
+    const spAnn = annualize(fullPeYears, spReturns);
+    $('heroPeAnn').textContent  = fmtPct(peAnn, { digits: 1 });
+    $('heroSpxAnn').textContent = fmtPct(spAnn, { digits: 1 });
+    $('heroGap').textContent    = fmtPct(peAnn - spAnn, { digits: 1 });
+    $('heroWinYears').textContent = `${peWinCount} / ${comparableYears}`;
+
+    $('peYearlyMeta').innerHTML =
+      `<strong>PE outperformed in ${peWinCount} of ${comparableYears} completed years.</strong> ` +
+      `Data through ${latestFullPeYear} for PE; through ${latestDate} for S&P 500 TR.`;
+  })();
+  </script>
+</body>
+</html>
