@@ -16,6 +16,56 @@ const BUCKETS = [
 ];
 
 // ============================================================
+// MARKET CONFIG — the same BATS logic can be applied to either the S&P 500
+// or the Nasdaq 100. Everything upstream (scoring functions, gauge, backtest
+// engine) is identical; we just swap which CSV files feed each component.
+// Defined near the top of the file so COMPONENTS and everything else can
+// reference MC without hitting the temporal dead zone.
+// ============================================================
+const MARKET = (typeof window !== 'undefined'
+  ? new URLSearchParams(window.location.search).get('market')
+  : null) === 'nasdaq' ? 'nasdaq' : 'sp500';
+
+const MARKET_CONFIG = {
+  sp500: {
+    label: 'S&P 500',
+    shortLabel: 'S&P 500',
+    ticker: '^GSPC',
+    volCsv: 'vix.csv',
+    volTicker: 'VIX',
+    volIsOHLC: true,   // datasets/finance-vix uses DATE,O,H,L,C — parse col 4
+    breadthEqualCsv: 'rsp.csv',
+    breadthCapCsv: 'spy.csv',
+    breadthLabel: 'RSP / SPY',
+    rsiCsv: 'spy.csv',
+    rsiTicker: 'SPY',
+    indexCsv: 'spx.csv',
+    indexTicker: 'S&P 500',
+    stockCsv: 'spy.csv',
+    stockTicker: 'SPY',
+  },
+  nasdaq: {
+    label: 'Nasdaq 100',
+    shortLabel: 'Nasdaq 100',
+    ticker: '^NDX',
+    volCsv: 'vxn.csv',
+    volTicker: 'VXN',
+    volIsOHLC: false,  // Yahoo Date,Close
+    breadthEqualCsv: 'qqew.csv',
+    breadthCapCsv: 'qqq.csv',
+    breadthLabel: 'QQEW / QQQ',
+    rsiCsv: 'qqq.csv',
+    rsiTicker: 'QQQ',
+    indexCsv: 'ndx.csv',
+    indexTicker: 'Nasdaq 100',
+    stockCsv: 'qqq.csv',
+    stockTicker: 'QQQ',
+  },
+};
+
+const MC = MARKET_CONFIG[MARKET];
+
+// ============================================================
 // INDICATOR SCORING
 // Each function below takes a raw market reading and returns a
 // BATS sentiment score from 0 (very oversold) to 100 (very bullish).
@@ -756,54 +806,6 @@ const HIST_OFFSETS = [
   { key: 'month', days: 21,  label: '1 month ago' },
   { key: 'year',  days: 252, label: '1 year ago' },
 ];
-
-// ============================================================
-// MARKET CONFIG — the same BATS logic can be applied to either the S&P 500
-// or the Nasdaq 100. Everything upstream (scoring functions, gauge, backtest
-// engine) is identical; we just swap which CSV files feed each component.
-// ============================================================
-const MARKET = (typeof window !== 'undefined'
-  ? new URLSearchParams(window.location.search).get('market')
-  : null) === 'nasdaq' ? 'nasdaq' : 'sp500';
-
-const MARKET_CONFIG = {
-  sp500: {
-    label: 'S&P 500',
-    shortLabel: 'S&P 500',
-    ticker: '^GSPC',
-    volCsv: 'vix.csv',
-    volTicker: 'VIX',
-    volIsOHLC: true,   // datasets/finance-vix uses DATE,O,H,L,C — parse col 4
-    breadthEqualCsv: 'rsp.csv',
-    breadthCapCsv: 'spy.csv',
-    breadthLabel: 'RSP / SPY',
-    rsiCsv: 'spy.csv',
-    rsiTicker: 'SPY',
-    indexCsv: 'spx.csv',
-    indexTicker: 'S&P 500',
-    stockCsv: 'spy.csv',
-    stockTicker: 'SPY',
-  },
-  nasdaq: {
-    label: 'Nasdaq 100',
-    shortLabel: 'Nasdaq 100',
-    ticker: '^NDX',
-    volCsv: 'vxn.csv',
-    volTicker: 'VXN',
-    volIsOHLC: false,  // Yahoo Date,Close
-    breadthEqualCsv: 'qqew.csv',
-    breadthCapCsv: 'qqq.csv',
-    breadthLabel: 'QQEW / QQQ',
-    rsiCsv: 'qqq.csv',
-    rsiTicker: 'QQQ',
-    indexCsv: 'ndx.csv',
-    indexTicker: 'Nasdaq 100',
-    stockCsv: 'qqq.csv',
-    stockTicker: 'QQQ',
-  },
-};
-
-const MC = MARKET_CONFIG[MARKET];
 
 async function fetchCSVText(path) {
   const res = await fetch(path);
