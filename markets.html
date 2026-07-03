@@ -30,7 +30,7 @@
     .rd-key-yields > div { display: flex; flex-direction: column; align-items: flex-end; }
     .rd-lbl {
       font-size: 0.72rem;
-      color: var(--dim);
+      color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -44,7 +44,7 @@
     .rd-num.neg { color: var(--s0); }
     .rd-num.warn { color: #f4b942; }
     .rd-svg { width: 100%; max-width: 100%; display: block; height: auto; }
-    .rd-svg .axis-label { fill: var(--dim); font-size: 11px; }
+    .rd-svg .axis-label { fill: #c9d3e0; font-size: 12px; font-weight: 500; }
     .rd-svg .axis-line  { stroke: var(--border); stroke-width: 1; }
     .rd-svg .grid-line  { stroke: var(--border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
     .rd-svg .curve      { fill: none; stroke: var(--s5); stroke-width: 2; }
@@ -54,7 +54,7 @@
     .rd-note {
       margin: 0.75rem 0 0;
       font-size: 0.82rem;
-      color: var(--dim);
+      color: var(--text-dim);
     }
     /* Reuse chart-periods styling from PE ratio page */
     .chart-periods {
@@ -64,7 +64,7 @@
     .chart-period-btn {
       font: inherit;
       background: transparent;
-      color: var(--dim);
+      color: var(--text-dim);
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 0.3rem 0.65rem;
@@ -73,7 +73,7 @@
       cursor: pointer;
       transition: color 0.15s, background 0.15s, border-color 0.15s;
     }
-    .chart-period-btn:hover  { color: var(--text); border-color: var(--dim); }
+    .chart-period-btn:hover  { color: var(--text); border-color: var(--text-dim); }
     .chart-period-btn.active {
       background: #64d3ff;
       color: #0a1218;
