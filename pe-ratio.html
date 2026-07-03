@@ -75,6 +75,30 @@
     .chart-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
     .chart-legend .swatch { width: 20px; height: 3px; border-radius: 2px; display: inline-block; }
 
+    /* --- Period selector buttons (multpl.com style) --- */
+    .chart-periods {
+      display: flex; gap: 0.35rem; flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .chart-period-btn {
+      font: inherit;
+      background: transparent;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .chart-period-btn:hover  { color: var(--text); border-color: var(--dim); }
+    .chart-period-btn.active {
+      background: #64d3ff;
+      color: #0a1218;
+      border-color: #64d3ff;
+    }
+
     /* --- Backtest table styling reused via .backtest-table --- */
     .bucket-name { font-weight: 600; }
     .num-neg { color: var(--s0); }
@@ -163,13 +187,22 @@
         </p>
       </div>
       <div class="per-chart-wrap">
+        <div class="chart-periods" id="chartPeriods" role="tablist" aria-label="Chart time period">
+          <button type="button" class="chart-period-btn" data-period="1"   role="tab">1Y</button>
+          <button type="button" class="chart-period-btn" data-period="2"   role="tab">2Y</button>
+          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn active" data-period="20"  role="tab">20Y</button>
+          <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
         <svg id="peChart" class="per-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="Historical S&P 500 PE ratio chart"></svg>
         <div class="chart-legend">
           <span><span class="swatch" style="background:var(--s5)"></span> PE ratio (monthly)</span>
-          <span><span class="swatch" style="background:#64d3ff"></span> Long-term average</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> Long-term average (full history)</span>
           <span><span class="swatch" style="background:var(--s6)"></span> Today</span>
         </div>
-        <p class="chart-cap-note">
+        <p class="chart-cap-note" id="chartCapNote">
           Chart y-axis is capped at 50 for readability. The 2009 spike to
           ~124 is a well-known artifact of the GFC earnings collapse (denominator
           near zero), not a real "market at 124x earnings" moment.
@@ -355,89 +388,147 @@
       &nbsp;·&nbsp; today's PE is higher than <strong>${percentile.toFixed(0)}%</strong> of historical readings
     `;
 
-    // --- SVG chart ---
+    // --- SVG chart (period-aware) ---
     const chart = $('peChart');
+    const capNote = $('chartCapNote');
     const W = 1200, H = 460;
-    const M = { top: 20, right: 30, bottom: 40, left: 45 };
+    const M = { top: 20, right: 60, bottom: 40, left: 45 };
     const plotW = W - M.left - M.right;
     const plotH = H - M.top - M.bottom;
-    const yCap = 50;  // clip 2009 spike for readability
-    const yMin = 0;
 
-    // x-scale: months since first row
-    const n = rows.length;
-    const xForIdx = (i) => M.left + (i / (n - 1)) * plotW;
-    // Convert 1871-01-01 => year fractional
+    // Precompute year-fraction for x-axis math
     const yearFrac = (d) => {
       const [y, m] = d.split('-').map(Number);
       return y + (m - 1) / 12;
     };
-    const firstYear = yearFrac(rows[0].date);
-    const lastYear  = yearFrac(latest.date);
-    const xForYear = (yr) => M.left + ((yr - firstYear) / (lastYear - firstYear)) * plotW;
+    // Attach a year-fraction to each row once
+    rows.forEach(r => { r.yf = yearFrac(r.date); });
 
-    const yFor = (pe) => M.top + plotH - ((Math.min(pe, yCap) - yMin) / (yCap - yMin)) * plotH;
+    // Build slice + render for a given period ('1', '2', '5', '10', '20', '50', 'all')
+    function renderChart(period) {
+      const latestYf = rows[rows.length - 1].yf;
+      let slice;
+      if (period === 'all') {
+        slice = rows;
+      } else {
+        const yrs = parseFloat(period);
+        const cutoff = latestYf - yrs;
+        slice = rows.filter(r => r.yf >= cutoff);
+      }
+      if (slice.length < 2) slice = rows.slice(-24); // safety
 
-    // background bands
-    const cheapTop = yFor(10);
-    const cheapBottom = yFor(0);
-    const expensiveTop = yFor(yCap);
-    const expensiveBottom = yFor(25);
+      const first = slice[0], last = slice[slice.length - 1];
+      const xForYear = (yr) => M.left + ((yr - first.yf) / (last.yf - first.yf || 1)) * plotW;
 
-    let svg = '';
-    svg += `<rect class="band-cheap" x="${M.left}" y="${cheapTop}" width="${plotW}" height="${cheapBottom - cheapTop}"/>`;
-    svg += `<rect class="band-expensive" x="${M.left}" y="${expensiveTop}" width="${plotW}" height="${expensiveBottom - expensiveTop}"/>`;
+      // Dynamic y-scale: cap only when the window's max would squish the plot
+      const peInSlice = slice.map(r => r.pe);
+      const maxInSlice = Math.max(...peInSlice);
+      const minInSlice = Math.min(...peInSlice);
+      // Cap kicks in at 50 for windows containing the GFC 2009 spike
+      const yCap = maxInSlice > 55 ? 50 : Math.max(35, Math.ceil((maxInSlice + 3) / 5) * 5);
+      const yBottom = Math.max(0, Math.floor(Math.min(minInSlice - 2, 10)));
+      const yFor = (pe) => M.top + plotH - ((Math.min(pe, yCap) - yBottom) / (yCap - yBottom)) * plotH;
 
-    // grid lines + y-axis labels
-    for (const p of [10, 20, 30, 40, 50]) {
-      const y = yFor(p);
-      svg += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
-      svg += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${p}</text>`;
+      let svg = '';
+
+      // Background bands (relative to current y-scale)
+      const cheapTop = yFor(Math.min(10, yCap));
+      const cheapBottom = yFor(yBottom);
+      const expensiveTop = yFor(yCap);
+      const expensiveBottom = yFor(Math.min(25, yCap));
+      svg += `<rect class="band-cheap" x="${M.left}" y="${cheapTop}" width="${plotW}" height="${cheapBottom - cheapTop}"/>`;
+      svg += `<rect class="band-expensive" x="${M.left}" y="${expensiveTop}" width="${plotW}" height="${expensiveBottom - expensiveTop}"/>`;
+
+      // Y-axis grid + labels (adaptive tick spacing)
+      const range = yCap - yBottom;
+      const yStep = range <= 20 ? 5 : range <= 45 ? 10 : range <= 90 ? 20 : 25;
+      for (let p = Math.ceil(yBottom / yStep) * yStep; p <= yCap; p += yStep) {
+        const y = yFor(p);
+        svg += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        svg += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${p}</text>`;
+      }
+
+      // X-axis year labels (adaptive)
+      const yearSpan = last.yf - first.yf;
+      let tickStep;
+      if      (yearSpan <= 1.2)  tickStep = 1 / 12 * 2; // ~every 2 months
+      else if (yearSpan <= 3)    tickStep = 0.5;        // every 6 months
+      else if (yearSpan <= 6)    tickStep = 1;          // yearly
+      else if (yearSpan <= 15)   tickStep = 2;          // every 2 years
+      else if (yearSpan <= 30)   tickStep = 5;          // every 5 years
+      else if (yearSpan <= 75)   tickStep = 10;         // every decade
+      else                       tickStep = 20;         // every 2 decades
+
+      // Round first tick to nice value
+      const tickStart = Math.ceil(first.yf / tickStep) * tickStep;
+      const fmtTick = (yf) => {
+        if (tickStep >= 1) return String(Math.round(yf));
+        const yr = Math.floor(yf);
+        const mo = Math.round((yf - yr) * 12) + 1;
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return `${monthNames[Math.min(mo - 1, 11)]} '${String(yr).slice(-2)}`;
+      };
+      for (let yr = tickStart; yr <= last.yf; yr += tickStep) {
+        if (yr < first.yf) continue;
+        const x = xForYear(yr);
+        svg += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        svg += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${fmtTick(yr)}</text>`;
+      }
+
+      // Axis lines
+      svg += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      svg += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      // Long-term average line (uses FULL-HISTORY average — always the same reference)
+      if (mean >= yBottom && mean <= yCap) {
+        const yAvg = yFor(mean);
+        svg += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${yAvg}" y2="${yAvg}"/>`;
+        svg += `<text class="axis-label" x="${W - M.right + 3}" y="${yAvg + 4}" style="fill:#64d3ff">avg ${mean.toFixed(1)}</text>`;
+      }
+
+      // PE line
+      let path = '';
+      for (let i = 0; i < slice.length; i++) {
+        const x = xForYear(slice[i].yf).toFixed(1);
+        const y = yFor(slice[i].pe).toFixed(1);
+        path += (i === 0 ? 'M' : 'L') + x + ',' + y + ' ';
+      }
+      svg += `<path class="pe-line" d="${path}"/>`;
+
+      // Callout for the 2009 spike, only when it's inside the window AND clipped
+      const spikeInWindow = slice.some(r => r.pe > yCap);
+      if (spikeInWindow) {
+        const spikeRow = slice.reduce((a, b) => b.pe > a.pe ? b : a);
+        const xSpike = xForYear(spikeRow.yf);
+        svg += `<line x1="${xSpike}" y1="${M.top + 12}" x2="${xSpike}" y2="${M.top}" stroke="var(--dim)" stroke-width="1" stroke-dasharray="2 2"/>`;
+        svg += `<text class="annotation" x="${xSpike + 4}" y="${M.top + 10}" text-anchor="start">↑ ${spikeRow.pe.toFixed(0)} (GFC 2009)</text>`;
+      }
+
+      // Show/hide the "y-axis capped at 50" note based on whether clipping is happening
+      capNote.style.display = spikeInWindow ? '' : 'none';
+
+      // Current PE dot (always at the far right of the slice)
+      const xCur = xForYear(last.yf);
+      const yCur = yFor(last.pe);
+      svg += `<circle class="current-dot" cx="${xCur}" cy="${yCur}" r="5"/>`;
+      svg += `<text class="annotation" x="${xCur + 8}" y="${yCur + 4}" text-anchor="start" style="fill:var(--s6);font-weight:600;font-size:12px;">${last.pe.toFixed(2)}</text>`;
+
+      // Y-axis title
+      svg += `<text class="axis-label" x="${M.left - 30}" y="${M.top - 6}" text-anchor="start">PE</text>`;
+
+      chart.innerHTML = svg;
     }
-    // x-axis year labels
-    const tickYears = [1880, 1900, 1920, 1940, 1960, 1980, 2000, 2020];
-    for (const yr of tickYears) {
-      if (yr < firstYear || yr > lastYear) continue;
-      const x = xForYear(yr);
-      svg += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-      svg += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${yr}</text>`;
-    }
-    // axis lines
-    svg += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
-    svg += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
 
-    // Long-term average line
-    const yAvg = yFor(mean);
-    svg += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${yAvg}" y2="${yAvg}"/>`;
-    svg += `<text class="axis-label" x="${W - M.right + 3}" y="${yAvg + 4}" style="fill:#64d3ff">avg ${mean.toFixed(1)}</text>`;
-
-    // PE line
-    let path = '';
-    for (let i = 0; i < rows.length; i++) {
-      const x = xForIdx(i).toFixed(1);
-      const y = yFor(rows[i].pe).toFixed(1);
-      path += (i === 0 ? 'M' : 'L') + x + ',' + y + ' ';
-    }
-    svg += `<path class="pe-line" d="${path}"/>`;
-
-    // Callout for the 2009 spike (clipped)
-    const maxDate = rows[maxIdx].date;
-    if (max > yCap) {
-      const xSpike = xForIdx(maxIdx);
-      svg += `<line x1="${xSpike}" y1="${M.top + 12}" x2="${xSpike}" y2="${M.top}" stroke="var(--dim)" stroke-width="1" stroke-dasharray="2 2"/>`;
-      svg += `<text class="annotation" x="${xSpike + 4}" y="${M.top + 10}" text-anchor="start">↑ ${max.toFixed(0)} (GFC 2009)</text>`;
-    }
-
-    // Current PE dot
-    const xCur = xForIdx(rows.length - 1);
-    const yCur = yFor(latest.pe);
-    svg += `<circle class="current-dot" cx="${xCur}" cy="${yCur}" r="5"/>`;
-    svg += `<text class="annotation" x="${xCur - 6}" y="${yCur - 8}" text-anchor="end" style="fill:var(--s6);font-weight:600;font-size:11px;">${latest.pe.toFixed(1)}</text>`;
-
-    // Axis titles
-    svg += `<text class="axis-label" x="${M.left - 30}" y="${M.top - 6}" text-anchor="start" transform="">PE</text>`;
-
-    chart.innerHTML = svg;
+    // Wire up period buttons
+    const periodBar = document.getElementById('chartPeriods');
+    periodBar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.chart-period-btn');
+      if (!btn) return;
+      periodBar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+      renderChart(btn.dataset.period);
+    });
+    // Initial render — default to 20Y (the button marked active in HTML)
+    renderChart('20');
 
     // --- Forward-return backtest using Real TR Price ---
     // Match each row to (T+12, T+60) if available.
