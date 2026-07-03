@@ -41,6 +41,31 @@ fetch_vix() {
   echo "Updated $out ($(wc -l < "$out") rows)"
 }
 
+# --- Treasury.gov daily yield curve CSV (all maturities) ---
+fetch_treasury_yields() {
+  local out="$DATA_DIR/treasury_yields.csv"
+  local tmp
+  tmp="$(mktemp)"
+  local year
+  year="$(date -u +%Y)"
+  local url="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/${year}/all?type=daily_treasury_yield_curve&field_tdr_date_value=${year}&page&_format=csv"
+  if ! curl -sSfL -A "Mozilla/5.0" --max-time 30 "$url" -o "$tmp"; then
+    warn "Treasury yield fetch failed; leaving $out unchanged"
+    rm -f "$tmp"; return 0
+  fi
+  if ! head -1 "$tmp" | grep -qi "Date"; then
+    warn "Treasury response doesn't look like the expected CSV; leaving $out unchanged"
+    rm -f "$tmp"; return 0
+  fi
+  # Sanity: at least a header + a few rows
+  if [ "$(wc -l < "$tmp")" -lt 5 ]; then
+    warn "Treasury row count suspiciously low; leaving $out unchanged"
+    rm -f "$tmp"; return 0
+  fi
+  mv "$tmp" "$out"
+  echo "Updated $out ($(wc -l < "$out") rows for $year)"
+}
+
 # --- Yahoo Finance chart API -> Date,Close CSV ---
 fetch_yahoo_daily() {
   local symbol="$1" out="$2" start_ts="$3"
@@ -86,8 +111,10 @@ fetch_yahoo_daily() {
 
 # ---- Fetch each dataset ----
 fetch_vix
+fetch_treasury_yields
 fetch_yahoo_daily "^GSPC"    "$DATA_DIR/spx.csv"     "631152000"    # 1990-01-01
 fetch_yahoo_daily "^SP500TR" "$DATA_DIR/sp500tr.csv" "946684800"    # 2000-01-03 (TR series inception)
+fetch_yahoo_daily "DX-Y.NYB" "$DATA_DIR/dxy.csv"     "631152000"    # 1990-01-01 (US Dollar Index)
 fetch_yahoo_daily "SPY"   "$DATA_DIR/spy.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "RSP"   "$DATA_DIR/rsp.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "HYG"   "$DATA_DIR/hyg.csv" "1176249600"   # 2007-04-11

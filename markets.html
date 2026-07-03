@@ -10,6 +10,76 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Rates & dollar card styling */
+    .rd-card-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .rd-card-head h3 { margin: 0; }
+    .rd-key-yields {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+    }
+    .rd-key-yields > div { display: flex; flex-direction: column; align-items: flex-end; }
+    .rd-lbl {
+      font-size: 0.72rem;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .rd-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .rd-num.pos { color: var(--s5); }
+    .rd-num.neg { color: var(--s0); }
+    .rd-num.warn { color: #f4b942; }
+    .rd-svg { width: 100%; max-width: 100%; display: block; height: auto; }
+    .rd-svg .axis-label { fill: var(--dim); font-size: 11px; }
+    .rd-svg .axis-line  { stroke: var(--border); stroke-width: 1; }
+    .rd-svg .grid-line  { stroke: var(--border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
+    .rd-svg .curve      { fill: none; stroke: var(--s5); stroke-width: 2; }
+    .rd-svg .curve-prev { fill: none; stroke: #64d3ff; stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.8; }
+    .rd-svg .curve-dot  { fill: var(--s5); }
+    .rd-svg .curve-label{ fill: var(--s5); font-size: 10px; font-weight: 600; }
+    .rd-note {
+      margin: 0.75rem 0 0;
+      font-size: 0.82rem;
+      color: var(--dim);
+    }
+    /* Reuse chart-periods styling from PE ratio page */
+    .chart-periods {
+      display: flex; gap: 0.35rem; flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .chart-period-btn {
+      font: inherit;
+      background: transparent;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .chart-period-btn:hover  { color: var(--text); border-color: var(--dim); }
+    .chart-period-btn.active {
+      background: #64d3ff;
+      color: #0a1218;
+      border-color: #64d3ff;
+    }
+  </style>
 </head>
 <body>
 
@@ -184,6 +254,50 @@
       </div>
     </section>
 
+    <!-- YIELD CURVE + DOLLAR INDEX -->
+    <section class="rates-dollar" id="rates">
+      <div class="section-head">
+        <h2>Rates &amp; the dollar</h2>
+        <p>The two macro backdrops behind everything equities do.</p>
+      </div>
+      <div class="technicals-grid">
+        <!-- YIELD CURVE CARD -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>US Treasury yield curve</h3>
+            <div class="rd-key-yields" id="keyYields">
+              <div><span class="rd-lbl">2-Year</span> <span class="rd-num" id="yield2y">&ndash;</span></div>
+              <div><span class="rd-lbl">10-Year</span> <span class="rd-num" id="yield10y">&ndash;</span></div>
+              <div><span class="rd-lbl">10Y &minus; 2Y spread</span> <span class="rd-num" id="yieldSpread">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="yieldCurveChart" class="rd-svg" viewBox="0 0 560 300" preserveAspectRatio="none" aria-label="US Treasury yield curve chart"></svg>
+          <p class="rd-note" id="yieldCurveNote">Loading yield curve&hellip;</p>
+        </div>
+
+        <!-- DOLLAR INDEX CARD -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>US Dollar Index (DXY)</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="dxyCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl" id="dxyChangeLabel">30-day change</span> <span class="rd-num" id="dxyChange">&ndash;</span></div>
+            </div>
+          </div>
+          <div class="chart-periods" id="dxyPeriods" role="tablist" aria-label="DXY chart time period">
+            <button type="button" class="chart-period-btn" data-period="0.25" role="tab">3M</button>
+            <button type="button" class="chart-period-btn" data-period="0.5"  role="tab">6M</button>
+            <button type="button" class="chart-period-btn active" data-period="1" role="tab">1Y</button>
+            <button type="button" class="chart-period-btn" data-period="2"    role="tab">2Y</button>
+            <button type="button" class="chart-period-btn" data-period="5"    role="tab">5Y</button>
+            <button type="button" class="chart-period-btn" data-period="all"  role="tab">All</button>
+          </div>
+          <svg id="dxyChart" class="rd-svg" viewBox="0 0 560 300" preserveAspectRatio="none" aria-label="US Dollar Index chart"></svg>
+          <p class="rd-note" id="dxyNote">Loading DXY&hellip;</p>
+        </div>
+      </div>
+    </section>
+
     <!-- NEWS -->
     <section class="news" id="news">
       <div class="section-head">
@@ -285,5 +399,288 @@
   </footer>
 
   <script src="app.js"></script>
+  <script>
+  // ==========================================================================
+  // YIELD CURVE — Treasury.gov daily CSV → SVG curve chart
+  // ==========================================================================
+  (async function renderYieldCurve() {
+    const $ = (id) => document.getElementById(id);
+    const svg = $('yieldCurveChart');
+    const note = $('yieldCurveNote');
+    if (!svg) return;
+
+    let txt;
+    try {
+      const r = await fetch('data/treasury_yields.csv', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      txt = await r.text();
+    } catch (e) {
+      note.textContent = 'Failed to load treasury yield data.';
+      return;
+    }
+
+    // Parse CSV; Treasury.gov columns are quoted like "1 Mo","2 Yr" etc.
+    const lines = txt.trim().split(/\r?\n/);
+    const headerRaw = lines[0].match(/("[^"]*"|[^,]+)/g).map(s => s.replace(/^"|"$/g, '').trim());
+    // Map maturities we care about → year fraction on x-axis
+    const MATURITIES = [
+      { label: '1M',  yrs: 1/12,  key: '1 Mo' },
+      { label: '3M',  yrs: 0.25,  key: '3 Mo' },
+      { label: '6M',  yrs: 0.5,   key: '6 Mo' },
+      { label: '1Y',  yrs: 1,     key: '1 Yr' },
+      { label: '2Y',  yrs: 2,     key: '2 Yr' },
+      { label: '3Y',  yrs: 3,     key: '3 Yr' },
+      { label: '5Y',  yrs: 5,     key: '5 Yr' },
+      { label: '7Y',  yrs: 7,     key: '7 Yr' },
+      { label: '10Y', yrs: 10,    key: '10 Yr' },
+      { label: '20Y', yrs: 20,    key: '20 Yr' },
+      { label: '30Y', yrs: 30,    key: '30 Yr' }
+    ];
+    const colIndex = {};
+    headerRaw.forEach((h, i) => { colIndex[h] = i; });
+
+    const parseRow = (line) => {
+      const cells = line.match(/("[^"]*"|[^,]+)/g).map(s => s.replace(/^"|"$/g, '').trim());
+      const dateStr = cells[colIndex['Date']];
+      // Treasury.gov date format: MM/DD/YYYY
+      const [mm, dd, yyyy] = dateStr.split('/');
+      const dateISO = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+      const yields = MATURITIES.map(m => {
+        const val = parseFloat(cells[colIndex[m.key]]);
+        return isFinite(val) ? { ...m, y: val } : null;
+      });
+      return { dateISO, dateStr, yields };
+    };
+
+    // Row 1 is the most recent (Treasury.gov puts newest first)
+    const latest = parseRow(lines[1]);
+    // Find a row ~30 calendar days back for comparison
+    const target = new Date(latest.dateISO);
+    target.setDate(target.getDate() - 30);
+    const targetIso = target.toISOString().slice(0, 10);
+    let prev = null;
+    for (let i = 2; i < lines.length; i++) {
+      const p = parseRow(lines[i]);
+      if (p.dateISO <= targetIso) { prev = p; break; }
+    }
+
+    // --- Update the callout numbers ---
+    const y2 = latest.yields.find(v => v && v.label === '2Y');
+    const y10 = latest.yields.find(v => v && v.label === '10Y');
+    const spread = y2 && y10 ? (y10.y - y2.y) : null;
+    if (y2)  { $('yield2y').textContent  = y2.y.toFixed(2)  + '%'; }
+    if (y10) { $('yield10y').textContent = y10.y.toFixed(2) + '%'; }
+    if (spread != null) {
+      const el = $('yieldSpread');
+      const sign = spread > 0 ? '+' : '';
+      el.textContent = sign + (spread * 100).toFixed(0) + ' bp';
+      el.classList.add(spread < 0 ? 'neg' : 'pos');
+    }
+
+    // --- Render SVG ---
+    const W = 560, H = 300;
+    const M = { top: 20, right: 20, bottom: 40, left: 40 };
+    const plotW = W - M.left - M.right;
+    const plotH = H - M.top - M.bottom;
+
+    // Log x-scale for maturities (0.083..30)
+    const xForYrs = (yrs) => {
+      const minX = Math.log(1/12), maxX = Math.log(30);
+      return M.left + ((Math.log(yrs) - minX) / (maxX - minX)) * plotW;
+    };
+
+    const allYields = latest.yields.concat(prev ? prev.yields : []).filter(Boolean).map(v => v.y);
+    const yMin = Math.floor(Math.min(...allYields) * 2) / 2 - 0.25;
+    const yMax = Math.ceil(Math.max(...allYields) * 2) / 2 + 0.25;
+    const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+    let s = '';
+
+    // Y-grid
+    for (let v = Math.ceil(yMin * 2) / 2; v <= yMax; v += 0.5) {
+      const y = yFor(v);
+      s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+      s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v.toFixed(1)}%</text>`;
+    }
+
+    // X-tick labels
+    for (const m of MATURITIES) {
+      const x = xForYrs(m.yrs);
+      s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+      s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${m.label}</text>`;
+    }
+
+    // Axis lines
+    s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+    s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+    // Previous curve (30d ago), dashed
+    if (prev) {
+      const prevPts = prev.yields.filter(Boolean);
+      const prevPath = prevPts.map((p, i) =>
+        (i === 0 ? 'M' : 'L') + xForYrs(p.yrs).toFixed(1) + ',' + yFor(p.y).toFixed(1)
+      ).join(' ');
+      s += `<path class="curve-prev" d="${prevPath}"/>`;
+    }
+
+    // Current curve
+    const curPts = latest.yields.filter(Boolean);
+    const curPath = curPts.map((p, i) =>
+      (i === 0 ? 'M' : 'L') + xForYrs(p.yrs).toFixed(1) + ',' + yFor(p.y).toFixed(1)
+    ).join(' ');
+    s += `<path class="curve" d="${curPath}"/>`;
+
+    // Dots on each maturity
+    for (const p of curPts) {
+      s += `<circle class="curve-dot" cx="${xForYrs(p.yrs).toFixed(1)}" cy="${yFor(p.y).toFixed(1)}" r="3"/>`;
+    }
+
+    svg.innerHTML = s;
+
+    let noteHtml = `Curve as of <strong>${latest.dateStr}</strong>`;
+    if (prev) noteHtml += `, with the curve from <strong>${prev.dateStr}</strong> shown in cyan dashes.`;
+    if (spread != null) {
+      noteHtml += ' The 10Y &minus; 2Y spread ';
+      if (spread < 0) noteHtml += 'is <strong>inverted</strong> &mdash; historically a recession signal.';
+      else if (spread < 0.5) noteHtml += 'is <strong>flat</strong> &mdash; markets pricing in slowing growth.';
+      else noteHtml += 'is <strong>normal</strong> (long yields higher than short yields).';
+    }
+    note.innerHTML = noteHtml;
+  })();
+
+  // ==========================================================================
+  // US DOLLAR INDEX (DXY) — with 3M/6M/1Y/2Y/5Y/All period buttons
+  // ==========================================================================
+  (async function renderDxy() {
+    const $ = (id) => document.getElementById(id);
+    const svg = $('dxyChart');
+    const note = $('dxyNote');
+    if (!svg) return;
+
+    let txt;
+    try {
+      const r = await fetch('data/dxy.csv', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      txt = await r.text();
+    } catch (e) {
+      note.textContent = 'Failed to load US Dollar Index data.';
+      return;
+    }
+
+    const rows = txt.trim().split(/\r?\n/).slice(1).map(ln => {
+      const [d, c] = ln.split(',');
+      const px = parseFloat(c);
+      return { d, px, t: new Date(d).getTime() };
+    }).filter(r => isFinite(r.px));
+    if (rows.length < 10) { note.textContent = 'Insufficient DXY data.'; return; }
+
+    const latest = rows[rows.length - 1];
+    $('dxyCurrent').textContent = latest.px.toFixed(2);
+
+    const W = 560, H = 300;
+    const M = { top: 15, right: 55, bottom: 30, left: 45 };
+    const plotW = W - M.left - M.right;
+    const plotH = H - M.top - M.bottom;
+
+    function render(period) {
+      let slice;
+      if (period === 'all') {
+        slice = rows;
+      } else {
+        const yrs = parseFloat(period);
+        const cutoff = latest.t - yrs * 365.25 * 24 * 3600 * 1000;
+        slice = rows.filter(r => r.t >= cutoff);
+      }
+      if (slice.length < 2) slice = rows.slice(-60);
+      const first = slice[0], last = slice[slice.length - 1];
+
+      // 30-day change readout
+      const changePeriodDays = period === 'all' ? 365 : Math.min(30, Math.max(7, Math.round(yrsFromPeriod(period) * 30)));
+      // Actually simpler: change over the current window
+      const chg = last.px - first.px;
+      const chgPct = (chg / first.px) * 100;
+      const el = $('dxyChange');
+      el.textContent = (chg >= 0 ? '+' : '') + chgPct.toFixed(2) + '%';
+      el.classList.remove('pos', 'neg');
+      el.classList.add(chg >= 0 ? 'pos' : 'neg');
+      $('dxyChangeLabel').textContent = 'Change (' + fmtPeriod(period) + ')';
+
+      const pxs = slice.map(r => r.px);
+      const yMin = Math.floor(Math.min(...pxs) - 0.5);
+      const yMax = Math.ceil(Math.max(...pxs) + 0.5);
+      const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+      const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
+
+      let s = '';
+
+      // Y-grid
+      const range = yMax - yMin;
+      const step = range <= 5 ? 1 : range <= 15 ? 2 : range <= 30 ? 5 : 10;
+      for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
+        const y = yFor(v);
+        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v}</text>`;
+      }
+
+      // X-tick labels
+      const spanMs = last.t - first.t;
+      const spanYrs = spanMs / (365.25 * 24 * 3600 * 1000);
+      let tickMs;
+      if (spanYrs <= 0.35)      tickMs = 30 * 24 * 3600 * 1000;         // ~monthly
+      else if (spanYrs <= 0.75) tickMs = 60 * 24 * 3600 * 1000;         // ~2mo
+      else if (spanYrs <= 1.5)  tickMs = 90 * 24 * 3600 * 1000;         // ~quarterly
+      else if (spanYrs <= 3)    tickMs = 6 * 30 * 24 * 3600 * 1000;     // ~semi
+      else if (spanYrs <= 8)    tickMs = 365 * 24 * 3600 * 1000;        // yearly
+      else                      tickMs = 5 * 365 * 24 * 3600 * 1000;    // every 5yr
+
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const fmtTick = (t) => {
+        const d = new Date(t);
+        if (spanYrs > 3) return String(d.getUTCFullYear());
+        return `${monthNames[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(-2)}`;
+      };
+      for (let t = Math.ceil(first.t / tickMs) * tickMs; t <= last.t; t += tickMs) {
+        const x = xFor(t);
+        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${fmtTick(t)}</text>`;
+      }
+
+      // Axis lines
+      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      // Line
+      const path = slice.map((r, i) =>
+        (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yFor(r.px).toFixed(1)
+      ).join(' ');
+      s += `<path fill="none" stroke="var(--s5)" stroke-width="1.5" d="${path}"/>`;
+
+      // Latest dot + label
+      const xCur = xFor(last.t), yCur = yFor(last.px);
+      s += `<circle cx="${xCur}" cy="${yCur}" r="4" fill="var(--s5)" stroke="#fff" stroke-width="1"/>`;
+      s += `<text x="${xCur + 8}" y="${yCur + 4}" fill="var(--s5)" font-size="12" font-weight="600">${last.px.toFixed(2)}</text>`;
+
+      svg.innerHTML = s;
+      note.innerHTML = `Window: <strong>${first.d}</strong> to <strong>${last.d}</strong> &nbsp;·&nbsp; ${slice.length.toLocaleString()} daily closes`;
+    }
+
+    function yrsFromPeriod(p) { return p === 'all' ? 100 : parseFloat(p); }
+    function fmtPeriod(p) {
+      if (p === 'all') return 'window';
+      const y = parseFloat(p);
+      if (y < 1) return Math.round(y * 12) + 'M';
+      return y + 'Y';
+    }
+
+    const bar = document.getElementById('dxyPeriods');
+    bar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.chart-period-btn');
+      if (!btn) return;
+      bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+      render(btn.dataset.period);
+    });
+    render('1');  // default = 1Y
+  })();
+  </script>
 </body>
 </html>
