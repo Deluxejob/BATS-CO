@@ -405,8 +405,8 @@ function vixAdvisory(vix) {
 const COMPONENTS = [
   {
     key: 'vix',
-    name: 'VIX (Volatility)',
-    desc: 'The "fear gauge." Contrarian: high VIX often means a buying opportunity; low VIX means complacency.',
+    name: `${MC.volTicker} (Volatility)`,
+    desc: 'The "fear gauge." Contrarian: high volatility often means a buying opportunity; low volatility means complacency.',
     weight: 25,
     status: 'live',
     raw: 22.5,
@@ -418,7 +418,7 @@ const COMPONENTS = [
   {
     key: 'breadth',
     name: 'Market Breadth',
-    desc: 'How many stocks are participating. Confirmatory: broad participation is bullish, narrow rallies are fragile.',
+    desc: `How many stocks are participating (${MC.breadthLabel} 20-day spread). Confirmatory: broad participation is bullish, narrow rallies are fragile.`,
     weight: 25,
     status: 'live',
     raw: -0.8,
@@ -429,7 +429,7 @@ const COMPONENTS = [
   },
   {
     key: 'spy_rsi',
-    name: 'SPY 14-day RSI',
+    name: `${MC.rsiTicker} 14-day RSI`,
     desc: 'Momentum. Below 30 = oversold (bullish); above 70 = overbought (bearish). Markets can stay stretched.',
     weight: 10,
     status: 'live',
@@ -441,7 +441,7 @@ const COMPONENTS = [
   },
   {
     key: 'ma200',
-    name: 'S&P vs 200-day MA',
+    name: `${MC.indexTicker} vs 200-day MA`,
     desc: 'How far above or below its long-term trend the market sits. Far below = crash zone (bullish); far above = strong uptrend (also bullish, not overbought).',
     weight: 10,
     status: 'live',
@@ -490,7 +490,7 @@ const COMPONENTS = [
   {
     key: 'safehaven',
     name: 'Safe Haven Demand',
-    desc: 'Stocks vs 20+ year Treasuries (SPY − TLT 20-day return). Confirmatory: risk-on = bullish; flight to safety = bearish.',
+    desc: `Stocks vs 20+ year Treasuries (${MC.stockTicker} − TLT 20-day return). Confirmatory: risk-on = bullish; flight to safety = bearish.`,
     weight: 5,
     status: 'live',
     raw: 0,
@@ -757,6 +757,54 @@ const HIST_OFFSETS = [
   { key: 'year',  days: 252, label: '1 year ago' },
 ];
 
+// ============================================================
+// MARKET CONFIG — the same BATS logic can be applied to either the S&P 500
+// or the Nasdaq 100. Everything upstream (scoring functions, gauge, backtest
+// engine) is identical; we just swap which CSV files feed each component.
+// ============================================================
+const MARKET = (typeof window !== 'undefined'
+  ? new URLSearchParams(window.location.search).get('market')
+  : null) === 'nasdaq' ? 'nasdaq' : 'sp500';
+
+const MARKET_CONFIG = {
+  sp500: {
+    label: 'S&P 500',
+    shortLabel: 'S&P 500',
+    ticker: '^GSPC',
+    volCsv: 'vix.csv',
+    volTicker: 'VIX',
+    volIsOHLC: true,   // datasets/finance-vix uses DATE,O,H,L,C — parse col 4
+    breadthEqualCsv: 'rsp.csv',
+    breadthCapCsv: 'spy.csv',
+    breadthLabel: 'RSP / SPY',
+    rsiCsv: 'spy.csv',
+    rsiTicker: 'SPY',
+    indexCsv: 'spx.csv',
+    indexTicker: 'S&P 500',
+    stockCsv: 'spy.csv',
+    stockTicker: 'SPY',
+  },
+  nasdaq: {
+    label: 'Nasdaq 100',
+    shortLabel: 'Nasdaq 100',
+    ticker: '^NDX',
+    volCsv: 'vxn.csv',
+    volTicker: 'VXN',
+    volIsOHLC: false,  // Yahoo Date,Close
+    breadthEqualCsv: 'qqew.csv',
+    breadthCapCsv: 'qqq.csv',
+    breadthLabel: 'QQEW / QQQ',
+    rsiCsv: 'qqq.csv',
+    rsiTicker: 'QQQ',
+    indexCsv: 'ndx.csv',
+    indexTicker: 'Nasdaq 100',
+    stockCsv: 'qqq.csv',
+    stockTicker: 'QQQ',
+  },
+};
+
+const MC = MARKET_CONFIG[MARKET];
+
 async function fetchCSVText(path) {
   const res = await fetch(path);
   if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`);
@@ -851,28 +899,31 @@ function computeRsiSeriesLive(closes, period = 14) {
 }
 
 async function loadLiveData() {
-  const [vixText, rspText, spyText, hygText, lqdText, spxText, aaiiText, naaimText, tltText] = await Promise.all([
-    fetchCSVText(APP_DATA_BASE + 'vix.csv'),
-    fetchCSVText(APP_DATA_BASE + 'rsp.csv'),
-    fetchCSVText(APP_DATA_BASE + 'spy.csv'),
+  // Market-specific data files (VIX/VXN, RSP/QQEW, SPY/QQQ, SPX/NDX)
+  // Universal data files (HYG, LQD, AAII, NAAIM, TLT — apply to both markets)
+  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, aaiiText, naaimText, tltText] = await Promise.all([
+    fetchCSVText(APP_DATA_BASE + MC.volCsv),
+    fetchCSVText(APP_DATA_BASE + MC.breadthEqualCsv),
+    fetchCSVText(APP_DATA_BASE + MC.breadthCapCsv),
     fetchCSVText(APP_DATA_BASE + 'hyg.csv'),
     fetchCSVText(APP_DATA_BASE + 'lqd.csv'),
-    fetchCSVText(APP_DATA_BASE + 'spx.csv'),
+    fetchCSVText(APP_DATA_BASE + MC.indexCsv),
     fetchCSVText(APP_DATA_BASE + 'aaii.csv'),
     fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
     fetchCSVText(APP_DATA_BASE + 'tlt.csv'),
   ]);
-  const vix = parseVIXLive(vixText);
-  const rsp = parseDateCloseLive(rspText);
-  const spy = parseDateCloseLive(spyText);
+  // VIX ships as OHLC; VXN as Date,Close. Same field name downstream.
+  const vix = MC.volIsOHLC ? parseVIXLive(volText) : parseDateCloseLive(volText).map(r => ({ date: r.date, close: r.close }));
+  const rsp = parseDateCloseLive(breadthEqualText);
+  const spy = parseDateCloseLive(breadthCapText); // "SPY" var name kept for internal continuity; holds QQQ when market=nasdaq
   const hyg = parseDateCloseLive(hygText);
   const lqd = parseDateCloseLive(lqdText);
-  const spx = parseDateCloseLive(spxText);
+  const spx = parseDateCloseLive(indexText);      // "SPX" var name kept; holds NDX when market=nasdaq
   const tlt = parseDateCloseLive(tltText);
   const aaii = parseAAIILive(aaiiText);
   const naaim = parseNAAIMLive(naaimText);
-  const rsi = computeRsiSeriesLive(spy.map(r => r.close));
-  const sma200 = computeSmaSeries(spx.map(r => r.close), 200);
+  const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
+  const sma200 = computeSmaSeries(spx.map(r => r.close), 200); // 200-day MA of index (SPX or NDX)
 
   const vixByDate = new Map(); vix.forEach((r, i) => vixByDate.set(r.date, i));
   const spyByDate = new Map(); spy.forEach((r, i) => spyByDate.set(r.date, i));
@@ -1057,6 +1108,29 @@ function renderHistoricalContext(history) {
 async function init() {
   const yearEl = document.getElementById('footerYear');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  // Update anywhere on the page that names the market we're tracking.
+  document.querySelectorAll('[data-market-label]').forEach(el => {
+    el.textContent = MC.label;
+  });
+  // Highlight the active tab in the market toggle (both dashboard + explainer pages)
+  document.querySelectorAll('[data-market-toggle]').forEach(el => {
+    el.classList.toggle('active', el.dataset.marketToggle === MARKET);
+  });
+
+  // When Nasdaq mode is active, decorate all internal links with ?market=nasdaq
+  // so the selection persists as the user navigates around.
+  if (MARKET === 'nasdaq') {
+    document.querySelectorAll('a[href]').forEach(a => {
+      const href = a.getAttribute('href');
+      if (!href) return;
+      if (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('#')) return;
+      if (a.dataset.marketToggle) return;      // toggle links manage their own market param
+      if (href.includes('market=')) return;    // already has one
+      const sep = href.includes('?') ? '&' : '?';
+      a.setAttribute('href', href + sep + 'market=nasdaq');
+    });
+  }
 
   // Only build the dashboard machinery if we're on the main page
   // (identified by the presence of the sentiment gauge SVG).

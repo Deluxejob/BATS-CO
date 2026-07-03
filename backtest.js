@@ -11,6 +11,16 @@ const BREADTH_LOOKBACK  = 20;
 
 const DATA_BASE = (typeof window !== 'undefined' && window.BATS_DATA_BASE) || 'data/';
 
+// Reuse the same MARKET_CONFIG defined in app.js. If for any reason app.js
+// didn't load first (unlikely — the script tags are ordered), fall back to
+// S&P 500 defaults so the backtest still runs.
+const BT_MARKET = (typeof MARKET !== 'undefined') ? MARKET : 'sp500';
+const BT_MC = (typeof MARKET_CONFIG !== 'undefined')
+  ? MARKET_CONFIG[BT_MARKET]
+  : { volCsv: 'vix.csv', volIsOHLC: true, breadthEqualCsv: 'rsp.csv',
+      breadthCapCsv: 'spy.csv', rsiCsv: 'spy.csv', indexCsv: 'spx.csv',
+      stockCsv: 'spy.csv' };
+
 async function fetchText(path) {
   const res = await fetch(path);
   if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`);
@@ -51,15 +61,15 @@ function bucketOf(score) {
 function avg(arr) { return arr.reduce((s, x) => s + x, 0) / arr.length; }
 
 // ============================================================
-// VIX BACKTEST
+// VIX BACKTEST (VIX for S&P, VXN for Nasdaq)
 // ============================================================
 async function runVixBacktest() {
-  const [vixText, spxText] = await Promise.all([
-    fetchText(DATA_BASE + 'vix.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+  const [volText, indexText] = await Promise.all([
+    fetchText(DATA_BASE + BT_MC.volCsv),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
-  const vix = parseVIX(vixText);
-  const spx = parseDateClose(spxText);
+  const vix = BT_MC.volIsOHLC ? parseVIX(volText) : parseDateClose(volText);
+  const spx = parseDateClose(indexText);
   const spxIdxByDate = new Map();
   spx.forEach((r, i) => spxIdxByDate.set(r.date, i));
 
@@ -90,9 +100,9 @@ async function runVixBacktest() {
 // ============================================================
 async function runBreadthBacktest() {
   const [rspText, spyText, spxText] = await Promise.all([
-    fetchText(DATA_BASE + 'rsp.csv'),
-    fetchText(DATA_BASE + 'spy.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + BT_MC.breadthEqualCsv),
+    fetchText(DATA_BASE + BT_MC.breadthCapCsv),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
   const rsp = parseDateClose(rspText);
   const spy = parseDateClose(spyText);
@@ -160,8 +170,8 @@ function computeRsiSeries(closes) {
 // ============================================================
 async function runRsiBacktest() {
   const [spyText, spxText] = await Promise.all([
-    fetchText(DATA_BASE + 'spy.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + BT_MC.rsiCsv),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
   const spy = parseDateClose(spyText);
   const spx = parseDateClose(spxText);
@@ -247,7 +257,7 @@ function aaiiOnOrBefore(aaiiRows, targetDate) {
 async function runNaaimBacktest() {
   const [naaimText, spxText] = await Promise.all([
     fetchText(DATA_BASE + 'naaim.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
   const naaim = parseNAAIM(naaimText);
   const spx = parseDateClose(spxText);
@@ -285,7 +295,7 @@ async function runNaaimBacktest() {
 async function runAaiiBacktest() {
   const [aaiiText, spxText] = await Promise.all([
     fetchText(DATA_BASE + 'aaii.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
   const aaii = parseAAII(aaiiText);
   const spx = parseDateClose(spxText);
@@ -323,7 +333,7 @@ async function runAaiiBacktest() {
 // SPX vs 200-day MA BACKTEST — distance from long-term trend
 // ============================================================
 async function runMa200Backtest() {
-  const spxText = await fetchText(DATA_BASE + 'spx.csv');
+  const spxText = await fetchText(DATA_BASE + BT_MC.indexCsv);
   const spx = parseDateClose(spxText);
   const sma200 = computeSmaSeriesBacktest(spx.map(r => r.close), SMA_PERIOD);
 
@@ -353,9 +363,9 @@ async function runMa200Backtest() {
 // ============================================================
 async function runSafeHavenBacktest() {
   const [spyText, tltText, spxText] = await Promise.all([
-    fetchText(DATA_BASE + 'spy.csv'),
+    fetchText(DATA_BASE + BT_MC.stockCsv),
     fetchText(DATA_BASE + 'tlt.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
   const spy = parseDateClose(spyText);
   const tlt = parseDateClose(tltText);
@@ -401,7 +411,7 @@ async function runJunkBacktest() {
   const [hygText, lqdText, spxText] = await Promise.all([
     fetchText(DATA_BASE + 'hyg.csv'),
     fetchText(DATA_BASE + 'lqd.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
   const hyg = parseDateClose(hygText);
   const lqd = parseDateClose(lqdText);
@@ -447,17 +457,17 @@ async function runJunkBacktest() {
 // ============================================================
 async function runBlendedBacktest() {
   const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText, naaimText, tltText] = await Promise.all([
-    fetchText(DATA_BASE + 'vix.csv'),
-    fetchText(DATA_BASE + 'rsp.csv'),
-    fetchText(DATA_BASE + 'spy.csv'),
-    fetchText(DATA_BASE + 'spx.csv'),
+    fetchText(DATA_BASE + BT_MC.volCsv),
+    fetchText(DATA_BASE + BT_MC.breadthEqualCsv),
+    fetchText(DATA_BASE + BT_MC.breadthCapCsv),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
     fetchText(DATA_BASE + 'hyg.csv'),
     fetchText(DATA_BASE + 'lqd.csv'),
     fetchText(DATA_BASE + 'aaii.csv'),
     fetchText(DATA_BASE + 'naaim.csv'),
     fetchText(DATA_BASE + 'tlt.csv'),
   ]);
-  const vix = parseVIX(vixText);
+  const vix = BT_MC.volIsOHLC ? parseVIX(vixText) : parseDateClose(vixText);
   const rsp = parseDateClose(rspText);
   const spy = parseDateClose(spyText);
   const spx = parseDateClose(spxText);

@@ -62,7 +62,11 @@
 
     <!-- THE BIG GAUGE — the BATS -->
     <section class="hero" id="gauge">
-      <p class="hero-eyebrow">Tracking the S&amp;P 500 &middot; Updated daily after market close</p>
+      <div class="market-toggle" role="tablist" aria-label="Choose market">
+        <a href="?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
+        <a href="?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
+      </div>
+      <p class="hero-eyebrow">Tracking the <span data-market-label>S&amp;P 500</span> &middot; Updated daily after market close</p>
       <div class="gauge-wrap">
         <svg viewBox="-24 -6 448 268" class="gauge" id="sentimentGauge" aria-label="Market sentiment gauge"></svg>
         <div class="gauge-readout">
