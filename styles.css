@@ -759,6 +759,32 @@ main.explainer .disclaimer {
   margin-top: 1rem;
 }
 
+/* Ticker chips on the concentration page */
+.ticker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .5rem;
+}
+.ticker-chip {
+  display: inline-block;
+  padding: .45rem .85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--accent);
+  letter-spacing: .04em;
+}
+
+/* pos/neg colouring shared by concentration + backtest tables */
+.backtest-table td.num.pos,
+.backtest-table td.num.pos strong { color: var(--bull); }
+.backtest-table td.num.neg,
+.backtest-table td.num.neg strong { color: var(--bear); }
+
 /* Back-to-dashboard button */
 .next-nav {
   display: flex;

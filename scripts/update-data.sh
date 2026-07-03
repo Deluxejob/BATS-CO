@@ -98,4 +98,11 @@ fetch_yahoo_daily "^NDX"  "$DATA_DIR/ndx.csv" "631152000"    # 1990-01-01
 fetch_yahoo_daily "QQQ"   "$DATA_DIR/qqq.csv" "920851200"    # 1999-03-10 (QQQ inception)
 fetch_yahoo_daily "QQEW"  "$DATA_DIR/qqew.csv" "1145404800"  # 2006-04-19 (QQEW inception)
 
+# Top-10 constituent tickers used on the Concentration page.
+mkdir -p "$DATA_DIR/top10"
+for sym in AAPL MSFT NVDA AMZN GOOGL META BRK-B TSLA LLY JPM AVGO COST NFLX; do
+  fname="$(echo "$sym" | tr 'A-Z' 'a-z').csv"
+  fetch_yahoo_daily "$sym" "$DATA_DIR/top10/$fname" "946684800"  # 2000-01-01
+done
+
 echo "Data refresh complete."

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Concentration — BATS.CO</title>
+  <meta name="description" content="Are the top 10 stocks dominating, or is the broader market winning? Historical return comparison across 1D, 1W, 1M, 1Q, 6M, 1Y for both the S&P 500 and Nasdaq 100." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <div class="market-toggle" role="tablist" aria-label="Choose market">
+      <a href="concentration.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
+      <a href="concentration.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="index.html#components">Components</a>
+      <a href="index.html#backtest">Backtest</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="markets.html">Markets</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">MARKET CONCENTRATION</p>
+      <h1>Top 10 stocks vs the rest — who's really driving the <span data-market-label>S&amp;P 500</span>?</h1>
+      <p class="lede">
+        The "Magnificent 7" trade of 2023&ndash;2024 taught investors an uncomfortable lesson:
+        a handful of megacaps can drag an entire index up (or down) while the average
+        stock does something completely different. This page shows exactly that split &mdash;
+        how the top 10 constituents are performing versus the equal-weighted broad market
+        across every relevant timeframe.
+      </p>
+    </section>
+
+    <section id="concentration">
+      <div class="section-head">
+        <h2>Returns across timeframes</h2>
+        <p>
+          Equal-weighted average return of today's top 10 constituents,
+          compared to the equal-weighted broad-market ETF. A large positive gap =
+          megacap dominance. A large negative gap = broadening rally.
+        </p>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="concentrationTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="concentrationMeta">Loading&hellip;</p>
+    </section>
+
+    <section id="tickers">
+      <div class="section-head">
+        <h2>The 10 tickers being tracked</h2>
+        <p>Today's top constituents by market cap. These change slowly over time &mdash; we use the current list for the entire historical window.</p>
+      </div>
+      <div class="ticker-chips" id="concentrationTickers"></div>
+    </section>
+
+    <section id="method">
+      <div class="section-head">
+        <h2>How to read this</h2>
+      </div>
+      <ol class="usage-list">
+        <li>
+          <strong>Gap is the story.</strong>
+          If Top 10 is beating the broad market (positive gap), the index rally is being
+          led by megacaps &mdash; a "narrow" market. If the broad market is beating the
+          top 10 (negative gap), participation is broadening &mdash; historically a
+          healthier setup.
+        </li>
+        <li>
+          <strong>Longer windows are less accurate.</strong>
+          We use today's top 10 for the entire lookback. Nvidia wasn't in the top 10
+          before 2023, and Meta hit the top 10 later than most. Over 1D, 1W, 1M, 1Q
+          this is fine; over 6M and 1Y it's approximately right; before that it drifts.
+        </li>
+        <li>
+          <strong>Cross-reference with the BATS.</strong>
+          When the top 10 vs broad gap is stretched (either direction), and the BATS
+          Breadth component is also flagging extremes, the concentration story is
+          especially strong.
+        </li>
+        <li>
+          <strong>Note the sector concentration.</strong>
+          The <span data-market-label>S&amp;P 500</span>'s top 10 is heavily tech.
+          When tech leads the index, this table shows a big positive gap; when
+          value/dividend stocks lead, the gap flips negative.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical
+        patterns are not guarantees. Always do your own research or talk to a
+        financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

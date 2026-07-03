@@ -65,6 +65,14 @@ const MARKET_CONFIG = {
 
 const MC = MARKET_CONFIG[MARKET];
 
+// Top 10 constituents by market cap (as of 2026). We use today's top 10 for
+// the whole historical window — introduces mild look-ahead bias at long
+// lookbacks but is accurate for what matters most (recent concentration).
+const TOP10_TICKERS = {
+  sp500:  ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'BRK-B', 'TSLA', 'LLY',  'JPM'],
+  nasdaq: ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA',  'AVGO', 'COST', 'NFLX'],
+};
+
 // ============================================================
 // INDICATOR SCORING
 // Each function below takes a raw market reading and returns a
@@ -1105,6 +1113,102 @@ function renderHistoricalContext(history) {
 }
 
 // ============================================================
+// CONCENTRATION PAGE — Top 10 constituents vs broad market
+// Renders only when the concentration.html page is loaded (detected by
+// presence of the #concentrationTable element).
+// ============================================================
+const CONC_WINDOWS = [
+  { key: 'd1',  days: 1,   label: '1 Day' },
+  { key: 'w1',  days: 5,   label: '1 Week' },
+  { key: 'm1',  days: 21,  label: '1 Month' },
+  { key: 'q1',  days: 63,  label: '1 Quarter' },
+  { key: 'm6',  days: 126, label: '6 Months' },
+  { key: 'y1',  days: 252, label: '1 Year' },
+];
+
+// Return over `days` trading days for a series of {date, close} rows.
+function returnOver(series, days) {
+  if (!series || series.length < days + 1) return null;
+  const last = series[series.length - 1].close;
+  const prior = series[series.length - 1 - days].close;
+  return (last / prior - 1) * 100;
+}
+
+async function renderConcentration() {
+  const table = document.getElementById('concentrationTable');
+  if (!table) return;
+
+  const tickers = TOP10_TICKERS[MARKET];
+  const broadCsv = MC.breadthEqualCsv;  // RSP or QQEW
+
+  // Fetch all 10 top tickers + the broad reference in parallel
+  const [broadText, ...topTexts] = await Promise.all([
+    fetchCSVText(APP_DATA_BASE + broadCsv),
+    ...tickers.map(t => fetchCSVText(APP_DATA_BASE + 'top10/' + t.toLowerCase() + '.csv')),
+  ]);
+  const broad = parseDateCloseLive(broadText);
+  const topSeries = topTexts.map(parseDateCloseLive);
+
+  const latestDate = broad[broad.length - 1].date;
+  const meta = document.getElementById('concentrationMeta');
+  if (meta) meta.textContent = `Latest close: ${latestDate}. Top 10 tickers used: ${tickers.join(', ')}.`;
+
+  // For each timeframe, compute top-10 equal-weighted avg and broad-market
+  const rows = CONC_WINDOWS.map(({ label, days }) => {
+    const topReturns = topSeries.map(s => returnOver(s, days)).filter(r => r != null);
+    const topAvg = topReturns.length === tickers.length
+      ? topReturns.reduce((sum, r) => sum + r, 0) / topReturns.length
+      : null;
+    const broadRet = returnOver(broad, days);
+    const gap = (topAvg != null && broadRet != null) ? topAvg - broadRet : null;
+    return { label, topAvg, broadRet, gap };
+  });
+
+  function fmt(x, digits = 2) {
+    if (x == null) return '<span class="text-dim">—</span>';
+    const s = x.toFixed(digits) + '%';
+    return x > 0 ? '+' + s : s;
+  }
+  function cls(x) {
+    if (x == null) return '';
+    if (x > 0) return 'pos';
+    if (x < 0) return 'neg';
+    return '';
+  }
+
+  const broadLabel = MARKET === 'nasdaq' ? 'QQEW (equal-weight Nasdaq 100)' : 'RSP (equal-weight S&P 500)';
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Timeframe</th>
+        <th class="num">Top 10 (equal-weight avg)</th>
+        <th class="num">${broadLabel}</th>
+        <th class="num">Gap (Top 10 − Broad)</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map(r => `
+        <tr>
+          <td><strong>${r.label}</strong></td>
+          <td class="num ${cls(r.topAvg)}">${fmt(r.topAvg)}</td>
+          <td class="num ${cls(r.broadRet)}">${fmt(r.broadRet)}</td>
+          <td class="num ${cls(r.gap)}"><strong>${fmt(r.gap)}</strong></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+
+  // Populate the ticker chip list
+  const chips = document.getElementById('concentrationTickers');
+  if (chips) {
+    chips.innerHTML = tickers.map(t =>
+      `<span class="ticker-chip">${t}</span>`
+    ).join('');
+  }
+}
+
+// ============================================================
 // INIT
 // ============================================================
 async function init() {
@@ -1161,4 +1265,11 @@ async function init() {
   setGauge(computeBatsScore());
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  renderConcentration().catch(err => {
+    console.warn('Concentration render failed:', err);
+    const meta = document.getElementById('concentrationMeta');
+    if (meta) meta.textContent = 'Could not load concentration data.';
+  });
+});
