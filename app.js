@@ -452,15 +452,6 @@ const COMPONENTS = [
     explainer: 'indicators/junk-bond-demand.html',
   },
   {
-    key: 'putcall',
-    name: 'Put/Call Ratio',
-    desc: 'Bets on stocks falling vs rising. High = bearish crowd = contrarian bullish. (Historical data source blocked; parked for now.)',
-    weight: 0,
-    status: 'soon',
-    signal: null,
-    value: '—',
-  },
-  {
     key: 'safehaven',
     name: 'Safe Haven Demand',
     desc: 'Stocks vs bonds, last 20 days. Bonds winning = nervous market.',
