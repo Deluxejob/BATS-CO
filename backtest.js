@@ -220,6 +220,18 @@ function parseAAII(text) {
   return rows;
 }
 
+// Parser for the weekly NAAIM CSV (Date,NAAIM).
+function parseNAAIM(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const v = parseFloat(parts[1]);
+    if (parts[0] && !isNaN(v)) rows.push({ date: parts[0], value: v });
+  }
+  return rows;
+}
+
 // Given a sorted-by-date AAII array, return the row whose date is the latest
 // one ≤ targetDate (i.e. the reading in effect on that day).
 function aaiiOnOrBefore(aaiiRows, targetDate) {
@@ -227,6 +239,43 @@ function aaiiOnOrBefore(aaiiRows, targetDate) {
     if (aaiiRows[i].date <= targetDate) return aaiiRows[i];
   }
   return null;
+}
+
+// ============================================================
+// NAAIM BACKTEST — weekly manager exposure vs SPX forward returns.
+// ============================================================
+async function runNaaimBacktest() {
+  const [naaimText, spxText] = await Promise.all([
+    fetchText(DATA_BASE + 'naaim.csv'),
+    fetchText(DATA_BASE + 'spx.csv'),
+  ]);
+  const naaim = parseNAAIM(naaimText);
+  const spx = parseDateClose(spxText);
+  const spxByDate = new Map();
+  spx.forEach((r, i) => spxByDate.set(r.date, i));
+
+  const trades = [];
+  for (const n of naaim) {
+    let xi = spxByDate.get(n.date);
+    if (xi == null) {
+      for (let i = 0; i < spx.length; i++) if (spx[i].date >= n.date) { xi = i; break; }
+    }
+    if (xi == null) continue;
+    const score = scoreNAAIM(n.value);
+    if (score == null) continue;
+    const spxNow = spx[xi].close;
+    const spx6   = spx[xi + TRADING_DAYS_6MO];
+    const spx12  = spx[xi + TRADING_DAYS_12MO];
+    trades.push({
+      date: n.date,
+      raw: n.value,
+      score,
+      bucket: bucketOf(score),
+      ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
+      ret12mo: spx12 ? (spx12.close / spxNow - 1) * 100 : null,
+    });
+  }
+  return summarize(trades);
 }
 
 // ============================================================
@@ -351,7 +400,7 @@ async function runJunkBacktest() {
 // are currently set in COMPONENTS (app.js). This is the actual product.
 // ============================================================
 async function runBlendedBacktest() {
-  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText] = await Promise.all([
+  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText, naaimText] = await Promise.all([
     fetchText(DATA_BASE + 'vix.csv'),
     fetchText(DATA_BASE + 'rsp.csv'),
     fetchText(DATA_BASE + 'spy.csv'),
@@ -359,6 +408,7 @@ async function runBlendedBacktest() {
     fetchText(DATA_BASE + 'hyg.csv'),
     fetchText(DATA_BASE + 'lqd.csv'),
     fetchText(DATA_BASE + 'aaii.csv'),
+    fetchText(DATA_BASE + 'naaim.csv'),
   ]);
   const vix = parseVIX(vixText);
   const rsp = parseDateClose(rspText);
@@ -367,6 +417,7 @@ async function runBlendedBacktest() {
   const hyg = parseDateClose(hygText);
   const lqd = parseDateClose(lqdText);
   const aaii = parseAAII(aaiiText);
+  const naaim = parseNAAIM(naaimText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
   const sma200 = computeSmaSeriesBacktest(spx.map(r => r.close), SMA_PERIOD);
 
@@ -387,12 +438,13 @@ async function runBlendedBacktest() {
   const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
   const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII;
+  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')       || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM;
   if (wTotal <= 0) throw new Error('No live weights configured');
 
-  // Rolling pointer for AAII carry-forward across the sequential trading-day
-  // iteration below (O(n) instead of O(n²)).
+  // Rolling pointers for the weekly-series carry-forward (O(n) instead of O(n²)).
   let aaiiPtr = -1;
+  let naaimPtr = -1;
 
   const trades = [];
   for (let i = BREADTH_LOOKBACK; i < rsp.length; i++) {
@@ -406,9 +458,10 @@ async function runBlendedBacktest() {
     if (hi == null || hi < BREADTH_LOOKBACK || li == null || li < BREADTH_LOOKBACK) continue;
     if (rsi[si] == null || sma200[xi] == null) continue;
 
-    // Advance AAII pointer to the most recent reading ≤ this trading day.
+    // Advance weekly-series pointers to the most recent reading ≤ this trading day.
     while (aaiiPtr + 1 < aaii.length && aaii[aaiiPtr + 1].date <= d) aaiiPtr++;
-    if (aaiiPtr < 0) continue;
+    while (naaimPtr + 1 < naaim.length && naaim[naaimPtr + 1].date <= d) naaimPtr++;
+    if (aaiiPtr < 0 || naaimPtr < 0) continue;
 
     const rspRet = (rsp[i].close / rsp[i - BREADTH_LOOKBACK].close - 1) * 100;
     const spyRet = (spy[si].close / spy[si - BREADTH_LOOKBACK].close - 1) * 100;
@@ -418,6 +471,7 @@ async function runBlendedBacktest() {
     const junkSpread = hygRet - lqdRet;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const aaiiSpread = aaii[aaiiPtr].spread;
+    const naaimVal = naaim[naaimPtr].value;
 
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
@@ -425,9 +479,10 @@ async function runBlendedBacktest() {
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
     const as_ = scoreAAII(aaiiSpread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null) continue;
+    const ns = scoreNAAIM(naaimVal);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -574,6 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
                : kind === 'junk'    ? runJunkBacktest
                : kind === 'ma200'   ? runMa200Backtest
                : kind === 'aaii'    ? runAaiiBacktest
+               : kind === 'naaim'   ? runNaaimBacktest
                : kind === 'blended' ? runBlendedBacktest
                : runVixBacktest;
   runner()

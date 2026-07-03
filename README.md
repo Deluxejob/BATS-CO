@@ -14,12 +14,13 @@ Live at **[bats.co](https://bats.co)**.
 
 | Component | Weight | Direction | Data source |
 |---|---|---|---|
-| VIX | 35% | Contrarian: high fear = buying opportunity | datasets/finance-vix |
+| VIX | 30% | Contrarian: high fear = buying opportunity | datasets/finance-vix |
 | Market Breadth (RSP/SPY spread) | 25% | Confirmatory: broad participation is bullish | Yahoo Finance `RSP`, `SPY` |
 | S&P vs 200-day MA | 10% | State: far below = buy zone; far above = strong trend | Computed from Yahoo `^GSPC` |
 | Junk Bond Demand (HYG/LQD spread) | 10% | Confirmatory: risk-on credit = bullish | Yahoo Finance `HYG`, `LQD` |
 | AAII Retail Sentiment (Bull−Bear) | 10% | Contrarian: retail extremes are wrong | AAII.com via Wayback Machine (weekly) |
 | SPY 14-day RSI | 10% | Contrarian: extreme momentum reverts | Computed from Yahoo `SPY` closes |
+| NAAIM Manager Exposure | 5% | State: low exposure = pros defensive = buy zone | naaim.org (weekly) |
 
 ## Files
 

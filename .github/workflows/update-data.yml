@@ -36,11 +36,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install xlrd for parsing the AAII XLS
-        run: pip install --quiet xlrd
+      - name: Install xlrd + openpyxl for parsing AAII / NAAIM
+        run: pip install --quiet xlrd openpyxl
 
       - name: Refresh AAII (weekly — tolerant of no-new-data)
         run: python scripts/update-aaii.py
+
+      - name: Refresh NAAIM (weekly — tolerant of no-new-data)
+        run: python scripts/update-naaim.py
 
       - name: Commit and push if anything changed
         run: |

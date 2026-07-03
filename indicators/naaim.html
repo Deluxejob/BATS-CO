@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAAIM Manager Exposure — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO uses the NAAIM Exposure Index — the institutional sister to AAII — to measure active-manager positioning." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <img src="/logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../index.html#components">Components</a>
+      <a href="../index.html#backtest">Backtest</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #07</p>
+      <h1>NAAIM Manager Exposure &mdash; what the pros are actually doing</h1>
+      <p class="lede">
+        Every Wednesday, the National Association of Active Investment Managers
+        polls its members and asks a simple question: <em>how much equity exposure
+        do you currently hold?</em> The answers reveal what the professionals are
+        <strong>doing</strong> &mdash; not what they're saying.
+      </p>
+    </section>
+
+    <section id="whatis">
+      <h2>What is the NAAIM Exposure Index?</h2>
+      <p>
+        NAAIM is the institutional sister to the AAII retail sentiment survey.
+        Where AAII asks retail investors what they <em>think</em>, NAAIM asks
+        professional active investment managers what they've <em>done</em> with
+        their portfolios. Members report their current equity exposure on a
+        &minus;200% to +200% scale (leveraged short to leveraged long).
+      </p>
+      <p>
+        The <strong>NAAIM Number</strong> is the aggregate mean across all respondents.
+        It's published every Wednesday, with data going back to July 2006.
+      </p>
+      <div class="key-thresholds card">
+        <h3>Historical distribution (2006&ndash;2026)</h3>
+        <ul>
+          <li><span class="range">Median</span> 72 (managers typically sit ~72% long &mdash; structurally bullish)</li>
+          <li><span class="range">10th pct</span> 32 (unusually cautious)</li>
+          <li><span class="range">90th pct</span> 94 (heavily long)</li>
+          <li><span class="range">Extreme low</span> ≤ 10 (defensive / rare)</li>
+          <li><span class="range">Extreme high</span> &gt; 100 (leveraged long / rare)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses NAAIM</h2>
+      <p>
+        Same direction convention as AAII: <strong>low NAAIM → LOW BATS</strong>
+        (managers defensive = oversold market state); <strong>high NAAIM → HIGH BATS</strong>
+        (managers all in = bullish market state). Piecewise linear scoring, centered
+        loosely around the historical median of ~72.
+      </p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>NAAIM Number</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>&le; 10</td><td class="num">5</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold</td></tr>
+            <tr><td>10 &ndash; 35</td><td class="num">5 &ndash; 25</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Oversold</td></tr>
+            <tr><td>35 &ndash; 60</td><td class="num">25 &ndash; 50</td><td><span class="bucket-dot" style="background:var(--s2)"></span>Slightly Bearish &rarr; Neutral</td></tr>
+            <tr><td>60 &ndash; 85</td><td class="num">50 &ndash; 75</td><td><span class="bucket-dot" style="background:var(--s4)"></span>Neutral &rarr; Slightly Bullish</td></tr>
+            <tr><td>85 &ndash; 100</td><td class="num">75 &ndash; 90</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish</td></tr>
+            <tr><td>&gt; 100</td><td class="num">95</td><td><span class="bucket-dot" style="background:var(--s6)"></span>Very Bullish</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="disclaimer" style="margin-top:1rem">
+        <strong>Note:</strong> NAAIM is a <em>weekly</em> reading. The BATS dashboard
+        carries the most recent one forward until a new one arrives each Wednesday.
+      </p>
+    </section>
+
+    <section id="backtest" class="backtest">
+      <div class="section-head">
+        <h2>Does it work? &mdash; Historical backtest (2006&ndash;2026)</h2>
+        <p>
+          For every weekly NAAIM reading, we compute the NAAIM component of the
+          BATS and measure how the S&P 500 actually performed 6 and 12 months
+          later. 1,000+ readings across nearly two decades.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>Three findings from the 20-year NAAIM backtest &mdash; and one is a genuine surprise:</p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>When pros go defensive, buy.</h3>
+          <p>
+            When NAAIM dropped to 35 or below (professional managers pulling back
+            to defensive positioning), the S&P 500 was up an average of
+            <strong>+13.3%</strong> over the next 12 months, positive
+            <strong>83%</strong> of the time (n=96 readings). At the more extreme
+            &le;10 bucket, +13.6% and 75% positive.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Institutional caution has been a reliable
+            contrarian buy signal &mdash; just like retail bearishness in AAII.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">2</div>
+          <h3>Pros ride trends &mdash; unlike retail.</h3>
+          <p>
+            When NAAIM went above 100 (managers using leverage on the long side),
+            forward 12-month returns were still <strong>+11.9%</strong> and
+            <strong>82%</strong> positive (n=89). This is the opposite of
+            AAII's Very Bullish bucket, which delivered only +4.5% at retail
+            euphoria.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Institutions ride trends better than
+            retail. High professional exposure is <em>not</em> automatically
+            a warning sign.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">3</div>
+          <h3>Retail + institutional = a fuller picture.</h3>
+          <p>
+            AAII and NAAIM agree on the "buy when defensive" side but disagree
+            on the "sell when euphoric" side. Combined, they give us two
+            independent confirmations of oversold sentiment, and let us
+            distinguish "everyone's bullish" (retail euphoria = warning) from
+            "professionals are long" (trend-following = fine).
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Two sentiment surveys from different
+            crowds are much more informative than one.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>Watch the low end.</strong>
+          When professional managers drop their exposure below 35, history
+          says the odds strongly favor patient buyers over the next 6&ndash;12 months.
+        </li>
+        <li>
+          <strong>Don't fade the pros just because they're long.</strong>
+          Unlike retail, high institutional exposure hasn't historically preceded
+          weak returns. Managers get paid to be right about trends &mdash; and often are.
+        </li>
+        <li>
+          <strong>Compare NAAIM to AAII.</strong>
+          When institutions and retail both go defensive at the same time, the
+          contrarian setup is unusually strong. When they disagree, the
+          institutional reading has generally been the more reliable one.
+        </li>
+        <li>
+          <strong>Weekly cadence &mdash; slow updates.</strong>
+          NAAIM publishes each Wednesday. The BATS dashboard shows the most
+          recent one and holds it steady between updates.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns
+        are not guarantees. Always do your own research or talk to a financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = '../data/';
+    window.BATS_BACKTEST_KIND = 'naaim';
+  </script>
+  <script src="../app.js"></script>
+  <script src="../backtest.js"></script>
+</body>
+</html>

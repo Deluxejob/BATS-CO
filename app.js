@@ -98,6 +98,52 @@ function rsiAdvisory(rsi) {
   return                { tone: 'opportunity', text: 'Extremely oversold. Very strong contrarian buy signal historically (+25% avg forward 12mo, 100% positive in 11 historical instances). Rare but potent.' };
 }
 
+// ---- NAAIM Exposure Index — professional active-manager positioning ----
+//
+// The National Association of Active Investment Managers polls its members
+// each Wednesday: what's your current equity exposure? Responses range from
+// -200% (fully leveraged short) to +200% (fully leveraged long). The aggregate
+// mean is the "NAAIM Number." Institutional sister to AAII, published since 2006.
+//
+// Direction of BATS mapping — same as market state:
+//   Managers heavily long (high NAAIM)  -> HIGH BATS (market in confident state)
+//   Managers defensive  (low NAAIM)    -> LOW BATS (oversold state, historically buy zone)
+//
+// Distribution 2006-2026 (1,043 weekly readings): min -3.6, 10th 32, median 72,
+// mean 67, 90th 94, max 121. Managers typically sit around 70% long — the
+// median reflects their structural bullish bias.
+//
+// Backtest 2006-2026:
+//   Very Oversold (NAAIM ≤ 10, managers defensive): +13.6% avg 12mo, 75% hit
+//   Oversold      (NAAIM 10-35):                    +13.3% avg 12mo, 83% hit
+//   Very Bullish  (NAAIM > 100, leveraged long):    +11.9% avg 12mo, 82% hit
+// Unlike AAII, NAAIM's Very Bullish extreme is NOT punished — institutions
+// ride trends better than retail. But the "buy when defensive" side matches
+// AAII, giving us TWO independent institutional/retail confirmations at oversold.
+//
+// Weekly data — dashboard carries the most recent reading forward.
+function scoreNAAIM(v) {
+  if (v == null || isNaN(v)) return null;
+  let s;
+  if (v <= 10)       s = 5;
+  else if (v <= 35)  s = 5  + (v - 10) * (25 - 5)  / 25;
+  else if (v <= 60)  s = 25 + (v - 35) * (50 - 25) / 25;
+  else if (v <= 85)  s = 50 + (v - 60) * (75 - 50) / 25;
+  else if (v <= 100) s = 75 + (v - 85) * (90 - 75) / 15;
+  else               s = 95;
+  return Math.max(2, Math.min(98, s));
+}
+
+function naaimAdvisory(v) {
+  if (v == null || isNaN(v)) return null;
+  if (v <= 10)  return { tone: 'opportunity', text: 'Active managers deeply defensive — historically a bullish setup. Forward 12mo returns have averaged +13.6% from this rare zone (75% positive).' };
+  if (v <= 35)  return { tone: 'opportunity', text: 'Active managers unusually cautious. Historically a contrarian buy zone: +13.3% avg forward 12mo (83% positive).' };
+  if (v <= 55)  return { tone: 'info',        text: 'Managers moderately defensive — below their long-term average of ~70%.' };
+  if (v <= 80)  return { tone: 'info',        text: 'Manager exposure near its long-term average — neutral positioning.' };
+  if (v <= 100) return { tone: 'info',        text: 'Managers solidly long — comfortable but not maxed out.' };
+  return                { tone: 'info',        text: 'Managers using leverage on the long side — historically NOT a warning (institutions ride trends better than retail). Forward 12mo returns have averaged +12% from this zone.' };
+}
+
 // ---- AAII Investor Sentiment Survey — Bull-Bear Spread ----
 //
 // AAII (American Association of Individual Investors) has run a weekly survey
@@ -325,7 +371,7 @@ const COMPONENTS = [
     key: 'vix',
     name: 'VIX (Volatility)',
     desc: 'The "fear gauge." Contrarian: high VIX often means a buying opportunity; low VIX means complacency.',
-    weight: 35,
+    weight: 30,
     status: 'live',
     raw: 22.5,
     value: '22.5 (demo)',
@@ -380,6 +426,18 @@ const COMPONENTS = [
     signal: scoreAAII(0),
     advisory: aaiiAdvisory(0),
     explainer: 'indicators/aaii.html',
+  },
+  {
+    key: 'naaim',
+    name: 'NAAIM Manager Exposure',
+    desc: 'Weekly survey of active investment managers — how much equity exposure they hold. Institutional sister to AAII. Low readings = defensive = historically buy zone.',
+    weight: 5,
+    status: 'live',
+    raw: 0,
+    value: '0 (loading)',
+    signal: scoreNAAIM(0),
+    advisory: naaimAdvisory(0),
+    explainer: 'indicators/naaim.html',
   },
   {
     key: 'junk_demand',
@@ -711,6 +769,25 @@ function parseAAIILive(text) {
   return rows;
 }
 
+// NAAIM: Date,NAAIM (weekly, since 2006). Two-column simple CSV.
+function parseNAAIMLive(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const v = parseFloat(parts[1]);
+    if (parts[0] && !isNaN(v)) rows.push({ date: parts[0], value: v });
+  }
+  return rows;
+}
+
+function findNaaimOnOrBefore(naaimRows, targetDate) {
+  for (let i = naaimRows.length - 1; i >= 0; i--) {
+    if (naaimRows[i].date <= targetDate) return naaimRows[i];
+  }
+  return null;
+}
+
 // Find the most recent AAII reading on or before `targetDate` (YYYY-MM-DD).
 // AAII rows are chronologically sorted, so walk from the end.
 function findAaiiOnOrBefore(aaiiRows, targetDate) {
@@ -744,7 +821,7 @@ function computeRsiSeriesLive(closes, period = 14) {
 }
 
 async function loadLiveData() {
-  const [vixText, rspText, spyText, hygText, lqdText, spxText, aaiiText] = await Promise.all([
+  const [vixText, rspText, spyText, hygText, lqdText, spxText, aaiiText, naaimText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + 'vix.csv'),
     fetchCSVText(APP_DATA_BASE + 'rsp.csv'),
     fetchCSVText(APP_DATA_BASE + 'spy.csv'),
@@ -752,6 +829,7 @@ async function loadLiveData() {
     fetchCSVText(APP_DATA_BASE + 'lqd.csv'),
     fetchCSVText(APP_DATA_BASE + 'spx.csv'),
     fetchCSVText(APP_DATA_BASE + 'aaii.csv'),
+    fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
   ]);
   const vix = parseVIXLive(vixText);
   const rsp = parseDateCloseLive(rspText);
@@ -760,6 +838,7 @@ async function loadLiveData() {
   const lqd = parseDateCloseLive(lqdText);
   const spx = parseDateCloseLive(spxText);
   const aaii = parseAAIILive(aaiiText);
+  const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));
   const sma200 = computeSmaSeries(spx.map(r => r.close), 200);
 
@@ -775,7 +854,8 @@ async function loadLiveData() {
   const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
   const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII;
+  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')       || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -790,6 +870,8 @@ async function loadLiveData() {
     if (xi == null || sma200[xi] == null) return null;
     const aaiiRec = findAaiiOnOrBefore(aaii, d);
     if (!aaiiRec) return null;
+    const naaimRec = findNaaimOnOrBefore(naaim, d);
+    if (!naaimRec) return null;
     const rspRet = (rsp[rspRowIdx].close / rsp[rspRowIdx - 20].close - 1) * 100;
     const spyRet = (spy[si].close        / spy[si - 20].close        - 1) * 100;
     const spread = rspRet - spyRet;
@@ -803,7 +885,8 @@ async function loadLiveData() {
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
     const as_ = scoreAAII(aaiiRec.spread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || wTotal <= 0) return null;
+    const ns = scoreNAAIM(naaimRec.value);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -813,8 +896,10 @@ async function loadLiveData() {
       ma200Dist,
       aaiiSpread: aaiiRec.spread,
       aaiiDate: aaiiRec.date,
-      vs, bs, rs, js, ms, as_,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII) / wTotal,
+      naaimValue: naaimRec.value,
+      naaimDate: naaimRec.date,
+      vs, bs, rs, js, ms, as_, ns,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM) / wTotal,
     };
   }
 
@@ -885,6 +970,13 @@ function updateComponentsWithLatest(current) {
     aaiiComp.value = `${sign}${current.aaiiSpread.toFixed(1)}% (${current.aaiiDate})`;
     aaiiComp.signal = current.as_;
     aaiiComp.advisory = aaiiAdvisory(current.aaiiSpread);
+  }
+  const naaimComp = COMPONENTS.find(c => c.key === 'naaim');
+  if (naaimComp) {
+    naaimComp.raw = current.naaimValue;
+    naaimComp.value = `${current.naaimValue.toFixed(1)} (${current.naaimDate})`;
+    naaimComp.signal = current.ns;
+    naaimComp.advisory = naaimAdvisory(current.naaimValue);
   }
 }
 
