@@ -39,7 +39,10 @@
       "Bash(curl -sSL \"https://bats-co.vercel.app/index.html\")",
       "Bash(git add *)",
       "Bash(git commit -m 'Add Junk Bond Demand as 4th component \\(HYG/LQD 20-day spread\\) *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(rm -f scratch_naaim.xlsx)",
+      "Bash(git rm *)",
+      "Bash(git commit *)"
     ]
   }
 }
