@@ -50,7 +50,7 @@ const BUCKETS = [
   },
   {
     label: 'Bullish',
-    action: 'Hold, but be careful',
+    action: 'Hold, But Be Careful',
     subtitle: 'Above baseline: +11.6% avg 12mo, 88% positive. Trend has been strong — watch for stretching.',
     color: 'var(--s5)',
     min: 65,
@@ -658,20 +658,16 @@ function buildGauge() {
   const svg = document.getElementById('sentimentGauge');
   if (!svg) return;
 
-  const totalDeg = 180; // semicircle
-  const gapDeg = GAUGE.segmentGap;
-  const totalGapDeg = gapDeg * (BUCKETS.length - 1);
-  const arcDeg = totalDeg - totalGapDeg;   // space available for the colored arcs
+  const totalDeg = 180;
+  const gap = GAUGE.segmentGap;
+  const segDeg = (totalDeg - gap * (BUCKETS.length - 1)) / BUCKETS.length;
 
-  // Each arc's angular width = its share of the 0-100 score range * arcDeg.
-  // Extended (72-100) is a wide band because it spans a wide score range —
-  // this visually communicates that scores can go there in theory but rarely do.
+  // Equal-width arcs — one for each bucket, visually uniform. The needle
+  // position math (see scoreToGaugeAngle) uses piecewise interpolation
+  // so a score inside a given bucket always lands in that bucket's arc,
+  // regardless of the bucket's underlying score range.
   let cursor = 180;
   BUCKETS.forEach((bucket, i) => {
-    const nextMin = (i < BUCKETS.length - 1) ? BUCKETS[i + 1].min : 100;
-    const bucketScoreWidth = nextMin - bucket.min;
-    const segDeg = arcDeg * (bucketScoreWidth / 100);
-
     const segStart = cursor;
     const segEnd = cursor - segDeg;
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -679,15 +675,17 @@ function buildGauge() {
     path.setAttribute('fill', bucket.color);
     path.setAttribute('data-bucket', i);
     svg.appendChild(path);
-    cursor = segEnd - gapDeg;
+    cursor = segEnd - gap;
   });
 
   // Speedometer-style tick marks + numeric labels around the outside.
-  // Major labels at 0/25/50/75/100 (quartiles). Minor tick marks every 10.
-  const MAJOR_TICKS = [0, 25, 50, 75, 100];
-  const MINOR_TICKS = [10, 20, 30, 40, 60, 70, 80, 90];
+  // Values chosen to land exactly at the bucket-boundary arc positions under
+  // the piecewise score→angle mapping — so ticks always line up with the
+  // color-band transitions on the gauge.
+  const MAJOR_TICKS = [0, 45, 65, 100];         // start / Neutral / Bullish / max
+  const MINOR_TICKS = [15, 30, 57, 72];         // other bucket boundaries
 
-  function tickAngle(v) { return 180 - (v / 100) * 180; }
+  function tickAngle(v) { return scoreToGaugeAngle(v); }
 
   function drawTick(v, len, strokeWidth) {
     const a = tickAngle(v);
@@ -747,10 +745,25 @@ function buildGauge() {
   svg.appendChild(pivot);
 }
 
+// Map a BATS score (0-100) to the math angle on the gauge arc.
+// PIECEWISE: each bucket owns an equal 1/7 slice of the arc, so a score
+// inside bucket N always points somewhere inside that bucket's colored arc.
+// Progress within a bucket is linear (score → arc angle) within its slice.
+function scoreToGaugeAngle(score) {
+  const s = Math.max(0, Math.min(100, score));
+  const bIdx = bucketIndexFor(s);
+  const b = BUCKETS[bIdx];
+  const nextMin = (bIdx < BUCKETS.length - 1) ? BUCKETS[bIdx + 1].min : 100;
+  const bucketScoreWidth = nextMin - b.min;
+  const progress = bucketScoreWidth > 0 ? (s - b.min) / bucketScoreWidth : 0;
+  const arcPerBucket = 180 / BUCKETS.length;
+  return 180 - bIdx * arcPerBucket - progress * arcPerBucket;
+}
+
 // Move needle to a 0-100 value
 function setGauge(value) {
   const v = Math.max(0, Math.min(100, value));
-  const targetMathDeg = 180 - (v / 100) * 180;
+  const targetMathDeg = scoreToGaugeAngle(v);
   const rotateBy = 90 - targetMathDeg;
   const needle = document.getElementById('gaugeNeedle');
   if (needle) needle.style.transform = `rotate(${rotateBy}deg)`;
