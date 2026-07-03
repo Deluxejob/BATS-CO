@@ -248,6 +248,42 @@ function computeSmaSeries(closes, period = 200) {
   return sma;
 }
 
+// ---- Safe Haven Demand — SPY vs TLT 20-day return spread ----
+//
+// When investors get scared, they rotate out of stocks (SPY) and into
+// long-duration Treasuries (TLT — 20+ Year Treasury Bond ETF). When
+// they're greedy, they do the opposite. This is the classic CNN Fear &
+// Greed "Safe Haven Demand" component: are stocks or bonds winning?
+//
+// CONFIRMATORY (like Breadth, Junk):
+//   Positive spread (stocks beating bonds) -> risk-on -> HIGH BATS
+//   Negative spread (bonds beating stocks) -> flight to safety -> LOW BATS
+//
+// Distribution 2003-2026 (5,811 days): median +1.3%, 90th ±7.5%, extremes ±40%.
+// Slightly wider tails than Breadth (stocks and bonds decouple more than
+// two stock ETFs do), so we use a gentler slope: score = 50 + spread * 5.
+//
+// Backtest 2003-2026:
+//   Very Oversold (spread ≤ -9%, deep flight to safety): +13.8% avg 12mo, 81% hit (n=485)
+//   Very Bullish  (spread ≥ +9%, extreme risk-on):       +13.1% avg 12mo, 84% hit (n=649)
+// Clean smile — both extremes above +10% baseline.
+function scoreSafeHaven(spread) {
+  if (spread == null || isNaN(spread)) return null;
+  const score = 50 + spread * 5;
+  return Math.max(5, Math.min(95, score));
+}
+
+function safeHavenAdvisory(spread) {
+  if (spread == null || isNaN(spread)) return null;
+  if (spread <= -9)    return { tone: 'opportunity', text: 'Deep flight to safety — bonds crushing stocks. Historically a strong contrarian buy signal (+14% avg forward 12mo, 81% positive).' };
+  if (spread <= -3)    return { tone: 'watch',       text: 'Investors rotating into bonds — cautious risk-off tone. Bearish confirmation but forward returns still solid.' };
+  if (spread <= -0.5)  return { tone: 'info',        text: 'Mildly risk-off — bonds slightly outperforming stocks.' };
+  if (spread <   3)    return { tone: 'info',        text: 'Balanced — stocks and bonds moving in step.' };
+  if (spread <   6)    return { tone: 'info',        text: 'Stocks outperforming bonds — healthy risk-on tone.' };
+  if (spread <   9)    return { tone: 'info',        text: 'Broad risk-on — stocks clearly beating bonds. Bullish confirmation.' };
+  return                      { tone: 'info',        text: 'Extreme risk-on — stocks demolishing bonds. Historically strong bullish confirmation (+13% avg forward 12mo, 84% positive).' };
+}
+
 // ---- Junk Bond Demand — HYG/LQD 20-day spread ----
 //
 // Measures the credit market's risk appetite. HYG holds high-yield ("junk")
@@ -371,7 +407,7 @@ const COMPONENTS = [
     key: 'vix',
     name: 'VIX (Volatility)',
     desc: 'The "fear gauge." Contrarian: high VIX often means a buying opportunity; low VIX means complacency.',
-    weight: 30,
+    weight: 25,
     status: 'live',
     raw: 22.5,
     value: '22.5 (demo)',
@@ -454,11 +490,14 @@ const COMPONENTS = [
   {
     key: 'safehaven',
     name: 'Safe Haven Demand',
-    desc: 'Stocks vs bonds, last 20 days. Bonds winning = nervous market.',
-    weight: 0,
-    status: 'soon',
-    signal: null,
-    value: '—',
+    desc: 'Stocks vs 20+ year Treasuries (SPY − TLT 20-day return). Confirmatory: risk-on = bullish; flight to safety = bearish.',
+    weight: 5,
+    status: 'live',
+    raw: 0,
+    value: '0.00% (loading)',
+    signal: scoreSafeHaven(0),
+    advisory: safeHavenAdvisory(0),
+    explainer: 'indicators/safe-haven.html',
   },
 ];
 
@@ -812,7 +851,7 @@ function computeRsiSeriesLive(closes, period = 14) {
 }
 
 async function loadLiveData() {
-  const [vixText, rspText, spyText, hygText, lqdText, spxText, aaiiText, naaimText] = await Promise.all([
+  const [vixText, rspText, spyText, hygText, lqdText, spxText, aaiiText, naaimText, tltText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + 'vix.csv'),
     fetchCSVText(APP_DATA_BASE + 'rsp.csv'),
     fetchCSVText(APP_DATA_BASE + 'spy.csv'),
@@ -821,6 +860,7 @@ async function loadLiveData() {
     fetchCSVText(APP_DATA_BASE + 'spx.csv'),
     fetchCSVText(APP_DATA_BASE + 'aaii.csv'),
     fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
+    fetchCSVText(APP_DATA_BASE + 'tlt.csv'),
   ]);
   const vix = parseVIXLive(vixText);
   const rsp = parseDateCloseLive(rspText);
@@ -828,6 +868,7 @@ async function loadLiveData() {
   const hyg = parseDateCloseLive(hygText);
   const lqd = parseDateCloseLive(lqdText);
   const spx = parseDateCloseLive(spxText);
+  const tlt = parseDateCloseLive(tltText);
   const aaii = parseAAIILive(aaiiText);
   const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));
@@ -838,6 +879,7 @@ async function loadLiveData() {
   const hygByDate = new Map(); hyg.forEach((r, i) => hygByDate.set(r.date, i));
   const lqdByDate = new Map(); lqd.forEach((r, i) => lqdByDate.set(r.date, i));
   const spxByDate = new Map(); spx.forEach((r, i) => spxByDate.set(r.date, i));
+  const tltByDate = new Map(); tlt.forEach((r, i) => tltByDate.set(r.date, i));
 
   const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
   const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
@@ -846,7 +888,8 @@ async function loadLiveData() {
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
   const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
   const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')       || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM;
+  const wSafe    = (COMPONENTS.find(c => c.key === 'safehaven')   || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSafe;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -856,8 +899,10 @@ async function loadLiveData() {
     const hi = hygByDate.get(d);
     const li = lqdByDate.get(d);
     const xi = spxByDate.get(d);
+    const ti = tltByDate.get(d);
     if (si == null || si < 20 || vi == null || rsi[si] == null) return null;
     if (hi == null || hi < 20 || li == null || li < 20) return null;
+    if (ti == null || ti < 20) return null;
     if (xi == null || sma200[xi] == null) return null;
     const aaiiRec = findAaiiOnOrBefore(aaii, d);
     if (!aaiiRec) return null;
@@ -869,6 +914,8 @@ async function loadLiveData() {
     const hygRet = (hyg[hi].close        / hyg[hi - 20].close        - 1) * 100;
     const lqdRet = (lqd[li].close        / lqd[li - 20].close        - 1) * 100;
     const junkSpread = hygRet - lqdRet;
+    const tltRet = (tlt[ti].close        / tlt[ti - 20].close        - 1) * 100;
+    const safeSpread = spyRet - tltRet;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
@@ -877,7 +924,8 @@ async function loadLiveData() {
     const ms = scoreMA200(ma200Dist);
     const as_ = scoreAAII(aaiiRec.spread);
     const ns = scoreNAAIM(naaimRec.value);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || wTotal <= 0) return null;
+    const shs = scoreSafeHaven(safeSpread);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || shs == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -889,8 +937,9 @@ async function loadLiveData() {
       aaiiDate: aaiiRec.date,
       naaimValue: naaimRec.value,
       naaimDate: naaimRec.date,
-      vs, bs, rs, js, ms, as_, ns,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM) / wTotal,
+      safeSpread,
+      vs, bs, rs, js, ms, as_, ns, shs,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + shs * wSafe) / wTotal,
     };
   }
 
@@ -968,6 +1017,14 @@ function updateComponentsWithLatest(current) {
     naaimComp.value = `${current.naaimValue.toFixed(1)} (${current.naaimDate})`;
     naaimComp.signal = current.ns;
     naaimComp.advisory = naaimAdvisory(current.naaimValue);
+  }
+  const safeComp = COMPONENTS.find(c => c.key === 'safehaven');
+  if (safeComp) {
+    safeComp.raw = current.safeSpread;
+    const sign = current.safeSpread >= 0 ? '+' : '';
+    safeComp.value = `${sign}${current.safeSpread.toFixed(2)}%`;
+    safeComp.signal = current.shs;
+    safeComp.advisory = safeHavenAdvisory(current.safeSpread);
   }
 }
 

@@ -349,6 +349,52 @@ async function runMa200Backtest() {
 }
 
 // ============================================================
+// SAFE HAVEN DEMAND BACKTEST — SPY - TLT 20-day return spread
+// ============================================================
+async function runSafeHavenBacktest() {
+  const [spyText, tltText, spxText] = await Promise.all([
+    fetchText(DATA_BASE + 'spy.csv'),
+    fetchText(DATA_BASE + 'tlt.csv'),
+    fetchText(DATA_BASE + 'spx.csv'),
+  ]);
+  const spy = parseDateClose(spyText);
+  const tlt = parseDateClose(tltText);
+  const spx = parseDateClose(spxText);
+
+  const tltByDate = new Map();
+  tlt.forEach((r, i) => tltByDate.set(r.date, i));
+  const spxByDate = new Map();
+  spx.forEach((r, i) => spxByDate.set(r.date, i));
+
+  const trades = [];
+  for (let i = BREADTH_LOOKBACK; i < spy.length; i++) {
+    const d = spy[i].date;
+    const ti = tltByDate.get(d);
+    const xi = spxByDate.get(d);
+    if (ti == null || ti < BREADTH_LOOKBACK || xi == null) continue;
+
+    const spyRet = (spy[i].close  / spy[i - BREADTH_LOOKBACK].close  - 1) * 100;
+    const tltRet = (tlt[ti].close / tlt[ti - BREADTH_LOOKBACK].close - 1) * 100;
+    const spread = spyRet - tltRet;
+    const score  = scoreSafeHaven(spread);
+    if (score == null) continue;
+
+    const spxNow = spx[xi].close;
+    const spx6   = spx[xi + TRADING_DAYS_6MO];
+    const spx12  = spx[xi + TRADING_DAYS_12MO];
+    trades.push({
+      date: d,
+      raw: spread,
+      score,
+      bucket: bucketOf(score),
+      ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
+      ret12mo: spx12 ? (spx12.close / spxNow - 1) * 100 : null,
+    });
+  }
+  return summarize(trades);
+}
+
+// ============================================================
 // JUNK BOND DEMAND BACKTEST — HYG - LQD 20-day return spread
 // ============================================================
 async function runJunkBacktest() {
@@ -400,7 +446,7 @@ async function runJunkBacktest() {
 // are currently set in COMPONENTS (app.js). This is the actual product.
 // ============================================================
 async function runBlendedBacktest() {
-  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText, naaimText] = await Promise.all([
+  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText, naaimText, tltText] = await Promise.all([
     fetchText(DATA_BASE + 'vix.csv'),
     fetchText(DATA_BASE + 'rsp.csv'),
     fetchText(DATA_BASE + 'spy.csv'),
@@ -409,6 +455,7 @@ async function runBlendedBacktest() {
     fetchText(DATA_BASE + 'lqd.csv'),
     fetchText(DATA_BASE + 'aaii.csv'),
     fetchText(DATA_BASE + 'naaim.csv'),
+    fetchText(DATA_BASE + 'tlt.csv'),
   ]);
   const vix = parseVIX(vixText);
   const rsp = parseDateClose(rspText);
@@ -416,6 +463,7 @@ async function runBlendedBacktest() {
   const spx = parseDateClose(spxText);
   const hyg = parseDateClose(hygText);
   const lqd = parseDateClose(lqdText);
+  const tlt = parseDateClose(tltText);
   const aaii = parseAAII(aaiiText);
   const naaim = parseNAAIM(naaimText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
@@ -431,6 +479,8 @@ async function runBlendedBacktest() {
   hyg.forEach((r, i) => hygByDate.set(r.date, i));
   const lqdByDate = new Map();
   lqd.forEach((r, i) => lqdByDate.set(r.date, i));
+  const tltByDate = new Map();
+  tlt.forEach((r, i) => tltByDate.set(r.date, i));
 
   const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
   const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
@@ -439,7 +489,8 @@ async function runBlendedBacktest() {
   const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
   const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
   const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')       || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM;
+  const wSafe    = (COMPONENTS.find(c => c.key === 'safehaven')   || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSafe;
   if (wTotal <= 0) throw new Error('No live weights configured');
 
   // Rolling pointers for the weekly-series carry-forward (O(n) instead of O(n²)).
@@ -454,8 +505,10 @@ async function runBlendedBacktest() {
     const vi = vixByDate.get(d);
     const hi = hygByDate.get(d);
     const li = lqdByDate.get(d);
+    const ti = tltByDate.get(d);
     if (si == null || si < BREADTH_LOOKBACK || xi == null || vi == null) continue;
     if (hi == null || hi < BREADTH_LOOKBACK || li == null || li < BREADTH_LOOKBACK) continue;
+    if (ti == null || ti < BREADTH_LOOKBACK) continue;
     if (rsi[si] == null || sma200[xi] == null) continue;
 
     // Advance weekly-series pointers to the most recent reading ≤ this trading day.
@@ -469,6 +522,8 @@ async function runBlendedBacktest() {
     const hygRet = (hyg[hi].close / hyg[hi - BREADTH_LOOKBACK].close - 1) * 100;
     const lqdRet = (lqd[li].close / lqd[li - BREADTH_LOOKBACK].close - 1) * 100;
     const junkSpread = hygRet - lqdRet;
+    const tltRet = (tlt[ti].close / tlt[ti - BREADTH_LOOKBACK].close - 1) * 100;
+    const safeSpread = spyRet - tltRet;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const aaiiSpread = aaii[aaiiPtr].spread;
     const naaimVal = naaim[naaimPtr].value;
@@ -480,9 +535,10 @@ async function runBlendedBacktest() {
     const ms = scoreMA200(ma200Dist);
     const as_ = scoreAAII(aaiiSpread);
     const ns = scoreNAAIM(naaimVal);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null) continue;
+    const shs = scoreSafeHaven(safeSpread);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || shs == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + shs * wSafe) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -624,13 +680,14 @@ function renderBacktest({ summary, baseline, dateFrom, dateTo }) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   const kind = (typeof window !== 'undefined' && window.BATS_BACKTEST_KIND) || 'vix';
-  const runner = kind === 'breadth' ? runBreadthBacktest
-               : kind === 'rsi'     ? runRsiBacktest
-               : kind === 'junk'    ? runJunkBacktest
-               : kind === 'ma200'   ? runMa200Backtest
-               : kind === 'aaii'    ? runAaiiBacktest
-               : kind === 'naaim'   ? runNaaimBacktest
-               : kind === 'blended' ? runBlendedBacktest
+  const runner = kind === 'breadth'   ? runBreadthBacktest
+               : kind === 'rsi'       ? runRsiBacktest
+               : kind === 'junk'      ? runJunkBacktest
+               : kind === 'ma200'     ? runMa200Backtest
+               : kind === 'aaii'      ? runAaiiBacktest
+               : kind === 'naaim'     ? runNaaimBacktest
+               : kind === 'safehaven' ? runSafeHavenBacktest
+               : kind === 'blended'   ? runBlendedBacktest
                : runVixBacktest;
   runner()
     .then(renderBacktest)
