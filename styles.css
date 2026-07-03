@@ -223,17 +223,33 @@ section { margin: 2.5rem 0; }
   font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.reading-action {
+  margin-top: .35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: .01em;
 }
 .reading-value {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 1.1rem;
   color: var(--text-dim);
-  margin-top: .25rem;
+  margin-top: .5rem;
 }
 .reading-value #readingValue { color: var(--text); font-weight: 700; font-size: 1.4rem; }
 .reading-suffix { color: var(--text-faint); }
+.reading-subtitle {
+  margin: .75rem auto 0;
+  max-width: 560px;
+  font-size: .9rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  font-style: italic;
+}
 .updated {
-  margin-top: .5rem;
+  margin-top: .65rem;
   font-size: .85rem;
   color: var(--text-faint);
 }
@@ -288,13 +304,14 @@ section { margin: 2.5rem 0; }
 .legend-item {
   display: inline-flex;
   align-items: center;
-  gap: .4rem;
-  font-size: .8rem;
+  gap: .5rem;
+  font-size: .78rem;
   color: var(--text-dim);
   background: var(--bg-card);
-  padding: .35rem .65rem;
-  border-radius: 999px;
+  padding: .4rem .75rem;
+  border-radius: 12px;
   border: 1px solid var(--border-soft);
+  line-height: 1.2;
 }
 .legend-item.active {
   color: var(--text);
@@ -304,7 +321,16 @@ section { margin: 2.5rem 0; }
 }
 .legend-swatch {
   width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
 }
+.legend-text {
+  display: flex;
+  flex-direction: column;
+  gap: .05rem;
+}
+.legend-label { font-weight: 600; color: var(--text); }
+.legend-action { font-size: .7rem; color: var(--text-faint); font-weight: 500; }
+.legend-item.active .legend-action { color: var(--text-dim); }
 
 .hero-blurb {
   margin: 1.5rem auto 0;

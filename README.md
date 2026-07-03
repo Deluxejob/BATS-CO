@@ -5,7 +5,7 @@ simple question: **"Is now a good time to buy stocks?"**
 
 The BATS blends widely-used public market indicators into a 0–100 score across
 seven buckets — Very Oversold, Oversold, Slightly Bearish, Neutral, Slightly
-Bullish, Bullish, Very Bullish. Every component is documented and independently
+Bullish, Bullish, Extended. Every component is documented and independently
 backtested against S&P 500 forward returns.
 
 Live at **[bats.co](https://bats.co)**.

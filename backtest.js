@@ -56,7 +56,12 @@ function parseVIX(text) {
 }
 
 function bucketOf(score) {
-  return Math.min(6, Math.max(0, Math.floor((score / 100) * 7)));
+  // Uses the same non-uniform boundaries defined in app.js's BUCKETS.
+  const s = Math.max(0, Math.min(100, score));
+  for (let i = BUCKETS.length - 1; i >= 0; i--) {
+    if (s >= BUCKETS[i].min) return i;
+  }
+  return 0;
 }
 function avg(arr) { return arr.reduce((s, x) => s + x, 0) / arr.length; }
 

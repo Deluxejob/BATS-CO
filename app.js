@@ -4,16 +4,74 @@
    and (later) wires up real data feeds for the BATS.
    ============================================================ */
 
-// --- The 7 sentiment buckets, in order from oversold -> bullish ---
+// --- The 7 BATS buckets, from oversold (low score) to extended (high score) ---
+// Boundaries are calibrated to the empirical BATS distribution so each bucket
+// gets meaningful population, INCLUDING the "Extended" extreme (~1% of days).
+// Every bucket carries three descriptions:
+//   label:    the state name (what the market is doing)
+//   action:   a short "what to consider" hint
+//   subtitle: what our own backtest actually shows for this bucket
+// The `min` field is the LOWER bound (inclusive). Upper bound = next bucket's min.
 const BUCKETS = [
-  { label: 'Very Oversold',     color: 'var(--s0)' },
-  { label: 'Oversold',          color: 'var(--s1)' },
-  { label: 'Slightly Bearish',  color: 'var(--s2)' },
-  { label: 'Neutral',           color: 'var(--s3)' },
-  { label: 'Slightly Bullish',  color: 'var(--s4)' },
-  { label: 'Bullish',           color: 'var(--s5)' },
-  { label: 'Very Bullish',      color: 'var(--s6)' },
+  {
+    label: 'Very Oversold',
+    action: 'Strong Buy',
+    subtitle: 'Historically +39% avg 12mo — every historical instance positive. Includes the 2008 GFC and 2020 COVID bottoms.',
+    color: 'var(--s0)',
+    min: 0,
+  },
+  {
+    label: 'Oversold',
+    action: 'Consider Buying',
+    subtitle: 'Historically +15.6% avg 12mo, 80% positive. Well above the +10% baseline.',
+    color: 'var(--s1)',
+    min: 15,
+  },
+  {
+    label: 'Slightly Bearish',
+    action: 'Be Careful',
+    subtitle: 'The weakest historical zone — forward 12mo returns average +8.8%, below baseline. Not a crash, just weaker odds.',
+    color: 'var(--s2)',
+    min: 30,
+  },
+  {
+    label: 'Neutral',
+    action: 'No Real Trend',
+    subtitle: 'Baseline forward returns (~+10% avg 12mo). The market is not making a strong statement in either direction.',
+    color: 'var(--s3)',
+    min: 45,
+  },
+  {
+    label: 'Slightly Bullish',
+    action: 'Hold',
+    subtitle: 'Roughly baseline forward returns (+9.3% avg 12mo, 83% positive). Normal bull-market territory.',
+    color: 'var(--s4)',
+    min: 57,
+  },
+  {
+    label: 'Bullish',
+    action: 'Hold, but be careful',
+    subtitle: 'Above baseline: +11.6% avg 12mo, 88% positive. Trend has been strong — watch for stretching.',
+    color: 'var(--s5)',
+    min: 65,
+  },
+  {
+    label: 'Extended',
+    action: 'Trim / Rebalance Stretched Positions',
+    subtitle: 'Rare — only ~1% of the time. Includes the 2016 post-election rally and 2023 AI euphoria peak. Historically +12% avg 12mo (76% positive) — the market can keep going, but individual tickers may be stretched.',
+    color: 'var(--s6)',
+    min: 72,
+  },
 ];
+
+// Returns the bucket index for a given BATS score using the boundaries above.
+function bucketIndexFor(score) {
+  const s = Math.max(0, Math.min(100, score));
+  for (let i = BUCKETS.length - 1; i >= 0; i--) {
+    if (s >= BUCKETS[i].min) return i;
+  }
+  return 0;
+}
 
 // ============================================================
 // MARKET CONFIG — the same BATS logic can be applied to either the S&P 500
@@ -601,13 +659,19 @@ function buildGauge() {
   if (!svg) return;
 
   const totalDeg = 180; // semicircle
-  const gap = GAUGE.segmentGap;
-  const segDeg = (totalDeg - gap * (BUCKETS.length - 1)) / BUCKETS.length;
+  const gapDeg = GAUGE.segmentGap;
+  const totalGapDeg = gapDeg * (BUCKETS.length - 1);
+  const arcDeg = totalDeg - totalGapDeg;   // space available for the colored arcs
 
-  // Start at 180° (left side of gauge), sweep down to 0° (right side)
+  // Each arc's angular width = its share of the 0-100 score range * arcDeg.
+  // Extended (72-100) is a wide band because it spans a wide score range —
+  // this visually communicates that scores can go there in theory but rarely do.
   let cursor = 180;
-
   BUCKETS.forEach((bucket, i) => {
+    const nextMin = (i < BUCKETS.length - 1) ? BUCKETS[i + 1].min : 100;
+    const bucketScoreWidth = nextMin - bucket.min;
+    const segDeg = arcDeg * (bucketScoreWidth / 100);
+
     const segStart = cursor;
     const segEnd = cursor - segDeg;
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -615,7 +679,7 @@ function buildGauge() {
     path.setAttribute('fill', bucket.color);
     path.setAttribute('data-bucket', i);
     svg.appendChild(path);
-    cursor = segEnd - gap;
+    cursor = segEnd - gapDeg;
   });
 
   // Speedometer-style tick marks + numeric labels around the outside.
@@ -686,19 +750,23 @@ function buildGauge() {
 // Move needle to a 0-100 value
 function setGauge(value) {
   const v = Math.max(0, Math.min(100, value));
-  // value 0   -> needle angle straight LEFT (math 180°)
-  // value 100 -> needle angle straight RIGHT (math 0°)
-  // The needle starts pointing UP (math 90°), so we rotate by (90° - target°).
   const targetMathDeg = 180 - (v / 100) * 180;
-  const rotateBy = 90 - targetMathDeg; // CSS rotate: positive = clockwise
+  const rotateBy = 90 - targetMathDeg;
   const needle = document.getElementById('gaugeNeedle');
   if (needle) needle.style.transform = `rotate(${rotateBy}deg)`;
 
-  // Update label + value
-  const bucketIndex = Math.min(BUCKETS.length - 1, Math.floor((v / 100) * BUCKETS.length));
-  document.getElementById('readingLabel').textContent = BUCKETS[bucketIndex].label;
-  document.getElementById('readingValue').textContent = Math.round(v);
-  document.getElementById('updatedTime').textContent = new Date().toLocaleString();
+  const bucketIndex = bucketIndexFor(v);
+  const b = BUCKETS[bucketIndex];
+  const labelEl = document.getElementById('readingLabel');
+  const actionEl = document.getElementById('readingAction');
+  const valueEl = document.getElementById('readingValue');
+  const subtitleEl = document.getElementById('readingSubtitle');
+  const timeEl = document.getElementById('updatedTime');
+  if (labelEl) labelEl.textContent = b.label;
+  if (actionEl) actionEl.textContent = b.action;
+  if (valueEl) valueEl.textContent = Math.round(v);
+  if (subtitleEl) subtitleEl.textContent = b.subtitle;
+  if (timeEl) timeEl.textContent = new Date().toLocaleString();
 
   // Highlight active legend item
   document.querySelectorAll('.legend-item').forEach((el, i) => {
@@ -715,7 +783,13 @@ function buildLegend() {
   BUCKETS.forEach((b) => {
     const el = document.createElement('span');
     el.className = 'legend-item';
-    el.innerHTML = `<span class="legend-swatch" style="background:${b.color}"></span>${b.label}`;
+    el.innerHTML = `
+      <span class="legend-swatch" style="background:${b.color}"></span>
+      <span class="legend-text">
+        <span class="legend-label">${b.label}</span>
+        <span class="legend-action">${b.action}</span>
+      </span>
+    `;
     wrap.appendChild(el);
   });
 }
@@ -1090,8 +1164,7 @@ function updateComponentsWithLatest(current) {
 }
 
 function bucketLabelFor(score) {
-  const idx = Math.min(BUCKETS.length - 1, Math.floor((score / 100) * BUCKETS.length));
-  return BUCKETS[idx].label;
+  return BUCKETS[bucketIndexFor(score)].label;
 }
 
 function renderHistoricalContext(history) {
