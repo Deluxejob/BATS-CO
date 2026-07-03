@@ -1122,16 +1122,30 @@ const CONC_WINDOWS = [
   { key: 'w1',  days: 5,   label: '1 Week' },
   { key: 'm1',  days: 21,  label: '1 Month' },
   { key: 'q1',  days: 63,  label: '1 Quarter' },
+  { key: 'ytd', ytd: true, label: 'YTD' },
   { key: 'm6',  days: 126, label: '6 Months' },
   { key: 'y1',  days: 252, label: '1 Year' },
 ];
 
-// Return over `days` trading days for a series of {date, close} rows.
-function returnOver(series, days) {
-  if (!series || series.length < days + 1) return null;
-  const last = series[series.length - 1].close;
+// Return over a window for a series of {date, close} rows.
+// `window` is either { days: N } (trailing N trading days) or { ytd: true }
+// (this year's first trading day, i.e., last close of the prior calendar year).
+function returnOver(series, window) {
+  if (!series || series.length < 2) return null;
+  const last = series[series.length - 1];
+  if (window.ytd) {
+    const currentYear = last.date.substring(0, 4);
+    for (let i = series.length - 2; i >= 0; i--) {
+      if (series[i].date.substring(0, 4) !== currentYear) {
+        return (last.close / series[i].close - 1) * 100;
+      }
+    }
+    return null;
+  }
+  const days = window.days;
+  if (series.length < days + 1) return null;
   const prior = series[series.length - 1 - days].close;
-  return (last / prior - 1) * 100;
+  return (last.close / prior - 1) * 100;
 }
 
 async function renderConcentration() {
@@ -1154,14 +1168,14 @@ async function renderConcentration() {
   if (meta) meta.textContent = `Latest close: ${latestDate}. Top 10 tickers used: ${tickers.join(', ')}.`;
 
   // For each timeframe, compute top-10 equal-weighted avg and broad-market
-  const rows = CONC_WINDOWS.map(({ label, days }) => {
-    const topReturns = topSeries.map(s => returnOver(s, days)).filter(r => r != null);
+  const rows = CONC_WINDOWS.map(window => {
+    const topReturns = topSeries.map(s => returnOver(s, window)).filter(r => r != null);
     const topAvg = topReturns.length === tickers.length
       ? topReturns.reduce((sum, r) => sum + r, 0) / topReturns.length
       : null;
-    const broadRet = returnOver(broad, days);
+    const broadRet = returnOver(broad, window);
     const gap = (topAvg != null && broadRet != null) ? topAvg - broadRet : null;
-    return { label, topAvg, broadRet, gap };
+    return { label: window.label, topAvg, broadRet, gap };
   });
 
   function fmt(x, digits = 2) {
