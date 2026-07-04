@@ -117,6 +117,8 @@ fetch_yahoo_daily "^SP500TR" "$DATA_DIR/sp500tr.csv" "946684800"    # 2000-01-03
 fetch_yahoo_daily "DX-Y.NYB" "$DATA_DIR/dxy.csv"     "631152000"    # 1990-01-01 (US Dollar Index)
 fetch_yahoo_daily "SPY"   "$DATA_DIR/spy.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "RSP"   "$DATA_DIR/rsp.csv" "1051660800"   # 2003-04-30
+fetch_yahoo_daily "MDY"   "$DATA_DIR/mdy.csv" "799545600"    # 1995-05-04 (MDY inception)
+fetch_yahoo_daily "IWM"   "$DATA_DIR/iwm.csv" "959299200"    # 2000-05-26 (IWM inception)
 fetch_yahoo_daily "HYG"   "$DATA_DIR/hyg.csv" "1176249600"   # 2007-04-11
 fetch_yahoo_daily "LQD"   "$DATA_DIR/lqd.csv" "1176249600"   # 2007-04-11 (aligned with HYG)
 fetch_yahoo_daily "TLT"   "$DATA_DIR/tlt.csv" "1027296000"   # 2002-07-22 (TLT inception)
