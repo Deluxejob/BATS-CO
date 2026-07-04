@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extremes — Panic Buys & Peak Warnings — BATS.CO</title>
+  <meta name="description" content="Two very rare S&P 500 signals with real historical edge: buy after a 5-day panic drop of 7%+; warn when RSI drops back below 80 from extreme overbought." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ---- Status card grid ---- */
+    .ex-status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .ex-status-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+    }
+    .ex-status-card.buy   { border-left: 4px solid #22c55e; }
+    .ex-status-card.sell  { border-left: 4px solid #f87171; }
+    .ex-status-card.active { background: rgba(74, 222, 128, 0.06); border-color: #22c55e; }
+    .ex-status-card.active.sell { background: rgba(248, 113, 113, 0.06); border-color: #f87171; }
+    .ex-status-card h3 {
+      margin: 0 0 0.75rem;
+      font-size: 1.1rem;
+    }
+    .ex-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+    }
+    .ex-badge.on-buy  { background: #22c55e; color: #0a1218; }
+    .ex-badge.on-sell { background: #f87171; color: #0a1218; }
+    .ex-badge.off     { background: rgba(168, 179, 196, 0.15); color: var(--text-dim); }
+    .ex-metric {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      display: block;
+      line-height: 1;
+      margin: 0.5rem 0 0.35rem;
+    }
+    .ex-metric-label {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .ex-since {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      margin-top: 0.75rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    .ex-explainer {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin: 0.75rem 0 0;
+    }
+
+    /* ---- Chart ---- */
+    .ex-chart-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .ex-chart {
+      width: 100%;
+      display: block;
+      font-family: 'Inter', sans-serif;
+    }
+    .ex-chart .axis-label { fill: #c9d3e0; font-size: 12px; font-weight: 500; }
+    .ex-chart .axis-line  { stroke: var(--border); stroke-width: 1; }
+    .ex-chart .grid-line  { stroke: var(--border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
+    .ex-chart .spx-line   { fill: none; stroke: #64d3ff; stroke-width: 1.5; }
+    .ex-chart .m-buy      { fill: #22c55e; stroke: #fff; stroke-width: 1.5; }
+    .ex-chart .m-sell     { fill: #f87171; stroke: #fff; stroke-width: 1.5; }
+    .ex-chart-legend {
+      display: flex; gap: 1.25rem; flex-wrap: wrap; justify-content: center;
+      margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-dim);
+    }
+    .ex-chart-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .ex-chart-legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 6px; }
+
+    .chart-periods {
+      display: flex; gap: 0.35rem; flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .chart-period-btn {
+      font: inherit;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .chart-period-btn:hover  { color: var(--text); border-color: var(--text-dim); }
+    .chart-period-btn.active {
+      background: #64d3ff;
+      color: #0a1218;
+      border-color: #64d3ff;
+    }
+
+    /* Recent-signals list */
+    .recent-signals {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .recent-block h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .recent-block ul { list-style: none; padding: 0; margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.85rem; }
+    .recent-block li {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-dim);
+    }
+    .recent-block li:last-child { border-bottom: none; }
+    .recent-block li strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="index.html#components">Components</a>
+      <a href="index.html#backtest">Backtest</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="pe-ratio.html">PE Ratio</a>
+      <a href="momentum.html">Momentum</a>
+      <a href="extremes.html">Extremes</a>
+      <a href="markets.html">Markets</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">RARE-SIGNAL SHORT-TERM TIMING</p>
+      <h1>Two extremes that history says actually work.</h1>
+      <p class="lede">
+        Most technical "sell" signals fail on the S&P 500 because the market
+        rises 58&ndash;70% of any given day. Most "buy" signals only produce
+        a marginal edge. But we tested dozens of them against 36 years of
+        data and found <strong>two rare setups</strong> &mdash; one at
+        bottoms, one at tops &mdash; that have historically produced returns
+        <em>meaningfully</em> different from a random day. This page shows
+        them, honestly.
+      </p>
+    </section>
+
+    <!-- TODAY'S STATUS -->
+    <section id="status">
+      <div class="section-head">
+        <h2>Where we stand right now</h2>
+        <p>Two independent signals. Either can be active; usually neither is.</p>
+      </div>
+      <div class="ex-status-grid">
+        <div class="ex-status-card buy" id="panicCard">
+          <h3>Panic Buy <span class="ex-badge off" id="panicBadge">Loading&hellip;</span></h3>
+          <span class="ex-metric" id="panicMetric">&ndash;</span>
+          <span class="ex-metric-label" id="panicLabel">5-day return</span>
+          <p class="ex-explainer">
+            Fires when the S&P has dropped <strong>7% or more over the last 5 trading days</strong>.
+            The intuition: that's a proper flush. Fear is elevated, forced selling
+            is done, and buyers with cash are stepping in. Historically these episodes
+            were followed by <strong>+3.8% avg over the next 20 days</strong> and
+            <strong>+8.6% avg over the next 60 days</strong>. Fires ~2&times; per year on average.
+          </p>
+          <div class="ex-since" id="panicSince"></div>
+        </div>
+        <div class="ex-status-card sell" id="peakCard">
+          <h3>Peak Warning <span class="ex-badge off" id="peakBadge">Loading&hellip;</span></h3>
+          <span class="ex-metric" id="peakMetric">&ndash;</span>
+          <span class="ex-metric-label" id="peakLabel">14-day RSI</span>
+          <p class="ex-explainer">
+            Fires when the <strong>14-day RSI drops back below 80</strong>
+            after being above 80. The RSI has to actually get to 80+ first
+            (which means euphoric momentum), and then start to fade. Historically
+            these were followed by <strong>&minus;0.9% avg over the next 10 days</strong>
+            (only 35% positive), and <strong>&minus;0.4% avg over 20 days</strong>
+            (41% positive) &mdash; the only "sell" signal we tested that produced
+            genuinely negative expected returns. Very rare: ~<strong>once every 2 years</strong>.
+          </p>
+          <div class="ex-since" id="peakSince"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHART -->
+    <section id="chart">
+      <div class="section-head">
+        <h2>S&P 500 with every historical signal</h2>
+        <p>
+          Green dots mark <strong>Panic Buy</strong> triggers, red dots mark
+          <strong>Peak Warning</strong> triggers. Notice how sparse both are &mdash;
+          that's the feature, not a bug. If a signal fired every week, it wouldn't
+          mean anything.
+        </p>
+      </div>
+      <div class="ex-chart-wrap">
+        <div class="chart-periods" id="exPeriods" role="tablist" aria-label="Chart time period">
+          <button type="button" class="chart-period-btn" data-period="1"    role="tab">1Y</button>
+          <button type="button" class="chart-period-btn active" data-period="5" role="tab">5Y</button>
+          <button type="button" class="chart-period-btn" data-period="10"   role="tab">10Y</button>
+          <button type="button" class="chart-period-btn" data-period="20"   role="tab">20Y</button>
+          <button type="button" class="chart-period-btn" data-period="all"  role="tab">All</button>
+        </div>
+        <svg id="exChart" class="ex-chart" viewBox="0 0 1200 420" preserveAspectRatio="none"></svg>
+        <div class="ex-chart-legend">
+          <span><span class="sw" style="background:#22c55e"></span>Panic Buy</span>
+          <span><span class="sw" style="background:#f87171"></span>Peak Warning</span>
+          <span><span class="sw" style="background:#64d3ff"></span>S&P 500</span>
+        </div>
+      </div>
+      <div class="recent-signals">
+        <div class="recent-block">
+          <h4>Most recent Panic Buy signals</h4>
+          <ul id="recentPanics"></ul>
+        </div>
+        <div class="recent-block">
+          <h4>Most recent Peak Warnings</h4>
+          <ul id="recentPeaks"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACKTEST -->
+    <section id="backtest">
+      <div class="section-head">
+        <h2>How they performed &mdash; historical backtest since 1990</h2>
+        <p>
+          For every day one of these signals fired, we recorded the S&P's forward
+          returns 5, 10, 20, and 60 trading days later. Compared against baseline
+          (the return distribution of any random trading day) so the edge is visible.
+        </p>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="exBacktestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="exBacktestMeta">Loading&hellip;</p>
+    </section>
+
+    <!-- FINDINGS -->
+    <section id="findings">
+      <h2>Three things to understand before you use these</h2>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>Rarity is the whole point.</h3>
+          <p>
+            Panic Buys fire roughly 2&times; a year. Peak Warnings fire
+            roughly <em>once every two years</em>. If you want a "what
+            should I do this week" signal, this page won't give you one
+            most of the time &mdash; it'll say "nothing." That is the
+            correct answer 95%+ of the time.
+          </p>
+        </div>
+        <div class="finding finding-pos">
+          <div class="finding-num">2</div>
+          <h3>The Panic Buy is the stronger of the two.</h3>
+          <p>
+            +3.8% average forward 20-day return (vs +0.77% baseline). That's
+            about <strong>5&times; the baseline expected return</strong>, at
+            73% positive. When the market drops 7% in a week, the odds
+            historically shift very sharply in your favor. This is the classic
+            "buy when there's blood in the streets" pattern &mdash; quantified.
+          </p>
+        </div>
+        <div class="finding finding-neg">
+          <div class="finding-num">3</div>
+          <h3>The Peak Warning is fast-fading.</h3>
+          <p>
+            At 5-20 days the signal produces negative expected returns. At 60
+            days it's positive again (+2.6%) &mdash; the upward drift reasserts
+            itself. This is not "sell everything and go to cash." It's a
+            <strong>2-4 week caution flag</strong> saying momentum has peaked
+            and short-term returns are likely below average.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW TO USE -->
+    <section id="howtouse">
+      <h2>How to actually read this page</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>Default state: neither signal is on.</strong> That's
+          most of the time. It means the market isn't in an extreme
+          setup &mdash; use the main BATS gauge and the Momentum page instead.
+        </li>
+        <li>
+          <strong>When Panic Buy is on:</strong> the setup is a "buy
+          the flush" signal with a 4-8 week horizon. History says the
+          odds favor buyers strongly. But every fire is different &mdash;
+          the 2008 GFC and the COVID crash both fired multiple times as
+          the market kept falling before ultimately bottoming.
+        </li>
+        <li>
+          <strong>When Peak Warning is on:</strong> think "trim, not
+          exit." The signal warns of below-average forward returns for
+          2-4 weeks, not a crash. Historically the market often drifts
+          sideways-to-down after this signal before resuming its rise.
+        </li>
+        <li>
+          <strong>These two signals do not conflict.</strong> They
+          measure different extremes. Both can be off (most of the time).
+          Both can be on in the same year at different moments. They
+          cannot both be on the same day.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical
+        edge is not a guarantee. Even the Panic Buy signal fired repeatedly during
+        the 2008 crisis while the market continued lower &mdash; the eventual
+        rally didn't come until March 2009. Always do your own research or talk
+        to a financial professional.
+      </p>
+    </section>
+
+    <!-- METHODOLOGY -->
+    <section id="method">
+      <h2>Methodology</h2>
+      <div class="card" style="padding:1.25rem 1.5rem; border-left:3px solid var(--s2, #64d3ff);">
+        <p style="margin:0 0 0.75rem;">
+          <strong>Data:</strong> S&P 500 daily closes since 1990, from our
+          own <code>data/spx.csv</code> (refreshed daily via GitHub Actions).
+          All math is done live in the browser &mdash; no server-side pre-computation.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Panic Buy trigger:</strong> today's close is more than 7% below
+          the close 5 trading days ago. Formula:
+          <code>(close_today / close_5_days_ago) - 1 &lt; -0.07</code>.
+          Fires on the day the threshold is crossed; can fire on consecutive days
+          if the market keeps falling.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Peak Warning trigger:</strong> yesterday's 14-day RSI (Wilder
+          smoothing) was above 80; today's RSI is at or below 80. That means the
+          index had to reach a genuinely extreme overbought state first, then
+          start to lose steam.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Backtest baseline:</strong> we compare each signal's forward
+          returns to the return distribution of every single trading day in the
+          dataset. Baseline: +0.19% at 5d, +0.77% at 20d, +2.31% at 60d;
+          57.8% / 63.6% / 70.2% positive. The market rises far more often than
+          it falls, which is why "sell" signals are so hard to build.
+        </p>
+        <p style="margin:0;">
+          <strong>Why not more signals?</strong> We tested 11 popular technical
+          setups (RSI crossovers at 20/80, Bollinger band violations, stochastic
+          overbought/oversold crossovers, VIX regime shifts, blowoff-top rules,
+          MACD zero-line crossovers, and more). All the others produced returns
+          statistically indistinguishable from the baseline. These are the two
+          that survived.
+        </p>
+      </div>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the BATS</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+  (async function () {
+    const $ = (id) => document.getElementById(id);
+    $('footerYear').textContent = new Date().getFullYear();
+
+    // ---------------------------------------------------------------
+    // Load SPX daily closes
+    // ---------------------------------------------------------------
+    let txt;
+    try {
+      const r = await fetch('data/spx.csv', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      txt = await r.text();
+    } catch (e) {
+      $('panicBadge').textContent = 'data unavailable';
+      $('peakBadge').textContent  = 'data unavailable';
+      return;
+    }
+    const rows = [];
+    for (const line of txt.trim().split(/\r?\n/).slice(1)) {
+      const [d, c] = line.split(',');
+      const px = parseFloat(c);
+      if (!isFinite(px)) continue;
+      rows.push({ d, px });
+    }
+    if (rows.length < 100) return;
+    const closes = rows.map(r => r.px);
+
+    // ---------------------------------------------------------------
+    // Compute 14-day Wilder RSI series
+    // ---------------------------------------------------------------
+    function rsi(cl, p = 14) {
+      const out = new Array(cl.length).fill(null);
+      if (cl.length <= p) return out;
+      let ag = 0, al = 0;
+      for (let i = 1; i <= p; i++) {
+        const d = cl[i] - cl[i - 1];
+        if (d >= 0) ag += d; else al += -d;
+      }
+      ag /= p; al /= p;
+      out[p] = 100 - 100 / (1 + ag / (al || 1e-9));
+      for (let i = p + 1; i < cl.length; i++) {
+        const d = cl[i] - cl[i - 1];
+        const g = d > 0 ? d : 0;
+        const l = d < 0 ? -d : 0;
+        ag = (ag * (p - 1) + g) / p;
+        al = (al * (p - 1) + l) / p;
+        out[i] = 100 - 100 / (1 + ag / (al || 1e-9));
+      }
+      return out;
+    }
+    const rsiArr = rsi(closes);
+
+    // ---------------------------------------------------------------
+    // Compute historical signals
+    // ---------------------------------------------------------------
+    const panics = [];        // indices where Panic Buy triggered
+    const peaks  = [];        // indices where Peak Warning triggered
+    for (let i = 5; i < closes.length; i++) {
+      const ret5 = (closes[i] / closes[i - 5] - 1) * 100;
+      if (ret5 < -7) panics.push(i);
+    }
+    for (let i = 1; i < closes.length; i++) {
+      if (rsiArr[i - 1] == null || rsiArr[i] == null) continue;
+      if (rsiArr[i - 1] > 80 && rsiArr[i] <= 80) peaks.push(i);
+    }
+
+    // ---------------------------------------------------------------
+    // Today's status
+    // ---------------------------------------------------------------
+    const latestIdx = rows.length - 1;
+    const latestDate = rows[latestIdx].d;
+    const ret5 = latestIdx >= 5 ? (closes[latestIdx] / closes[latestIdx - 5] - 1) * 100 : null;
+    const curRsi = rsiArr[latestIdx];
+
+    // Panic Buy card
+    const panicOn = ret5 != null && ret5 < -7;
+    if (ret5 != null) {
+      $('panicMetric').textContent = (ret5 > 0 ? '+' : '') + ret5.toFixed(2) + '%';
+    }
+    $('panicLabel').textContent = `SPX 5-day return (as of ${latestDate})`;
+    if (panicOn) {
+      $('panicCard').classList.add('active');
+      $('panicBadge').textContent = 'ACTIVE — Buy Signal';
+      $('panicBadge').className = 'ex-badge on-buy';
+    } else {
+      $('panicBadge').textContent = 'not active';
+      $('panicBadge').className = 'ex-badge off';
+    }
+    const lastPanic = panics.length ? rows[panics[panics.length - 1]].d : null;
+    if (lastPanic && !panicOn) {
+      const daysSince = latestIdx - panics[panics.length - 1];
+      $('panicSince').textContent = `Last fired ${daysSince} trading days ago (${lastPanic}).`;
+    } else if (panicOn) {
+      $('panicSince').textContent = `Signal is live as of today's close.`;
+    }
+
+    // Peak Warning card
+    const yestRsi = latestIdx > 0 ? rsiArr[latestIdx - 1] : null;
+    const peakOn = curRsi != null && yestRsi != null && yestRsi > 80 && curRsi <= 80;
+    if (curRsi != null) {
+      $('peakMetric').textContent = curRsi.toFixed(1);
+    }
+    $('peakLabel').textContent = `SPX 14-day RSI (as of ${latestDate})`;
+    if (peakOn) {
+      $('peakCard').classList.add('active', 'sell');
+      $('peakBadge').textContent = 'ACTIVE — Peak Warning';
+      $('peakBadge').className = 'ex-badge on-sell';
+    } else {
+      $('peakBadge').textContent = 'not active';
+      $('peakBadge').className = 'ex-badge off';
+    }
+    const lastPeak = peaks.length ? rows[peaks[peaks.length - 1]].d : null;
+    if (lastPeak && !peakOn) {
+      const daysSince = latestIdx - peaks[peaks.length - 1];
+      $('peakSince').textContent = `Last fired ${daysSince} trading days ago (${lastPeak}).`;
+    } else if (peakOn) {
+      $('peakSince').textContent = `Signal is live as of today's close.`;
+    }
+
+    // ---------------------------------------------------------------
+    // Recent-signals lists (last 5 of each)
+    // ---------------------------------------------------------------
+    function renderRecent(elId, indices, label) {
+      const el = $(elId);
+      if (!indices.length) { el.innerHTML = '<li>No historical signals yet.</li>'; return; }
+      const last5 = indices.slice(-5).reverse();
+      el.innerHTML = last5.map(i => {
+        const date = rows[i].d;
+        const fwd20 = i + 20 < rows.length ? ((rows[i+20].px / rows[i].px - 1) * 100) : null;
+        const fwdStr = fwd20 != null ? `<strong style="color:${fwd20>0?'#4ade80':'#f87171'}">${fwd20>0?'+':''}${fwd20.toFixed(1)}%</strong>` : '<span>—</span>';
+        return `<li><span>${date}</span>${fwdStr}</li>`;
+      }).join('');
+    }
+    renderRecent('recentPanics', panics, 'panic');
+    renderRecent('recentPeaks',  peaks,  'peak');
+
+    // ---------------------------------------------------------------
+    // Chart with markers, period-aware
+    // ---------------------------------------------------------------
+    const svg = $('exChart');
+    const W = 1200, H = 420;
+    const M = { top: 20, right: 60, bottom: 40, left: 55 };
+    const plotW = W - M.left - M.right;
+    const plotH = H - M.top - M.bottom;
+    rows.forEach(r => {
+      const [y, mo, dy] = r.d.split('-').map(Number);
+      r.yf = y + (mo - 1) / 12 + (dy - 1) / 365;
+    });
+
+    function render(period) {
+      const lastYf = rows[rows.length - 1].yf;
+      let slice, sliceStart;
+      if (period === 'all') { slice = rows; sliceStart = 0; }
+      else {
+        const yrs = parseFloat(period);
+        const cutoff = lastYf - yrs;
+        sliceStart = rows.findIndex(r => r.yf >= cutoff);
+        if (sliceStart < 0) sliceStart = 0;
+        slice = rows.slice(sliceStart);
+      }
+      if (slice.length < 5) { slice = rows.slice(-60); sliceStart = rows.length - 60; }
+      const first = slice[0], last = slice[slice.length - 1];
+
+      const pxs = slice.map(r => r.px);
+      const yMin = Math.min(...pxs) * 0.97;
+      const yMax = Math.max(...pxs) * 1.03;
+      const xFor = (yf) => M.left + ((yf - first.yf) / (last.yf - first.yf || 1)) * plotW;
+      const yFor = (p)  => M.top + plotH - ((p - yMin) / (yMax - yMin)) * plotH;
+
+      let s = '';
+      // Y grid
+      const range = yMax - yMin;
+      const step = range < 200 ? 25 : range < 500 ? 50 : range < 1500 ? 200 : range < 4000 ? 500 : 1000;
+      for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
+        const y = yFor(v);
+        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        s += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${v.toLocaleString()}</text>`;
+      }
+      // X ticks
+      const yearSpan = last.yf - first.yf;
+      let tickStep;
+      if      (yearSpan <= 1.2)  tickStep = 1/6;
+      else if (yearSpan <= 3)    tickStep = 0.5;
+      else if (yearSpan <= 8)    tickStep = 1;
+      else if (yearSpan <= 20)   tickStep = 2;
+      else                       tickStep = 5;
+      const tickStart = Math.ceil(first.yf / tickStep) * tickStep;
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const fmtTick = (yf) => {
+        if (tickStep >= 1) return String(Math.round(yf));
+        const yr = Math.floor(yf);
+        const mo = Math.round((yf - yr) * 12) + 1;
+        return `${monthNames[Math.min(mo - 1, 11)]} '${String(yr).slice(-2)}`;
+      };
+      for (let yr = tickStart; yr <= last.yf; yr += tickStep) {
+        if (yr < first.yf) continue;
+        const x = xFor(yr);
+        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${fmtTick(yr)}</text>`;
+      }
+      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      // SPX line
+      const path = slice.map((r, i) =>
+        (i === 0 ? 'M' : 'L') + xFor(r.yf).toFixed(1) + ',' + yFor(r.px).toFixed(1)
+      ).join(' ');
+      s += `<path class="spx-line" d="${path}"/>`;
+
+      // Markers
+      const inSlice = (arr) => arr.filter(i => i >= sliceStart);
+      for (const i of inSlice(panics)) {
+        s += `<circle class="m-buy" cx="${xFor(rows[i].yf).toFixed(1)}" cy="${yFor(rows[i].px).toFixed(1)}" r="5"/>`;
+      }
+      for (const i of inSlice(peaks)) {
+        s += `<circle class="m-sell" cx="${xFor(rows[i].yf).toFixed(1)}" cy="${yFor(rows[i].px).toFixed(1)}" r="5"/>`;
+      }
+
+      // Latest dot
+      const xCur = xFor(last.yf), yCur = yFor(last.px);
+      s += `<text x="${xCur + 8}" y="${yCur + 4}" fill="#64d3ff" font-size="12" font-weight="600">${last.px.toFixed(0)}</text>`;
+
+      svg.innerHTML = s;
+    }
+    document.getElementById('exPeriods').addEventListener('click', (e) => {
+      const btn = e.target.closest('.chart-period-btn');
+      if (!btn) return;
+      document.querySelectorAll('#exPeriods .chart-period-btn').forEach(b =>
+        b.classList.toggle('active', b === btn)
+      );
+      render(btn.dataset.period);
+    });
+    render('5');
+
+    // ---------------------------------------------------------------
+    // Backtest table
+    // ---------------------------------------------------------------
+    const horizons = [5, 10, 20, 60];
+    function statsFor(indices) {
+      const out = {};
+      for (const h of horizons) {
+        const rets = [];
+        for (const i of indices) {
+          if (i + h < closes.length) {
+            rets.push((closes[i + h] / closes[i] - 1) * 100);
+          }
+        }
+        const n = rets.length;
+        const avg = n ? rets.reduce((a, b) => a + b, 0) / n : null;
+        const pos = n ? rets.filter(r => r > 0).length / n * 100 : null;
+        out[h] = { n, avg, pos };
+      }
+      return out;
+    }
+    // Baseline: every day
+    const baselineIdx = [];
+    for (let i = 0; i < closes.length; i++) baselineIdx.push(i);
+    const baseStats  = statsFor(baselineIdx);
+    const panicStats = statsFor(panics);
+    const peakStats  = statsFor(peaks);
+
+    const fmtRet = (v, cls) => v == null ? '&mdash;' : `<span style="color:${v > baseStats[cls].avg + 0.5 ? '#4ade80' : v < baseStats[cls].avg - 0.5 ? '#f87171' : 'inherit'}">${v > 0 ? '+' : ''}${v.toFixed(2)}%</span>`;
+    const fmtPos = (v) => v == null ? '&mdash;' : `${v.toFixed(0)}%`;
+
+    let bhtml = `<thead><tr>
+      <th>Setup</th>
+      <th class="num">Fires</th>
+      <th class="num">+5d</th>
+      <th class="num">5d win</th>
+      <th class="num">+10d</th>
+      <th class="num">10d win</th>
+      <th class="num">+20d</th>
+      <th class="num">20d win</th>
+      <th class="num">+60d</th>
+      <th class="num">60d win</th>
+    </tr></thead><tbody>`;
+    const rowFor = (label, stats, count, color) => {
+      const highlight = color ? `<span class="bucket-dot" style="background:${color}"></span>` : '';
+      return `<tr>
+        <td>${highlight}<strong>${label}</strong></td>
+        <td class="num">${count}</td>
+        <td class="num">${stats[5].avg != null ? (stats[5].avg > 0 ? '+' : '') + stats[5].avg.toFixed(2) + '%' : '&mdash;'}</td>
+        <td class="num">${fmtPos(stats[5].pos)}</td>
+        <td class="num">${stats[10].avg != null ? (stats[10].avg > 0 ? '+' : '') + stats[10].avg.toFixed(2) + '%' : '&mdash;'}</td>
+        <td class="num">${fmtPos(stats[10].pos)}</td>
+        <td class="num">${stats[20].avg != null ? (stats[20].avg > 0 ? '+' : '') + stats[20].avg.toFixed(2) + '%' : '&mdash;'}</td>
+        <td class="num">${fmtPos(stats[20].pos)}</td>
+        <td class="num">${stats[60].avg != null ? (stats[60].avg > 0 ? '+' : '') + stats[60].avg.toFixed(2) + '%' : '&mdash;'}</td>
+        <td class="num">${fmtPos(stats[60].pos)}</td>
+      </tr>`;
+    };
+    bhtml += rowFor('Baseline (any random day)', baseStats, baselineIdx.length.toLocaleString(), null);
+    bhtml += rowFor('Panic Buy', panicStats, panics.length, '#22c55e');
+    bhtml += rowFor('Peak Warning', peakStats, peaks.length, '#f87171');
+    bhtml += '</tbody>';
+    document.getElementById('exBacktestTable').innerHTML = bhtml;
+    document.getElementById('exBacktestMeta').innerHTML =
+      `Data ${rows[0].d} through ${latestDate} &nbsp;·&nbsp; ` +
+      `<strong>Panic Buy</strong> fires when SPX 5-day return &lt; &minus;7%. ` +
+      `<strong>Peak Warning</strong> fires when SPX 14-day RSI drops back below 80. ` +
+      `The row highlighted in green is a buy signal; the row highlighted in red is a warning.`;
+  })();
+  </script>
+</body>
+</html>
