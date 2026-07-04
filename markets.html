@@ -79,6 +79,50 @@
       color: #0a1218;
       border-color: #64d3ff;
     }
+
+    /* SPY news list (Yahoo-backed) */
+    .spy-source {
+      color: var(--text-dim);
+      font-weight: 400;
+      font-size: 0.85rem;
+    }
+    .spy-news-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.75rem 0 0;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .spy-news-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .spy-news-list li:last-child { border-bottom: none; }
+    .spy-news-list li.spy-news-loading {
+      color: var(--text-dim);
+      font-style: italic;
+      border-bottom: none;
+    }
+    .spy-news-list a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      line-height: 1.35;
+      display: block;
+    }
+    .spy-news-list a:hover { color: #64d3ff; }
+    .spy-news-list .spy-news-byline {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+    .spy-news-list .spy-news-publisher { color: #c9d3e0; font-weight: 500; }
+    .spy-news-meta {
+      margin: 0.6rem 0 0;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
   </style>
 </head>
 <body>
@@ -324,22 +368,11 @@
           </div>
         </div>
         <div class="card">
-          <h3>S&P 500 (SPY)</h3>
-          <div class="tradingview-widget-container news-widget refreshable-widget">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-            {
-              "feedMode": "symbol",
-              "symbol": "AMEX:SPY",
-              "isTransparent": true,
-              "displayMode": "regular",
-              "width": "100%",
-              "height": 500,
-              "colorTheme": "dark",
-              "locale": "en"
-            }
-            </script>
-          </div>
+          <h3>S&P 500 (SPY) &mdash; <span class="spy-source">via Yahoo Finance</span></h3>
+          <ul class="spy-news-list" id="spyNewsList">
+            <li class="spy-news-loading">Loading headlines&hellip;</li>
+          </ul>
+          <p class="spy-news-meta" id="spyNewsMeta"></p>
         </div>
       </div>
       <script>
@@ -546,6 +579,61 @@
       else noteHtml += 'is <strong>normal</strong> (long yields higher than short yields).';
     }
     note.innerHTML = noteHtml;
+  })();
+
+  // ==========================================================================
+  // SPY NEWS — fetch our own Yahoo-backed data/spy_news.json, render list
+  // ==========================================================================
+  (async function renderSpyNews() {
+    const list = document.getElementById('spyNewsList');
+    const meta = document.getElementById('spyNewsMeta');
+    if (!list) return;
+
+    let payload;
+    try {
+      const r = await fetch('data/spy_news.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      payload = await r.json();
+    } catch (e) {
+      list.innerHTML = '<li class="spy-news-loading">Couldn\'t load headlines right now.</li>';
+      return;
+    }
+
+    const items = payload.items || [];
+    if (!items.length) {
+      list.innerHTML = '<li class="spy-news-loading">No headlines available right now.</li>';
+      return;
+    }
+
+    const now = Date.now() / 1000;
+    const relTime = (ts) => {
+      if (!ts) return '';
+      const diff = now - ts;
+      if (diff < 60)      return 'just now';
+      if (diff < 3600)    return `${Math.round(diff / 60)} min ago`;
+      if (diff < 86400)   return `${Math.round(diff / 3600)} hr ago`;
+      if (diff < 7 * 86400) return `${Math.round(diff / 86400)} day ago`;
+      const d = new Date(ts * 1000);
+      return d.toISOString().slice(0, 10);
+    };
+    const escape = (s) => String(s || '').replace(/[<>&"']/g, c => (
+      { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+
+    const html = items.map(it => `
+      <li>
+        <a href="${escape(it.link)}" target="_blank" rel="noopener noreferrer">${escape(it.title)}</a>
+        <span class="spy-news-byline">
+          <span class="spy-news-publisher">${escape(it.publisher || 'Yahoo Finance')}</span>
+          &middot; ${escape(relTime(it.publishedAt))}
+        </span>
+      </li>
+    `).join('');
+    list.innerHTML = html;
+
+    if (payload.fetchedAt) {
+      meta.textContent = `Feed refreshed ${relTime(payload.fetchedAt)}. Refreshes hourly via GitHub Actions.`;
+    }
   })();
 
   // ==========================================================================

@@ -48,6 +48,9 @@ jobs:
       - name: Refresh S&P 500 PE ratio (monthly — tolerant of no-new-data)
         run: python scripts/update-pe-ratio.py
 
+      - name: Refresh SPY news from Yahoo (tolerant of no-new-data)
+        run: python scripts/update-spy-news.py
+
       - name: Commit and push if anything changed
         run: |
           if [ -n "$(git status --porcelain data/)" ]; then

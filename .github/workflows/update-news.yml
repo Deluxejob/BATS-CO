@@ -1,0 +1,48 @@
+name: Update SPY news
+
+# Runs hourly during US market waking hours to keep the SPY news card on
+# markets.html fresh. Yahoo's news endpoint updates continuously, so if we
+# only pulled once a day the card would drift stale within hours.
+#
+# Manual trigger available from the Actions tab (workflow_dispatch).
+
+on:
+  schedule:
+    - cron: '0 11-23 * * 1-5'   # every hour 11 UTC (~7 AM ET) through 23 UTC on weekdays
+    - cron: '30 12,18 * * 0,6'  # twice a day on weekends (still-active markets in Asia move S&P futures)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-spy-news
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch SPY news from Yahoo
+        run: python scripts/update-spy-news.py
+
+      - name: Commit and push if news changed
+        run: |
+          if [ -n "$(git status --porcelain data/spy_news.json)" ]; then
+            git config user.name  "BATS.CO News Bot"
+            git config user.email "bot@bats.co"
+            git add data/spy_news.json
+            git commit -m "chore: refresh SPY news $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+            echo "::notice::Pushed refreshed SPY news."
+          else
+            echo "::notice::No news changes; nothing to commit."
+          fi
