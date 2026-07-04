@@ -530,11 +530,19 @@
         <div class="section-head" style="margin-top:2rem;">
           <h3>Sector heatmap &mdash; SPDR ETFs</h3>
           <p>
-            The 11 State Street SPDR sector ETFs, one tile per sector. Cell
-            color shows most recent daily change (deep green = strongest gain,
-            deep red = strongest loss). For live intraday quotes, use the
-            <strong>Sectors</strong> tab in the Market Overview above.
+            The 11 State Street SPDR sector ETFs, one tile per sector. Pick a
+            time period below &mdash; tiles re-sort best-to-worst and recolor
+            with intensity scaled to the strongest mover in that window.
+            For live intraday quotes, use the <strong>Sectors</strong> tab in
+            the Market Overview above.
           </p>
+        </div>
+        <div class="chart-periods" id="sectorHeatPeriods" role="tablist" aria-label="Sector heatmap time period">
+          <button type="button" class="chart-period-btn active" data-period="1d"  role="tab">1 day</button>
+          <button type="button" class="chart-period-btn"        data-period="1w"  role="tab">1 week</button>
+          <button type="button" class="chart-period-btn"        data-period="1m"  role="tab">1 month</button>
+          <button type="button" class="chart-period-btn"        data-period="ytd" role="tab">YTD</button>
+          <button type="button" class="chart-period-btn"        data-period="1y"  role="tab">1 year</button>
         </div>
         <div class="sector-heat-grid" id="sectorHeatGrid">
           <em style="color:var(--text-dim)">Loading sector data&hellip;</em>
@@ -849,92 +857,126 @@
       { sym: 'xlc',  name: 'Comm. Services' },
     ];
 
+    const PERIODS = {
+      '1d':  { label: '1 day',   lookback: 1,   floor: 1.2 },
+      '1w':  { label: '1 week',  lookback: 5,   floor: 2.5 },
+      '1m':  { label: '1 month', lookback: 21,  floor: 4.0 },
+      'ytd': { label: 'YTD',     lookback: 'ytd', floor: 5.0 },
+      '1y':  { label: '1 year',  lookback: 252, floor: 10.0 },
+    };
+
     const grid = document.getElementById('sectorHeatGrid');
     const meta = document.getElementById('sectorHeatMeta');
+    const bar  = document.getElementById('sectorHeatPeriods');
     if (!grid) return;
 
-    async function lastTwoCloses(sym) {
+    async function loadRows(sym) {
       const r = await fetch(`data/sectors/${sym}.csv`, { cache: 'no-store' });
       if (!r.ok) throw new Error('http ' + r.status);
       const txt = await r.text();
-      const lines = txt.trim().split(/\r?\n/).slice(1);
-      if (lines.length < 2) return null;
-      const parse = (ln) => {
+      const rows = [];
+      for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
         const [d, c] = ln.split(',');
         const px = parseFloat(c);
-        return isFinite(px) ? { d, px } : null;
-      };
-      const last = parse(lines[lines.length - 1]);
-      const prev = parse(lines[lines.length - 2]);
-      if (!last || !prev) return null;
-      return { last, prev };
+        if (isFinite(px)) rows.push({ d, px });
+      }
+      return rows;
     }
 
-    // Fetch all in parallel
-    const results = await Promise.all(SECTORS.map(async (s) => {
+    // Load all ETFs once, keep full history in memory
+    const loaded = await Promise.all(SECTORS.map(async (s) => {
       try {
-        const p = await lastTwoCloses(s.sym);
-        if (!p) return { ...s, err: 'no data' };
-        const chg = (p.last.px / p.prev.px - 1) * 100;
-        return { ...s, last: p.last, prev: p.prev, chg };
+        const rows = await loadRows(s.sym);
+        return { ...s, rows };
       } catch (e) {
-        return { ...s, err: String(e) };
+        return { ...s, rows: null };
       }
     }));
 
-    // Determine intensity scale from the max absolute change today
-    const chgs = results.filter(r => isFinite(r.chg)).map(r => r.chg);
-    const maxAbs = Math.max(1.2, ...chgs.map(v => Math.abs(v)));  // floor of 1.2% so tiles aren't washed out on quiet days
+    function changeForPeriod(rows, period) {
+      if (!rows || rows.length < 2) return null;
+      const last = rows[rows.length - 1];
+      let baseline = null;
+      if (period.lookback === 'ytd') {
+        // Find the last close of the prior calendar year
+        const lastYr = parseInt(last.d.slice(0, 4), 10);
+        for (let i = rows.length - 1; i >= 0; i--) {
+          const yr = parseInt(rows[i].d.slice(0, 4), 10);
+          if (yr < lastYr) { baseline = rows[i]; break; }
+        }
+      } else {
+        const idx = rows.length - 1 - period.lookback;
+        if (idx >= 0) baseline = rows[idx];
+      }
+      if (!baseline) return null;
+      return { last, baseline, chg: (last.px / baseline.px - 1) * 100 };
+    }
 
-    function colorFor(chg) {
-      if (!isFinite(chg)) return { bg: 'rgba(90,100,120,0.35)', border: 'rgba(255,255,255,0.06)' };
-      // Cap intensity at 1.0 so extreme days don't blow out the scale
+    function colorFor(chg, maxAbs) {
+      if (!isFinite(chg)) return { bg: 'rgba(90,100,120,0.2)', border: 'rgba(255,255,255,0.06)' };
       const intensity = Math.min(1.0, Math.abs(chg) / maxAbs);
       if (chg > 0) {
-        // Green scale: darker green as intensity grows
-        // Start #123423 (near-zero) → #16a34a (strong green)
         const alpha = 0.15 + intensity * 0.75;
         return { bg: `rgba(34, 197, 94, ${alpha.toFixed(3)})`, border: 'rgba(74, 222, 128, 0.35)' };
-      } else if (chg < 0) {
+      }
+      if (chg < 0) {
         const alpha = 0.15 + intensity * 0.75;
         return { bg: `rgba(248, 113, 113, ${alpha.toFixed(3)})`, border: 'rgba(248, 113, 113, 0.35)' };
       }
       return { bg: 'rgba(90, 100, 120, 0.35)', border: 'rgba(255, 255, 255, 0.1)' };
     }
 
-    // Sort tiles by change % descending — best-performing at top-left
-    const sorted = results.slice().sort((a, b) => (b.chg ?? -99) - (a.chg ?? -99));
+    function render(periodKey) {
+      const period = PERIODS[periodKey];
+      const results = loaded.map(s => {
+        const info = changeForPeriod(s.rows, period);
+        return { ...s, info };
+      });
+      const chgs = results.map(r => r.info?.chg).filter(v => isFinite(v));
+      const maxAbs = Math.max(period.floor, ...chgs.map(Math.abs));
 
-    grid.innerHTML = sorted.map(r => {
-      if (!isFinite(r.chg)) {
-        return `<div class="sector-tile" style="background:rgba(90,100,120,0.2)">
-          <div class="sector-name">${r.name}</div>
-          <div class="sector-ticker">${r.sym.toUpperCase()}</div>
-          <div class="sector-change" style="color:#a8b3c4">&mdash;</div>
+      const sorted = results.slice().sort((a, b) => (b.info?.chg ?? -1e9) - (a.info?.chg ?? -1e9));
+
+      grid.innerHTML = sorted.map(r => {
+        if (!r.info || !isFinite(r.info.chg)) {
+          return `<div class="sector-tile" style="background:rgba(90,100,120,0.2)">
+            <div class="sector-name">${r.name}</div>
+            <div class="sector-ticker">${r.sym.toUpperCase()}</div>
+            <div class="sector-change" style="color:#a8b3c4">&mdash;</div>
+          </div>`;
+        }
+        const col = colorFor(r.info.chg, maxAbs);
+        const sign = r.info.chg >= 0 ? '+' : '';
+        return `<div class="sector-tile" style="background:${col.bg}; border-color:${col.border};">
+          <div>
+            <div class="sector-name">${r.name}</div>
+            <div class="sector-ticker">${r.sym.toUpperCase()}</div>
+          </div>
+          <div>
+            <div class="sector-change">${sign}${r.info.chg.toFixed(2)}%</div>
+            <div class="sector-price">$${r.info.last.px.toFixed(2)}</div>
+          </div>
         </div>`;
-      }
-      const col = colorFor(r.chg);
-      const sign = r.chg >= 0 ? '+' : '';
-      return `<div class="sector-tile" style="background:${col.bg}; border-color:${col.border};">
-        <div>
-          <div class="sector-name">${r.name}</div>
-          <div class="sector-ticker">${r.sym.toUpperCase()}</div>
-        </div>
-        <div>
-          <div class="sector-change">${sign}${r.chg.toFixed(2)}%</div>
-          <div class="sector-price">$${r.last.px.toFixed(2)}</div>
-        </div>
-      </div>`;
-    }).join('');
+      }).join('');
 
-    const anyGood = results.find(r => isFinite(r.chg));
-    if (anyGood && meta) {
-      const dt = anyGood.last.d;
-      meta.innerHTML =
-        `Change is ${anyGood.last.d} close vs ${anyGood.prev.d} close. ` +
-        `Tiles are sorted best-to-worst and colored by that day's daily move (green = up, red = down, intensity scales with size of move). ` +
-        `Data refreshes daily via GitHub Actions after US market close.`;
+      const anyGood = results.find(r => r.info);
+      if (anyGood && meta) {
+        meta.innerHTML =
+          `Showing <strong>${period.label}</strong> change: ${anyGood.info.last.d} close vs ${anyGood.info.baseline.d} close. ` +
+          `Tiles are sorted best-to-worst and colored by move size (green = up, red = down, intensity relative to the strongest sector in this window). ` +
+          `Data refreshes daily via GitHub Actions after US market close.`;
+      }
     }
+
+    if (bar) {
+      bar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chart-period-btn');
+        if (!btn) return;
+        bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+        render(btn.dataset.period);
+      });
+    }
+    render('1d');
   })();
 
   // ==========================================================================
