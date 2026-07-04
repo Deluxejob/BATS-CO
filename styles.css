@@ -930,6 +930,14 @@ main.explainer .disclaimer {
 
 /* ====== Real market moments — cards under the home-page backtest ====== */
 .moments-block { margin-top: 1.5rem; }
+/* Match the "Real market moments" heading to the h2 size above it so both
+   subsections read as equally important. Semantic h3 preserved for
+   document outline; only the visual weight is upgraded. */
+.moments-block .section-head h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: .25rem;
+}
 .moments-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
