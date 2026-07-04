@@ -927,3 +927,43 @@ main.explainer .disclaimer {
   .site-nav { width: 100%; justify-content: space-between; gap: .5rem; }
   .site-nav a { font-size: .85rem; }
 }
+
+/* ====== Current-reading card on indicator explainer pages ======
+   Reuses .comp-card for the base styling; adds the bucket dot,
+   score readout, and date footer specific to this variant. */
+.current-reading-card {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.4rem 1.5rem;
+}
+.current-reading-card h3 { font-size: 1.15rem; }
+.current-reading-card .value { font-size: 1.85rem; }
+.cr-bucket {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  flex-wrap: wrap;
+  font-size: .95rem;
+  margin-top: .3rem;
+}
+.cr-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.15);
+}
+.cr-score {
+  color: var(--text-dim);
+  font-size: .85rem;
+  margin-left: auto;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.cr-date {
+  display: block;
+  color: var(--text-faint);
+  font-size: .78rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  margin-top: .5rem;
+  text-align: right;
+}

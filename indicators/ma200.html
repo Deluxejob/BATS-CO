@@ -52,6 +52,14 @@
       </p>
     </section>
 
+    <section id="current-reading-section">
+      <div class="section-head">
+        <h2>Today's reading</h2>
+        <p>Same number you'll see on this component's card on the main dashboard.</p>
+      </div>
+      <div id="currentReading"><div class="comp-card current-reading-card"><em>Loading current reading&hellip;</em></div></div>
+    </section>
+
     <section id="whatis">
       <h2>What is the 200-day moving average?</h2>
       <p>
@@ -221,6 +229,7 @@
   <script>
     window.BATS_DATA_BASE = '../data/';
     window.BATS_BACKTEST_KIND = 'ma200';
+    window.BATS_INDICATOR_KEY = 'ma200';
   </script>
   <script src="../app.js"></script>
   <script src="../backtest.js"></script>

@@ -1381,20 +1381,29 @@ async function init() {
     });
   }
 
-  // Only build the dashboard machinery if we're on the main page
-  // (identified by the presence of the sentiment gauge SVG).
+  // Two contexts run app.js beyond the top-of-page nav machinery:
+  //  1. The main dashboard (identified by the sentiment gauge SVG).
+  //  2. An individual indicator explainer page (identified by window.BATS_INDICATOR_KEY).
+  // Both paths need live data loaded; only the dashboard builds the gauge/grid.
   const svg = document.getElementById('sentimentGauge');
-  if (!svg) return;
+  const indicatorKey = (typeof window !== 'undefined' && window.BATS_INDICATOR_KEY) || null;
+  const isMainPage = !!svg;
+  const isIndicatorPage = !!indicatorKey;
+  if (!isMainPage && !isIndicatorPage) return;
 
-  buildLegend();
-  buildGauge();
+  if (isMainPage) {
+    buildLegend();
+    buildGauge();
+  }
 
   // Try to load real market values from the CSVs; fall back to the demo
   // values already sitting in COMPONENTS if the fetch fails (file://, offline).
+  let latestDate = null;
   try {
     const { current, history } = await loadLiveData();
     updateComponentsWithLatest(current);
-    renderHistoricalContext(history);
+    latestDate = current.date;
+    if (isMainPage) renderHistoricalContext(history);
     const dateNote = document.getElementById('gaugeDateNote');
     if (dateNote) dateNote.textContent = `Latest close: ${current.date}`;
   } catch (err) {
@@ -1403,9 +1412,52 @@ async function init() {
     if (dateNote) dateNote.textContent = 'Using demo values (live data unavailable).';
   }
 
-  buildComponents();
-  buildComposition();
-  setGauge(computeBatsScore());
+  if (isMainPage) {
+    buildComponents();
+    buildComposition();
+    setGauge(computeBatsScore());
+  }
+
+  if (isIndicatorPage) {
+    renderCurrentReadingOnIndicator(indicatorKey, latestDate);
+  }
+}
+
+// ============================================================
+// INDICATOR PAGE — current-reading card
+// Shows the same component reading that's on the main dashboard card,
+// so a visitor landing from "How this affects the score →" sees the
+// live value up top before reading the explainer.
+// ============================================================
+function renderCurrentReadingOnIndicator(key, latestDate) {
+  const wrap = document.getElementById('currentReading');
+  if (!wrap) return;
+  const c = COMPONENTS.find(comp => comp.key === key);
+  if (!c) { wrap.innerHTML = ''; return; }
+
+  const signalPct = c.signal == null ? 50 : c.signal;
+  const bucket = BUCKETS[bucketIndexFor(signalPct)];
+  const advisoryHTML = c.advisory
+    ? `<div class="advisory advisory-${c.advisory.tone}">${c.advisory.text}</div>`
+    : '';
+  const dateHTML = latestDate
+    ? `<span class="cr-date">Latest close: ${latestDate}</span>`
+    : `<span class="cr-date">Using demo values (live data unavailable)</span>`;
+
+  wrap.innerHTML = `
+    <div class="comp-card current-reading-card">
+      <h3>${c.name}</h3>
+      <div class="value">${c.value}</div>
+      <div class="signal-bar"><span class="marker" style="left:${signalPct}%"></span></div>
+      <div class="cr-bucket">
+        <span class="cr-dot" style="background:${bucket.color}"></span>
+        <strong>${bucket.label}</strong>
+        <span class="cr-score">BATS component score: <strong>${signalPct.toFixed(1)}</strong> / 100</span>
+      </div>
+      ${advisoryHTML}
+      ${dateHTML}
+    </div>
+  `;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
