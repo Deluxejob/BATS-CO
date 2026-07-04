@@ -928,6 +928,118 @@ main.explainer .disclaimer {
   .site-nav a { font-size: .85rem; }
 }
 
+/* ====== Real market moments — cards under the home-page backtest ====== */
+.moments-block { margin-top: 1.5rem; }
+.moments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.moment-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+}
+.moment-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.moment-date {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: .78rem;
+  color: var(--text-dim);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.moment-event {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-top: .15rem;
+  line-height: 1.25;
+}
+.moment-spx {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: .8rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.moment-context {
+  font-size: .82rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.moment-reading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .6rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.moment-score {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 4.5rem;
+  text-align: center;
+}
+.moment-bucket {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex: 1;
+}
+.moment-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,.15);
+}
+.moment-bucket-label {
+  font-weight: 600;
+  font-size: .95rem;
+}
+.moment-action {
+  font-size: .78rem;
+  color: var(--text-dim);
+  margin-top: .1rem;
+}
+.moment-forward {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .35rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: .82rem;
+}
+.fwd-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: .35rem .25rem;
+  background: var(--bg-elevated);
+  border-radius: 6px;
+}
+.fwd-lbl {
+  font-size: .7rem;
+  color: var(--text-dim);
+  margin-bottom: .15rem;
+  letter-spacing: .04em;
+}
+.fwd-pos  { color: #4ade80; font-weight: 600; }
+.fwd-neg  { color: #f87171; font-weight: 600; }
+.fwd-neu  { color: var(--text); }
+.fwd-none { color: var(--text-faint); font-style: italic; }
+
 /* ====== Current-reading card on indicator explainer pages ======
    Reuses .comp-card for the base styling; adds the bucket dot,
    score readout, and date footer specific to this variant. */

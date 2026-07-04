@@ -118,6 +118,23 @@
         <table id="backtestTable" class="backtest-table"></table>
       </div>
       <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+
+      <div class="moments-block">
+        <div class="section-head" style="margin-top:2.5rem">
+          <h3>Real market moments — what did the BATS say?</h3>
+          <p>
+            The aggregate backtest above averages every trading day since 2007. Below are
+            <strong>specific moments people actually remember</strong> &mdash; famous crashes,
+            famous bottoms, famous tops &mdash; with the BATS reading on that day and how
+            the S&P 500 performed afterward. This is the "did it work at the moment that
+            mattered?" test.
+          </p>
+        </div>
+        <div class="moments-grid" id="momentsGrid">
+          <em>Loading market moments&hellip;</em>
+        </div>
+        <p class="backtest-meta" id="momentsMeta"></p>
+      </div>
     </section>
 
     <!-- ABOUT -->
@@ -158,5 +175,76 @@
   </script>
   <script src="app.js"></script>
   <script src="backtest.js"></script>
+  <script>
+  // Render the "Real market moments" cards inside the backtest section.
+  // Reads pre-computed data/bats_moments.json (regenerated daily by the workflow).
+  (async function () {
+    const grid = document.getElementById('momentsGrid');
+    const meta = document.getElementById('momentsMeta');
+    if (!grid) return;
+    let payload;
+    try {
+      const r = await fetch('data/bats_moments.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      payload = await r.json();
+    } catch (e) {
+      grid.innerHTML = '<em style="color:var(--text-dim)">Couldn\'t load market moments right now.</em>';
+      return;
+    }
+    const moments = payload.moments || [];
+    if (!moments.length) {
+      grid.innerHTML = '<em style="color:var(--text-dim)">No moments configured.</em>';
+      return;
+    }
+
+    const fmtDate = (iso) => {
+      const [y, m, d] = iso.split('-').map(Number);
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `${months[m - 1]} ${d}, ${y}`;
+    };
+    const fmtPct = (v) => {
+      if (v == null) return '<span class="fwd-none">not yet</span>';
+      const sign = v > 0 ? '+' : '';
+      const cls  = v > 0 ? 'fwd-pos' : v < 0 ? 'fwd-neg' : 'fwd-neu';
+      return `<span class="${cls}">${sign}${v.toFixed(1)}%</span>`;
+    };
+
+    grid.innerHTML = moments.map(m => `
+      <div class="moment-card">
+        <div class="moment-head">
+          <div>
+            <div class="moment-date">${fmtDate(m.date)}</div>
+            <div class="moment-event">${m.event}</div>
+          </div>
+          <div class="moment-spx">SPX ${m.spxClose ? m.spxClose.toLocaleString() : '&mdash;'}</div>
+        </div>
+        <div class="moment-context">${m.context}</div>
+        <div class="moment-reading">
+          <div class="moment-score" style="color:${m.bucketColor}">${m.batsScore != null ? m.batsScore.toFixed(1) : '&mdash;'}</div>
+          <div class="moment-bucket">
+            <span class="moment-dot" style="background:${m.bucketColor}"></span>
+            <div>
+              <div class="moment-bucket-label">${m.bucketLabel || '&mdash;'}</div>
+              <div class="moment-action">${m.action || ''}</div>
+            </div>
+          </div>
+        </div>
+        <div class="moment-forward">
+          <div class="fwd-cell"><span class="fwd-lbl">+1mo</span> ${fmtPct(m.forward.spx_1m)}</div>
+          <div class="fwd-cell"><span class="fwd-lbl">+3mo</span> ${fmtPct(m.forward.spx_3m)}</div>
+          <div class="fwd-cell"><span class="fwd-lbl">+6mo</span> ${fmtPct(m.forward.spx_6m)}</div>
+          <div class="fwd-cell"><span class="fwd-lbl">+12mo</span> ${fmtPct(m.forward.spx_12m)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    if (meta) {
+      meta.innerHTML =
+        `Forward returns are S&amp;P 500 price returns (no dividends). ` +
+        `"not yet" = the moment is recent enough that the window hasn't closed. ` +
+        `Data through ${payload.latestSpxDate}.`;
+    }
+  })();
+  </script>
 </body>
 </html>

@@ -51,6 +51,9 @@ jobs:
       - name: Refresh SPY news from Yahoo (tolerant of no-new-data)
         run: python scripts/update-spy-news.py
 
+      - name: Regenerate BATS moments (fills in forward returns as time passes)
+        run: python scripts/build-bats-moments.py
+
       - name: Commit and push if anything changed
         run: |
           if [ -n "$(git status --porcelain data/)" ]; then
