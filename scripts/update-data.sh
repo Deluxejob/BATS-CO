@@ -119,6 +119,16 @@ fetch_yahoo_daily "SPY"   "$DATA_DIR/spy.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "RSP"   "$DATA_DIR/rsp.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "MDY"   "$DATA_DIR/mdy.csv" "799545600"    # 1995-05-04 (MDY inception)
 fetch_yahoo_daily "IWM"   "$DATA_DIR/iwm.csv" "959299200"    # 2000-05-26 (IWM inception)
+
+# --- State Street Select SPDR sector ETFs (for the sector heatmap) ---
+mkdir -p "$DATA_DIR/sectors"
+# Original 9 SPDR sectors launched 1998-12-16
+for sym in XLK XLF XLE XLV XLI XLY XLP XLU XLB; do
+  fname="$(echo "$sym" | tr 'A-Z' 'a-z').csv"
+  fetch_yahoo_daily "$sym" "$DATA_DIR/sectors/$fname" "913766400"  # 1998-12-16
+done
+fetch_yahoo_daily "XLRE" "$DATA_DIR/sectors/xlre.csv" "1444176000" # 2015-10-07 (Real Estate inception)
+fetch_yahoo_daily "XLC"  "$DATA_DIR/sectors/xlc.csv"  "1529280000" # 2018-06-18 (Comm Services inception)
 fetch_yahoo_daily "HYG"   "$DATA_DIR/hyg.csv" "1176249600"   # 2007-04-11
 fetch_yahoo_daily "LQD"   "$DATA_DIR/lqd.csv" "1176249600"   # 2007-04-11 (aligned with HYG)
 fetch_yahoo_daily "TLT"   "$DATA_DIR/tlt.csv" "1027296000"   # 2002-07-22 (TLT inception)
