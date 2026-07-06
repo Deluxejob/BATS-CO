@@ -34,7 +34,16 @@ def warn(msg: str) -> None:
 
 
 def fetch_quote(symbol: str) -> dict | None:
-    """Return {price, prevClose, marketTime} for the ETF, or None on failure."""
+    """Return {price, prevClose, marketTime} for the ETF, or None on failure.
+
+    Yahoo's meta fields `previousClose` and `regularMarketPreviousClose` come
+    back null for many ETFs, and `chartPreviousClose` is the close *before* the
+    chart's range starts — not the true previous session close. So we ignore
+    the meta prevClose values entirely and instead take the previous session's
+    close directly from the chart daily-candle series: the second-to-last close
+    when the last row is today's intraday. This matches what every quote
+    provider shows as "% change today".
+    """
     url = (
         f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
         "?interval=1d&range=5d&includePrePost=false"
@@ -50,19 +59,33 @@ def fetch_quote(symbol: str) -> dict | None:
     try:
         result = payload["chart"]["result"][0]
         meta = result["meta"]
+        closes = result["indicators"]["quote"][0]["close"]
     except (KeyError, IndexError, TypeError):
         warn(f"{symbol}: unexpected response shape")
         return None
 
     price = meta.get("regularMarketPrice")
-    prev = meta.get("chartPreviousClose") or meta.get("previousClose")
     ts = meta.get("regularMarketTime")
+
+    # Take the previous session's close from the last chart row that isn't the
+    # current intraday session. Walk from the end, skipping nulls, and take the
+    # second usable value.
+    prev = None
+    usable = [c for c in closes if c is not None]
+    if len(usable) >= 2:
+        prev = float(usable[-2])
+    # Final fallback: meta's chartPreviousClose (may be stale but better than nothing)
+    if prev is None:
+        cpc = meta.get("chartPreviousClose")
+        if cpc is not None:
+            prev = float(cpc)
+
     if price is None or prev is None:
         warn(f"{symbol}: missing price fields")
         return None
     return {
         "price": float(price),
-        "prevClose": float(prev),
+        "prevClose": prev,
         "marketTime": int(ts) if ts is not None else None,
     }
 
