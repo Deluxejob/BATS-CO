@@ -34,15 +34,18 @@ jobs:
       - name: Fetch SPY news from Yahoo
         run: python scripts/update-spy-news.py
 
+      - name: Fetch broad-market news from Yahoo
+        run: python scripts/update-market-news.py
+
       - name: Commit and push if news changed
         run: |
-          if [ -n "$(git status --porcelain data/spy_news.json)" ]; then
+          if [ -n "$(git status --porcelain data/spy_news.json data/market_news.json)" ]; then
             git config user.name  "BATS.CO News Bot"
             git config user.email "bot@bats.co"
-            git add data/spy_news.json
-            git commit -m "chore: refresh SPY news $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git add data/spy_news.json data/market_news.json
+            git commit -m "chore: refresh news $(date -u +'%Y-%m-%d %H:%M UTC')"
             git push
-            echo "::notice::Pushed refreshed SPY news."
+            echo "::notice::Pushed refreshed news."
           else
             echo "::notice::No news changes; nothing to commit."
           fi

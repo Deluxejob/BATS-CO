@@ -806,24 +806,11 @@
       </div>
       <div class="technicals-grid">
         <div class="card">
-          <h3>Broad market <span class="spy-source">via TradingView</span></h3>
-          <div class="news-scroll-wrap">
-            <div class="tradingview-widget-container news-widget refreshable-widget">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-              {
-                "feedMode": "market",
-                "market": "stock",
-                "isTransparent": true,
-                "displayMode": "regular",
-                "width": "100%",
-                "height": 1400,
-                "colorTheme": "dark",
-                "locale": "en"
-              }
-              </script>
-            </div>
-          </div>
+          <h3>Broad market &mdash; <span class="spy-source">via Yahoo Finance</span></h3>
+          <ul class="spy-news-list" id="marketNewsList">
+            <li class="spy-news-loading">Loading headlines&hellip;</li>
+          </ul>
+          <p class="spy-news-meta" id="marketNewsMeta"></p>
         </div>
         <div class="card">
           <h3>S&P 500 (SPY) &mdash; <span class="spy-source">via Yahoo Finance</span></h3>
@@ -833,29 +820,6 @@
           <p class="spy-news-meta" id="spyNewsMeta"></p>
         </div>
       </div>
-      <script>
-      // Auto-refresh every TradingView Timeline widget every 15 minutes so an
-      // open tab doesn't go stale. Browsers won't re-execute an existing
-      // <script> tag from a plain innerHTML swap — we clone each script into
-      // a fresh element so the widget re-fetches TradingView's feed.
-      (function () {
-        const containers = document.querySelectorAll('.refreshable-widget');
-        if (!containers.length) return;
-        const snapshots = Array.from(containers).map(c => c.innerHTML);
-        setInterval(function () {
-          containers.forEach(function (container, i) {
-            container.innerHTML = snapshots[i];
-            const oldScript = container.querySelector('script');
-            if (!oldScript) return;
-            const newScript = document.createElement('script');
-            newScript.src = oldScript.src;
-            newScript.async = true;
-            newScript.text = oldScript.textContent;
-            oldScript.parentNode.replaceChild(newScript, oldScript);
-          });
-        }, 15 * 60 * 1000);
-      })();
-      </script>
     </section>
 
     <!-- COMING SOON -->
@@ -1228,28 +1192,16 @@
   // No custom JS needed; the widgets self-initialize from their inline scripts.)
 
   // ==========================================================================
-  // SPY NEWS — fetch our own Yahoo-backed data/spy_news.json, render list
+  // NEWS LISTS — both cards fetch a Yahoo-backed JSON and render a list.
+  //   - Broad market news: data/market_news.json (query "S&P 500")
+  //   - SPY-specific news: data/spy_news.json  (query "SPY")
+  // Both refreshed hourly during market hours via GitHub Actions.
   // ==========================================================================
-  (async function renderSpyNews() {
-    const list = document.getElementById('spyNewsList');
-    const meta = document.getElementById('spyNewsMeta');
-    if (!list) return;
-
-    let payload;
-    try {
-      const r = await fetch('data/spy_news.json', { cache: 'no-store' });
-      if (!r.ok) throw new Error('http ' + r.status);
-      payload = await r.json();
-    } catch (e) {
-      list.innerHTML = '<li class="spy-news-loading">Couldn\'t load headlines right now.</li>';
-      return;
-    }
-
-    const items = payload.items || [];
-    if (!items.length) {
-      list.innerHTML = '<li class="spy-news-loading">No headlines available right now.</li>';
-      return;
-    }
+  (async function renderNewsCards() {
+    const CARDS = [
+      { listId: 'marketNewsList', metaId: 'marketNewsMeta', url: 'data/market_news.json' },
+      { listId: 'spyNewsList',    metaId: 'spyNewsMeta',    url: 'data/spy_news.json'    },
+    ];
 
     const now = Date.now() / 1000;
     const relTime = (ts) => {
@@ -1266,20 +1218,39 @@
       { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
     ));
 
-    const html = items.map(it => `
-      <li>
-        <a href="${escape(it.link)}" target="_blank" rel="noopener noreferrer">${escape(it.title)}</a>
-        <span class="spy-news-byline">
-          <span class="spy-news-publisher">${escape(it.publisher || 'Yahoo Finance')}</span>
-          &middot; ${escape(relTime(it.publishedAt))}
-        </span>
-      </li>
-    `).join('');
-    list.innerHTML = html;
-
-    if (payload.fetchedAt) {
-      meta.textContent = `Feed refreshed ${relTime(payload.fetchedAt)}. Refreshes hourly via GitHub Actions.`;
+    async function renderOne({ listId, metaId, url }) {
+      const list = document.getElementById(listId);
+      const meta = document.getElementById(metaId);
+      if (!list) return;
+      let payload;
+      try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        payload = await r.json();
+      } catch (e) {
+        list.innerHTML = '<li class="spy-news-loading">Couldn\'t load headlines right now.</li>';
+        return;
+      }
+      const items = payload.items || [];
+      if (!items.length) {
+        list.innerHTML = '<li class="spy-news-loading">No headlines available right now.</li>';
+        return;
+      }
+      list.innerHTML = items.map(it => `
+        <li>
+          <a href="${escape(it.link)}" target="_blank" rel="noopener noreferrer">${escape(it.title)}</a>
+          <span class="spy-news-byline">
+            <span class="spy-news-publisher">${escape(it.publisher || 'Yahoo Finance')}</span>
+            &middot; ${escape(relTime(it.publishedAt))}
+          </span>
+        </li>
+      `).join('');
+      if (meta && payload.fetchedAt) {
+        meta.textContent = `Feed refreshed ${relTime(payload.fetchedAt)}. Refreshes hourly via GitHub Actions.`;
+      }
     }
+
+    await Promise.all(CARDS.map(renderOne));
   })();
 
   // (DXY now uses a TradingView Symbol Overview widget — self-initializing,
