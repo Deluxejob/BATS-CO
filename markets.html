@@ -133,63 +133,23 @@
       color: var(--text-dim);
     }
 
-    /* Index dashboard cards (SPY / QQQ / MDY / IWM) */
+    /* Index dashboard cards — each wraps a TradingView Symbol Overview widget */
     .idx-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
       gap: 1rem;
       margin-top: 1rem;
     }
-    .idx-card { padding: 1.1rem 1.2rem; }
-    .idx-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
-      margin-bottom: .85rem;
-    }
-    .idx-head h3 { margin: 0; font-size: 1.05rem; }
-    .idx-ticker {
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
-      font-size: .75rem;
-      color: var(--text-dim);
-      font-weight: 500;
-      margin-left: .35rem;
-      letter-spacing: .04em;
-    }
+    .idx-card { padding: 1rem 1.1rem; }
+    .idx-header { margin-bottom: .5rem; }
+    .idx-header h3 { margin: 0; font-size: 1.05rem; }
     .idx-desc {
       font-size: .78rem;
       color: var(--text-dim);
-      margin-top: .3rem;
-      max-width: 26rem;
+      margin-top: .25rem;
+      max-width: 30rem;
       line-height: 1.35;
     }
-    .idx-price-block { text-align: right; white-space: nowrap; }
-    .idx-price {
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1;
-    }
-    .idx-change {
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
-      font-size: .85rem;
-      font-weight: 600;
-      margin-top: .3rem;
-      color: var(--text-dim);
-      min-height: 1.1em;
-    }
-    .idx-change.pos { color: #4ade80; }
-    .idx-change.neg { color: #f87171; }
-    .idx-svg { width: 100%; display: block; height: auto; margin-top: .5rem; }
-    .idx-svg .axis-label { fill: #c9d3e0; font-size: 11px; font-weight: 500; }
-    .idx-svg .axis-line  { stroke: var(--border); stroke-width: 1; }
-    .idx-svg .grid-line  { stroke: var(--border); stroke-width: 1; opacity: 0.3; stroke-dasharray: 2 3; }
-    .idx-svg .idx-line   { fill: none; stroke: #64d3ff; stroke-width: 1.6; }
-    .idx-svg .idx-line.pos { stroke: #4ade80; }
-    .idx-svg .idx-line.neg { stroke: #f87171; }
-    .idx-svg .idx-dot    { stroke: #fff; stroke-width: 1; }
 
     /* Sector heatmap tiles */
     .sector-heat-grid {
@@ -309,95 +269,155 @@
     <section id="dashboards">
       <div class="section-head">
         <h2>Index dashboards</h2>
-        <p>Four core US equity indices at a glance. Pick a period on any card &mdash; the chart, current price, and change all update.</p>
+        <p>Four core US equity indices with live streaming prices. Click any range button on a card (1D/5D/1M/3M/6M/YTD/1Y/5Y/All) to zoom in or out. The green dot next to the ETF name = live during US market hours.</p>
       </div>
       <div class="idx-grid">
-        <div class="card idx-card" data-symbol="spy">
-          <div class="idx-head">
-            <div>
-              <h3>S&P 500 <span class="idx-ticker">SPY</span></h3>
-              <div class="idx-desc">The 500 largest US stocks, cap-weighted.</div>
-            </div>
-            <div class="idx-price-block">
-              <div class="idx-price" id="spyPrice">&ndash;</div>
-              <div class="idx-change" id="spyChange">&nbsp;</div>
-            </div>
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>S&P 500</h3>
+            <div class="idx-desc">The 500 largest US stocks, cap-weighted.</div>
           </div>
-          <div class="chart-periods" id="spyPeriods" role="tablist" aria-label="SPY chart time period">
-            <button type="button" class="chart-period-btn" data-period="0.083" role="tab">1M</button>
-            <button type="button" class="chart-period-btn" data-period="0.25"  role="tab">3M</button>
-            <button type="button" class="chart-period-btn" data-period="0.5"   role="tab">6M</button>
-            <button type="button" class="chart-period-btn active" data-period="1" role="tab">1Y</button>
-            <button type="button" class="chart-period-btn" data-period="5"     role="tab">5Y</button>
-            <button type="button" class="chart-period-btn" data-period="all"   role="tab">All</button>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["S&P 500 (SPY)", "AMEX:SPY|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
           </div>
-          <svg class="idx-svg" id="spyChart" viewBox="0 0 560 240" preserveAspectRatio="none"></svg>
         </div>
 
-        <div class="card idx-card" data-symbol="qqq">
-          <div class="idx-head">
-            <div>
-              <h3>Nasdaq 100 <span class="idx-ticker">QQQ</span></h3>
-              <div class="idx-desc">The 100 largest non-financial Nasdaq stocks &mdash; tech-heavy.</div>
-            </div>
-            <div class="idx-price-block">
-              <div class="idx-price" id="qqqPrice">&ndash;</div>
-              <div class="idx-change" id="qqqChange">&nbsp;</div>
-            </div>
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Nasdaq 100</h3>
+            <div class="idx-desc">The 100 largest non-financial Nasdaq stocks &mdash; tech-heavy.</div>
           </div>
-          <div class="chart-periods" id="qqqPeriods" role="tablist" aria-label="QQQ chart time period">
-            <button type="button" class="chart-period-btn" data-period="0.083" role="tab">1M</button>
-            <button type="button" class="chart-period-btn" data-period="0.25"  role="tab">3M</button>
-            <button type="button" class="chart-period-btn" data-period="0.5"   role="tab">6M</button>
-            <button type="button" class="chart-period-btn active" data-period="1" role="tab">1Y</button>
-            <button type="button" class="chart-period-btn" data-period="5"     role="tab">5Y</button>
-            <button type="button" class="chart-period-btn" data-period="all"   role="tab">All</button>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Nasdaq 100 (QQQ)", "NASDAQ:QQQ|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
           </div>
-          <svg class="idx-svg" id="qqqChart" viewBox="0 0 560 240" preserveAspectRatio="none"></svg>
         </div>
 
-        <div class="card idx-card" data-symbol="mdy">
-          <div class="idx-head">
-            <div>
-              <h3>Mid Caps <span class="idx-ticker">MDY</span></h3>
-              <div class="idx-desc">S&P MidCap 400 &mdash; the middle tier by market cap ($3B&ndash;$18B).</div>
-            </div>
-            <div class="idx-price-block">
-              <div class="idx-price" id="mdyPrice">&ndash;</div>
-              <div class="idx-change" id="mdyChange">&nbsp;</div>
-            </div>
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Mid Caps</h3>
+            <div class="idx-desc">S&P MidCap 400 &mdash; the middle tier by market cap ($3B&ndash;$18B).</div>
           </div>
-          <div class="chart-periods" id="mdyPeriods" role="tablist" aria-label="MDY chart time period">
-            <button type="button" class="chart-period-btn" data-period="0.083" role="tab">1M</button>
-            <button type="button" class="chart-period-btn" data-period="0.25"  role="tab">3M</button>
-            <button type="button" class="chart-period-btn" data-period="0.5"   role="tab">6M</button>
-            <button type="button" class="chart-period-btn active" data-period="1" role="tab">1Y</button>
-            <button type="button" class="chart-period-btn" data-period="5"     role="tab">5Y</button>
-            <button type="button" class="chart-period-btn" data-period="all"   role="tab">All</button>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Mid Caps (MDY)", "AMEX:MDY|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
           </div>
-          <svg class="idx-svg" id="mdyChart" viewBox="0 0 560 240" preserveAspectRatio="none"></svg>
         </div>
 
-        <div class="card idx-card" data-symbol="iwm">
-          <div class="idx-head">
-            <div>
-              <h3>Small Caps <span class="idx-ticker">IWM</span></h3>
-              <div class="idx-desc">Russell 2000 &mdash; the smallest 2,000 US stocks.</div>
-            </div>
-            <div class="idx-price-block">
-              <div class="idx-price" id="iwmPrice">&ndash;</div>
-              <div class="idx-change" id="iwmChange">&nbsp;</div>
-            </div>
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Small Caps</h3>
+            <div class="idx-desc">Russell 2000 &mdash; the smallest 2,000 US stocks.</div>
           </div>
-          <div class="chart-periods" id="iwmPeriods" role="tablist" aria-label="IWM chart time period">
-            <button type="button" class="chart-period-btn" data-period="0.083" role="tab">1M</button>
-            <button type="button" class="chart-period-btn" data-period="0.25"  role="tab">3M</button>
-            <button type="button" class="chart-period-btn" data-period="0.5"   role="tab">6M</button>
-            <button type="button" class="chart-period-btn active" data-period="1" role="tab">1Y</button>
-            <button type="button" class="chart-period-btn" data-period="5"     role="tab">5Y</button>
-            <button type="button" class="chart-period-btn" data-period="all"   role="tab">All</button>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Small Caps (IWM)", "AMEX:IWM|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
           </div>
-          <svg class="idx-svg" id="iwmChart" viewBox="0 0 560 240" preserveAspectRatio="none"></svg>
         </div>
       </div>
     </section>
@@ -942,139 +962,8 @@
     render('1d');
   })();
 
-  // ==========================================================================
-  // INDEX DASHBOARDS — four ETF proxies (SPY, QQQ, MDY, IWM) with period buttons
-  // ==========================================================================
-  (function setupIndexDashboards() {
-    const INDICES = [
-      { sym: 'spy', file: 'data/spy.csv' },
-      { sym: 'qqq', file: 'data/qqq.csv' },
-      { sym: 'mdy', file: 'data/mdy.csv' },
-      { sym: 'iwm', file: 'data/iwm.csv' },
-    ];
-
-    async function loadClosesCsv(url) {
-      const r = await fetch(url, { cache: 'no-store' });
-      if (!r.ok) throw new Error('http ' + r.status);
-      const txt = await r.text();
-      const out = [];
-      for (const line of txt.trim().split(/\r?\n/).slice(1)) {
-        const [d, c] = line.split(',');
-        const px = parseFloat(c);
-        if (!isFinite(px)) continue;
-        out.push({ d, px, t: new Date(d).getTime() });
-      }
-      return out;
-    }
-
-    function renderIndex(sym, rows, period) {
-      const svg   = document.getElementById(sym + 'Chart');
-      const priceEl = document.getElementById(sym + 'Price');
-      const changeEl = document.getElementById(sym + 'Change');
-      if (!svg || !rows.length) return;
-
-      const latest = rows[rows.length - 1];
-      priceEl.textContent = latest.px < 100
-        ? latest.px.toFixed(2)
-        : latest.px.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
-
-      // Slice rows by period
-      let slice;
-      if (period === 'all') {
-        slice = rows;
-      } else {
-        const yrs = parseFloat(period);
-        const cutoff = latest.t - yrs * 365.25 * 24 * 3600 * 1000;
-        slice = rows.filter(r => r.t >= cutoff);
-      }
-      if (slice.length < 2) slice = rows.slice(-30);
-      const first = slice[0], last = slice[slice.length - 1];
-
-      const chgAbs = last.px - first.px;
-      const chgPct = (chgAbs / first.px) * 100;
-      const isPos = chgAbs >= 0;
-      changeEl.textContent = (isPos ? '+' : '') + chgPct.toFixed(2) + '%';
-      changeEl.classList.remove('pos', 'neg');
-      changeEl.classList.add(isPos ? 'pos' : 'neg');
-
-      // Render SVG
-      const W = 560, H = 240;
-      const M = { top: 10, right: 8, bottom: 26, left: 45 };
-      const plotW = W - M.left - M.right;
-      const plotH = H - M.top - M.bottom;
-
-      const pxs = slice.map(r => r.px);
-      const pxMin = Math.min(...pxs);
-      const pxMax = Math.max(...pxs);
-      const pad = (pxMax - pxMin) * 0.06 || 1;
-      const yMin = pxMin - pad;
-      const yMax = pxMax + pad;
-      const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
-      const yFor = (p) => M.top + plotH - ((p - yMin) / (yMax - yMin)) * plotH;
-
-      let s = '';
-      // Y grid (4 tick marks)
-      for (let k = 0; k <= 4; k++) {
-        const v = yMin + (yMax - yMin) * (k / 4);
-        const y = yFor(v);
-        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
-        const vLabel = v < 100 ? v.toFixed(1) : Math.round(v).toLocaleString();
-        s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${vLabel}</text>`;
-      }
-
-      // X ticks (adaptive by period)
-      const spanMs = last.t - first.t;
-      const spanYrs = spanMs / (365.25 * 24 * 3600 * 1000);
-      let tickMs, fmtTick;
-      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      if (spanYrs <= 0.15)      { tickMs = 7 * 24 * 3600 * 1000;                fmtTick = t => { const d = new Date(t); return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`; }; }
-      else if (spanYrs <= 0.4)  { tickMs = 21 * 24 * 3600 * 1000;               fmtTick = t => { const d = new Date(t); return `${monthNames[d.getUTCMonth()]} ${d.getUTCDate()}`; }; }
-      else if (spanYrs <= 0.75) { tickMs = 45 * 24 * 3600 * 1000;               fmtTick = t => { const d = new Date(t); return monthNames[d.getUTCMonth()]; }; }
-      else if (spanYrs <= 1.5)  { tickMs = 90 * 24 * 3600 * 1000;               fmtTick = t => { const d = new Date(t); return `${monthNames[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(-2)}`; }; }
-      else if (spanYrs <= 8)    { tickMs = 365 * 24 * 3600 * 1000;              fmtTick = t => String(new Date(t).getUTCFullYear()); }
-      else                       { tickMs = 5 * 365 * 24 * 3600 * 1000;         fmtTick = t => String(new Date(t).getUTCFullYear()); }
-      for (let t = Math.ceil(first.t / tickMs) * tickMs; t <= last.t; t += tickMs) {
-        const x = xFor(t);
-        s += `<line class="grid-line" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-        s += `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 14).toFixed(1)}" text-anchor="middle">${fmtTick(t)}</text>`;
-      }
-
-      // Axis lines
-      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
-      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-
-      // Path (colored green/red by period change)
-      const cls = isPos ? 'idx-line pos' : 'idx-line neg';
-      const path = slice.map((r, i) => (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yFor(r.px).toFixed(1)).join(' ');
-      s += `<path class="${cls}" d="${path}"/>`;
-
-      // Latest dot
-      const dotColor = isPos ? '#4ade80' : '#f87171';
-      s += `<circle class="idx-dot" cx="${xFor(last.t).toFixed(1)}" cy="${yFor(last.px).toFixed(1)}" r="3.5" fill="${dotColor}"/>`;
-
-      svg.innerHTML = s;
-    }
-
-    INDICES.forEach(async ({ sym, file }) => {
-      const priceEl = document.getElementById(sym + 'Price');
-      try {
-        const rows = await loadClosesCsv(file);
-        if (!rows.length) throw new Error('empty');
-        // Initial render at 1Y (matches which button has .active class in HTML)
-        renderIndex(sym, rows, '1');
-        // Wire period buttons
-        const bar = document.getElementById(sym + 'Periods');
-        bar.addEventListener('click', (e) => {
-          const btn = e.target.closest('.chart-period-btn');
-          if (!btn) return;
-          bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
-          renderIndex(sym, rows, btn.dataset.period);
-        });
-      } catch (e) {
-        if (priceEl) priceEl.textContent = '—';
-      }
-    });
-  })();
+  // (Index Dashboards now use TradingView Symbol Overview widgets — see HTML.
+  // No custom JS needed; the widgets self-initialize from their inline scripts.)
 
   // ==========================================================================
   // SPY NEWS — fetch our own Yahoo-backed data/spy_news.json, render list
