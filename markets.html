@@ -196,6 +196,37 @@
       font-weight: 700;
       color: #ffffff;
     }
+
+    /* Cross-asset ratio card explainer */
+    .ratio-explainer {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+    .ratio-explainer h4 {
+      margin: 0 0 0.4rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .ratio-explainer p { margin: 0 0 0.6rem; }
+    .ratio-explainer ul { margin: 0 0 0.6rem 1.1rem; padding: 0; }
+    .ratio-explainer li { margin-bottom: 0.25rem; }
+    .ratio-explainer strong { color: var(--text); }
+    .ratio-explainer .ratio-history {
+      margin-top: 0.6rem;
+      padding: 0.5rem 0.7rem;
+      background: rgba(100, 211, 255, 0.05);
+      border-left: 2px solid #64d3ff;
+      border-radius: 4px;
+      font-size: 0.82rem;
+    }
+    .rd-svg .avg-line { stroke: #64d3ff; stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.85; }
   </style>
 </head>
 <body>
@@ -604,6 +635,84 @@
             </script>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- RATIOS: GOLD/SILVER + SPX/GOLD -->
+    <section id="ratios">
+      <div class="section-head">
+        <h2>Cross-asset ratios</h2>
+        <p>
+          Two long-running ratios that historically tell you where investors are
+          hiding &mdash; risk-on stocks, defensive gold, or its speculative cousin silver.
+        </p>
+      </div>
+      <div class="technicals-grid">
+
+        <!-- GOLD / SILVER RATIO -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>Gold / Silver ratio</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="gsrCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Long-term median</span> <span class="rd-num" id="gsrMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="gsrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Silver ratio chart"></svg>
+          <p class="rd-note" id="gsrNote">Loading gold/silver ratio&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              The Gold/Silver ratio measures how many ounces of silver it takes to buy one
+              ounce of gold. It's a classic contrarian tool in the precious-metals world:
+              when the ratio is unusually <strong>high</strong>, silver is cheap relative to gold and has
+              historically outperformed on the reversal; when it's unusually <strong>low</strong>,
+              silver is expensive and gold tends to catch up.
+            </p>
+            <ul>
+              <li><strong>Above 90:</strong> Silver deeply undervalued vs gold. Rare &mdash; happened in the 2008 crisis, 2020 COVID, 2016 mining crash.</li>
+              <li><strong>60&ndash;80:</strong> Normal historical range. No strong signal.</li>
+              <li><strong>Below 50:</strong> Silver expensive vs gold. Historically the setup where silver's rally has run out of room.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Extremes:</strong> 2020 COVID crash pushed the ratio to ~125 (all-time high).
+              1980 Hunt-brothers silver squeeze pushed it to ~15 (all-time low).
+            </p>
+          </div>
+        </div>
+
+        <!-- S&P 500 / GOLD RATIO -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>S&P 500 / Gold ratio</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="sgrCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="sgrMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="sgrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="S&P 500/Gold ratio chart"></svg>
+          <p class="rd-note" id="sgrNote">Loading S&P 500/gold ratio&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              This ratio compares the S&P 500 index level to the gold price per ounce.
+              It's a barometer of investor risk appetite: how much you'd have to pay in
+              ounces of gold to buy one "share" of the S&P 500.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> stocks growing faster than gold &mdash; risk-on, corporate confidence, positive real growth expectations.</li>
+              <li><strong>Falling:</strong> gold outpacing stocks &mdash; defensive positioning, inflation hedging, or geopolitical stress.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Historical extremes:</strong>
+              1999 dot-com peak: <strong>5.5</strong> (stocks wildly overvalued vs gold).
+              1980 stagflation trough: <strong>~0.2</strong> (gold expensive, stocks depressed).
+              The ratio has trended lower recently &mdash; even though the S&P is at record highs,
+              gold's bull run has outpaced equity gains, compressing the ratio.
+            </p>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1093,6 +1202,179 @@
 
   // (DXY now uses a TradingView Symbol Overview widget — self-initializing,
   // live-streaming during market hours. No custom JS needed.)
+
+  // ==========================================================================
+  // CROSS-ASSET RATIOS — Gold/Silver + S&P 500/Gold
+  // Both computed daily from data/gold.csv, data/silver.csv, data/spx.csv.
+  // ==========================================================================
+  (async function renderRatios() {
+    async function loadCsv(url) {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const out = [];
+      for (const ln of (await r.text()).trim().split(/\r?\n/).slice(1)) {
+        const [d, c] = ln.split(',');
+        const px = parseFloat(c);
+        if (isFinite(px)) out.push({ d, px, t: new Date(d).getTime() });
+      }
+      return out;
+    }
+
+    let gold, silver, spx;
+    try {
+      [gold, silver, spx] = await Promise.all([
+        loadCsv('data/gold.csv'),
+        loadCsv('data/silver.csv'),
+        loadCsv('data/spx.csv'),
+      ]);
+    } catch (e) {
+      const gsr = document.getElementById('gsrNote');
+      const sgr = document.getElementById('sgrNote');
+      if (gsr) gsr.textContent = 'Failed to load ratio data.';
+      if (sgr) sgr.textContent = 'Failed to load ratio data.';
+      return;
+    }
+
+    // Build date → close maps for fast joining
+    const map = (rows) => { const m = new Map(); for (const r of rows) m.set(r.d, r.px); return m; };
+    const goldMap = map(gold), silverMap = map(silver), spxMap = map(spx);
+
+    // For each date in gold (which starts 2000-08-30), compute the ratio if both
+    // other series have a value on that date. If not, hold last known.
+    function joinedRatio(numerator, denominator, numMap, denMap) {
+      const rows = numerator;   // driver — iterates over its dates
+      const out = [];
+      let lastDen = null;
+      for (const r of rows) {
+        const denV = denMap.get(r.d) ?? lastDen;
+        if (denV != null) lastDen = denV;
+        if (denV != null && denV !== 0) {
+          out.push({ d: r.d, t: r.t, v: r.px / denV });
+        }
+      }
+      return out;
+    }
+
+    // Gold / Silver ratio: iterate over gold dates, divide by matching silver close
+    const gsRatio = joinedRatio(gold, silver, goldMap, silverMap);
+    // S&P / Gold ratio: iterate over spx dates, divide by matching gold close
+    //   Only kept from 2000-08-30 onward (when gold data starts)
+    const sgRatio = joinedRatio(
+      spx.filter(r => r.d >= '2000-08-30'),
+      gold, spxMap, goldMap
+    );
+
+    // Utilities
+    const median = (arr) => {
+      const s = [...arr].sort((a, b) => a - b);
+      return s.length ? s[Math.floor(s.length / 2)] : null;
+    };
+    const fmt = (v, d = 2) => v == null ? '—' : v.toFixed(d);
+
+    // --- Render one ratio chart (SVG line + horizontal median line + latest dot) ---
+    function drawChart(svgEl, rows, opts) {
+      if (!svgEl || rows.length < 10) return;
+      const W = 560, H = 260;
+      const M = { top: 15, right: 50, bottom: 30, left: 45 };
+      const plotW = W - M.left - M.right;
+      const plotH = H - M.top - M.bottom;
+
+      const vals = rows.map(r => r.v);
+      const yMin = Math.min(...vals) * 0.95;
+      const yMax = Math.max(...vals) * 1.05;
+      const first = rows[0], last = rows[rows.length - 1];
+      const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
+      const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+      let s = '';
+      // Y grid — 4 ticks
+      const range = yMax - yMin;
+      const step = range < 1 ? 0.25 : range < 5 ? 1 : range < 20 ? 5 : range < 80 ? 10 : 20;
+      for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
+        const y = yFor(v);
+        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v < 10 ? v.toFixed(1) : Math.round(v)}</text>`;
+      }
+      // X ticks — every ~4 years
+      const yearMs = 365.25 * 24 * 3600 * 1000;
+      const spanYrs = (last.t - first.t) / yearMs;
+      const tickYears = spanYrs > 15 ? 5 : spanYrs > 8 ? 2 : 1;
+      const startYr = new Date(first.t).getUTCFullYear();
+      const endYr = new Date(last.t).getUTCFullYear();
+      for (let y = Math.ceil(startYr / tickYears) * tickYears; y <= endYr; y += tickYears) {
+        const t = new Date(Date.UTC(y, 0, 1)).getTime();
+        if (t < first.t || t > last.t) continue;
+        const x = xFor(t);
+        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${y}</text>`;
+      }
+      // Axes
+      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      // Median line
+      if (opts.median != null && opts.median >= yMin && opts.median <= yMax) {
+        const y = yFor(opts.median);
+        s += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        s += `<text class="axis-label" x="${W - M.right + 3}" y="${y + 3}" style="fill:#64d3ff">med ${fmt(opts.median, opts.medianDigits || 1)}</text>`;
+      }
+
+      // Ratio line
+      const path = rows.map((r, i) =>
+        (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yFor(r.v).toFixed(1)
+      ).join(' ');
+      s += `<path fill="none" stroke="${opts.color || 'var(--s5)'}" stroke-width="1.4" d="${path}"/>`;
+
+      // Latest dot + value
+      const xC = xFor(last.t), yC = yFor(last.v);
+      s += `<circle cx="${xC}" cy="${yC}" r="4" fill="${opts.color || 'var(--s5)'}" stroke="#fff" stroke-width="1"/>`;
+      s += `<text x="${xC - 6}" y="${yC - 8}" text-anchor="end" fill="${opts.color || 'var(--s5)'}" font-size="12" font-weight="600">${fmt(last.v, opts.currentDigits || 1)}</text>`;
+
+      svgEl.innerHTML = s;
+    }
+
+    // === Gold / Silver ratio ===
+    const gsMedian = median(gsRatio.map(r => r.v));
+    const gsLast = gsRatio[gsRatio.length - 1];
+    document.getElementById('gsrCurrent').textContent = fmt(gsLast?.v, 1);
+    document.getElementById('gsrMedian').textContent = fmt(gsMedian, 1);
+    drawChart(document.getElementById('gsrChart'), gsRatio, {
+      median: gsMedian, color: '#f4b942', currentDigits: 1, medianDigits: 1,
+    });
+    if (gsLast) {
+      const dev = gsMedian ? ((gsLast.v / gsMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      let posture = 'within normal range';
+      if (gsLast.v >= 90) posture = 'unusually high — silver deeply undervalued relative to gold';
+      else if (gsLast.v <= 50) posture = 'unusually low — silver expensive relative to gold';
+      else if (gsLast.v >= 80) posture = 'elevated — silver on the cheap side';
+      else if (gsLast.v <= 60) posture = 'compressed — silver on the expensive side';
+      document.getElementById('gsrNote').innerHTML =
+        `As of <strong>${gsLast.d}</strong>: ratio <strong>${fmt(gsLast.v, 1)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(gsMedian, 1)}</strong>) — ${posture}.`;
+    }
+
+    // === S&P 500 / Gold ratio ===
+    const sgMedian = median(sgRatio.map(r => r.v));
+    const sgLast = sgRatio[sgRatio.length - 1];
+    document.getElementById('sgrCurrent').textContent = fmt(sgLast?.v, 2);
+    document.getElementById('sgrMedian').textContent = fmt(sgMedian, 2);
+    drawChart(document.getElementById('sgrChart'), sgRatio, {
+      median: sgMedian, color: '#64d3ff', currentDigits: 2, medianDigits: 2,
+    });
+    if (sgLast) {
+      const dev = sgMedian ? ((sgLast.v / sgMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      let posture = 'near the historical median';
+      if (sgLast.v >= 4) posture = 'stretched to the upside — stocks richly valued vs gold';
+      else if (sgLast.v <= 1) posture = 'stretched to the downside — gold richly valued vs stocks';
+      else if (dev > 20) posture = 'above the median — stocks winning the last cycle';
+      else if (dev < -20) posture = 'below the median — gold winning the last cycle';
+      document.getElementById('sgrNote').innerHTML =
+        `As of <strong>${sgLast.d}</strong>: ratio <strong>${fmt(sgLast.v, 2)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(sgMedian, 2)}</strong>) — ${posture}.`;
+    }
+  })();
   </script>
 </body>
 </html>
