@@ -227,6 +227,19 @@
       font-size: 0.82rem;
     }
     .rd-svg .avg-line { stroke: #64d3ff; stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.85; }
+
+    /* Ratios & spreads: strict 2-column layout so the 4 cards render 2×2,
+       not 3+1 (which is what the auto-fit .technicals-grid produces on
+       wide viewports). Stacks to 1 column on narrower screens. */
+    .ratios-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 900px) {
+      .ratios-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -648,7 +661,7 @@
           indicator.
         </p>
       </div>
-      <div class="technicals-grid">
+      <div class="ratios-grid">
 
         <!-- GOLD / SILVER RATIO -->
         <div class="card">
