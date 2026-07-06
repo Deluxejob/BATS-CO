@@ -367,8 +367,8 @@
             The 11 State Street SPDR sector ETFs, one tile per sector. Pick a
             time period below &mdash; tiles re-sort best-to-worst and recolor
             with intensity scaled to the strongest mover in that window.
-            For live intraday quotes, use the <strong>Sectors</strong> tab in
-            the Market Overview above.
+            The <strong>1 day</strong> view refreshes every 10 minutes during
+            US market hours; longer periods use daily closes.
           </p>
         </div>
         <div class="chart-periods" id="sectorHeatPeriods" role="tablist" aria-label="Sector heatmap time period">
@@ -841,10 +841,12 @@
   })();
 
   // ==========================================================================
-  // SECTOR HEATMAP — 11 SPDR ETFs, tiles colored by daily change
-  // Populated from data/sectors/*.csv (updated end-of-day via workflow).
-  // Live intraday view is available via the Sectors tab on the Market Overview
-  // widget above (TradingView, live-streaming).
+  // SECTOR HEATMAP — 11 SPDR ETFs, tiles colored by change
+  // Two data sources:
+  //   - data/sectors/*.csv    → daily closes (updated once after US market close)
+  //   - data/sectors_live.json → intraday quotes, refreshed every 10 min during
+  //     market hours by the update-sectors-intraday workflow. Used ONLY for
+  //     the "1 day" bucket when the JSON is fresh (< 30 min old).
   // ==========================================================================
   (async function renderSectorHeatmap() {
     const SECTORS = [
@@ -869,6 +871,11 @@
       '1y':  { label: '1 year',  lookback: 252, floor: 10.0 },
     };
 
+    // Intraday data is treated as "live" only if it was written within this
+    // many seconds — beyond that we fall back to the CSV close so we don't
+    // show stale-but-labeled-live numbers overnight/weekend.
+    const LIVE_MAX_AGE_SEC = 30 * 60;
+
     const grid = document.getElementById('sectorHeatGrid');
     const meta = document.getElementById('sectorHeatMeta');
     const bar  = document.getElementById('sectorHeatPeriods');
@@ -887,19 +894,51 @@
       return rows;
     }
 
-    // Load all ETFs once, keep full history in memory
-    const loaded = await Promise.all(SECTORS.map(async (s) => {
+    async function loadLive() {
       try {
-        const rows = await loadRows(s.sym);
-        return { ...s, rows };
+        const r = await fetch('data/sectors_live.json', { cache: 'no-store' });
+        if (!r.ok) return null;
+        return await r.json();
       } catch (e) {
-        return { ...s, rows: null };
+        return null;
       }
-    }));
+    }
 
-    function changeForPeriod(rows, period) {
+    // Load all ETFs + the live-quotes JSON in parallel
+    const [loaded, live] = await Promise.all([
+      Promise.all(SECTORS.map(async (s) => {
+        try {
+          const rows = await loadRows(s.sym);
+          return { ...s, rows };
+        } catch (e) {
+          return { ...s, rows: null };
+        }
+      })),
+      loadLive(),
+    ]);
+
+    // Decide whether the live JSON is fresh enough to use
+    const nowSec = Math.floor(Date.now() / 1000);
+    const liveAgeSec = live && live.generatedAtTs ? nowSec - live.generatedAtTs : Infinity;
+    const liveIsFresh = live && live.sectors && liveAgeSec < LIVE_MAX_AGE_SEC;
+
+    function changeForPeriod(rows, period, sym) {
       if (!rows || rows.length < 2) return null;
       const last = rows[rows.length - 1];
+
+      // Special case: for the "1 day" bucket, prefer the intraday JSON if it's
+      // available and fresh. It gives us today's live change against yesterday's
+      // official close — which is what a viewer actually wants during market hours.
+      if (period.lookback === 1 && liveIsFresh && live.sectors[sym]) {
+        const q = live.sectors[sym];
+        return {
+          last: { d: '(intraday)', px: q.price },
+          baseline: { d: '(yesterday close)', px: q.prevClose },
+          chg: q.changePct,
+          source: 'live',
+        };
+      }
+
       let baseline = null;
       if (period.lookback === 'ytd') {
         // Find the last close of the prior calendar year
@@ -913,7 +952,7 @@
         if (idx >= 0) baseline = rows[idx];
       }
       if (!baseline) return null;
-      return { last, baseline, chg: (last.px / baseline.px - 1) * 100 };
+      return { last, baseline, chg: (last.px / baseline.px - 1) * 100, source: 'csv' };
     }
 
     function colorFor(chg, maxAbs) {
@@ -933,7 +972,7 @@
     function render(periodKey) {
       const period = PERIODS[periodKey];
       const results = loaded.map(s => {
-        const info = changeForPeriod(s.rows, period);
+        const info = changeForPeriod(s.rows, period, s.sym);
         return { ...s, info };
       });
       const chgs = results.map(r => r.info?.chg).filter(v => isFinite(v));
@@ -965,10 +1004,21 @@
 
       const anyGood = results.find(r => r.info);
       if (anyGood && meta) {
+        const usingLive = anyGood.info.source === 'live';
+        let dataLine;
+        if (usingLive) {
+          const mins = Math.max(1, Math.round(liveAgeSec / 60));
+          dataLine =
+            `Showing <strong>${period.label}</strong> intraday change vs yesterday's close ` +
+            `&mdash; live quotes refreshed ${mins} min ago (updates every 10 min during market hours).`;
+        } else {
+          dataLine =
+            `Showing <strong>${period.label}</strong> change: ${anyGood.info.last.d} close vs ${anyGood.info.baseline.d} close. ` +
+            `Data refreshes daily via GitHub Actions after US market close.`;
+        }
         meta.innerHTML =
-          `Showing <strong>${period.label}</strong> change: ${anyGood.info.last.d} close vs ${anyGood.info.baseline.d} close. ` +
-          `Tiles are sorted best-to-worst and colored by move size (green = up, red = down, intensity relative to the strongest sector in this window). ` +
-          `Data refreshes daily via GitHub Actions after US market close.`;
+          dataLine + ` Tiles are sorted best-to-worst and colored by move size ` +
+          `(green = up, red = down, intensity relative to the strongest sector in this window).`;
       }
     }
 

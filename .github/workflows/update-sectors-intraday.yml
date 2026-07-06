@@ -1,0 +1,58 @@
+name: Update sector heatmap (intraday)
+
+# Refreshes data/sectors_live.json every 10 minutes during US market hours
+# so the sector heatmap on markets.html shows today's percentage change
+# instead of yesterday's close. Longer periods (1W/1M/YTD/1Y) on the tiles
+# still read the daily CSVs, which the main daily workflow refreshes.
+#
+# Cron: */10 13-21 * * 1-5
+#   - every 10 minutes (0/10/20/30/40/50 past the hour)
+#   - during UTC hours 13-21 (covers both EDT 13:30-20:00 and EST 14:30-21:00
+#     US market sessions with a small buffer on each side)
+#   - Monday through Friday only
+#
+# GitHub Actions cron isn't guaranteed on the dot — runs sometimes slip
+# 5-15 minutes. In practice this keeps sector tiles within ~15 minutes
+# of real-time during market hours.
+#
+# Manual trigger available from the Actions tab (workflow_dispatch).
+
+on:
+  schedule:
+    - cron: '*/10 13-21 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-sectors-intraday
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch intraday sector quotes
+        run: python scripts/update-sectors-intraday.py
+
+      - name: Commit and push if data changed
+        run: |
+          if [ -n "$(git status --porcelain data/sectors_live.json)" ]; then
+            git config user.name  "BATS.CO Sectors Bot"
+            git config user.email "bot@bats.co"
+            git add data/sectors_live.json
+            git commit -m "chore: refresh sectors_live $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+            echo "::notice::Pushed refreshed intraday sector data."
+          else
+            echo "::notice::Sector prices unchanged; nothing to commit."
+          fi
