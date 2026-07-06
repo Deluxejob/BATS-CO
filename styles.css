@@ -183,33 +183,39 @@ section { margin: 2.5rem 0; }
 /* Market toggle — pill-shaped tab pair (S&P 500 / Nasdaq 100) */
 .market-toggle {
   display: inline-flex;
-  gap: 2px;
-  padding: 4px;
+  gap: 4px;
+  padding: 6px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 999px;
-  margin: 0 auto 1rem;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .market-toggle-btn {
-  padding: .45rem 1.1rem;
+  padding: 0.75rem 1.9rem;
   border-radius: 999px;
   color: var(--text-dim);
   text-decoration: none;
-  font-size: .85rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: .02em;
-  transition: background .15s, color .15s;
+  letter-spacing: 0.02em;
+  transition: background .15s, color .15s, transform .12s;
 }
 .market-toggle-btn:hover {
   color: var(--text);
   text-decoration: none;
+  transform: translateY(-1px);
 }
 .market-toggle-btn.active {
-  background: var(--bg-card);
-  color: var(--text);
+  background: var(--accent);
+  color: #0a1218;
   cursor: default;
+  box-shadow: 0 2px 8px rgba(110, 231, 255, 0.35);
 }
-.market-toggle-btn.active:hover { color: var(--text); }
+.market-toggle-btn.active:hover {
+  color: #0a1218;
+  transform: none;
+}
 .gauge-wrap {
   position: relative;
   max-width: 520px;
