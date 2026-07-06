@@ -638,13 +638,14 @@
       </div>
     </section>
 
-    <!-- RATIOS: GOLD/SILVER + SPX/GOLD -->
+    <!-- RATIOS: GOLD/SILVER + SPX/GOLD + GOLD/OIL + 10Y-2Y SPREAD -->
     <section id="ratios">
       <div class="section-head">
-        <h2>Cross-asset ratios</h2>
+        <h2>Ratios &amp; spreads</h2>
         <p>
-          Two long-running ratios that historically tell you where investors are
-          hiding &mdash; risk-on stocks, defensive gold, or its speculative cousin silver.
+          Four long-running cross-market signals: precious-metals contrarian pair,
+          stocks-vs-gold risk appetite, commodities stress, and the classic recession
+          indicator.
         </p>
       </div>
       <div class="technicals-grid">
@@ -709,6 +710,74 @@
               1980 stagflation trough: <strong>~0.2</strong> (gold expensive, stocks depressed).
               The ratio has trended lower recently &mdash; even though the S&P is at record highs,
               gold's bull run has outpaced equity gains, compressing the ratio.
+            </p>
+          </div>
+        </div>
+
+        <!-- GOLD / OIL RATIO -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>Gold / Oil ratio</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="goRCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="goRMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="goRChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Oil ratio chart"></svg>
+          <p class="rd-note" id="goRNote">Loading gold/oil ratio&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              How many barrels of oil one ounce of gold buys. Because oil is the world's
+              growth commodity and gold is its defensive one, this ratio flags when the
+              two decouple &mdash; usually because something in the global economy is
+              breaking.
+            </p>
+            <ul>
+              <li><strong>Rising sharply:</strong> oil crashing faster than gold. Deflationary shock, demand destruction, or recession fear. Historically peaks near recession lows.</li>
+              <li><strong>Falling sharply:</strong> oil rallying faster than gold. Inflation, supply shock, or reflation trade. Common in commodity booms.</li>
+              <li><strong>Near median:</strong> normal risk regime, no strong signal.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Historical extremes:</strong>
+              April 2020 (COVID + negative oil day): <strong>~90+</strong> all-time high.
+              2008 GFC oil crash: <strong>~25</strong>.
+              1986 oil-price collapse: <strong>~30+</strong>.
+              2008 pre-GFC oil peak ($147/bbl): <strong>~6</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- 10Y - 2Y TREASURY SPREAD (with NBER recession shading) -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>10Y &minus; 2Y Treasury yield spread</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current spread</span> <span class="rd-num" id="ysCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Regime</span> <span class="rd-num" id="ysRegime">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="ysChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="10Y-2Y Treasury yield spread since 1990"></svg>
+          <p class="rd-note" id="ysNote">Loading yield spread&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              The gap between the 10-year and 2-year US Treasury yields. In normal times
+              long yields sit above short yields (positive spread) because investors want
+              extra compensation for locking money up longer. When the spread inverts
+              (goes negative), bond markets are pricing in near-term stress and lower
+              rates ahead &mdash; historically a recession signal.
+            </p>
+            <ul>
+              <li><strong>Above +100 bp:</strong> steep &mdash; economy expanding, Fed easing or on hold.</li>
+              <li><strong>0 to +100 bp:</strong> flat &mdash; late-cycle, tightening biting.</li>
+              <li><strong>Below 0 (inverted):</strong> classic pre-recession signal. Every US recession since 1970 has been preceded by an inversion of this spread by 6-24 months.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Track record since 1990:</strong> spread inverted before all four US
+              recessions in the chart (1990, 2001, 2008, 2020) plus the 2022&ndash;2024
+              inversion (deepest since 1981). Shaded bars mark official NBER recession
+              periods; note how the spread inverts <em>before</em> each shaded region.
             </p>
           </div>
         </div>
@@ -1220,18 +1289,32 @@
       return out;
     }
 
-    let gold, silver, spx;
+    async function loadYieldsHistory(url) {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const out = [];
+      for (const ln of (await r.text()).trim().split(/\r?\n/).slice(1)) {
+        const [d, y2, y10, spread] = ln.split(',');
+        const sp = parseFloat(spread);
+        if (isFinite(sp)) out.push({ d, t: new Date(d).getTime(), v: sp });
+      }
+      return out;
+    }
+
+    let gold, silver, spx, oil, yields;
     try {
-      [gold, silver, spx] = await Promise.all([
+      [gold, silver, spx, oil, yields] = await Promise.all([
         loadCsv('data/gold.csv'),
         loadCsv('data/silver.csv'),
         loadCsv('data/spx.csv'),
+        loadCsv('data/oil.csv'),
+        loadYieldsHistory('data/yields_history.csv'),
       ]);
     } catch (e) {
-      const gsr = document.getElementById('gsrNote');
-      const sgr = document.getElementById('sgrNote');
-      if (gsr) gsr.textContent = 'Failed to load ratio data.';
-      if (sgr) sgr.textContent = 'Failed to load ratio data.';
+      ['gsrNote','sgrNote','goRNote','ysNote'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'Failed to load ratio data.';
+      });
       return;
     }
 
@@ -1373,6 +1456,196 @@
       document.getElementById('sgrNote').innerHTML =
         `As of <strong>${sgLast.d}</strong>: ratio <strong>${fmt(sgLast.v, 2)}</strong> ` +
         `(${devTxt} vs median <strong>${fmt(sgMedian, 2)}</strong>) — ${posture}.`;
+    }
+
+    // === Gold / Oil ratio ===
+    const oilMap = map(oil);
+    const goRatio = joinedRatio(gold, oil, goldMap, oilMap);
+    const goMedian = median(goRatio.map(r => r.v));
+    const goLast = goRatio[goRatio.length - 1];
+    document.getElementById('goRCurrent').textContent = fmt(goLast?.v, 1);
+    document.getElementById('goRMedian').textContent = fmt(goMedian, 1);
+    drawChart(document.getElementById('goRChart'), goRatio, {
+      median: goMedian, color: '#f4b942', currentDigits: 1, medianDigits: 1,
+    });
+    if (goLast) {
+      const dev = goMedian ? ((goLast.v / goMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      let posture = 'within normal range';
+      if (goLast.v >= 40) posture = 'sharply elevated — gold vastly outpacing oil, historically a deflationary / recession stress signal';
+      else if (goLast.v >= 25) posture = 'elevated — gold outpacing oil, cautious tone in the commodities complex';
+      else if (goLast.v <= 8) posture = 'compressed — oil boom outpacing gold, historically an inflation / commodity-cycle signal';
+      else if (dev > 30) posture = 'above the median — gold winning vs oil';
+      else if (dev < -30) posture = 'below the median — oil winning vs gold';
+      document.getElementById('goRNote').innerHTML =
+        `As of <strong>${goLast.d}</strong>: ratio <strong>${fmt(goLast.v, 1)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(goMedian, 1)}</strong>) — ${posture}.`;
+    }
+
+    // === 10Y - 2Y Treasury spread with NBER recession shading ===
+    // NBER-dated US recessions since 1990. Format: [start, end] as YYYY-MM-DD.
+    const RECESSIONS = [
+      { start: '1990-07-01', end: '1991-03-31', label: 'Early-90s recession' },
+      { start: '2001-03-01', end: '2001-11-30', label: 'Dot-com recession' },
+      { start: '2007-12-01', end: '2009-06-30', label: 'Great Financial Crisis' },
+      { start: '2020-02-01', end: '2020-04-30', label: 'COVID recession' },
+    ];
+
+    function drawYieldSpread(svgEl, rows) {
+      if (!svgEl || rows.length < 10) return;
+      const W = 560, H = 260;
+      const M = { top: 15, right: 50, bottom: 30, left: 45 };
+      const plotW = W - M.left - M.right;
+      const plotH = H - M.top - M.bottom;
+
+      const vals = rows.map(r => r.v);
+      const rawMax = Math.max(...vals);
+      const rawMin = Math.min(...vals);
+      // Symmetric-ish scale around zero
+      const yMax = Math.max(3.5, rawMax + 0.3);
+      const yMin = Math.min(-3, rawMin - 0.3);
+      const first = rows[0], last = rows[rows.length - 1];
+      const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
+      const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+      let s = '';
+
+      // --- Recession shading (drawn first so it sits behind grid lines) ---
+      for (const rec of RECESSIONS) {
+        const startT = new Date(rec.start).getTime();
+        const endT = new Date(rec.end).getTime();
+        if (endT < first.t || startT > last.t) continue;
+        const x1 = xFor(Math.max(startT, first.t));
+        const x2 = xFor(Math.min(endT, last.t));
+        s += `<rect x="${x1.toFixed(1)}" y="${M.top}" width="${(x2 - x1).toFixed(1)}" ` +
+             `height="${plotH}" fill="#c9d3e0" fill-opacity="0.12"/>`;
+      }
+
+      // --- Y grid + labels ---
+      for (let v = Math.ceil(yMin); v <= Math.floor(yMax); v += 1) {
+        const y = yFor(v);
+        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        const label = v > 0 ? '+' + v : String(v);
+        s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${label}%</text>`;
+      }
+
+      // --- Zero baseline (drawn thicker to emphasize inversion boundary) ---
+      const yZero = yFor(0);
+      s += `<line x1="${M.left}" x2="${W - M.right}" y1="${yZero}" y2="${yZero}" ` +
+           `stroke="#c9d3e0" stroke-width="1" opacity="0.55"/>`;
+
+      // --- X ticks (every 5 years) ---
+      const startYr = new Date(first.t).getUTCFullYear();
+      const endYr = new Date(last.t).getUTCFullYear();
+      for (let y = Math.ceil(startYr / 5) * 5; y <= endYr; y += 5) {
+        const t = new Date(Date.UTC(y, 0, 1)).getTime();
+        if (t < first.t || t > last.t) continue;
+        const x = xFor(t);
+        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${y}</text>`;
+      }
+      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      // --- Filled area: green above zero, red below zero ---
+      // Build separate paths for positive and negative regions.
+      const pts = rows.map(r => ({ x: xFor(r.t), y: yFor(r.v), v: r.v }));
+      // Fill above zero (green): area between line and yZero when v > 0
+      let posArea = '', negArea = '';
+      let inPos = false, inNeg = false;
+      let startPosX = null, startNegX = null;
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i];
+        if (p.v > 0) {
+          if (!inPos) {
+            posArea += `M${p.x.toFixed(1)},${yZero} L${p.x.toFixed(1)},${p.y.toFixed(1)} `;
+            inPos = true;
+          } else {
+            posArea += `L${p.x.toFixed(1)},${p.y.toFixed(1)} `;
+          }
+          if (inNeg) {
+            negArea += `L${p.x.toFixed(1)},${yZero} Z `;
+            inNeg = false;
+          }
+        } else {
+          if (!inNeg) {
+            negArea += `M${p.x.toFixed(1)},${yZero} L${p.x.toFixed(1)},${p.y.toFixed(1)} `;
+            inNeg = true;
+          } else {
+            negArea += `L${p.x.toFixed(1)},${p.y.toFixed(1)} `;
+          }
+          if (inPos) {
+            posArea += `L${p.x.toFixed(1)},${yZero} Z `;
+            inPos = false;
+          }
+        }
+      }
+      if (inPos) posArea += `L${pts[pts.length - 1].x.toFixed(1)},${yZero} Z`;
+      if (inNeg) negArea += `L${pts[pts.length - 1].x.toFixed(1)},${yZero} Z`;
+      s += `<path d="${posArea}" fill="#4ade80" fill-opacity="0.35" stroke="none"/>`;
+      s += `<path d="${negArea}" fill="#f87171" fill-opacity="0.45" stroke="none"/>`;
+
+      // --- Line on top ---
+      const linePath = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+      s += `<path fill="none" stroke="#64d3ff" stroke-width="1.2" d="${linePath}"/>`;
+
+      // --- Latest dot + value ---
+      const xC = pts[pts.length - 1].x, yC = pts[pts.length - 1].y;
+      const dotColor = last.v >= 0 ? '#4ade80' : '#f87171';
+      s += `<circle cx="${xC}" cy="${yC}" r="4" fill="${dotColor}" stroke="#fff" stroke-width="1"/>`;
+      const sign = last.v > 0 ? '+' : '';
+      s += `<text x="${xC - 6}" y="${yC - 8}" text-anchor="end" fill="${dotColor}" font-size="12" font-weight="600">${sign}${last.v.toFixed(2)}%</text>`;
+
+      // --- Recession labels (small text above each shaded region) ---
+      for (const rec of RECESSIONS) {
+        const startT = new Date(rec.start).getTime();
+        if (startT < first.t || startT > last.t) continue;
+        const x = xFor(startT);
+        s += `<text x="${x + 3}" y="${M.top + 10}" fill="#c9d3e0" font-size="9" opacity="0.7">Recession</text>`;
+      }
+
+      svgEl.innerHTML = s;
+    }
+
+    drawYieldSpread(document.getElementById('ysChart'), yields);
+    const ysLast = yields[yields.length - 1];
+    if (ysLast) {
+      const bp = Math.round(ysLast.v * 100);
+      const sign = bp > 0 ? '+' : '';
+      const el = document.getElementById('ysCurrent');
+      el.textContent = `${sign}${bp} bp`;
+      el.style.color = ysLast.v >= 0 ? '#4ade80' : '#f87171';
+
+      let regime, regimeColor;
+      if (ysLast.v < 0) { regime = 'Inverted'; regimeColor = '#f87171'; }
+      else if (ysLast.v < 0.5) { regime = 'Flat'; regimeColor = '#f4b942'; }
+      else if (ysLast.v < 1.5) { regime = 'Normal'; regimeColor = '#c9d3e0'; }
+      else { regime = 'Steep'; regimeColor = '#4ade80'; }
+      const reg = document.getElementById('ysRegime');
+      reg.textContent = regime;
+      reg.style.color = regimeColor;
+
+      // Compute how long since last inversion ended (if we're not inverted)
+      let msg;
+      if (ysLast.v < 0) {
+        msg = `As of <strong>${ysLast.d}</strong>: curve <strong>inverted</strong> at ${sign}${bp} bp — historically the strongest recession warning we have.`;
+      } else {
+        // find most recent inversion
+        let lastInvIdx = -1;
+        for (let i = yields.length - 1; i >= 0; i--) {
+          if (yields[i].v < 0) { lastInvIdx = i; break; }
+        }
+        if (lastInvIdx >= 0) {
+          const invDate = yields[lastInvIdx].d;
+          const daysSince = Math.round((ysLast.t - yields[lastInvIdx].t) / 86400000);
+          msg = `As of <strong>${ysLast.d}</strong>: <strong>${sign}${bp} bp</strong>, ` +
+                `${regime.toLowerCase()}. Last day inverted: <strong>${invDate}</strong> (${daysSince} days ago). ` +
+                `Shaded bars mark the four NBER-dated US recessions since 1990.`;
+        } else {
+          msg = `As of <strong>${ysLast.d}</strong>: <strong>${sign}${bp} bp</strong>, ${regime.toLowerCase()}. Shaded bars mark NBER recessions.`;
+        }
+      }
+      document.getElementById('ysNote').innerHTML = msg;
     }
   })();
   </script>

@@ -117,6 +117,7 @@ fetch_yahoo_daily "^SP500TR" "$DATA_DIR/sp500tr.csv" "946684800"    # 2000-01-03
 fetch_yahoo_daily "DX-Y.NYB" "$DATA_DIR/dxy.csv"     "631152000"    # 1990-01-01 (US Dollar Index)
 fetch_yahoo_daily "GC=F"     "$DATA_DIR/gold.csv"    "967593600"    # 2000-08-30 (Gold futures)
 fetch_yahoo_daily "SI=F"     "$DATA_DIR/silver.csv"  "967593600"    # 2000-08-30 (Silver futures)
+fetch_yahoo_daily "CL=F"     "$DATA_DIR/oil.csv"     "967593600"    # 2000-08-30 (WTI Crude Oil futures)
 fetch_yahoo_daily "SPY"   "$DATA_DIR/spy.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "RSP"   "$DATA_DIR/rsp.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "MDY"   "$DATA_DIR/mdy.csv" "799545600"    # 1995-05-04 (MDY inception)
