@@ -1026,10 +1026,13 @@
       '1y':  { label: '1 year',  lookback: 252, floor: 10.0 },
     };
 
-    // Intraday data is treated as "live" only if it was written within this
-    // many seconds — beyond that we fall back to the CSV close so we don't
-    // show stale-but-labeled-live numbers overnight/weekend.
-    const LIVE_MAX_AGE_SEC = 30 * 60;
+    // Intraday data is preferred for the 1-day bucket when it exists and is
+    // reasonably fresh. 30 hours means: through the trading day (updated every
+    // ~10 min by the workflow), overnight, and into the next morning before
+    // markets reopen. Beyond that we fall back to the CSV close so we don't
+    // show ancient "live" data if the workflow has been dead for a day+.
+    // Fallback still shows a real close-vs-prior-close, just less fresh.
+    const LIVE_MAX_AGE_SEC = 30 * 3600;
 
     const grid = document.getElementById('sectorHeatGrid');
     const meta = document.getElementById('sectorHeatMeta');
@@ -1162,10 +1165,19 @@
         const usingLive = anyGood.info.source === 'live';
         let dataLine;
         if (usingLive) {
-          const mins = Math.max(1, Math.round(liveAgeSec / 60));
+          const ageMin = Math.max(1, Math.round(liveAgeSec / 60));
+          const ageHr  = Math.round(liveAgeSec / 3600);
+          let freshness;
+          if (liveAgeSec < 30 * 60) {
+            freshness = `live quotes refreshed ${ageMin} min ago (updates every 10 min during market hours)`;
+          } else if (liveAgeSec < 3 * 3600) {
+            freshness = `most recent intraday snapshot from ${ageMin} min ago`;
+          } else {
+            freshness = `most recent intraday snapshot from ${ageHr} hr ago (market may be closed)`;
+          }
           dataLine =
             `Showing <strong>${period.label}</strong> intraday change vs yesterday's close ` +
-            `&mdash; live quotes refreshed ${mins} min ago (updates every 10 min during market hours).`;
+            `&mdash; ${freshness}.`;
         } else {
           dataLine =
             `Showing <strong>${period.label}</strong> change: ${anyGood.info.last.d} close vs ${anyGood.info.baseline.d} close. ` +

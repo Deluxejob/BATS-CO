@@ -57,6 +57,9 @@ jobs:
       - name: Refresh broad-market news from Yahoo (tolerant of no-new-data)
         run: python scripts/update-market-news.py
 
+      - name: Refresh intraday sector snapshot (safety net for the 10-min bot)
+        run: python scripts/update-sectors-intraday.py
+
       - name: Regenerate BATS moments (fills in forward returns as time passes)
         run: python scripts/build-bats-moments.py
 
