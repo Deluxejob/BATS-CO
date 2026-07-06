@@ -564,24 +564,45 @@
         </div>
 
         <!-- DOLLAR INDEX CARD -->
-        <div class="card">
-          <div class="rd-card-head">
+        <div class="card idx-card">
+          <div class="idx-header">
             <h3>US Dollar Index (DXY)</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="dxyCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl" id="dxyChangeLabel">30-day change</span> <span class="rd-num" id="dxyChange">&ndash;</span></div>
+            <div class="idx-desc">
+              Broad measure of USD strength against a basket of six major currencies
+              (EUR, JPY, GBP, CAD, SEK, CHF). Rising = dollar strengthening.
+              Green dot = live during trading hours.
             </div>
           </div>
-          <div class="chart-periods" id="dxyPeriods" role="tablist" aria-label="DXY chart time period">
-            <button type="button" class="chart-period-btn" data-period="0.25" role="tab">3M</button>
-            <button type="button" class="chart-period-btn" data-period="0.5"  role="tab">6M</button>
-            <button type="button" class="chart-period-btn active" data-period="1" role="tab">1Y</button>
-            <button type="button" class="chart-period-btn" data-period="2"    role="tab">2Y</button>
-            <button type="button" class="chart-period-btn" data-period="5"    role="tab">5Y</button>
-            <button type="button" class="chart-period-btn" data-period="all"  role="tab">All</button>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["US Dollar Index (DXY)", "TVC:DXY|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
           </div>
-          <svg id="dxyChart" class="rd-svg" viewBox="0 0 560 300" preserveAspectRatio="none" aria-label="US Dollar Index chart"></svg>
-          <p class="rd-note" id="dxyNote">Loading DXY&hellip;</p>
         </div>
       </div>
     </section>
@@ -1020,139 +1041,8 @@
     }
   })();
 
-  // ==========================================================================
-  // US DOLLAR INDEX (DXY) — with 3M/6M/1Y/2Y/5Y/All period buttons
-  // ==========================================================================
-  (async function renderDxy() {
-    const $ = (id) => document.getElementById(id);
-    const svg = $('dxyChart');
-    const note = $('dxyNote');
-    if (!svg) return;
-
-    let txt;
-    try {
-      const r = await fetch('data/dxy.csv', { cache: 'no-store' });
-      if (!r.ok) throw new Error('http ' + r.status);
-      txt = await r.text();
-    } catch (e) {
-      note.textContent = 'Failed to load US Dollar Index data.';
-      return;
-    }
-
-    const rows = txt.trim().split(/\r?\n/).slice(1).map(ln => {
-      const [d, c] = ln.split(',');
-      const px = parseFloat(c);
-      return { d, px, t: new Date(d).getTime() };
-    }).filter(r => isFinite(r.px));
-    if (rows.length < 10) { note.textContent = 'Insufficient DXY data.'; return; }
-
-    const latest = rows[rows.length - 1];
-    $('dxyCurrent').textContent = latest.px.toFixed(2);
-
-    const W = 560, H = 300;
-    const M = { top: 15, right: 55, bottom: 30, left: 45 };
-    const plotW = W - M.left - M.right;
-    const plotH = H - M.top - M.bottom;
-
-    function render(period) {
-      let slice;
-      if (period === 'all') {
-        slice = rows;
-      } else {
-        const yrs = parseFloat(period);
-        const cutoff = latest.t - yrs * 365.25 * 24 * 3600 * 1000;
-        slice = rows.filter(r => r.t >= cutoff);
-      }
-      if (slice.length < 2) slice = rows.slice(-60);
-      const first = slice[0], last = slice[slice.length - 1];
-
-      // 30-day change readout
-      const changePeriodDays = period === 'all' ? 365 : Math.min(30, Math.max(7, Math.round(yrsFromPeriod(period) * 30)));
-      // Actually simpler: change over the current window
-      const chg = last.px - first.px;
-      const chgPct = (chg / first.px) * 100;
-      const el = $('dxyChange');
-      el.textContent = (chg >= 0 ? '+' : '') + chgPct.toFixed(2) + '%';
-      el.classList.remove('pos', 'neg');
-      el.classList.add(chg >= 0 ? 'pos' : 'neg');
-      $('dxyChangeLabel').textContent = 'Change (' + fmtPeriod(period) + ')';
-
-      const pxs = slice.map(r => r.px);
-      const yMin = Math.floor(Math.min(...pxs) - 0.5);
-      const yMax = Math.ceil(Math.max(...pxs) + 0.5);
-      const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
-      const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
-
-      let s = '';
-
-      // Y-grid
-      const range = yMax - yMin;
-      const step = range <= 5 ? 1 : range <= 15 ? 2 : range <= 30 ? 5 : 10;
-      for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
-        const y = yFor(v);
-        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
-        s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v}</text>`;
-      }
-
-      // X-tick labels
-      const spanMs = last.t - first.t;
-      const spanYrs = spanMs / (365.25 * 24 * 3600 * 1000);
-      let tickMs;
-      if (spanYrs <= 0.35)      tickMs = 30 * 24 * 3600 * 1000;         // ~monthly
-      else if (spanYrs <= 0.75) tickMs = 60 * 24 * 3600 * 1000;         // ~2mo
-      else if (spanYrs <= 1.5)  tickMs = 90 * 24 * 3600 * 1000;         // ~quarterly
-      else if (spanYrs <= 3)    tickMs = 6 * 30 * 24 * 3600 * 1000;     // ~semi
-      else if (spanYrs <= 8)    tickMs = 365 * 24 * 3600 * 1000;        // yearly
-      else                      tickMs = 5 * 365 * 24 * 3600 * 1000;    // every 5yr
-
-      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const fmtTick = (t) => {
-        const d = new Date(t);
-        if (spanYrs > 3) return String(d.getUTCFullYear());
-        return `${monthNames[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(-2)}`;
-      };
-      for (let t = Math.ceil(first.t / tickMs) * tickMs; t <= last.t; t += tickMs) {
-        const x = xFor(t);
-        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${fmtTick(t)}</text>`;
-      }
-
-      // Axis lines
-      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
-      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-
-      // Line
-      const path = slice.map((r, i) =>
-        (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yFor(r.px).toFixed(1)
-      ).join(' ');
-      s += `<path fill="none" stroke="var(--s5)" stroke-width="1.5" d="${path}"/>`;
-
-      // Latest dot + label
-      const xCur = xFor(last.t), yCur = yFor(last.px);
-      s += `<circle cx="${xCur}" cy="${yCur}" r="4" fill="var(--s5)" stroke="#fff" stroke-width="1"/>`;
-      s += `<text x="${xCur + 8}" y="${yCur + 4}" fill="var(--s5)" font-size="12" font-weight="600">${last.px.toFixed(2)}</text>`;
-
-      svg.innerHTML = s;
-      note.innerHTML = `Window: <strong>${first.d}</strong> to <strong>${last.d}</strong> &nbsp;·&nbsp; ${slice.length.toLocaleString()} daily closes`;
-    }
-
-    function yrsFromPeriod(p) { return p === 'all' ? 100 : parseFloat(p); }
-    function fmtPeriod(p) {
-      if (p === 'all') return 'window';
-      const y = parseFloat(p);
-      if (y < 1) return Math.round(y * 12) + 'M';
-      return y + 'Y';
-    }
-
-    const bar = document.getElementById('dxyPeriods');
-    bar.addEventListener('click', (e) => {
-      const btn = e.target.closest('.chart-period-btn');
-      if (!btn) return;
-      bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
-      render(btn.dataset.period);
-    });
-    render('1');  // default = 1Y
-  })();
+  // (DXY now uses a TradingView Symbol Overview widget — self-initializing,
+  // live-streaming during market hours. No custom JS needed.)
   </script>
 </body>
 </html>
