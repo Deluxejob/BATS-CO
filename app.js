@@ -98,7 +98,7 @@ const MARKET_CONFIG = {
     ticker: '^GSPC',
     volCsv: 'vix.csv',
     volTicker: 'VIX',
-    volIsOHLC: true,   // datasets/finance-vix uses DATE,O,H,L,C — parse col 4
+    volIsOHLC: false,  // Yahoo ^VIX: Date,Close (same shape as VXN)
     breadthEqualCsv: 'rsp.csv',
     breadthCapCsv: 'spy.csv',
     breadthLabel: 'RSP / SPY',

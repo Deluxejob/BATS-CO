@@ -162,11 +162,12 @@ def load_close(fname, close_col=1):
     return out
 
 def load_vix():
+    # Yahoo ^VIX ships as Date,Close (col 1).
     rows = _read_csv('vix.csv')
     if not rows: return None
     out = {}
     for row in rows[1:]:
-        try: out[row[0]] = float(row[4])
+        try: out[row[0]] = float(row[1])
         except: pass
     return out
 

@@ -18,28 +18,10 @@ END_TS=$(date +%s)
 
 warn() { echo "::warning::$*"; }
 
-# --- VIX: pull from datasets/finance-vix (curated OHLC, updated daily) ---
-fetch_vix() {
-  local out="$DATA_DIR/vix.csv"
-  local tmp="$(mktemp)"
-  if ! curl -sSfL -A "Mozilla/5.0" \
-       "https://raw.githubusercontent.com/datasets/finance-vix/main/data/vix-daily.csv" \
-       -o "$tmp"; then
-    warn "VIX fetch failed; leaving $out unchanged"
-    rm -f "$tmp"; return 0
-  fi
-  # Sanity: header + a reasonable row count
-  if ! head -1 "$tmp" | grep -qi "^DATE,"; then
-    warn "VIX response doesn't look like the expected CSV; leaving $out unchanged"
-    rm -f "$tmp"; return 0
-  fi
-  if [ "$(wc -l < "$tmp")" -lt 5000 ]; then
-    warn "VIX row count suspiciously low; leaving $out unchanged"
-    rm -f "$tmp"; return 0
-  fi
-  mv "$tmp" "$out"
-  echo "Updated $out ($(wc -l < "$out") rows)"
-}
+# --- VIX: pull ^VIX from Yahoo (same intraday-updated source as SPY/QQQ) ---
+# Previously used datasets/finance-vix on GitHub, but that mirror lagged ~1 day.
+# Yahoo publishes VIX closes on the same schedule as the other daily quotes.
+# Output format is Date,Close (parseDateCloseLive downstream, matches VXN).
 
 # --- Treasury.gov daily yield curve CSV (all maturities) ---
 fetch_treasury_yields() {
@@ -110,7 +92,7 @@ fetch_yahoo_daily() {
 }
 
 # ---- Fetch each dataset ----
-fetch_vix
+fetch_yahoo_daily "^VIX"  "$DATA_DIR/vix.csv" "631152000"    # 1990-01-02 (VIX inception)
 fetch_treasury_yields
 fetch_yahoo_daily "^GSPC"    "$DATA_DIR/spx.csv"     "631152000"    # 1990-01-01
 fetch_yahoo_daily "^SP500TR" "$DATA_DIR/sp500tr.csv" "946684800"    # 2000-01-03 (TR series inception)

@@ -17,7 +17,7 @@ const DATA_BASE = (typeof window !== 'undefined' && window.BATS_DATA_BASE) || 'd
 const BT_MARKET = (typeof MARKET !== 'undefined') ? MARKET : 'sp500';
 const BT_MC = (typeof MARKET_CONFIG !== 'undefined')
   ? MARKET_CONFIG[BT_MARKET]
-  : { volCsv: 'vix.csv', volIsOHLC: true, breadthEqualCsv: 'rsp.csv',
+  : { volCsv: 'vix.csv', volIsOHLC: false, breadthEqualCsv: 'rsp.csv',
       breadthCapCsv: 'spy.csv', rsiCsv: 'spy.csv', indexCsv: 'spx.csv',
       stockCsv: 'spy.csv' };
 
