@@ -5,21 +5,24 @@ name: Update sector heatmap (intraday)
 # instead of yesterday's close. Longer periods (1W/1M/YTD/1Y) on the tiles
 # still read the daily CSVs, which the main daily workflow refreshes.
 #
-# Cron: */10 13-21 * * 1-5
-#   - every 10 minutes (0/10/20/30/40/50 past the hour)
-#   - during UTC hours 13-21 (covers both EDT 13:30-20:00 and EST 14:30-21:00
-#     US market sessions with a small buffer on each side)
-#   - Monday through Friday only
+# Cron: */5 12-22 * * 1-5
+#   - every 5 minutes during UTC hours 12-22, Monday-Friday
+#   - Covers EDT 12:00-22:00 (8am-6pm ET) and EST 12:00-22:00 (7am-5pm ET)
+#     — gives us pre-market coverage so the first fresh live snapshot lands
+#     BEFORE 9:30 AM ET open, not 2 hours after. GitHub Actions cron drifts
+#     up to ~15 min, so scheduling every 5 min gives ~3× as many chances
+#     to fire before the tiles look stale to a viewer at market open.
 #
-# GitHub Actions cron isn't guaranteed on the dot — runs sometimes slip
-# 5-15 minutes. In practice this keeps sector tiles within ~15 minutes
-# of real-time during market hours.
+# The client-side markets.html only trusts live data for ≤4 hours;
+# beyond that it falls back to the daily CSV's last-close-vs-prior-close,
+# so tiles keep showing correct day-over-day numbers overnight without
+# looking "frozen."
 #
 # Manual trigger available from the Actions tab (workflow_dispatch).
 
 on:
   schedule:
-    - cron: '*/10 13-21 * * 1-5'
+    - cron: '*/5 12-22 * * 1-5'
   workflow_dispatch:
 
 permissions:

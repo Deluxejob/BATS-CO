@@ -1024,13 +1024,14 @@
       '1y':  { label: '1 year',  lookback: 252, floor: 10.0 },
     };
 
-    // Intraday data is preferred for the 1-day bucket when it exists and is
-    // reasonably fresh. 30 hours means: through the trading day (updated every
-    // ~10 min by the workflow), overnight, and into the next morning before
-    // markets reopen. Beyond that we fall back to the CSV close so we don't
-    // show ancient "live" data if the workflow has been dead for a day+.
-    // Fallback still shows a real close-vs-prior-close, just less fresh.
-    const LIVE_MAX_AGE_SEC = 30 * 3600;
+    // Intraday data is preferred for the 1-day bucket ONLY while it's actually
+    // still live — during market hours + a short buffer after close. Beyond
+    // that, keep showing accurate day-over-day numbers by falling back to the
+    // CSV (last close vs prior close). Otherwise tiles would look "frozen"
+    // overnight and confuse viewers into thinking the page is broken.
+    //   ≤4 hrs old  → use live JSON (covers market open through ~2 hrs after close)
+    //   >4 hrs old  → fall back to CSV close-vs-prior-close (updated nightly by the daily bot)
+    const LIVE_MAX_AGE_SEC = 4 * 3600;
 
     const grid = document.getElementById('sectorHeatGrid');
     const meta = document.getElementById('sectorHeatMeta');
