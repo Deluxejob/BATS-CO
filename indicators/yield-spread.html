@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10Y-2Y Yield Spread — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO uses the 10-year minus 2-year Treasury yield spread as a leading recession signal." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <img src="/logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <div class="market-toggle" role="tablist" aria-label="Choose market">
+      <a href="../index.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
+      <a href="../index.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../pe-ratio.html">PE Ratio</a>
+      <a href="../concentration.html">Concentration</a>
+      <a href="../momentum.html">Momentum</a>
+      <a href="../extremes.html">Extremes</a>
+      <a href="../pe.html">Private Equity</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #08</p>
+      <h1>10Y-2Y Yield Spread &mdash; the bond market&rsquo;s recession signal</h1>
+      <p class="lede">
+        The single most-watched recession indicator on Wall Street. When the
+        yield on the 2-year Treasury climbs above the yield on the 10-year, the
+        curve is <strong>inverted</strong> &mdash; and inversions have preceded
+        every U.S. recession since 1970 by 6 to 24 months. This is a
+        <strong>leading</strong> signal, not a coincident one.
+      </p>
+    </section>
+
+    <section id="current-reading-section">
+      <div class="section-head">
+        <h2>Today&rsquo;s reading</h2>
+        <p>Same number you&rsquo;ll see on this component&rsquo;s card on the main dashboard.</p>
+      </div>
+      <div id="currentReading"><div class="comp-card current-reading-card"><em>Loading current reading&hellip;</em></div></div>
+    </section>
+
+    <section id="whatis">
+      <h2>What is the 10Y-2Y spread?</h2>
+      <p>
+        It&rsquo;s the difference between the yield on the 10-year U.S. Treasury note
+        and the yield on the 2-year U.S. Treasury note, in <strong>percentage
+        points</strong>. Normally, longer bonds pay more than shorter ones &mdash;
+        investors demand extra yield for tying their money up longer. That&rsquo;s
+        called the <em>term premium</em>, and it makes the spread positive most
+        of the time.
+      </p>
+      <p>
+        When the curve inverts (spread goes negative), the bond market is saying
+        short-term interest rates are too restrictive and the economy is likely
+        to slow. Historically, that&rsquo;s a warning shot 6 to 24 months before
+        an actual recession begins.
+      </p>
+      <div class="key-thresholds card">
+        <h3>Reading the curve</h3>
+        <ul>
+          <li><span class="range">Below &minus;1.5 pp</span> Deeply inverted &mdash; strong recession warning.</li>
+          <li><span class="range">&minus;1.5 to 0 pp</span> Inverted &mdash; late cycle, slowdown signal.</li>
+          <li><span class="range">0 to +0.5 pp</span> Flat &mdash; term premium is squeezed out.</li>
+          <li><span class="range">+0.5 to +1.5 pp</span> Normal &mdash; mid-cycle expansion.</li>
+          <li><span class="range">+1.5 to +2.5 pp</span> Steepening &mdash; healthy expansion.</li>
+          <li><span class="range">Above +2.5 pp</span> Very steep &mdash; early-cycle or aggressive rate cuts.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses it</h2>
+      <p>
+        <strong>Leading</strong>. This is the only leading indicator in the BATS
+        blend &mdash; all the others (VIX, breadth, RSI, sentiment surveys, credit
+        spreads) are coincident, telling you what the market is doing <em>right
+        now</em>. The yield curve tells you what the bond market <em>expects</em>
+        to happen 6 to 24 months from now.
+      </p>
+      <p>
+        The mapping is piecewise linear so each zone&rsquo;s slope matches its real
+        meaning:
+      </p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>Spread range</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Above +2.5 pp</td><td class="num">95</td><td><span class="bucket-dot" style="background:var(--s6)"></span>Extended</td></tr>
+            <tr><td>+1.5 to +2.5 pp</td><td class="num">75 &ndash; 95</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish</td></tr>
+            <tr><td>+0.5 to +1.5 pp</td><td class="num">55 &ndash; 75</td><td><span class="bucket-dot" style="background:var(--s4)"></span>Slightly Bullish</td></tr>
+            <tr><td>0 to +0.5 pp</td><td class="num">40 &ndash; 55</td><td><span class="bucket-dot" style="background:var(--s3)"></span>Neutral</td></tr>
+            <tr><td>&minus;1.5 to 0 pp</td><td class="num">5 &ndash; 40</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Oversold</td></tr>
+            <tr><td>Below &minus;1.5 pp</td><td class="num">5</td><td><span class="bucket-dot" style="background:var(--s0)"></span>Very Oversold</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Notice the asymmetry: an inverted curve gets a strong bearish score, but
+        a steep positive curve caps out at 95 (Extended). This is because
+        inversions are historically actionable recession warnings, while very
+        steep curves are just normal early-expansion signals &mdash; nice to see
+        but not screaming &ldquo;buy.&rdquo;
+      </p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>Three findings from the 36-year backtest of a 10Y-2Y-swapped blend (1990&ndash;2026):</p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>Inverted curve + fear = best contrarian buy zone in the model.</h3>
+          <p>
+            Swapping the SPY-TLT Safe Haven for the yield spread pushed the
+            &ldquo;Very Oversold&rdquo; blended bucket from +42% avg forward 12mo
+            (baseline) to <strong>+56%</strong>, with <strong>100% positive</strong>
+            hit rate across 17 historical instances. Very Oversold days now
+            require an inverted curve <em>and</em> extreme fear elsewhere &mdash;
+            a rare alignment that historically has been the highest-conviction
+            setup in the blend.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> The bond market and the stock market
+            screaming at the same time is one of the most reliable buy signals
+            in market history.
+          </p>
+        </div>
+
+        <div class="finding finding-pos">
+          <div class="finding-num">2</div>
+          <h3>Oversold hit rate improves too.</h3>
+          <p>
+            Adding the yield spread lifted the Oversold bucket&rsquo;s hit rate
+            from 81% to <strong>88.5%</strong> and average forward 12mo return
+            from +18% to <strong>+25%</strong>. Because the leading indicator
+            adds an independent signal, the whole distribution tightens up.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Even outside of extremes, having a
+            leading indicator alongside coincident ones makes the blend less
+            noisy.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">3</div>
+          <h3>The curve isn&rsquo;t magic on its own.</h3>
+          <p>
+            An inverted curve by itself doesn&rsquo;t mean sell everything. In
+            our history, most inversions preceded rallies of many months before
+            the actual recession began. What the yield curve does is <em>tilt
+            the odds</em> and <em>make the extremes rarer and stronger</em>.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Don&rsquo;t trade this indicator alone.
+            Its power comes from combining with the other seven components.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>Watch for deep inversions coinciding with fear.</strong>
+          When the curve is inverted <em>and</em> VIX is elevated <em>and</em>
+          breadth is failing at the same time, historically that&rsquo;s the
+          strongest buy setup the model has ever produced.
+        </li>
+        <li>
+          <strong>Don&rsquo;t interpret an inversion in isolation.</strong>
+          Yield curves have inverted years before the actual recession start.
+          The curve says &ldquo;something&rsquo;s coming,&rdquo; not
+          &ldquo;sell now.&rdquo;
+        </li>
+        <li>
+          <strong>Steep positive curve = normal.</strong>
+          A steep curve is a healthy expansion signal, not a top warning.
+          That&rsquo;s why the Extended bucket for this indicator is capped at
+          95 rather than pushed to 100.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical
+        patterns are not guarantees. Always do your own research or talk to a
+        financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = '../data/';
+    window.BATS_INDICATOR_KEY = 'yield_spread';
+  </script>
+  <script src="../app.js"></script>
+</body>
+</html>

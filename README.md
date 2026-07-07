@@ -21,7 +21,7 @@ Live at **[bats.co](https://bats.co)**.
 | AAII Retail Sentiment (Bull−Bear) | 10% | Contrarian: retail extremes are wrong | AAII.com via Wayback Machine (weekly) |
 | SPY 14-day RSI | 10% | Contrarian: extreme momentum reverts | Computed from Yahoo `SPY` closes |
 | NAAIM Manager Exposure | 5% | State: low exposure = pros defensive = buy zone | naaim.org (weekly) |
-| Safe Haven Demand (SPY/TLT spread) | 5% | Confirmatory: stocks winning = risk-on = bullish | Yahoo Finance `SPY`, `TLT` |
+| 10Y-2Y Yield Spread | 5% | Leading: inverted curve = recession warning; steep = healthy expansion | Treasury.gov daily par yields |
 
 ## Files
 

@@ -1,7 +1,7 @@
 {
   "source": "Computed from data/*.csv using the same scoring functions as app.js",
-  "generatedAt": 1783386981,
-  "latestSpxDate": "2026-07-06",
+  "generatedAt": 1783393003,
+  "latestSpxDate": "2026-07-02",
   "moments": [
     {
       "date": "2007-10-09",
@@ -9,7 +9,7 @@
       "event": "Pre-GFC all-time high",
       "context": "S&P 500 hit its cyclical peak. Housing bubble already leaking.",
       "spxClose": 1565.15,
-      "batsScore": 64.5,
+      "batsScore": 62.5,
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
@@ -49,9 +49,9 @@
           "score": 73.8,
           "weight": 10
         },
-        "safe": {
-          "raw": 9.21,
-          "score": 95,
+        "spread": {
+          "raw": 0.52,
+          "score": 55.4,
           "weight": 5
         }
       },
@@ -68,10 +68,10 @@
       "event": "GFC bottom",
       "context": "S&P closed at 676. Financial crisis panic in full effect.",
       "spxClose": 676.53,
-      "batsScore": 12.5,
-      "bucketLabel": "Very Oversold",
-      "bucketColor": "var(--s0)",
-      "action": "Strong Buy",
+      "batsScore": 16.4,
+      "bucketLabel": "Oversold",
+      "bucketColor": "var(--s1)",
+      "action": "Consider Buying",
       "components": {
         "vix": {
           "raw": 49.68,
@@ -108,9 +108,9 @@
           "score": 5,
           "weight": 10
         },
-        "safe": {
-          "raw": -23.02,
-          "score": 5,
+        "spread": {
+          "raw": 1.93,
+          "score": 83.6,
           "weight": 5
         }
       },
@@ -127,10 +127,10 @@
       "event": "S&P US downgrade / debt ceiling",
       "context": "S&P downgraded US credit; -6.7% single-day crash.",
       "spxClose": 1119.46,
-      "batsScore": 11.1,
-      "bucketLabel": "Very Oversold",
-      "bucketColor": "var(--s0)",
-      "action": "Strong Buy",
+      "batsScore": 15.2,
+      "bucketLabel": "Oversold",
+      "bucketColor": "var(--s1)",
+      "action": "Consider Buying",
       "components": {
         "vix": {
           "raw": 48.0,
@@ -167,9 +167,9 @@
           "score": 5,
           "weight": 10
         },
-        "safe": {
-          "raw": -23.97,
-          "score": 5,
+        "spread": {
+          "raw": 2.13,
+          "score": 87.6,
           "weight": 5
         }
       },
@@ -186,7 +186,7 @@
       "event": "Powell put / trade-war bottom",
       "context": "Christmas Eve low; Fed pivoted, market rallied.",
       "spxClose": 2351.1,
-      "batsScore": 17.7,
+      "batsScore": 19.8,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -226,9 +226,9 @@
           "score": 8.9,
           "weight": 10
         },
-        "safe": {
-          "raw": -16.35,
-          "score": 5,
+        "spread": {
+          "raw": 0.19,
+          "score": 45.7,
           "weight": 5
         }
       },
@@ -245,7 +245,7 @@
       "event": "Pre-COVID all-time high",
       "context": "Peak before the COVID crash — SPX at 3386.",
       "spxClose": 3386.15,
-      "batsScore": 58.0,
+      "batsScore": 58.3,
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
@@ -285,9 +285,9 @@
           "score": 39.9,
           "weight": 10
         },
-        "safe": {
-          "raw": -2.22,
-          "score": 38.9,
+        "spread": {
+          "raw": 0.14,
+          "score": 44.2,
           "weight": 5
         }
       },
@@ -304,7 +304,7 @@
       "event": "COVID crash bottom",
       "context": "Fed unlimited-QE announcement day; SPX bottomed at 2237.",
       "spxClose": 2237.4,
-      "batsScore": 8.3,
+      "batsScore": 10.8,
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
@@ -344,9 +344,9 @@
           "score": 5,
           "weight": 10
         },
-        "safe": {
-          "raw": -41.33,
-          "score": 5,
+        "spread": {
+          "raw": 0.48,
+          "score": 54.4,
           "weight": 5
         }
       },
@@ -363,7 +363,7 @@
       "event": "Post-COVID all-time high",
       "context": "Peak before the 2022 bear market — SPX at 4796.",
       "spxClose": 4796.56,
-      "batsScore": 63.5,
+      "batsScore": 61.9,
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
@@ -403,9 +403,9 @@
           "score": 84.7,
           "weight": 10
         },
-        "safe": {
-          "raw": 11.87,
-          "score": 95,
+        "spread": {
+          "raw": 0.85,
+          "score": 62.0,
           "weight": 5
         }
       },
@@ -462,9 +462,9 @@
           "score": 39.7,
           "weight": 10
         },
-        "safe": {
-          "raw": -1.71,
-          "score": 41.5,
+        "spread": {
+          "raw": 0.08,
+          "score": 42.4,
           "weight": 5
         }
       },
@@ -481,7 +481,7 @@
       "event": "2022 final bear-market bottom",
       "context": "SPX 3577 — the actual low of the 2022 cycle.",
       "spxClose": 3577.03,
-      "batsScore": 31.3,
+      "batsScore": 31.0,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
@@ -521,9 +521,9 @@
           "score": 74.0,
           "weight": 10
         },
-        "safe": {
-          "raw": -2.52,
-          "score": 37.4,
+        "spread": {
+          "raw": -0.37,
+          "score": 31.4,
           "weight": 5
         }
       },
@@ -540,7 +540,7 @@
       "event": "Liberation Day tariff bottom",
       "context": "SPX 4983; day before Trump announced 90-day tariff pause.",
       "spxClose": 4982.77,
-      "batsScore": 21.3,
+      "batsScore": 23.8,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -580,9 +580,9 @@
           "score": 35.2,
           "weight": 10
         },
-        "safe": {
-          "raw": -8.42,
-          "score": 7.9,
+        "spread": {
+          "raw": 0.55,
+          "score": 56.0,
           "weight": 5
         }
       },
@@ -603,7 +603,7 @@
       "aaii": 10,
       "naaim": 5,
       "junk": 10,
-      "safe": 5
+      "spread": 5
     },
     "buckets": [
       {

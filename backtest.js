@@ -247,6 +247,19 @@ function parseNAAIM(text) {
   return rows;
 }
 
+// Parser for the daily yields history CSV (Date,Y2,Y10,Spread10Y2Y).
+// The 4th column is the 10Y-2Y spread in percentage points.
+function parseYieldsHistory(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const sp = parseFloat(parts[3]);
+    if (parts[0] && !isNaN(sp)) rows.push({ date: parts[0], spread: sp });
+  }
+  return rows;
+}
+
 // Given a sorted-by-date AAII array, return the row whose date is the latest
 // one ≤ targetDate (i.e. the reading in effect on that day).
 function aaiiOnOrBefore(aaiiRows, targetDate) {
@@ -364,42 +377,32 @@ async function runMa200Backtest() {
 }
 
 // ============================================================
-// SAFE HAVEN DEMAND BACKTEST — SPY - TLT 20-day return spread
+// 10Y-2Y YIELD SPREAD BACKTEST
 // ============================================================
-async function runSafeHavenBacktest() {
-  const [spyText, tltText, spxText] = await Promise.all([
-    fetchText(DATA_BASE + BT_MC.stockCsv),
-    fetchText(DATA_BASE + 'tlt.csv'),
+async function runYieldSpreadBacktest() {
+  const [yieldsText, spxText] = await Promise.all([
+    fetchText(DATA_BASE + 'yields_history.csv'),
     fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
-  const spy = parseDateClose(spyText);
-  const tlt = parseDateClose(tltText);
+  const yields = parseYieldsHistory(yieldsText);
   const spx = parseDateClose(spxText);
 
-  const tltByDate = new Map();
-  tlt.forEach((r, i) => tltByDate.set(r.date, i));
   const spxByDate = new Map();
   spx.forEach((r, i) => spxByDate.set(r.date, i));
 
   const trades = [];
-  for (let i = BREADTH_LOOKBACK; i < spy.length; i++) {
-    const d = spy[i].date;
-    const ti = tltByDate.get(d);
-    const xi = spxByDate.get(d);
-    if (ti == null || ti < BREADTH_LOOKBACK || xi == null) continue;
-
-    const spyRet = (spy[i].close  / spy[i - BREADTH_LOOKBACK].close  - 1) * 100;
-    const tltRet = (tlt[ti].close / tlt[ti - BREADTH_LOOKBACK].close - 1) * 100;
-    const spread = spyRet - tltRet;
-    const score  = scoreSafeHaven(spread);
+  for (const y of yields) {
+    const xi = spxByDate.get(y.date);
+    if (xi == null) continue;
+    const score = scoreYieldSpread(y.spread);
     if (score == null) continue;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
     const spx12  = spx[xi + TRADING_DAYS_12MO];
     trades.push({
-      date: d,
-      raw: spread,
+      date: y.date,
+      raw: y.spread,
       score,
       bucket: bucketOf(score),
       ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
@@ -461,7 +464,7 @@ async function runJunkBacktest() {
 // are currently set in COMPONENTS (app.js). This is the actual product.
 // ============================================================
 async function runBlendedBacktest() {
-  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText, naaimText, tltText] = await Promise.all([
+  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText, naaimText, yieldsText] = await Promise.all([
     fetchText(DATA_BASE + BT_MC.volCsv),
     fetchText(DATA_BASE + BT_MC.breadthEqualCsv),
     fetchText(DATA_BASE + BT_MC.breadthCapCsv),
@@ -470,7 +473,7 @@ async function runBlendedBacktest() {
     fetchText(DATA_BASE + 'lqd.csv'),
     fetchText(DATA_BASE + 'aaii.csv'),
     fetchText(DATA_BASE + 'naaim.csv'),
-    fetchText(DATA_BASE + 'tlt.csv'),
+    fetchText(DATA_BASE + 'yields_history.csv'),
   ]);
   const vix = BT_MC.volIsOHLC ? parseVIX(vixText) : parseDateClose(vixText);
   const rsp = parseDateClose(rspText);
@@ -478,7 +481,7 @@ async function runBlendedBacktest() {
   const spx = parseDateClose(spxText);
   const hyg = parseDateClose(hygText);
   const lqd = parseDateClose(lqdText);
-  const tlt = parseDateClose(tltText);
+  const yields = parseYieldsHistory(yieldsText);
   const aaii = parseAAII(aaiiText);
   const naaim = parseNAAIM(naaimText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
@@ -494,23 +497,22 @@ async function runBlendedBacktest() {
   hyg.forEach((r, i) => hygByDate.set(r.date, i));
   const lqdByDate = new Map();
   lqd.forEach((r, i) => lqdByDate.set(r.date, i));
-  const tltByDate = new Map();
-  tlt.forEach((r, i) => tltByDate.set(r.date, i));
 
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
-  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
-  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
-  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
-  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')       || {}).weight || 0;
-  const wSafe    = (COMPONENTS.find(c => c.key === 'safehaven')   || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSafe;
+  const wVix     = (COMPONENTS.find(c => c.key === 'vix')          || {}).weight || 0;
+  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')      || {}).weight || 0;
+  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')      || {}).weight || 0;
+  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')        || {}).weight || 0;
+  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')  || {}).weight || 0;
+  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')         || {}).weight || 0;
+  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')        || {}).weight || 0;
+  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread') || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread;
   if (wTotal <= 0) throw new Error('No live weights configured');
 
   // Rolling pointers for the weekly-series carry-forward (O(n) instead of O(n²)).
   let aaiiPtr = -1;
   let naaimPtr = -1;
+  let yieldsPtr = -1;
 
   const trades = [];
   for (let i = BREADTH_LOOKBACK; i < rsp.length; i++) {
@@ -520,16 +522,15 @@ async function runBlendedBacktest() {
     const vi = vixByDate.get(d);
     const hi = hygByDate.get(d);
     const li = lqdByDate.get(d);
-    const ti = tltByDate.get(d);
     if (si == null || si < BREADTH_LOOKBACK || xi == null || vi == null) continue;
     if (hi == null || hi < BREADTH_LOOKBACK || li == null || li < BREADTH_LOOKBACK) continue;
-    if (ti == null || ti < BREADTH_LOOKBACK) continue;
     if (rsi[si] == null || sma200[xi] == null) continue;
 
-    // Advance weekly-series pointers to the most recent reading ≤ this trading day.
+    // Advance carry-forward pointers to the most recent reading ≤ this trading day.
     while (aaiiPtr + 1 < aaii.length && aaii[aaiiPtr + 1].date <= d) aaiiPtr++;
     while (naaimPtr + 1 < naaim.length && naaim[naaimPtr + 1].date <= d) naaimPtr++;
-    if (aaiiPtr < 0 || naaimPtr < 0) continue;
+    while (yieldsPtr + 1 < yields.length && yields[yieldsPtr + 1].date <= d) yieldsPtr++;
+    if (aaiiPtr < 0 || naaimPtr < 0 || yieldsPtr < 0) continue;
 
     const rspRet = (rsp[i].close / rsp[i - BREADTH_LOOKBACK].close - 1) * 100;
     const spyRet = (spy[si].close / spy[si - BREADTH_LOOKBACK].close - 1) * 100;
@@ -537,8 +538,7 @@ async function runBlendedBacktest() {
     const hygRet = (hyg[hi].close / hyg[hi - BREADTH_LOOKBACK].close - 1) * 100;
     const lqdRet = (lqd[li].close / lqd[li - BREADTH_LOOKBACK].close - 1) * 100;
     const junkSpread = hygRet - lqdRet;
-    const tltRet = (tlt[ti].close / tlt[ti - BREADTH_LOOKBACK].close - 1) * 100;
-    const safeSpread = spyRet - tltRet;
+    const yieldSpread = yields[yieldsPtr].spread;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const aaiiSpread = aaii[aaiiPtr].spread;
     const naaimVal = naaim[naaimPtr].value;
@@ -550,10 +550,10 @@ async function runBlendedBacktest() {
     const ms = scoreMA200(ma200Dist);
     const as_ = scoreAAII(aaiiSpread);
     const ns = scoreNAAIM(naaimVal);
-    const shs = scoreSafeHaven(safeSpread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || shs == null) continue;
+    const yss = scoreYieldSpread(yieldSpread);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + shs * wSafe) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
                : kind === 'ma200'     ? runMa200Backtest
                : kind === 'aaii'      ? runAaiiBacktest
                : kind === 'naaim'     ? runNaaimBacktest
-               : kind === 'safehaven' ? runSafeHavenBacktest
+               : kind === 'yield_spread' ? runYieldSpreadBacktest
                : kind === 'blended'   ? runBlendedBacktest
                : runVixBacktest;
   runner()

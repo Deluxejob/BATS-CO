@@ -31,7 +31,7 @@ def warn(msg: str) -> None:
 
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               aaii=10, naaim=5, junk=10, safe=5)
+               aaii=10, naaim=5, junk=10, spread=5)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -110,7 +110,17 @@ def score_naaim(v):
 
 def score_breadth(sp):  return clamp(50 + sp * 10, 5, 95) if sp is not None else None
 def score_junk(sp):     return clamp(50 + sp * 10, 5, 95) if sp is not None else None
-def score_safe(sp):     return clamp(50 + sp * 5,  5, 95) if sp is not None else None
+
+def score_spread(sp):
+    """10Y-2Y in percentage points. Inverted → low BATS, steep → high BATS."""
+    if sp is None: return None
+    if   sp <= -1.5: s = 5
+    elif sp <=  0:   s = 5  + (sp + 1.5) * (40 - 5)  / 1.5
+    elif sp <=  0.5: s = 40 + sp         * (55 - 40) / 0.5
+    elif sp <=  1.5: s = 55 + (sp - 0.5) * (75 - 55) / 1.0
+    elif sp <=  2.5: s = 75 + (sp - 1.5) * (95 - 75) / 1.0
+    else:            s = 95
+    return clamp(s, 2, 98)
 
 
 # --- Wilder's 14-day RSI (matches app.js) ---
@@ -174,6 +184,16 @@ def load_naaim():
     out = {}
     for row in rows[1:]:
         try: out[row[0]] = float(row[1])
+        except: pass
+    return out
+
+def load_yields():
+    """yields_history.csv: Date,Y2,Y10,Spread10Y2Y — column 3 is the spread in pp."""
+    rows = _read_csv('yields_history.csv')
+    if not rows: return None
+    out = {}
+    for row in rows[1:]:
+        try: out[row[0]] = float(row[3])
         except: pass
     return out
 
@@ -249,12 +269,12 @@ def main():
     rsp   = load_close('rsp.csv')
     hyg   = load_close('hyg.csv')
     lqd   = load_close('lqd.csv')
-    tlt   = load_close('tlt.csv')
     aaii  = load_aaii()
     naaim = load_naaim()
+    yields = load_yields()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
-                    hyg=hyg, lqd=lqd, tlt=tlt, aaii=aaii, naaim=naaim)
+                    hyg=hyg, lqd=lqd, aaii=aaii, naaim=naaim, yields=yields)
     missing = [k for k, v in required.items() if not v]
     if missing:
         warn(f'Missing data files: {missing}. Leaving bats_moments.json unchanged.')
@@ -265,10 +285,10 @@ def main():
     rsp_dates = sorted(rsp.keys())
     hyg_dates = sorted(hyg.keys())
     lqd_dates = sorted(lqd.keys())
-    tlt_dates = sorted(tlt.keys())
     vix_dates = sorted(vix.keys())
     aaii_dates = sorted(aaii.keys())
     naaim_dates = sorted(naaim.keys())
+    yields_dates = sorted(yields.keys())
 
     out_moments = []
     for m in MOMENTS:
@@ -278,36 +298,35 @@ def main():
         d_rsp  = snap_le(rsp_dates, target)
         d_hyg  = snap_le(hyg_dates, target)
         d_lqd  = snap_le(lqd_dates, target)
-        d_tlt  = snap_le(tlt_dates, target)
         d_vix  = snap_le(vix_dates, target)
         d_aaii = snap_le(aaii_dates, target)
         d_naaim = snap_le(naaim_dates, target)
+        d_yields = snap_le(yields_dates, target)
 
-        v_vix   = vix.get(d_vix)     if d_vix   else None
-        v_aaii  = aaii.get(d_aaii)   if d_aaii  else None
-        v_naaim = naaim.get(d_naaim) if d_naaim else None
-        v_rsi   = rsi_at(spy_dates, spy, d_spy) if d_spy else None
-        v_ma    = ma200_dist(spx_dates, spx, d_spx) if d_spx else None
+        v_vix    = vix.get(d_vix)       if d_vix    else None
+        v_aaii   = aaii.get(d_aaii)     if d_aaii   else None
+        v_naaim  = naaim.get(d_naaim)   if d_naaim  else None
+        v_rsi    = rsi_at(spy_dates, spy, d_spy) if d_spy else None
+        v_ma     = ma200_dist(spx_dates, spx, d_spx) if d_spx else None
+        v_spread = yields.get(d_yields) if d_yields else None
 
         spy20 = return_20d(spy_dates, spy, d_spy) if d_spy else None
         rsp20 = return_20d(rsp_dates, rsp, d_rsp) if d_rsp else None
         hyg20 = return_20d(hyg_dates, hyg, d_hyg) if d_hyg else None
         lqd20 = return_20d(lqd_dates, lqd, d_lqd) if d_lqd else None
-        tlt20 = return_20d(tlt_dates, tlt, d_tlt) if d_tlt else None
 
         breadth = (rsp20 - spy20) if (spy20 is not None and rsp20 is not None) else None
         junk    = (hyg20 - lqd20) if (hyg20 is not None and lqd20 is not None) else None
-        safe    = (spy20 - tlt20) if (spy20 is not None and tlt20 is not None) else None
 
         components = {
-            'vix':     dict(raw=v_vix,   score=score_vix(v_vix),          weight=WEIGHTS['vix']),
-            'breadth': dict(raw=breadth, score=score_breadth(breadth),    weight=WEIGHTS['breadth']),
-            'rsi':     dict(raw=v_rsi,   score=score_rsi(v_rsi),          weight=WEIGHTS['rsi']),
-            'ma200':   dict(raw=v_ma,    score=score_ma200(v_ma),         weight=WEIGHTS['ma200']),
-            'aaii':    dict(raw=v_aaii,  score=score_aaii(v_aaii),        weight=WEIGHTS['aaii']),
-            'naaim':   dict(raw=v_naaim, score=score_naaim(v_naaim),      weight=WEIGHTS['naaim']),
-            'junk':    dict(raw=junk,    score=score_junk(junk),          weight=WEIGHTS['junk']),
-            'safe':    dict(raw=safe,    score=score_safe(safe),          weight=WEIGHTS['safe']),
+            'vix':     dict(raw=v_vix,    score=score_vix(v_vix),          weight=WEIGHTS['vix']),
+            'breadth': dict(raw=breadth,  score=score_breadth(breadth),    weight=WEIGHTS['breadth']),
+            'rsi':     dict(raw=v_rsi,    score=score_rsi(v_rsi),          weight=WEIGHTS['rsi']),
+            'ma200':   dict(raw=v_ma,     score=score_ma200(v_ma),         weight=WEIGHTS['ma200']),
+            'aaii':    dict(raw=v_aaii,   score=score_aaii(v_aaii),        weight=WEIGHTS['aaii']),
+            'naaim':   dict(raw=v_naaim,  score=score_naaim(v_naaim),      weight=WEIGHTS['naaim']),
+            'junk':    dict(raw=junk,     score=score_junk(junk),          weight=WEIGHTS['junk']),
+            'spread':  dict(raw=v_spread, score=score_spread(v_spread),    weight=WEIGHTS['spread']),
         }
 
         # Weighted blend

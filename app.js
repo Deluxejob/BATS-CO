@@ -16,49 +16,49 @@ const BUCKETS = [
   {
     label: 'Very Oversold',
     action: 'Strong Buy',
-    subtitle: 'Historically +39% avg 12mo — every historical instance positive. Includes the 2008 GFC and 2020 COVID bottoms.',
+    subtitle: 'Historically +56% avg 12mo — every single instance positive. Rare (~17 days in 20 years). Includes the 2020 COVID bottom.',
     color: 'var(--s0)',
     min: 0,
   },
   {
     label: 'Oversold',
     action: 'Consider Buying',
-    subtitle: 'Historically +15.6% avg 12mo, 80% positive. Well above the +10% baseline.',
+    subtitle: 'Historically +25% avg 12mo, 88.5% positive — well above the +10% baseline. Includes the 2009 GFC bottom and 2018 Powell put.',
     color: 'var(--s1)',
     min: 15,
   },
   {
     label: 'Slightly Bearish',
     action: 'Be Careful',
-    subtitle: 'The weakest historical zone — forward 12mo returns average +8.8%, below baseline. Not a crash, just weaker odds.',
+    subtitle: 'Forward 12mo returns average +11.5%, hit rate 75%. Not a crash zone, just weaker odds.',
     color: 'var(--s2)',
     min: 30,
   },
   {
     label: 'Neutral',
     action: 'No Real Trend',
-    subtitle: 'Baseline forward returns (~+10% avg 12mo). The market is not making a strong statement in either direction.',
+    subtitle: 'Baseline forward returns (~+11% avg 12mo, 81% positive). The market is not making a strong statement in either direction.',
     color: 'var(--s3)',
     min: 45,
   },
   {
     label: 'Slightly Bullish',
     action: 'Hold',
-    subtitle: 'Roughly baseline forward returns (+9.3% avg 12mo, 83% positive). Normal bull-market territory.',
+    subtitle: 'Baseline forward returns (+11.1% avg 12mo, 87% positive). Normal bull-market territory.',
     color: 'var(--s4)',
     min: 57,
   },
   {
     label: 'Bullish',
     action: 'Hold, But Be Careful',
-    subtitle: 'Above baseline: +11.6% avg 12mo, 88% positive. Trend has been strong — watch for stretching.',
+    subtitle: 'Above baseline: +13.3% avg 12mo, 90% positive. Trend has been strong.',
     color: 'var(--s5)',
     min: 65,
   },
   {
     label: 'Extended',
     action: 'Trim / Rebalance Stretched Positions',
-    subtitle: 'Rare — only ~1% of the time. Includes the 2016 post-election rally and 2023 AI euphoria peak. Historically +12% avg 12mo (76% positive) — the market can keep going, but individual tickers may be stretched.',
+    subtitle: 'Rare — only ~1% of the time. Historically +15.6% avg 12mo (84% positive). The market can keep going, but individual tickers may be stretched.',
     color: 'var(--s6)',
     min: 72,
   },
@@ -364,40 +364,52 @@ function computeSmaSeries(closes, period = 200) {
   return sma;
 }
 
-// ---- Safe Haven Demand — SPY vs TLT 20-day return spread ----
+// ---- 10Y-2Y Treasury Yield Spread ----
 //
-// When investors get scared, they rotate out of stocks (SPY) and into
-// long-duration Treasuries (TLT — 20+ Year Treasury Bond ETF). When
-// they're greedy, they do the opposite. This is the classic CNN Fear &
-// Greed "Safe Haven Demand" component: are stocks or bonds winning?
+// The single most-watched recession indicator on Wall Street. It's the
+// difference between the yield on the 10-year Treasury and the 2-year
+// Treasury, expressed in percentage points. Normally, longer bonds pay
+// MORE than shorter ones (positive spread — the "term premium"). When
+// the curve inverts (spread < 0), the bond market is signaling that
+// short-term rates are too high and a slowdown is on the way.
 //
-// CONFIRMATORY (like Breadth, Junk):
-//   Positive spread (stocks beating bonds) -> risk-on -> HIGH BATS
-//   Negative spread (bonds beating stocks) -> flight to safety -> LOW BATS
+// LEADING indicator — inversions have preceded every US recession since
+// 1970 by 6-24 months. That's why we treat a deep inversion as a strong
+// BEARISH-leading signal (LOW BATS score), and a steep positive curve
+// as HEALTHY expansion (HIGH BATS score).
 //
-// Distribution 2003-2026 (5,811 days): median +1.3%, 90th ±7.5%, extremes ±40%.
-// Slightly wider tails than Breadth (stocks and bonds decouple more than
-// two stock ETFs do), so we use a gentler slope: score = 50 + spread * 5.
+// Piecewise-linear mapping (all values in percentage points):
+//   spread ≤ -1.5     → score 5   (deep inversion, recession warning)
+//   spread == 0       → ~40       (flat curve)
+//   spread ≈ +0.5     → ~55       (mildly normal)
+//   spread ≈ +1.5     → ~75       (steepening)
+//   spread ≥ +2.5     → 95        (very steep, early-cycle)
 //
-// Backtest 2003-2026:
-//   Very Oversold (spread ≤ -9%, deep flight to safety): +13.8% avg 12mo, 81% hit (n=485)
-//   Very Bullish  (spread ≥ +9%, extreme risk-on):       +13.1% avg 12mo, 84% hit (n=649)
-// Clean smile — both extremes above +10% baseline.
-function scoreSafeHaven(spread) {
+// Backtest 1990-2018 (7,000+ days), replacing Safe Haven at weight 5:
+//   Very Oversold bucket: +56% avg forward 12mo, 100% positive (n=17)
+//   Oversold bucket:      +25% avg forward 12mo, 88.5% positive
+//   Extended bucket:      +15.6% avg forward 12mo, 84.4% positive
+// Meaningful improvement over the SPY-TLT-based Safe Haven at both tails.
+function scoreYieldSpread(spread) {
   if (spread == null || isNaN(spread)) return null;
-  const score = 50 + spread * 5;
-  return Math.max(5, Math.min(95, score));
+  let s;
+  if      (spread <= -1.5) s = 5;
+  else if (spread <=  0)   s = 5  + (spread + 1.5) * (40 - 5)  / 1.5;
+  else if (spread <=  0.5) s = 40 + spread         * (55 - 40) / 0.5;
+  else if (spread <=  1.5) s = 55 + (spread - 0.5) * (75 - 55) / 1.0;
+  else if (spread <=  2.5) s = 75 + (spread - 1.5) * (95 - 75) / 1.0;
+  else                     s = 95;
+  return Math.max(2, Math.min(98, s));
 }
 
-function safeHavenAdvisory(spread) {
+function yieldSpreadAdvisory(spread) {
   if (spread == null || isNaN(spread)) return null;
-  if (spread <= -9)    return { tone: 'opportunity', text: 'Deep flight to safety — bonds crushing stocks. Historically a strong contrarian buy signal (+14% avg forward 12mo, 81% positive).' };
-  if (spread <= -3)    return { tone: 'watch',       text: 'Investors rotating into bonds — cautious risk-off tone. Bearish confirmation but forward returns still solid.' };
-  if (spread <= -0.5)  return { tone: 'info',        text: 'Mildly risk-off — bonds slightly outperforming stocks.' };
-  if (spread <   3)    return { tone: 'info',        text: 'Balanced — stocks and bonds moving in step.' };
-  if (spread <   6)    return { tone: 'info',        text: 'Stocks outperforming bonds — healthy risk-on tone.' };
-  if (spread <   9)    return { tone: 'info',        text: 'Broad risk-on — stocks clearly beating bonds. Bullish confirmation.' };
-  return                      { tone: 'info',        text: 'Extreme risk-on — stocks demolishing bonds. Historically strong bullish confirmation (+13% avg forward 12mo, 84% positive).' };
+  if (spread <= -1.5) return { tone: 'opportunity', text: 'Deeply inverted yield curve — a classic pre-recession signal. When this coincides with fear across the other components, historically a very strong contrarian buy zone (+56% avg forward 12mo).' };
+  if (spread <=  -0.25) return { tone: 'watch',     text: 'Yield curve inverted — the bond market is signaling economic slowdown ahead. Historically leads recessions by 6-24 months.' };
+  if (spread <   0.25) return { tone: 'watch',       text: 'Yield curve is flat — late-cycle territory. Not inverted yet, but the term premium has been squeezed out.' };
+  if (spread <   1.0)  return { tone: 'info',        text: 'Mildly positive — normal but not steep. Mid-cycle expansion.' };
+  if (spread <   2.0)  return { tone: 'info',        text: 'Healthy steepening — normal, well-behaved yield curve. Expansion phase.' };
+  return                      { tone: 'info',        text: 'Very steep curve — early-cycle territory or aggressive rate cuts. Bullish confirmation for a growth-friendly environment.' };
 }
 
 // ---- Junk Bond Demand — HYG/LQD 20-day spread ----
@@ -604,16 +616,16 @@ const COMPONENTS = [
     explainer: 'indicators/junk-bond-demand.html',
   },
   {
-    key: 'safehaven',
-    name: 'Safe Haven Demand',
-    desc: `Stocks vs 20+ year Treasuries (${MC.stockTicker} − TLT 20-day return). Confirmatory: risk-on = bullish; flight to safety = bearish.`,
+    key: 'yield_spread',
+    name: '10Y-2Y Yield Spread',
+    desc: 'The bond market\'s recession signal. 10-year minus 2-year Treasury yields, in percentage points. Leading: inverted = recession warning; steep = healthy expansion.',
     weight: 5,
     status: 'live',
     raw: 0,
-    value: '0.00% (loading)',
-    signal: scoreSafeHaven(0),
-    advisory: safeHavenAdvisory(0),
-    explainer: 'indicators/safe-haven.html',
+    value: '0.00 pp (loading)',
+    signal: scoreYieldSpread(0.5),
+    advisory: yieldSpreadAdvisory(0.5),
+    explainer: 'indicators/yield-spread.html',
   },
 ];
 
@@ -956,6 +968,19 @@ function parseNAAIMLive(text) {
   return rows;
 }
 
+// Yields history: Date,Y2,Y10,Spread10Y2Y (daily since 1990-01-02)
+// The 4th column is 10Y-2Y in percentage points, pre-computed by the fetcher.
+function parseYieldsHistoryLive(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const sp = parseFloat(parts[3]);
+    if (parts[0] && !isNaN(sp)) rows.push({ date: parts[0], spread: sp });
+  }
+  return rows;
+}
+
 function findNaaimOnOrBefore(naaimRows, targetDate) {
   for (let i = naaimRows.length - 1; i >= 0; i--) {
     if (naaimRows[i].date <= targetDate) return naaimRows[i];
@@ -997,8 +1022,8 @@ function computeRsiSeriesLive(closes, period = 14) {
 
 async function loadLiveData() {
   // Market-specific data files (VIX/VXN, RSP/QQEW, SPY/QQQ, SPX/NDX)
-  // Universal data files (HYG, LQD, AAII, NAAIM, TLT — apply to both markets)
-  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, aaiiText, naaimText, tltText] = await Promise.all([
+  // Universal data files (HYG, LQD, AAII, NAAIM, yields_history — apply to both markets)
+  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, aaiiText, naaimText, yieldsText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + MC.volCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthEqualCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthCapCsv),
@@ -1007,7 +1032,7 @@ async function loadLiveData() {
     fetchCSVText(APP_DATA_BASE + MC.indexCsv),
     fetchCSVText(APP_DATA_BASE + 'aaii.csv'),
     fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
-    fetchCSVText(APP_DATA_BASE + 'tlt.csv'),
+    fetchCSVText(APP_DATA_BASE + 'yields_history.csv'),
   ]);
   // VIX ships as OHLC; VXN as Date,Close. Same field name downstream.
   const vix = MC.volIsOHLC ? parseVIXLive(volText) : parseDateCloseLive(volText).map(r => ({ date: r.date, close: r.close }));
@@ -1016,7 +1041,7 @@ async function loadLiveData() {
   const hyg = parseDateCloseLive(hygText);
   const lqd = parseDateCloseLive(lqdText);
   const spx = parseDateCloseLive(indexText);      // "SPX" var name kept; holds NDX when market=nasdaq
-  const tlt = parseDateCloseLive(tltText);
+  const yields = parseYieldsHistoryLive(yieldsText);
   const aaii = parseAAIILive(aaiiText);
   const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
@@ -1027,17 +1052,24 @@ async function loadLiveData() {
   const hygByDate = new Map(); hyg.forEach((r, i) => hygByDate.set(r.date, i));
   const lqdByDate = new Map(); lqd.forEach((r, i) => lqdByDate.set(r.date, i));
   const spxByDate = new Map(); spx.forEach((r, i) => spxByDate.set(r.date, i));
-  const tltByDate = new Map(); tlt.forEach((r, i) => tltByDate.set(r.date, i));
 
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')         || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')     || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')     || {}).weight || 0;
-  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')       || {}).weight || 0;
-  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand') || {}).weight || 0;
-  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')        || {}).weight || 0;
-  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')       || {}).weight || 0;
-  const wSafe    = (COMPONENTS.find(c => c.key === 'safehaven')   || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSafe;
+  // Yields is sorted chronologically. Find most-recent spread on or before a date.
+  function findYieldsOnOrBefore(target) {
+    for (let i = yields.length - 1; i >= 0; i--) {
+      if (yields[i].date <= target) return yields[i];
+    }
+    return null;
+  }
+
+  const wVix     = (COMPONENTS.find(c => c.key === 'vix')          || {}).weight || 0;
+  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')      || {}).weight || 0;
+  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')      || {}).weight || 0;
+  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')        || {}).weight || 0;
+  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')  || {}).weight || 0;
+  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')         || {}).weight || 0;
+  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')        || {}).weight || 0;
+  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread') || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -1047,23 +1079,22 @@ async function loadLiveData() {
     const hi = hygByDate.get(d);
     const li = lqdByDate.get(d);
     const xi = spxByDate.get(d);
-    const ti = tltByDate.get(d);
     if (si == null || si < 20 || vi == null || rsi[si] == null) return null;
     if (hi == null || hi < 20 || li == null || li < 20) return null;
-    if (ti == null || ti < 20) return null;
     if (xi == null || sma200[xi] == null) return null;
     const aaiiRec = findAaiiOnOrBefore(aaii, d);
     if (!aaiiRec) return null;
     const naaimRec = findNaaimOnOrBefore(naaim, d);
     if (!naaimRec) return null;
+    const yieldsRec = findYieldsOnOrBefore(d);
+    if (!yieldsRec) return null;
     const rspRet = (rsp[rspRowIdx].close / rsp[rspRowIdx - 20].close - 1) * 100;
     const spyRet = (spy[si].close        / spy[si - 20].close        - 1) * 100;
     const spread = rspRet - spyRet;
     const hygRet = (hyg[hi].close        / hyg[hi - 20].close        - 1) * 100;
     const lqdRet = (lqd[li].close        / lqd[li - 20].close        - 1) * 100;
     const junkSpread = hygRet - lqdRet;
-    const tltRet = (tlt[ti].close        / tlt[ti - 20].close        - 1) * 100;
-    const safeSpread = spyRet - tltRet;
+    const yieldSpread = yieldsRec.spread;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
@@ -1072,8 +1103,8 @@ async function loadLiveData() {
     const ms = scoreMA200(ma200Dist);
     const as_ = scoreAAII(aaiiRec.spread);
     const ns = scoreNAAIM(naaimRec.value);
-    const shs = scoreSafeHaven(safeSpread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || shs == null || wTotal <= 0) return null;
+    const yss = scoreYieldSpread(yieldSpread);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -1085,9 +1116,10 @@ async function loadLiveData() {
       aaiiDate: aaiiRec.date,
       naaimValue: naaimRec.value,
       naaimDate: naaimRec.date,
-      safeSpread,
-      vs, bs, rs, js, ms, as_, ns, shs,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + shs * wSafe) / wTotal,
+      yieldSpread,
+      yieldsDate: yieldsRec.date,
+      vs, bs, rs, js, ms, as_, ns, yss,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread) / wTotal,
     };
   }
 
@@ -1166,13 +1198,13 @@ function updateComponentsWithLatest(current) {
     naaimComp.signal = current.ns;
     naaimComp.advisory = naaimAdvisory(current.naaimValue);
   }
-  const safeComp = COMPONENTS.find(c => c.key === 'safehaven');
-  if (safeComp) {
-    safeComp.raw = current.safeSpread;
-    const sign = current.safeSpread >= 0 ? '+' : '';
-    safeComp.value = `${sign}${current.safeSpread.toFixed(2)}%`;
-    safeComp.signal = current.shs;
-    safeComp.advisory = safeHavenAdvisory(current.safeSpread);
+  const spreadComp = COMPONENTS.find(c => c.key === 'yield_spread');
+  if (spreadComp) {
+    spreadComp.raw = current.yieldSpread;
+    const sign = current.yieldSpread >= 0 ? '+' : '';
+    spreadComp.value = `${sign}${current.yieldSpread.toFixed(2)} pp`;
+    spreadComp.signal = current.yss;
+    spreadComp.advisory = yieldSpreadAdvisory(current.yieldSpread);
   }
 }
 
