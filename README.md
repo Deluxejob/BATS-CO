@@ -4,7 +4,7 @@ A single, transparent market sentiment indicator (the **BATS**) that answers a
 simple question: **"Is now a good time to buy stocks?"**
 
 The BATS blends widely-used public market indicators into a 0–100 score across
-seven buckets — Very Oversold, Oversold, Slightly Bearish, Neutral, Slightly
+eight buckets — Extremely Oversold, Very Oversold, Oversold, Slightly Bearish, Neutral, Slightly
 Bullish, Bullish, Extended. Every component is documented and independently
 backtested against S&P 500 forward returns.
 

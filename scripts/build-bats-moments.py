@@ -35,13 +35,14 @@ WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
-    dict(label='Very Oversold',    min=0,  color='var(--s0)', action='Strong Buy'),
-    dict(label='Oversold',         min=15, color='var(--s1)', action='Consider Buying'),
-    dict(label='Slightly Bearish', min=30, color='var(--s2)', action='Be Careful'),
-    dict(label='Neutral',          min=45, color='var(--s3)', action='No Real Trend'),
-    dict(label='Slightly Bullish', min=57, color='var(--s4)', action='Hold'),
-    dict(label='Bullish',          min=65, color='var(--s5)', action='Hold, But Be Careful'),
-    dict(label='Extended',         min=72, color='var(--s6)', action='Trim / Rebalance'),
+    dict(label='Extremely Oversold', min=0,  color='var(--s-ext)', action='Aggressive Buy'),
+    dict(label='Very Oversold',      min=15, color='var(--s0)',    action='Strong Buy'),
+    dict(label='Oversold',           min=18, color='var(--s1)',    action='Consider Buying'),
+    dict(label='Slightly Bearish',   min=30, color='var(--s2)',    action='Be Careful'),
+    dict(label='Neutral',            min=45, color='var(--s3)',    action='No Real Trend'),
+    dict(label='Slightly Bullish',   min=57, color='var(--s4)',    action='Hold'),
+    dict(label='Bullish',            min=65, color='var(--s5)',    action='Hold, But Be Careful'),
+    dict(label='Extended',           min=72, color='var(--s6)',    action='Trim / Rebalance'),
 ]
 
 

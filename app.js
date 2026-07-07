@@ -4,9 +4,9 @@
    and (later) wires up real data feeds for the BATS.
    ============================================================ */
 
-// --- The 7 BATS buckets, from oversold (low score) to extended (high score) ---
+// --- The 8 BATS buckets, from extremely oversold (low score) to extended (high score) ---
 // Boundaries are calibrated to the empirical BATS distribution so each bucket
-// gets meaningful population, INCLUDING the "Extended" extreme (~1% of days).
+// gets meaningful population, including the two extremes at the edges.
 // Every bucket carries three descriptions:
 //   label:    the state name (what the market is doing)
 //   action:   a short "what to consider" hint
@@ -14,51 +14,58 @@
 // The `min` field is the LOWER bound (inclusive). Upper bound = next bucket's min.
 const BUCKETS = [
   {
+    label: 'Extremely Oversold',
+    action: 'Aggressive Buy',
+    subtitle: 'The rarest signal — only ~17 days in 20 years. Historically +54% avg 12mo, every single instance positive. Includes the 2020 COVID bottom.',
+    color: 'var(--s-ext)',
+    min: 0,
+  },
+  {
     label: 'Very Oversold',
     action: 'Strong Buy',
-    subtitle: 'Historically +56% avg 12mo — every single instance positive. Rare (~17 days in 20 years). Includes the 2020 COVID bottom.',
+    subtitle: 'Historically +32% avg 12mo, every single instance positive (~34 days in 20 years). Includes the 2008 GFC bottom and 2011 US downgrade.',
     color: 'var(--s0)',
-    min: 0,
+    min: 15,
   },
   {
     label: 'Oversold',
     action: 'Consider Buying',
-    subtitle: 'Historically +25% avg 12mo, 88.5% positive — well above the +10% baseline. Includes the 2009 GFC bottom and 2018 Powell put.',
+    subtitle: 'Historically +21% avg 12mo, 86% positive — well above the +9% baseline. Includes the 2018 Powell put and 2025 Liberation Day.',
     color: 'var(--s1)',
-    min: 15,
+    min: 18,
   },
   {
     label: 'Slightly Bearish',
     action: 'Be Careful',
-    subtitle: 'Forward 12mo returns average +11.5%, hit rate 75%. Not a crash zone, just weaker odds.',
+    subtitle: 'Forward 12mo returns average +9.4%, hit rate 74%. Not a crash zone, just weaker odds.',
     color: 'var(--s2)',
     min: 30,
   },
   {
     label: 'Neutral',
     action: 'No Real Trend',
-    subtitle: 'Baseline forward returns (~+11% avg 12mo, 81% positive). The market is not making a strong statement in either direction.',
+    subtitle: 'Baseline forward returns (+9.3% avg 12mo, 78% positive). The market is not making a strong statement in either direction.',
     color: 'var(--s3)',
     min: 45,
   },
   {
     label: 'Slightly Bullish',
     action: 'Hold',
-    subtitle: 'Baseline forward returns (+11.1% avg 12mo, 87% positive). Normal bull-market territory.',
+    subtitle: 'Baseline forward returns (+9.0% avg 12mo, 82% positive). Normal bull-market territory.',
     color: 'var(--s4)',
     min: 57,
   },
   {
     label: 'Bullish',
     action: 'Hold, But Be Careful',
-    subtitle: 'Above baseline: +13.3% avg 12mo, 90% positive. Trend has been strong.',
+    subtitle: 'Above baseline: +11.1% avg 12mo, 86% positive. Trend has been strong.',
     color: 'var(--s5)',
     min: 65,
   },
   {
     label: 'Extended',
     action: 'Trim / Rebalance Stretched Positions',
-    subtitle: 'Rare — only ~1% of the time. Historically +15.6% avg 12mo (84% positive). The market can keep going, but individual tickers may be stretched.',
+    subtitle: 'Rare — only ~1% of the time. Historically +13.4% avg 12mo (84% positive). The market can keep going, but individual tickers may be stretched.',
     color: 'var(--s6)',
     min: 72,
   },
@@ -695,7 +702,7 @@ function buildGauge() {
   // the piecewise score→angle mapping — so ticks always line up with the
   // color-band transitions on the gauge.
   const MAJOR_TICKS = [0, 45, 65, 100];         // start / Neutral / Bullish / max
-  const MINOR_TICKS = [15, 30, 57, 72];         // other bucket boundaries
+  const MINOR_TICKS = [15, 18, 30, 57, 72];     // other bucket boundaries
 
   function tickAngle(v) { return scoreToGaugeAngle(v); }
 

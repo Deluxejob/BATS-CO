@@ -20,7 +20,8 @@
   --neutral:      #b8c1d1;
   --warn:         #ffb842;
 
-  /* 7-segment sentiment palette: very oversold -> very bullish */
+  /* 8-segment sentiment palette: extremely oversold -> very bullish */
+  --s-ext: #7d1c39; /* extremely oversold — deep crimson */
   --s0: #c83353; /* very oversold */
   --s1: #e1635b; /* oversold      */
   --s2: #f0915c; /* slightly bearish */
