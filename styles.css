@@ -940,7 +940,8 @@ main.explainer .disclaimer {
 /* Match the "Real market moments" heading to the h2 size above it so both
    subsections read as equally important. Semantic h3 preserved for
    document outline; only the visual weight is upgraded. */
-.moments-block .section-head h3 {
+.moments-block .section-head h3,
+#cap-vs-equal .section-head h3 {
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: .25rem;
