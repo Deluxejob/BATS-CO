@@ -104,12 +104,38 @@
       <div class="section-head" style="margin-top:1.5rem">
         <h3>S&amp;P 500 &mdash; SPY vs RSP</h3>
       </div>
+      <div class="conc-gauge-wrap">
+        <div class="conc-gauge-readout">
+          <div class="conc-gauge-reading" id="capEqualSpReading">Loading…</div>
+          <div class="conc-gauge-value" id="capEqualSpValue">&nbsp;</div>
+        </div>
+        <div class="conc-gauge-bar" role="img" aria-label="S&P 500 cap-vs-equal gauge">
+          <div class="conc-gauge-marker" id="capEqualSpMarker" style="left:50%"></div>
+        </div>
+        <div class="conc-gauge-ends">
+          <span>← Concentrated<br><small>SPY beating RSP</small></span>
+          <span>Broad →<br><small>RSP beating SPY</small></span>
+        </div>
+      </div>
       <div class="backtest-table-wrap">
         <table id="capEqualSpTable" class="backtest-table"></table>
       </div>
 
       <div class="section-head" style="margin-top:1.5rem">
         <h3>Nasdaq 100 &mdash; QQQ vs QQEW</h3>
+      </div>
+      <div class="conc-gauge-wrap">
+        <div class="conc-gauge-readout">
+          <div class="conc-gauge-reading" id="capEqualNdxReading">Loading…</div>
+          <div class="conc-gauge-value" id="capEqualNdxValue">&nbsp;</div>
+        </div>
+        <div class="conc-gauge-bar" role="img" aria-label="Nasdaq 100 cap-vs-equal gauge">
+          <div class="conc-gauge-marker" id="capEqualNdxMarker" style="left:50%"></div>
+        </div>
+        <div class="conc-gauge-ends">
+          <span>← Concentrated<br><small>QQQ beating QQEW</small></span>
+          <span>Broad →<br><small>QQEW beating QQQ</small></span>
+        </div>
       </div>
       <div class="backtest-table-wrap">
         <table id="capEqualNdxTable" class="backtest-table"></table>

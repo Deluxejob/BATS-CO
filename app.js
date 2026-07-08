@@ -1501,8 +1501,9 @@ function renderCurrentReadingOnIndicator(key, latestDate) {
 
 // Cap-weighted vs Equal-weighted — a full-index concentration measure
 // that doesn't depend on the top-10 list. SPY vs RSP for S&P 500,
-// QQQ vs QQEW for Nasdaq 100. Renders two stacked tables on the
-// concentration page.
+// QQQ vs QQEW for Nasdaq 100. Renders a gauge + table for each market.
+// Gap sign: EQUAL − CAP so positive = broad market winning (right side of
+// the gauge, matching the "Broad →" label on the top-of-page gauge).
 async function renderCapVsEqual() {
   const spTable = document.getElementById('capEqualSpTable');
   const ndxTable = document.getElementById('capEqualNdxTable');
@@ -1524,7 +1525,7 @@ async function renderCapVsEqual() {
     .map(s => s[s.length - 1]?.date)
     .filter(Boolean)
     .sort()[0]; // earliest of the latest → the join date
-  if (meta) meta.textContent = `Latest close: ${latestDate}. Positive gap = cap-weight beating equal-weight = mega-caps pulling the index.`;
+  if (meta) meta.textContent = `Latest close: ${latestDate}. Positive gap = equal-weight beating cap-weight = broad market participating.`;
 
   function fmt(x, digits = 2) {
     if (x == null) return '<span class="text-dim">—</span>';
@@ -1538,21 +1539,54 @@ async function renderCapVsEqual() {
     return '';
   }
 
-  function renderPair(table, capSeries, eqSeries, capLabel, eqLabel) {
+  // Gap sign convention here: gap = equal − cap. Positive gap = broad
+  // market winning (right side of the gauge). Score = 50 + gap * 4.5,
+  // clamped to [5, 95] — mirror of scoreConcentration()'s formula.
+  function scoreEqualMinusCap(gap) {
+    if (gap == null || isNaN(gap)) return null;
+    const score = 50 + gap * 4.5;
+    return Math.max(5, Math.min(95, score));
+  }
+
+  function setGauge(prefix, gap) {
+    const marker = document.getElementById(prefix + 'Marker');
+    const reading = document.getElementById(prefix + 'Reading');
+    const valueEl = document.getElementById(prefix + 'Value');
+    if (!marker) return;
+    if (gap == null) {
+      if (reading) reading.textContent = 'No data';
+      if (valueEl) valueEl.textContent = '';
+      return;
+    }
+    const score = scoreEqualMinusCap(gap);
+    marker.style.left = score + '%';
+    const bucketIdx = Math.min(CONC_BUCKETS.length - 1, Math.floor((score / 100) * CONC_BUCKETS.length));
+    if (reading) reading.textContent = CONC_BUCKETS[bucketIdx].label;
+    if (valueEl) {
+      const sign = gap >= 0 ? '+' : '';
+      valueEl.textContent = `1-month gap (Equal − Cap): ${sign}${gap.toFixed(2)}%`;
+    }
+  }
+
+  function renderPair(table, gaugePrefix, capSeries, eqSeries, capLabel, eqLabel) {
     if (!table) return;
     const rows = CONC_WINDOWS.map(window => {
       const capRet = returnOver(capSeries, window);
       const eqRet  = returnOver(eqSeries,  window);
-      const gap = (capRet != null && eqRet != null) ? capRet - eqRet : null;
-      return { label: window.label, capRet, eqRet, gap };
+      const gap = (capRet != null && eqRet != null) ? eqRet - capRet : null;
+      return { label: window.label, key: window.key, capRet, eqRet, gap };
     });
+    // Point the gauge at the 1-month gap
+    const oneMonth = rows.find(r => r.key === 'm1');
+    if (oneMonth) setGauge(gaugePrefix, oneMonth.gap);
+
     table.innerHTML = `
       <thead>
         <tr>
           <th>Timeframe</th>
           <th class="num">${capLabel} (cap-weight)</th>
           <th class="num">${eqLabel} (equal-weight)</th>
-          <th class="num">Gap (Cap − Equal)</th>
+          <th class="num">Gap (Equal − Cap)</th>
         </tr>
       </thead>
       <tbody>
@@ -1568,8 +1602,8 @@ async function renderCapVsEqual() {
     `;
   }
 
-  renderPair(spTable,  spy, rsp,  'SPY', 'RSP');
-  renderPair(ndxTable, qqq, qqew, 'QQQ', 'QQEW');
+  renderPair(spTable,  'capEqualSp',  spy, rsp,  'SPY', 'RSP');
+  renderPair(ndxTable, 'capEqualNdx', qqq, qqew, 'QQQ', 'QQEW');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
