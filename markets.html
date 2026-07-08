@@ -170,7 +170,68 @@
       justify-content: space-between;
       transition: transform 0.12s;
     }
-    .sector-tile:hover { transform: translateY(-2px); }
+    .sector-tile { cursor: pointer; }
+    .sector-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+
+    /* Sector chart modal */
+    .sector-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(4, 8, 18, 0.85);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .sector-modal-backdrop.open { display: flex; }
+    .sector-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sector-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .sector-modal-head h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: var(--text);
+    }
+    .sector-modal-head .sub {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 0.15rem;
+    }
+    .sector-modal-close {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 6px;
+      font: inherit;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+    }
+    .sector-modal-close:hover { color: var(--text); border-color: var(--accent); }
+    .sector-modal-body {
+      padding: 0.75rem 1rem 1rem;
+      overflow: auto;
+    }
+    .sector-modal .tradingview-widget-container {
+      width: 100%;
+      min-height: 480px;
+    }
     .sector-tile .sector-name {
       font-size: 0.82rem;
       font-weight: 600;
@@ -425,6 +486,20 @@
           <em style="color:var(--text-dim)">Loading sector data&hellip;</em>
         </div>
         <p class="backtest-meta" id="sectorHeatMeta"></p>
+      </div>
+
+      <!-- Sector chart modal — opens when a tile is clicked -->
+      <div class="sector-modal-backdrop" id="sectorModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="sectorModalTitle">
+        <div class="sector-modal">
+          <div class="sector-modal-head">
+            <div>
+              <h3 id="sectorModalTitle">Sector</h3>
+              <div class="sub" id="sectorModalSub">Live chart with time periods</div>
+            </div>
+            <button type="button" class="sector-modal-close" id="sectorModalClose" aria-label="Close">&times;</button>
+          </div>
+          <div class="sector-modal-body" id="sectorModalBody"></div>
+        </div>
       </div>
     </section>
 
@@ -1140,7 +1215,7 @@
 
       grid.innerHTML = sorted.map(r => {
         if (!r.info || !isFinite(r.info.chg)) {
-          return `<div class="sector-tile" style="background:rgba(90,100,120,0.2)">
+          return `<div class="sector-tile" data-sym="${r.sym}" data-name="${r.name}" style="background:rgba(90,100,120,0.2)">
             <div class="sector-name">${r.name}</div>
             <div class="sector-ticker">${r.sym.toUpperCase()}</div>
             <div class="sector-change" style="color:#a8b3c4">&mdash;</div>
@@ -1148,7 +1223,7 @@
         }
         const col = colorFor(r.info.chg, maxAbs);
         const sign = r.info.chg >= 0 ? '+' : '';
-        return `<div class="sector-tile" style="background:${col.bg}; border-color:${col.border};">
+        return `<div class="sector-tile" data-sym="${r.sym}" data-name="${r.name}" style="background:${col.bg}; border-color:${col.border};">
           <div>
             <div class="sector-name">${r.name}</div>
             <div class="sector-ticker">${r.sym.toUpperCase()}</div>
@@ -1198,6 +1273,87 @@
       });
     }
     render('1d');
+
+    // === Sector chart modal ===
+    // Click any sector tile → modal opens with a TradingView Symbol Overview
+    // widget for that ETF (live price + interactive chart + time-period buttons
+    // 1D/5D/1M/3M/6M/YTD/1Y/5Y/All). Close via X button, backdrop click, or ESC.
+    const backdrop  = document.getElementById('sectorModalBackdrop');
+    const modalBody = document.getElementById('sectorModalBody');
+    const modalTitle = document.getElementById('sectorModalTitle');
+    const modalSub  = document.getElementById('sectorModalSub');
+    const closeBtn  = document.getElementById('sectorModalClose');
+
+    function openSectorModal(sym, name) {
+      const ticker = sym.toUpperCase();
+      modalTitle.textContent = `${name} (${ticker})`;
+      modalSub.textContent = 'Live chart — pick a time period below the price';
+      // Inject TradingView Symbol Overview widget matching the index-dashboard
+      // style. Widget config is JSON that lives as text content of the same
+      // element that also loads TradingView's external JS. We build via the
+      // DOM API rather than an inline template string so the closing-tag
+      // sequence inside the template literal doesn't prematurely end THIS
+      // enclosing inline block during HTML parsing.
+      modalBody.innerHTML = '';
+      const container = document.createElement('div');
+      container.className = 'tradingview-widget-container';
+      const widgetDiv = document.createElement('div');
+      widgetDiv.className = 'tradingview-widget-container__widget';
+      container.appendChild(widgetDiv);
+      const tvScript = document.createElement('script');
+      tvScript.type = 'text/javascript';
+      tvScript.async = true;
+      tvScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+      tvScript.text = JSON.stringify({
+        symbols: [[`${name} (${ticker})`, `AMEX:${ticker}|1D`]],
+        chartOnly: false,
+        width: '100%',
+        height: 480,
+        locale: 'en',
+        colorTheme: 'dark',
+        autosize: false,
+        showVolume: false,
+        showMA: false,
+        hideDateRanges: false,
+        hideMarketStatus: false,
+        hideSymbolLogo: true,
+        scalePosition: 'right',
+        scaleMode: 'Normal',
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        fontSize: '11',
+        noTimeScale: false,
+        valuesTracking: '1',
+        changeMode: 'price-and-percent',
+        chartType: 'area',
+        lineWidth: 2,
+        dateRanges: ['1d|1','5d|5','1m|30','3m|60','6m|1D','ytd|1D','12m|1D','60m|1W','all|1M'],
+        isTransparent: true,
+      });
+      container.appendChild(tvScript);
+      modalBody.appendChild(container);
+      backdrop.classList.add('open');
+    }
+
+    function closeSectorModal() {
+      backdrop.classList.remove('open');
+      // Remove the widget iframe when closing so the next open re-initializes fresh.
+      modalBody.innerHTML = '';
+    }
+
+    grid.addEventListener('click', (e) => {
+      const tile = e.target.closest('.sector-tile');
+      if (!tile) return;
+      const sym = tile.dataset.sym;
+      const name = tile.dataset.name;
+      if (sym && name) openSectorModal(sym, name);
+    });
+    closeBtn.addEventListener('click', closeSectorModal);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeSectorModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && backdrop.classList.contains('open')) closeSectorModal();
+    });
   })();
 
   // (Index Dashboards now use TradingView Symbol Overview widgets — see HTML.
