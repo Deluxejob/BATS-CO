@@ -98,7 +98,7 @@ h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); }
 }
 .brand-text { display: flex; flex-direction: column; }
 .brand h1 {
-  font-size: 1.35rem;
+  font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.015em;
   line-height: 1.15;
@@ -927,7 +927,7 @@ main.explainer .disclaimer {
   .site-header { padding: 1.25rem 1rem .5rem; }
   main { padding: .5rem 1rem 2rem; }
   .brand-logo { height: 52px; }
-  .brand h1 { font-size: 1.05rem; }
+  .brand h1 { font-size: 1.4rem; }
   .brand .tagline { font-size: .85rem; }
   .reading-label { font-size: 1.5rem; }
   .hero { padding: 1.25rem; }
