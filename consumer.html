@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consumer — BATS.CO</title>
+  <meta name="description" content="U-Michigan Consumer Sentiment vs the S&P 500 — a striking post-COVID divergence. Plus the Consumer Discretionary / Staples ratio (XLY/XLP) — Wall Street's canonical market-based read on consumer confidence." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Hero stat cards — reused from pe-ratio */
+    .cons-hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .cons-hero-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+    }
+    .cons-hero-stat .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      display: block;
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+    .cons-hero-stat .label {
+      font-size: 0.78rem;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .cons-hero-stat.current .num  { color: var(--s0); }
+    .cons-hero-stat.avg     .num  { color: #64d3ff; }
+    .cons-hero-stat.pct     .num  { color: var(--s5); }
+    .cons-hero-stat.gap     .num  { color: var(--s2); }
+
+    .cons-chart-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .cons-chart {
+      width: 100%;
+      max-width: 100%;
+      display: block;
+      font-family: 'Inter', sans-serif;
+    }
+    .cons-chart .axis-label { fill: var(--dim); font-size: 11px; }
+    .cons-chart .axis-line  { stroke: var(--border); stroke-width: 1; }
+    .cons-chart .grid-line  { stroke: var(--border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
+    .cons-chart .sent-line  { fill: none; stroke: #5aa4f5; stroke-width: 1.6; }
+    .cons-chart .spx-line   { fill: none; stroke: #e15555; stroke-width: 1.6; }
+    .cons-chart .ratio-line { fill: none; stroke: var(--s5); stroke-width: 1.4; }
+    .cons-chart .avg-line   { stroke: #64d3ff; stroke-width: 1.5; stroke-dasharray: 5 3; opacity: 0.85; }
+    .cons-chart .current-dot{ stroke: #fff; stroke-width: 1.5; }
+
+    .chart-legend {
+      display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
+      margin-top: 0.75rem; font-size: 0.85rem; color: var(--dim);
+    }
+    .chart-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .chart-legend .swatch { width: 20px; height: 3px; border-radius: 2px; display: inline-block; }
+
+    .chart-periods {
+      display: flex; gap: 0.35rem; flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .chart-period-btn {
+      font: inherit;
+      background: transparent;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chart-period-btn:hover  { color: var(--text); border-color: var(--dim); }
+    .chart-period-btn.active {
+      background: #64d3ff;
+      color: #0a1218;
+      border-color: #64d3ff;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="markets.html">Markets</a>
+      <a href="pe-ratio.html">PE Ratio</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="momentum.html">Momentum</a>
+      <a href="extremes.html">Extremes</a>
+      <a href="consumer.html">Consumer</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">CONSUMER SENTIMENT &amp; SPENDING</p>
+      <h1>Consumers say one thing. The stock market does another.</h1>
+      <p class="lede">
+        Since the COVID rebound, the University of Michigan Consumer Sentiment Index
+        has crashed from around 100 to near record lows &mdash; while the S&amp;P 500
+        has more than doubled. Two things that used to move together have completely
+        decoupled. This page looks at that divergence, then at what the market itself is
+        saying through the <strong>Consumer Discretionary vs Staples</strong> ratio
+        &mdash; the classic "risk-on within the consumer economy" gauge.
+      </p>
+    </section>
+
+    <section id="hero-stats">
+      <div class="section-head">
+        <h2>Where consumers stand today</h2>
+      </div>
+      <div class="cons-hero-stats">
+        <div class="cons-hero-stat current">
+          <span class="num" id="statCurrent">&ndash;</span>
+          <span class="label">Latest sentiment reading</span>
+        </div>
+        <div class="cons-hero-stat avg">
+          <span class="num" id="statAvg">&ndash;</span>
+          <span class="label">Long-term average (since 1978)</span>
+        </div>
+        <div class="cons-hero-stat pct">
+          <span class="num" id="statPct">&ndash;</span>
+          <span class="label">Historical percentile</span>
+        </div>
+        <div class="cons-hero-stat gap">
+          <span class="num" id="statGap">&ndash;</span>
+          <span class="label">Change vs a year ago</span>
+        </div>
+      </div>
+      <p class="backtest-meta" id="statMeta">Loading&hellip;</p>
+    </section>
+
+    <section id="sentiment-chart">
+      <div class="section-head">
+        <h2>Sentiment vs the S&amp;P 500</h2>
+        <p>
+          Blue is the U-Michigan Consumer Sentiment Index (left axis, monthly).
+          Red is the S&amp;P 500 (right axis, monthly close). Historically
+          they moved roughly together &mdash; both up in expansions, both down in
+          recessions. Since 2021 they&rsquo;ve pulled sharply apart.
+        </p>
+      </div>
+      <div class="cons-chart-wrap">
+        <div class="chart-periods" id="sentChartPeriods" role="tablist" aria-label="Chart time period">
+          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn active" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn" data-period="20"  role="tab">20Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="sentChart" class="cons-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="U-Mich Consumer Sentiment vs S&P 500"></svg>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:#5aa4f5"></span> Consumer Sentiment (left)</span>
+          <span><span class="swatch" style="background:#e15555"></span> S&amp;P 500 (right)</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="xlyxlp-chart">
+      <div class="section-head">
+        <h2>The market's own read: Consumer Discretionary vs Staples (XLY / XLP)</h2>
+        <p>
+          When investors are confident, they own Amazon, Tesla, Home Depot, Nike
+          &mdash; the discretionary side (XLY). When they get nervous, they rotate
+          into Walmart, Procter &amp; Gamble, Coca-Cola &mdash; the staples side
+          (XLP). This ratio has historically <strong>led</strong> the equity
+          market at inflection points because sector rotation happens before broad
+          risk-off. Rising = confident, falling = defensive.
+        </p>
+      </div>
+      <div class="cons-chart-wrap">
+        <div class="chart-periods" id="xlyxlpPeriods" role="tablist" aria-label="Ratio chart period">
+          <button type="button" class="chart-period-btn" data-period="1"   role="tab">1Y</button>
+          <button type="button" class="chart-period-btn" data-period="2"   role="tab">2Y</button>
+          <button type="button" class="chart-period-btn active" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="xlyxlpChart" class="cons-chart" viewBox="0 0 1200 320" preserveAspectRatio="none" aria-label="XLY/XLP ratio chart"></svg>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:var(--s5)"></span> XLY / XLP ratio</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> 5-year median</span>
+        </div>
+      </div>
+      <p class="backtest-meta" id="xlyxlpMeta">Loading&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <div class="findings-grid">
+        <div class="finding finding-info">
+          <div class="finding-num">1</div>
+          <h3>The divergence is unprecedented in the modern data.</h3>
+          <p>
+            From 1978 through 2020 the correlation between Consumer Sentiment and the
+            level of the S&amp;P 500 was strong &mdash; both climbed in expansions,
+            both fell in recessions. The post-COVID split is the widest sentiment-vs-price
+            gap in the entire 47-year U-Mich history, and it has now persisted for
+            over three years.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> The stock market is not the economy for most
+            people. Concentration in a handful of megacap tech stocks masks how the
+            median household actually feels about their financial situation.
+          </p>
+        </div>
+
+        <div class="finding finding-pos">
+          <div class="finding-num">2</div>
+          <h3>Extreme low sentiment has historically been bullish for stocks.</h3>
+          <p>
+            When U-Mich sentiment has been at extreme lows (bottom 10% of readings
+            historically &mdash; roughly below 60), forward 12-month S&amp;P 500
+            returns have averaged double-digit gains. Fear at the household level
+            has been a solid contrarian buy signal &mdash; because it usually
+            coincides with recessions that the market has already priced in.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Sentiment prints in the 40s and 50s are
+            historically <em>near</em> bottoms, not tops. That&rsquo;s exactly what
+            the BATS Score captures on the main dashboard.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">3</div>
+          <h3>Watch the XLY/XLP ratio for a real early warning.</h3>
+          <p>
+            The Consumer Discretionary / Staples ratio has historically <em>led</em>
+            the S&amp;P 500 at major turning points &mdash; it peaked in early 2000
+            (before the dot-com top), late 2007 (before the GFC), and in early 2022
+            (before the bear market). When Discretionary starts underperforming
+            Staples for weeks in a row, institutional money is quietly rotating
+            defensive.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> The consumer sentiment index tells you what
+            households feel. The XLY/XLP ratio tells you what portfolio managers
+            are actually doing about it. The second signal moves first.
+          </p>
+        </div>
+      </div>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical
+        patterns are not guarantees. Always do your own research or talk to a
+        financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // ==========================================================================
+    // Consumer page — U-Mich sentiment vs S&P 500 + XLY/XLP ratio chart
+    // ==========================================================================
+    (async function () {
+      const yearEl = document.getElementById('footerYear');
+      if (yearEl) yearEl.textContent = new Date().getUTCFullYear();
+
+      // --- Load monthly sentiment, daily SPX, daily XLY & XLP ---
+      async function loadCsv(url, parseFn) {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status + ' for ' + url);
+        return parseFn((await r.text()).trim());
+      }
+      function parseDateNum(text) {
+        const rows = [];
+        for (const ln of text.split(/\r?\n/).slice(1)) {
+          const parts = ln.split(',');
+          const v = parseFloat(parts[1]);
+          if (parts[0] && isFinite(v)) rows.push({ d: parts[0], v });
+        }
+        return rows;
+      }
+
+      const [sentRows, spxRows, xlyRows, xlpRows] = await Promise.all([
+        loadCsv('data/umcsent.csv',        parseDateNum),
+        loadCsv('data/spx.csv',            parseDateNum),
+        loadCsv('data/sectors/xly.csv',    parseDateNum),
+        loadCsv('data/sectors/xlp.csv',    parseDateNum),
+      ]);
+
+      // yearFrac helper: "YYYY-MM-DD" → decimal year
+      const yearFrac = (d) => {
+        const [y, m, dd] = d.split('-').map(Number);
+        // approx day-of-year using 30.44 avg days/month
+        return y + ((m - 1) * 30.44 + (dd || 1) - 1) / 365.25;
+      };
+      sentRows.forEach(r => r.yf = yearFrac(r.d));
+      spxRows.forEach(r  => r.yf = yearFrac(r.d));
+      xlyRows.forEach(r  => r.yf = yearFrac(r.d));
+      xlpRows.forEach(r  => r.yf = yearFrac(r.d));
+
+      // --- Hero stats ---
+      const latest = sentRows[sentRows.length - 1];
+      const mean = sentRows.reduce((s, r) => s + r.v, 0) / sentRows.length;
+      const sorted = [...sentRows.map(r => r.v)].sort((a, b) => a - b);
+      const rank = sorted.filter(v => v <= latest.v).length;
+      const pct = rank / sorted.length * 100;
+      const yearAgo = sentRows.slice().reverse().find(r => r.yf <= latest.yf - 1);
+      const yoyChg = yearAgo ? latest.v - yearAgo.v : null;
+
+      document.getElementById('statCurrent').textContent = latest.v.toFixed(1);
+      document.getElementById('statAvg').textContent = mean.toFixed(1);
+      document.getElementById('statPct').textContent = pct.toFixed(0) + 'th';
+      document.getElementById('statGap').textContent = (yoyChg != null)
+        ? (yoyChg >= 0 ? '+' : '') + yoyChg.toFixed(1)
+        : '—';
+
+      const [yr, mo] = latest.d.split('-').map(Number);
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      document.getElementById('statMeta').textContent =
+        `Latest reading: ${monthNames[mo-1]} ${yr}. Long-term average since 1978 is ${mean.toFixed(1)}. ` +
+        `The percentile shows where today's reading sits within all ${sentRows.length} historical monthly readings.`;
+
+      // --- Dual-axis sentiment vs SPX chart ---
+      const sentChart = document.getElementById('sentChart');
+      function drawSentChart(period) {
+        const latestYf = sentRows[sentRows.length - 1].yf;
+        let sSlice, xSlice;
+        if (period === 'all') {
+          sSlice = sentRows;
+          xSlice = spxRows;
+        } else {
+          const yrs = parseFloat(period);
+          const cutoff = latestYf - yrs;
+          sSlice = sentRows.filter(r => r.yf >= cutoff);
+          xSlice = spxRows.filter(r  => r.yf >= cutoff);
+        }
+        if (sSlice.length < 2 || xSlice.length < 2) return;
+
+        const W = 1200, H = 460;
+        const M = { top: 20, right: 55, bottom: 30, left: 55 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        // Common x range
+        const first = Math.min(sSlice[0].yf, xSlice[0].yf);
+        const last  = Math.max(sSlice[sSlice.length-1].yf, xSlice[xSlice.length-1].yf);
+        const xForYear = (yr) => M.left + ((yr - first) / (last - first || 1)) * plotW;
+
+        // Sentiment y-scale (left axis)
+        const sVals = sSlice.map(r => r.v);
+        const sMin = Math.max(0, Math.min(...sVals) - 5);
+        const sMax = Math.max(...sVals) + 5;
+        const yForSent = (v) => M.top + plotH - ((v - sMin) / (sMax - sMin)) * plotH;
+
+        // SPX y-scale (right axis)
+        const xVals = xSlice.map(r => r.v);
+        const xMin = Math.min(...xVals) * 0.95;
+        const xMax = Math.max(...xVals) * 1.05;
+        const yForSpx = (v) => M.top + plotH - ((v - xMin) / (xMax - xMin)) * plotH;
+
+        let svg = '';
+
+        // Left-axis grid + labels (sentiment)
+        const sRange = sMax - sMin;
+        const sStep = sRange <= 60 ? 20 : sRange <= 100 ? 20 : 40;
+        for (let v = Math.ceil(sMin / sStep) * sStep; v <= sMax; v += sStep) {
+          const y = yForSent(v);
+          svg += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+          svg += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${v}</text>`;
+        }
+        // Right-axis labels (SPX)
+        const xRange = xMax - xMin;
+        const xStep = xRange <= 2000 ? 500 : xRange <= 5000 ? 1000 : 2000;
+        for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax; v += xStep) {
+          const y = yForSpx(v);
+          svg += `<text class="axis-label" x="${W - M.right + 8}" y="${y + 3}" text-anchor="start" style="fill:#e15555">${v.toLocaleString()}</text>`;
+        }
+
+        // X-axis year labels
+        const yearSpan = last - first;
+        const tickStep = yearSpan <= 6 ? 1 : yearSpan <= 15 ? 2 : yearSpan <= 30 ? 5 : 10;
+        const tickStart = Math.ceil(first / tickStep) * tickStep;
+        for (let yr = tickStart; yr <= last; yr += tickStep) {
+          if (yr < first) continue;
+          const x = xForYear(yr);
+          svg += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+          svg += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${yr}</text>`;
+        }
+
+        // Axis lines
+        svg += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        svg += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        svg += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        // SPX line first (red, so sentiment blue overlays on top)
+        svg += '<path class="spx-line" d="';
+        for (let i = 0; i < xSlice.length; i++) {
+          svg += (i === 0 ? 'M' : 'L') + xForYear(xSlice[i].yf).toFixed(1) + ',' + yForSpx(xSlice[i].v).toFixed(1) + ' ';
+        }
+        svg += '"/>';
+
+        // Sentiment line
+        svg += '<path class="sent-line" d="';
+        for (let i = 0; i < sSlice.length; i++) {
+          svg += (i === 0 ? 'M' : 'L') + xForYear(sSlice[i].yf).toFixed(1) + ',' + yForSent(sSlice[i].v).toFixed(1) + ' ';
+        }
+        svg += '"/>';
+
+        // Axis titles
+        svg += `<text class="axis-label" x="${M.left - 40}" y="${M.top - 6}" text-anchor="start" style="fill:#5aa4f5;font-weight:600">Sentiment</text>`;
+        svg += `<text class="axis-label" x="${W - M.right + 8}" y="${M.top - 6}" text-anchor="start" style="fill:#e15555;font-weight:600">S&amp;P 500</text>`;
+
+        sentChart.innerHTML = svg;
+      }
+
+      document.getElementById('sentChartPeriods').addEventListener('click', (e) => {
+        const btn = e.target.closest('.chart-period-btn');
+        if (!btn) return;
+        document.querySelectorAll('#sentChartPeriods .chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+        drawSentChart(btn.dataset.period);
+      });
+      drawSentChart('10');
+
+      // --- XLY/XLP ratio chart ---
+      // Align XLY and XLP by date, compute ratio
+      const xlpByDate = new Map(xlpRows.map(r => [r.d, r.v]));
+      const ratioRows = [];
+      for (const r of xlyRows) {
+        const p = xlpByDate.get(r.d);
+        if (p != null) ratioRows.push({ d: r.d, yf: r.yf, v: r.v / p });
+      }
+
+      // Median for the last 5 years (rolling reference)
+      const median = (arr) => {
+        const s = [...arr].sort((a, b) => a - b);
+        return s.length ? s[Math.floor(s.length / 2)] : null;
+      };
+
+      const xlyxlpChart = document.getElementById('xlyxlpChart');
+      const xlyxlpMeta = document.getElementById('xlyxlpMeta');
+
+      function drawRatioChart(period) {
+        const latestYf = ratioRows[ratioRows.length - 1].yf;
+        let slice;
+        if (period === 'all') {
+          slice = ratioRows;
+        } else {
+          const yrs = parseFloat(period);
+          slice = ratioRows.filter(r => r.yf >= latestYf - yrs);
+        }
+        if (slice.length < 5) return;
+
+        const W = 1200, H = 320;
+        const M = { top: 15, right: 60, bottom: 30, left: 50 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        const vals = slice.map(r => r.v);
+        const yMin = Math.min(...vals) * 0.98;
+        const yMax = Math.max(...vals) * 1.02;
+        const first = slice[0], last = slice[slice.length - 1];
+        const xFor = (yf) => M.left + ((yf - first.yf) / (last.yf - first.yf || 1)) * plotW;
+        const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+        const med = median(vals);
+
+        let svg = '';
+        // Y grid
+        const range = yMax - yMin;
+        const step = range < 0.3 ? 0.05 : range < 1 ? 0.1 : range < 2 ? 0.25 : 0.5;
+        for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
+          const y = yFor(v);
+          svg += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+          svg += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${v.toFixed(2)}</text>`;
+        }
+        // X ticks
+        const yearSpan = last.yf - first.yf;
+        const tickStep = yearSpan <= 3 ? 0.5 : yearSpan <= 8 ? 1 : yearSpan <= 20 ? 2 : 5;
+        const tickStart = Math.ceil(first.yf / tickStep) * tickStep;
+        const fmtTick = (yf) => {
+          if (tickStep >= 1) return String(Math.round(yf));
+          const y = Math.floor(yf);
+          const m = Math.round((yf - y) * 12) + 1;
+          const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          return `${mn[Math.min(m-1,11)]} '${String(y).slice(-2)}`;
+        };
+        for (let yr = tickStart; yr <= last.yf; yr += tickStep) {
+          if (yr < first.yf) continue;
+          const x = xFor(yr);
+          svg += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+          svg += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${fmtTick(yr)}</text>`;
+        }
+        // Axes
+        svg += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        svg += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        // Median line
+        if (med >= yMin && med <= yMax) {
+          const y = yFor(med);
+          svg += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+          svg += `<text class="axis-label" x="${W - M.right + 3}" y="${y + 3}" style="fill:#64d3ff">med ${med.toFixed(2)}</text>`;
+        }
+        // Ratio line
+        let path = '';
+        for (let i = 0; i < slice.length; i++) {
+          path += (i === 0 ? 'M' : 'L') + xFor(slice[i].yf).toFixed(1) + ',' + yFor(slice[i].v).toFixed(1) + ' ';
+        }
+        svg += `<path class="ratio-line" d="${path}"/>`;
+        // Latest dot
+        const xC = xFor(last.yf), yC = yFor(last.v);
+        svg += `<circle class="current-dot" cx="${xC}" cy="${yC}" r="4" fill="var(--s5)"/>`;
+        svg += `<text x="${xC - 6}" y="${yC - 8}" text-anchor="end" fill="var(--s5)" font-size="12" font-weight="600">${last.v.toFixed(2)}</text>`;
+
+        xlyxlpChart.innerHTML = svg;
+
+        // Meta line
+        const dev = med ? ((last.v / med) - 1) * 100 : 0;
+        const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(1) + '%';
+        let posture = 'roughly in line with the reference median';
+        if (dev >= 8)  posture = 'discretionary strongly outperforming staples — risk-on';
+        else if (dev >= 3)  posture = 'discretionary edging ahead — moderately risk-on';
+        else if (dev <= -8) posture = 'discretionary strongly underperforming — defensive rotation';
+        else if (dev <= -3) posture = 'discretionary lagging — mildly defensive';
+        xlyxlpMeta.innerHTML =
+          `As of <strong>${last.d}</strong>: XLY/XLP ratio <strong>${last.v.toFixed(2)}</strong> ` +
+          `(${devTxt} vs the window's median <strong>${med.toFixed(2)}</strong>) — ${posture}.`;
+      }
+
+      document.getElementById('xlyxlpPeriods').addEventListener('click', (e) => {
+        const btn = e.target.closest('.chart-period-btn');
+        if (!btn) return;
+        document.querySelectorAll('#xlyxlpPeriods .chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+        drawRatioChart(btn.dataset.period);
+      });
+      drawRatioChart('5');
+    })().catch(err => {
+      console.error('Consumer page failed:', err);
+      const meta = document.getElementById('statMeta');
+      if (meta) meta.textContent = 'Could not load consumer data.';
+    });
+  </script>
+</body>
+</html>

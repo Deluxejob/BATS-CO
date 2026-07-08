@@ -48,6 +48,9 @@ jobs:
       - name: Refresh S&P 500 PE ratio (monthly — tolerant of no-new-data)
         run: python scripts/update-pe-ratio.py
 
+      - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)
+        run: python scripts/update-umcsent.py
+
       - name: Append current-year yields to yields_history.csv
         run: python scripts/update-yields-history.py
 
