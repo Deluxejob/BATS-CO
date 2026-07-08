@@ -1499,11 +1499,89 @@ function renderCurrentReadingOnIndicator(key, latestDate) {
   `;
 }
 
+// Cap-weighted vs Equal-weighted — a full-index concentration measure
+// that doesn't depend on the top-10 list. SPY vs RSP for S&P 500,
+// QQQ vs QQEW for Nasdaq 100. Renders two stacked tables on the
+// concentration page.
+async function renderCapVsEqual() {
+  const spTable = document.getElementById('capEqualSpTable');
+  const ndxTable = document.getElementById('capEqualNdxTable');
+  const meta = document.getElementById('capEqualMeta');
+  if (!spTable && !ndxTable) return;
+
+  const [spyText, rspText, qqqText, qqewText] = await Promise.all([
+    fetchCSVText(APP_DATA_BASE + 'spy.csv'),
+    fetchCSVText(APP_DATA_BASE + 'rsp.csv'),
+    fetchCSVText(APP_DATA_BASE + 'qqq.csv'),
+    fetchCSVText(APP_DATA_BASE + 'qqew.csv'),
+  ]);
+  const spy  = parseDateCloseLive(spyText);
+  const rsp  = parseDateCloseLive(rspText);
+  const qqq  = parseDateCloseLive(qqqText);
+  const qqew = parseDateCloseLive(qqewText);
+
+  const latestDate = [spy, rsp, qqq, qqew]
+    .map(s => s[s.length - 1]?.date)
+    .filter(Boolean)
+    .sort()[0]; // earliest of the latest → the join date
+  if (meta) meta.textContent = `Latest close: ${latestDate}. Positive gap = cap-weight beating equal-weight = mega-caps pulling the index.`;
+
+  function fmt(x, digits = 2) {
+    if (x == null) return '<span class="text-dim">—</span>';
+    const s = x.toFixed(digits) + '%';
+    return x > 0 ? '+' + s : s;
+  }
+  function cls(x) {
+    if (x == null) return '';
+    if (x > 0) return 'pos';
+    if (x < 0) return 'neg';
+    return '';
+  }
+
+  function renderPair(table, capSeries, eqSeries, capLabel, eqLabel) {
+    if (!table) return;
+    const rows = CONC_WINDOWS.map(window => {
+      const capRet = returnOver(capSeries, window);
+      const eqRet  = returnOver(eqSeries,  window);
+      const gap = (capRet != null && eqRet != null) ? capRet - eqRet : null;
+      return { label: window.label, capRet, eqRet, gap };
+    });
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Timeframe</th>
+          <th class="num">${capLabel} (cap-weight)</th>
+          <th class="num">${eqLabel} (equal-weight)</th>
+          <th class="num">Gap (Cap − Equal)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td><strong>${r.label}</strong></td>
+            <td class="num ${cls(r.capRet)}">${fmt(r.capRet)}</td>
+            <td class="num ${cls(r.eqRet)}">${fmt(r.eqRet)}</td>
+            <td class="num ${cls(r.gap)}"><strong>${fmt(r.gap)}</strong></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    `;
+  }
+
+  renderPair(spTable,  spy, rsp,  'SPY', 'RSP');
+  renderPair(ndxTable, qqq, qqew, 'QQQ', 'QQEW');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   init();
   renderConcentration().catch(err => {
     console.warn('Concentration render failed:', err);
     const meta = document.getElementById('concentrationMeta');
     if (meta) meta.textContent = 'Could not load concentration data.';
+  });
+  renderCapVsEqual().catch(err => {
+    console.warn('Cap-vs-equal render failed:', err);
+    const meta = document.getElementById('capEqualMeta');
+    if (meta) meta.textContent = 'Could not load cap-vs-equal data.';
   });
 });

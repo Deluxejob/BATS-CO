@@ -88,6 +88,35 @@
       <p class="backtest-meta" id="concentrationMeta">Loading&hellip;</p>
     </section>
 
+    <section id="cap-vs-equal">
+      <div class="section-head">
+        <h2>Cap-weight vs Equal-weight &mdash; full-index concentration</h2>
+        <p>
+          A cleaner concentration measure that doesn&rsquo;t depend on picking a
+          top-10 list. Each index has a <strong>cap-weighted</strong> version
+          (SPY, QQQ &mdash; the ETFs everyone quotes) and an <strong>equal-weighted</strong>
+          version (RSP, QQEW &mdash; each of the 500 or 100 stocks weighted equally).
+          When cap-weighted beats equal-weighted, the mega-caps are dragging the whole
+          index up. When equal-weighted wins, the average stock is participating.
+        </p>
+      </div>
+
+      <div class="section-head" style="margin-top:1.5rem">
+        <h3>S&amp;P 500 &mdash; SPY vs RSP</h3>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="capEqualSpTable" class="backtest-table"></table>
+      </div>
+
+      <div class="section-head" style="margin-top:1.5rem">
+        <h3>Nasdaq 100 &mdash; QQQ vs QQEW</h3>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="capEqualNdxTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="capEqualMeta">Loading&hellip;</p>
+    </section>
+
     <section id="tickers">
       <div class="section-head">
         <h2>The 10 tickers being tracked</h2>
