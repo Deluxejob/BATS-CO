@@ -19,7 +19,7 @@
       margin: 1.5rem 0;
     }
     .cons-hero-stat {
-      background: var(--card);
+      background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1.25rem 1rem;
@@ -35,7 +35,7 @@
     }
     .cons-hero-stat .label {
       font-size: 0.78rem;
-      color: var(--dim);
+      color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -45,7 +45,7 @@
     .cons-hero-stat.gap     .num  { color: var(--s2); }
 
     .cons-chart-wrap {
-      background: var(--card);
+      background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1.25rem;
@@ -58,7 +58,11 @@
       display: block;
       font-family: 'Inter', sans-serif;
     }
-    .cons-chart .axis-label { fill: var(--dim); font-size: 11px; }
+    /* Font size and stroke widths are in viewBox units; the SVG uses
+       preserveAspectRatio="none" so at typical widths the chart scales
+       to ~50-60% and 11px would render as ~6px on screen. Bumping to
+       18px keeps axis text readable at the actual rendered size. */
+    .cons-chart .axis-label { fill: #b8c1d1; font-size: 18px; font-weight: 500; }
     .cons-chart .axis-line  { stroke: var(--border); stroke-width: 1; }
     .cons-chart .grid-line  { stroke: var(--border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
     .cons-chart .sent-line  { fill: none; stroke: #5aa4f5; stroke-width: 1.6; }
