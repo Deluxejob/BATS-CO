@@ -174,8 +174,8 @@
       </div>
       <div class="cons-chart-wrap">
         <div class="chart-periods" id="sentChartPeriods" role="tablist" aria-label="Chart time period">
-          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
-          <button type="button" class="chart-period-btn active" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn active" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn" data-period="10"  role="tab">10Y</button>
           <button type="button" class="chart-period-btn" data-period="20"  role="tab">20Y</button>
           <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
         </div>
@@ -409,9 +409,9 @@
           svg += `<text class="axis-label" x="${W - M.right + 8}" y="${y + 3}" text-anchor="start" style="fill:#e15555">${v.toLocaleString()}</text>`;
         }
 
-        // X-axis year labels
+        // X-axis year labels — every year up to 10Y windows so viewers can pinpoint dates
         const yearSpan = last - first;
-        const tickStep = yearSpan <= 6 ? 1 : yearSpan <= 15 ? 2 : yearSpan <= 30 ? 5 : 10;
+        const tickStep = yearSpan <= 10 ? 1 : yearSpan <= 20 ? 2 : yearSpan <= 30 ? 5 : 10;
         const tickStart = Math.ceil(first / tickStep) * tickStep;
         for (let yr = tickStart; yr <= last; yr += tickStep) {
           if (yr < first) continue;
@@ -452,7 +452,7 @@
         document.querySelectorAll('#sentChartPeriods .chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
         drawSentChart(btn.dataset.period);
       });
-      drawSentChart('10');
+      drawSentChart('5');
 
       // --- XLY/XLP ratio chart ---
       // Align XLY and XLP by date, compute ratio
