@@ -47,15 +47,18 @@ jobs:
       - name: Fetch intraday sector quotes
         run: python scripts/update-sectors-intraday.py
 
+      - name: Fetch today's gainers / losers / most-active from Yahoo screener
+        run: python scripts/update-movers.py
+
       - name: Commit and push if data changed
         run: |
-          if [ -n "$(git status --porcelain data/sectors_live.json)" ]; then
+          if [ -n "$(git status --porcelain data/sectors_live.json data/movers.json)" ]; then
             git config user.name  "BATS.CO Sectors Bot"
             git config user.email "bot@bats.co"
-            git add data/sectors_live.json
-            git commit -m "chore: refresh sectors_live $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git add data/sectors_live.json data/movers.json
+            git commit -m "chore: refresh intraday data $(date -u +'%Y-%m-%d %H:%M UTC')"
             git push
-            echo "::notice::Pushed refreshed intraday sector data."
+            echo "::notice::Pushed refreshed intraday data."
           else
-            echo "::notice::Sector prices unchanged; nothing to commit."
+            echo "::notice::Intraday data unchanged; nothing to commit."
           fi

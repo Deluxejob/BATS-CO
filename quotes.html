@@ -247,6 +247,110 @@
     .brd-card .brd-tilt.bullish { color: var(--term-green); }
     .brd-card .brd-tilt.bearish { color: var(--term-red); }
 
+    /* Movers — 3 side-by-side scrollable boxes */
+    .movers-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+    }
+    @media (min-width: 900px) {
+      .movers-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .mover-box {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      min-height: 460px;
+    }
+    .mover-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid var(--term-border);
+    }
+    .mover-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--term-amber);
+      letter-spacing: 0.14em;
+      font-weight: 700;
+    }
+    .mover-title.pos { color: var(--term-green); }
+    .mover-title.neg { color: var(--term-red); }
+    .mover-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      letter-spacing: 0.05em;
+    }
+    .mover-list-wrap {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 460px;
+    }
+    /* Custom scrollbar to blend with terminal look (WebKit only) */
+    .mover-list-wrap::-webkit-scrollbar { width: 6px; }
+    .mover-list-wrap::-webkit-scrollbar-track { background: transparent; }
+    .mover-list-wrap::-webkit-scrollbar-thumb { background: var(--term-border); border-radius: 3px; }
+    .mover-list-wrap::-webkit-scrollbar-thumb:hover { background: var(--term-dim); }
+    .mover-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .mover-list li a.mover-row {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      column-gap: 0.5rem;
+      align-items: baseline;
+      padding: 0.4rem 0.85rem;
+      border-bottom: 1px solid var(--term-border-soft);
+      text-decoration: none;
+      color: var(--term-text);
+      transition: background 0.12s;
+    }
+    .mover-list li a.mover-row:hover {
+      background: rgba(255, 182, 88, 0.06);
+    }
+    .mover-list li:last-child a.mover-row { border-bottom: none; }
+    .mover-sym {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--term-cyan);
+      letter-spacing: 0.02em;
+    }
+    .mover-name {
+      color: var(--term-dim);
+      font-size: 0.75rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .mover-nums {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.2;
+      gap: 0.1rem;
+    }
+    .mover-price { color: var(--term-text); font-weight: 500; }
+    .mover-pct.pos { color: var(--term-green); font-weight: 600; }
+    .mover-pct.neg { color: var(--term-red);   font-weight: 600; }
+    .mover-loading {
+      padding: 1rem 0.85rem;
+      color: var(--term-dim);
+      font-size: 0.85rem;
+    }
+
     /* News list — override the default site styles for tight terminal look */
     .term-panel .term-news-list {
       list-style: none;
@@ -386,15 +490,15 @@
               "showFloatingTooltip": true,
               "tabs": [
                 {
-                  "title": "Futures",
+                  "title": "Futures / 24h",
                   "symbols": [
-                    {"s": "CME_MINI:ES1!",  "d": "S&P 500 (ES)"},
-                    {"s": "CME_MINI:NQ1!",  "d": "Nasdaq (NQ)"},
-                    {"s": "CBOT_MINI:YM1!", "d": "Dow (YM)"},
-                    {"s": "CME_MINI:RTY1!", "d": "Russell (RTY)"},
-                    {"s": "NYMEX:CL1!",     "d": "Crude Oil"},
-                    {"s": "COMEX:GC1!",     "d": "Gold"},
-                    {"s": "CBOT:ZN1!",      "d": "10Y Treasury"}
+                    {"s": "FOREXCOM:SPXUSD",    "d": "S&P 500"},
+                    {"s": "FOREXCOM:NSXUSD",    "d": "Nasdaq 100"},
+                    {"s": "FOREXCOM:DJI",       "d": "Dow 30"},
+                    {"s": "CAPITALCOM:US2000",  "d": "Russell 2000"},
+                    {"s": "TVC:USOIL",          "d": "Crude Oil"},
+                    {"s": "TVC:GOLD",           "d": "Gold"},
+                    {"s": "NASDAQ:TLT",         "d": "20+Y Treasury"}
                   ]
                 }
               ]
@@ -463,37 +567,45 @@
       </div>
     </section>
 
-    <!-- Row 4: Movers (gainers / losers / most active) -->
+    <!-- Row 4: Movers — 3 side-by-side scrollable boxes (Yahoo screener) -->
     <section class="term-section">
-      <div class="term-section-label">TODAY&rsquo;S MOVERS <span class="sub">— top gainers, losers, and most active</span></div>
-      <div class="term-panel">
-        <div class="tradingview-widget-container">
-          <div class="tradingview-widget-container__widget"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js" async>
-          {
-            "colorTheme": "dark",
-            "dateRange": "1D",
-            "exchange": "US",
-            "showChart": true,
-            "locale": "en",
-            "width": "100%",
-            "height": 560,
-            "isTransparent": true,
-            "showSymbolLogo": true,
-            "showFloatingTooltip": true,
-            "plotLineColorGrowing": "rgba(34, 211, 154, 1)",
-            "plotLineColorFalling": "rgba(255, 83, 116, 1)",
-            "gridLineColor": "rgba(240, 243, 250, 0)",
-            "scaleFontColor": "rgba(120, 123, 134, 1)",
-            "belowLineFillColorGrowing": "rgba(34, 211, 154, 0.12)",
-            "belowLineFillColorFalling": "rgba(255, 83, 116, 0.12)",
-            "belowLineFillColorGrowingBottom": "rgba(34, 211, 154, 0)",
-            "belowLineFillColorFallingBottom": "rgba(255, 83, 116, 0)",
-            "symbolActiveColor": "rgba(255, 182, 88, 0.15)"
-          }
-          </script>
+      <div class="term-section-label">TODAY&rsquo;S MOVERS <span class="sub">— 25 per column, refreshes every 5&ndash;10 min during market hours &middot; click any ticker to open its page</span></div>
+      <div class="movers-grid">
+        <div class="mover-box">
+          <div class="mover-head">
+            <span class="mover-title pos">GAINERS</span>
+            <span class="mover-count" id="moversGainersCount"></span>
+          </div>
+          <div class="mover-list-wrap">
+            <ul class="mover-list" id="moversGainersList">
+              <li class="mover-loading">Loading&hellip;</li>
+            </ul>
+          </div>
+        </div>
+        <div class="mover-box">
+          <div class="mover-head">
+            <span class="mover-title neg">LOSERS</span>
+            <span class="mover-count" id="moversLosersCount"></span>
+          </div>
+          <div class="mover-list-wrap">
+            <ul class="mover-list" id="moversLosersList">
+              <li class="mover-loading">Loading&hellip;</li>
+            </ul>
+          </div>
+        </div>
+        <div class="mover-box">
+          <div class="mover-head">
+            <span class="mover-title">MOST ACTIVE</span>
+            <span class="mover-count" id="moversActivesCount"></span>
+          </div>
+          <div class="mover-list-wrap">
+            <ul class="mover-list" id="moversActivesList">
+              <li class="mover-loading">Loading&hellip;</li>
+            </ul>
+          </div>
         </div>
       </div>
+      <p class="term-news-meta" id="moversMeta" style="text-align:right"></p>
     </section>
 
     <!-- Row 5: Economic Calendar -->
@@ -507,7 +619,7 @@
             "colorTheme": "dark",
             "isTransparent": true,
             "width": "100%",
-            "height": 500,
+            "height": 320,
             "locale": "en",
             "importanceFilter": "0,1",
             "countryFilter": "us,eu,gb,cn,jp,ca"
@@ -758,6 +870,86 @@
           <div class="brd-tilt ${c.tilt.cls}">${c.tilt.text}</div>
         </div>
       `).join('');
+    })();
+
+    // Movers — 3 scrollable lists from data/movers.json (Yahoo screener via our bot)
+    (async function renderMovers() {
+      const lists = {
+        gainers: document.getElementById('moversGainersList'),
+        losers:  document.getElementById('moversLosersList'),
+        actives: document.getElementById('moversActivesList'),
+      };
+      const counts = {
+        gainers: document.getElementById('moversGainersCount'),
+        losers:  document.getElementById('moversLosersCount'),
+        actives: document.getElementById('moversActivesCount'),
+      };
+      const metaEl = document.getElementById('moversMeta');
+      if (!lists.gainers) return;
+
+      let payload;
+      try {
+        const r = await fetch('data/movers.json', { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        payload = await r.json();
+      } catch (e) {
+        for (const key of ['gainers','losers','actives']) {
+          lists[key].innerHTML = '<li class="mover-loading">Movers data not available.</li>';
+        }
+        return;
+      }
+
+      const esc = (s) => String(s || '').replace(/[<>&"']/g, c => (
+        { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+      const fmtPrice = (v) => (v == null || !isFinite(v)) ? '—' :
+        (v >= 100 ? v.toFixed(2) : v.toFixed(2));
+      const fmtPct = (v) => {
+        if (v == null || !isFinite(v)) return '—';
+        const s = v.toFixed(2) + '%';
+        return v > 0 ? '+' + s : s;
+      };
+
+      function renderList(key) {
+        const items = payload[key] || [];
+        counts[key].textContent = items.length + ' listed';
+        if (!items.length) {
+          lists[key].innerHTML = '<li class="mover-loading">No data.</li>';
+          return;
+        }
+        lists[key].innerHTML = items.map(it => {
+          const sym = esc(it.symbol);
+          const name = esc(it.shortName);
+          const price = fmtPrice(it.price);
+          const pct = fmtPct(it.changePct);
+          const cls = it.changePct == null ? '' : (it.changePct >= 0 ? 'pos' : 'neg');
+          return `
+            <li>
+              <a class="mover-row" href="ticker.html?sym=${encodeURIComponent(sym)}">
+                <span class="mover-sym">${sym}</span>
+                <span class="mover-name" title="${name}">${name}</span>
+                <span class="mover-nums">
+                  <span class="mover-pct ${cls}">${pct}</span>
+                  <span class="mover-price">$${price}</span>
+                </span>
+              </a>
+            </li>
+          `;
+        }).join('');
+      }
+
+      renderList('gainers');
+      renderList('losers');
+      renderList('actives');
+
+      if (metaEl && payload.generatedAt) {
+        const ageSec = Math.max(0, Math.floor(Date.now()/1000) - payload.generatedAt);
+        const ageTxt = ageSec < 60      ? 'just now' :
+                        ageSec < 3600   ? `${Math.round(ageSec/60)} min ago` :
+                        ageSec < 86400  ? `${Math.round(ageSec/3600)} hr ago` :
+                        new Date(payload.generatedAt * 1000).toISOString().slice(0,10);
+        metaEl.textContent = `LAST REFRESHED: ${ageTxt}`;
+      }
     })();
 
     // Market news (Yahoo-backed) — terminal-styled compact list
