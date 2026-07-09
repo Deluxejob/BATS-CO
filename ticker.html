@@ -356,7 +356,11 @@
     .analyst-target-tile .tdelta.pos { color: var(--term-green); }
     .analyst-target-tile .tdelta.neg { color: var(--term-red); }
 
-    .analyst-target-track-wrap { margin: 1.2rem 0 1.75rem; padding-top: 0.1rem; }
+    /* Price-target track: Mean label sits above, Now label sits below,
+       so they can never overlap each other even when the values are
+       close together. Endpoints removed — the tiles above already
+       show LOW / MEAN / HIGH numbers. */
+    .analyst-target-track-wrap { margin: 2rem 0 1.75rem; padding-top: 0.1rem; }
     .analyst-target-track {
       position: relative;
       height: 6px;
@@ -375,25 +379,86 @@
     .analyst-target-marker::after {
       content: attr(data-label);
       position: absolute;
-      top: 100%;
       left: 50%;
       transform: translateX(-50%);
-      margin-top: 5px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.62rem;
       color: var(--term-text);
       white-space: nowrap;
     }
-    .analyst-target-endpts {
-      display: flex;
-      justify-content: space-between;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.62rem;
-      color: var(--term-dim);
-      margin-top: 0.4rem;
-      letter-spacing: 0.08em;
+    /* Now-price marker: label BELOW the track */
+    .analyst-target-marker.now::after {
+      top: 100%;
+      margin-top: 5px;
+      color: var(--term-cyan);
     }
-    .analyst-target-endpts strong { color: var(--term-text); font-weight: 600; }
+    /* Mean-target marker: label ABOVE the track */
+    .analyst-target-marker.mean::after {
+      bottom: 100%;
+      margin-bottom: 5px;
+    }
+
+    /* ---------- Ownership & Events tile grid ---------- */
+    .ov-tiles {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.4rem;
+    }
+    @media (min-width: 500px) {
+      .ov-tiles { grid-template-columns: repeat(4, 1fr); }
+    }
+    .ov-tile {
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border-soft);
+      border-radius: 3px;
+      padding: 0.45rem 0.5rem;
+      text-align: center;
+      min-width: 0;
+    }
+    .ov-tile .ov-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--term-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .ov-tile .ov-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--term-cyan);
+      margin: 0.15rem 0 0;
+      line-height: 1.1;
+    }
+    .ov-tile .ov-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--term-dim);
+      margin-top: 0.1rem;
+    }
+    .ov-events {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--term-text);
+      margin: 0.65rem 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1rem;
+    }
+    .ov-events .ov-ev-label {
+      color: var(--term-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.6rem;
+      margin-right: 0.35rem;
+    }
+    .ov-events strong { color: var(--term-cyan); font-weight: 600; }
+    .ov-empty {
+      color: var(--term-dim);
+      font-size: 0.78rem;
+      padding: 0.3rem 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
 
     .analyst-upgrades {
       list-style: none;
@@ -506,6 +571,11 @@
           <div class="mkt-col">
             <div class="term-section-label">KEY STATISTICS <span class="sub">— market cap, PE, EPS, sector</span></div>
             <div class="term-panel"><div id="infoWidgetMount"></div></div>
+
+            <div class="term-section-label" style="margin-top:0.85rem">OWNERSHIP &amp; EVENTS <span class="sub">— who holds it, when it reports</span></div>
+            <div class="term-panel">
+              <div id="overviewContent" class="analyst-loading">Loading company data&hellip;</div>
+            </div>
           </div>
           <div class="mkt-col">
             <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
@@ -684,6 +754,78 @@
       // Wall Street ratings — via /api/analyst Vercel proxy. Hides itself
       // gracefully for symbols with no analyst coverage (ETFs, indices).
       // -----------------------------------------------------------------
+      // ----- Ownership & Events helper (shares the /api/analyst fetch) -----
+      function renderOverview(ov) {
+        const el = document.getElementById('overviewContent');
+        if (!el) return;
+
+        // Nothing usable → hide the panel entirely
+        const hasAny = ov && [
+          ov.insiderOwnership, ov.institutionalOwnership,
+          ov.shortPctOfFloat, ov.shortRatio,
+          ov.nextEarningsDate, ov.exDividendDate, ov.dividendYield,
+        ].some(v => v != null);
+        if (!hasAny) {
+          el.className = 'ov-empty';
+          el.textContent = 'No ownership or upcoming-event data available for this ticker.';
+          return;
+        }
+
+        const pct = (v) => v == null ? '—' : (v * 100).toFixed(v * 100 < 10 ? 1 : 0) + '%';
+        const num = (v, d = 1) => v == null ? '—' : Number(v).toFixed(d);
+        const fmtDate = (ts) => {
+          if (!ts) return null;
+          const d = new Date(ts * 1000);
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+        };
+        const nextEarn = fmtDate(ov.nextEarningsDate);
+        const exDiv    = fmtDate(ov.exDividendDate);
+        const divYield = ov.dividendYield != null ? pct(ov.dividendYield) : null;
+
+        const tiles = `
+          <div class="ov-tiles">
+            <div class="ov-tile">
+              <div class="ov-label">Insider Own</div>
+              <div class="ov-val">${pct(ov.insiderOwnership)}</div>
+              <div class="ov-sub">of shares</div>
+            </div>
+            <div class="ov-tile">
+              <div class="ov-label">Institutional</div>
+              <div class="ov-val">${pct(ov.institutionalOwnership)}</div>
+              <div class="ov-sub">${ov.institutionCount ? ov.institutionCount.toLocaleString() + ' holders' : '&nbsp;'}</div>
+            </div>
+            <div class="ov-tile">
+              <div class="ov-label">Short Float</div>
+              <div class="ov-val">${pct(ov.shortPctOfFloat)}</div>
+              <div class="ov-sub">of public float</div>
+            </div>
+            <div class="ov-tile">
+              <div class="ov-label">Days to Cover</div>
+              <div class="ov-val">${num(ov.shortRatio, 1)}</div>
+              <div class="ov-sub">short ratio</div>
+            </div>
+          </div>
+        `;
+
+        const events = [];
+        if (nextEarn) {
+          const est = ov.nextEarningsEstimate != null
+            ? ` <span style="color:var(--term-dim)">(EPS est ${ov.nextEarningsEstimate.toFixed(2)})</span>` : '';
+          events.push(`<span><span class="ov-ev-label">Next Earnings</span><strong>${nextEarn}</strong>${est}</span>`);
+        }
+        if (exDiv) {
+          events.push(`<span><span class="ov-ev-label">Ex-Dividend</span><strong>${exDiv}</strong></span>`);
+        }
+        if (divYield) {
+          events.push(`<span><span class="ov-ev-label">Div Yield</span><strong>${divYield}</strong></span>`);
+        }
+        const eventsHtml = events.length
+          ? `<p class="ov-events">${events.join('')}</p>` : '';
+
+        el.className = '';
+        el.innerHTML = tiles + eventsHtml;
+      }
+
       (async function renderAnalyst() {
         const section = document.getElementById('analystSection');
         const content = document.getElementById('analystContent');
@@ -696,9 +838,23 @@
           data = await r.json();
         } catch (e) {
           console.warn('Analyst proxy failed:', e);
+          // Hide both dependent panels — the fetch is the only data source.
           if (section) section.style.display = 'none';
+          const ovEl = document.getElementById('overviewContent');
+          if (ovEl) {
+            const ovSection = ovEl.closest('.mkt-col');
+            // Just show a subtle empty state; don't hide the section since
+            // the Key Statistics widget above it is still valuable.
+            ovEl.className = 'ov-empty';
+            ovEl.textContent = 'Ownership data unavailable right now.';
+          }
           return;
         }
+
+        // Ownership & Events panel renders even for tickers without
+        // analyst coverage — index funds and ETFs still have holders,
+        // and (occasionally) a next-earnings/ex-div date.
+        renderOverview(data && data.overview);
 
         if (!data || !data.hasAnalysts) {
           if (section) section.style.display = 'none';
@@ -763,17 +919,16 @@
         if (lo != null && hi != null && hi > lo) {
           const range = hi - lo;
           const clamp = (v) => Math.max(0, Math.min(100, ((v - lo) / range) * 100));
+          // Mean marker → label above the track; Now marker → label below.
+          // Separating them vertically prevents overlap when the two prices
+          // are close (as they usually are).
           const meanMk = mean != null
-            ? `<div class="analyst-target-marker" style="left:${clamp(mean)}%" data-label="Mean ${fmtP(mean)}"></div>` : '';
+            ? `<div class="analyst-target-marker mean" style="left:${clamp(mean)}%" data-label="Mean ${fmtP(mean)}"></div>` : '';
           const curMk  = cur != null
-            ? `<div class="analyst-target-marker" style="left:${clamp(cur)}%;background:var(--term-cyan)" data-label="Now $${cur.toFixed(2)}"></div>` : '';
+            ? `<div class="analyst-target-marker now" style="left:${clamp(cur)}%;background:var(--term-cyan)" data-label="Now $${cur.toFixed(2)}"></div>` : '';
           trackHtml = `
             <div class="analyst-target-track-wrap">
               <div class="analyst-target-track">${meanMk}${curMk}</div>
-              <div class="analyst-target-endpts">
-                <span>LOW <strong>${fmtP(lo)}</strong></span>
-                <span>HIGH <strong>${fmtP(hi)}</strong></span>
-              </div>
             </div>
           `;
         }

@@ -57,7 +57,8 @@ export default async function handler(req, res) {
   try {
     const { crumb, cookieHeader } = await getCrumb();
 
-    const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory';
+    const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory,' +
+                    'defaultKeyStatistics,majorHoldersBreakdown,calendarEvents,summaryDetail';
     const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(raw)}` +
                 `?modules=${modules}&crumb=${encodeURIComponent(crumb)}`;
     const r = await fetch(url, {
@@ -97,6 +98,29 @@ export default async function handler(req, res) {
     };
     const totalRatings = ratings.strongBuy + ratings.buy + ratings.hold + ratings.sell + ratings.strongSell;
 
+    // Ownership + upcoming events — supplemental company data for the
+    // "OWNERSHIP & EVENTS" panel that sits under Key Statistics.
+    const ks   = r0.defaultKeyStatistics   || {};
+    const mhb  = r0.majorHoldersBreakdown  || {};
+    const cev  = r0.calendarEvents         || {};
+    const sdet = r0.summaryDetail          || {};
+    const earn = cev.earnings              || {};
+    const nextEarn = Array.isArray(earn.earningsDate) && earn.earningsDate[0] || null;
+
+    const overview = {
+      insiderOwnership:      toNum(mhb.insidersPercentHeld),      // decimal, e.g. 0.042
+      institutionalOwnership: toNum(mhb.institutionsPercentHeld), // decimal
+      institutionCount:      toNum(mhb.institutionsCount),
+      shortPctOfFloat:       toNum(ks.shortPercentOfFloat),       // decimal
+      shortRatio:            toNum(ks.shortRatio),                // days to cover
+      sharesShort:           toNum(ks.sharesShort),
+      nextEarningsDate:      toNum(nextEarn),                     // unix seconds
+      nextEarningsEstimate:  toNum(earn.earningsAverage),
+      exDividendDate:        toNum(cev.exDividendDate) || toNum(sdet.exDividendDate),
+      dividendYield:         toNum(sdet.dividendYield),           // decimal
+      dividendRate:          toNum(sdet.dividendRate),
+    };
+
     const payload = {
       symbol: raw,
       hasAnalysts: (Number(fd.numberOfAnalystOpinions && fd.numberOfAnalystOpinions.raw) || totalRatings) > 0,
@@ -112,6 +136,7 @@ export default async function handler(req, res) {
         current: toNum(fd.currentPrice),
       },
       upgrades,
+      overview,
     };
 
     res.setHeader('Access-Control-Allow-Origin', '*');
