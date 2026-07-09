@@ -1047,7 +1047,7 @@
         list.innerHTML = items.slice(0, shown).map(it => `
           <li>
             <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
-            <span class="meta">${esc(it.publisher || '')} · ${relTime(it.publishedTs)}</span>
+            <span class="meta">${esc(it.publisher || '')} · ${relTime(it.publishedAt)}</span>
           </li>
         `).join('');
         if (moreBtn) {

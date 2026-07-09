@@ -19,13 +19,11 @@ import sys
 import urllib.parse
 import urllib.request
 
-# S&P 500 as the query — Yahoo's search endpoint returns their own daily
-# market-wrap articles for this query ("Stock market today: ..." etc.)
-YAHOO_URL = (
-    "https://query1.finance.yahoo.com/v1/finance/search"
-    "?q=" + urllib.parse.quote("S&P 500") +
-    "&newsCount=15&quotesCount=0&enableFuzzyQuery=false"
-)
+# Yahoo caps each search query at ~10 news items regardless of newsCount, so
+# we aggregate across several broad-market queries and dedupe by article link.
+# In practice this yields 20-30 unique headlines per refresh.
+YAHOO_QUERIES = ("S&P 500", "stock market", "market news", "Wall Street", "Nasdaq")
+
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT_PATH = os.path.join(REPO_ROOT, "data", "market_news.json")
 
@@ -34,41 +32,52 @@ def warn(msg: str) -> None:
     print(f"::warning::{msg}")
 
 
-def fetch() -> list[dict] | None:
+def fetch_one(query: str) -> list[dict]:
+    """Pull the news[] array for one query. Returns [] on any failure."""
+    url = (
+        "https://query1.finance.yahoo.com/v1/finance/search"
+        "?q=" + urllib.parse.quote(query) +
+        "&newsCount=25&quotesCount=0&enableFuzzyQuery=false"
+    )
     try:
-        req = urllib.request.Request(
-            YAHOO_URL,
-            headers={"User-Agent": "Mozilla/5.0"},
-        )
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=25) as r:
             body = r.read().decode("utf-8", errors="ignore")
+        return (json.loads(body).get("news") or [])
     except Exception as exc:
-        warn(f"Yahoo market-news fetch failed: {exc}")
-        return None
-    try:
-        payload = json.loads(body)
-    except Exception as exc:
-        warn(f"Yahoo market-news parse failed: {exc}")
+        warn(f"Yahoo market-news query {query!r} failed: {exc}")
+        return []
+
+
+def fetch() -> list[dict] | None:
+    # Merge results from every query, dedupe by link (fall back to uuid then title).
+    seen_keys: set[str] = set()
+    merged: list[dict] = []
+    for q in YAHOO_QUERIES:
+        for item in fetch_one(q):
+            title = (item.get("title") or "").strip()
+            link = (item.get("link") or "").strip()
+            if not title or not link:
+                continue
+            key = link or (item.get("uuid") or title)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            merged.append({
+                "title": title,
+                "link": link,
+                "publisher": (item.get("publisher") or "").strip(),
+                "publishedAt": int(item.get("providerPublishTime") or 0),
+                "id": item.get("uuid") or "",
+            })
+
+    if not merged:
+        warn("All market-news queries returned no usable items")
         return None
 
-    raw = payload.get("news", []) or []
-    trimmed = []
-    for item in raw:
-        title = (item.get("title") or "").strip()
-        link = (item.get("link") or "").strip()
-        if not title or not link:
-            continue
-        trimmed.append({
-            "title": title,
-            "link": link,
-            "publisher": (item.get("publisher") or "").strip(),
-            "publishedAt": int(item.get("providerPublishTime") or 0),
-            "id": item.get("uuid") or "",
-        })
-    if not trimmed:
-        warn("Yahoo market-news response had no usable items")
-        return None
-    return trimmed[:15]
+    # Newest first
+    merged.sort(key=lambda it: it["publishedAt"], reverse=True)
+    return merged[:60]
 
 
 def main() -> int:
