@@ -355,26 +355,40 @@
     .term-panel .term-news-list {
       list-style: none;
       padding: 0;
-      margin: 0.25rem 0 0;
+      margin: 0.1rem 0 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      column-gap: 1.5rem;
+    }
+    /* Two-column dense feed on wider screens */
+    @media (min-width: 1000px) {
+      .term-panel .term-news-list { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1400px) {
+      .term-panel .term-news-list { grid-template-columns: repeat(3, 1fr); }
     }
     .term-panel .term-news-list li {
-      padding: 0.5rem 0;
+      padding: 0.28rem 0;
       border-bottom: 1px solid var(--term-border-soft);
       display: flex;
       flex-direction: column;
-      gap: 0.15rem;
+      gap: 0.1rem;
+      min-width: 0;
     }
-    .term-panel .term-news-list li:last-child { border-bottom: none; }
     .term-panel .term-news-list a {
       color: var(--term-text);
       text-decoration: none;
-      font-size: 0.9rem;
-      line-height: 1.35;
+      font-size: 0.78rem;
+      line-height: 1.25;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
     .term-panel .term-news-list a:hover { color: var(--term-cyan); }
     .term-panel .term-news-list .meta {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       color: var(--term-dim);
       letter-spacing: 0.03em;
     }
@@ -469,99 +483,109 @@
       </div>
     </section>
 
-    <!-- Row 3: Futures / Forex / Crypto (3-column) -->
+    <!-- Row 3: Futures / Forex / Crypto — 3 columns, each with its own label -->
     <section class="term-section">
-      <div class="term-section-label">FUTURES // FOREX // CRYPTO</div>
-      <div class="grid-3">
-        <!-- Futures -->
-        <div class="term-panel">
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-            {
-              "colorTheme": "dark",
-              "dateRange": "1D",
-              "showChart": true,
-              "locale": "en",
-              "width": "100%",
-              "height": 440,
-              "isTransparent": true,
-              "showSymbolLogo": true,
-              "showFloatingTooltip": true,
-              "tabs": [
-                {
-                  "title": "Futures / 24h",
-                  "symbols": [
-                    {"s": "FOREXCOM:SPXUSD",    "d": "S&P 500"},
-                    {"s": "FOREXCOM:NSXUSD",    "d": "Nasdaq 100"},
-                    {"s": "FOREXCOM:DJI",       "d": "Dow 30"},
-                    {"s": "CAPITALCOM:US2000",  "d": "Russell 2000"},
-                    {"s": "TVC:USOIL",          "d": "Crude Oil"},
-                    {"s": "TVC:GOLD",           "d": "Gold"},
-                    {"s": "NASDAQ:TLT",         "d": "20+Y Treasury"}
-                  ]
-                }
-              ]
-            }
-            </script>
+      <div class="grid-3 mkt-col-grid">
+        <!-- Futures column -->
+        <div class="mkt-col">
+          <div class="term-section-label">FUTURES <span class="sub">— 24h index / commodity feeds</span></div>
+          <div class="term-panel">
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+              {
+                "colorTheme": "dark",
+                "dateRange": "1D",
+                "showChart": true,
+                "locale": "en",
+                "width": "100%",
+                "height": 440,
+                "isTransparent": true,
+                "showSymbolLogo": true,
+                "showFloatingTooltip": true,
+                "tabs": [
+                  {
+                    "title": "Futures / 24h",
+                    "symbols": [
+                      {"s": "FOREXCOM:SPXUSD", "d": "S&P 500"},
+                      {"s": "FOREXCOM:NSXUSD", "d": "Nasdaq 100"},
+                      {"s": "FOREXCOM:DJI",    "d": "Dow 30"},
+                      {"s": "AMEX:IWM",        "d": "Russell 2000 (IWM)"},
+                      {"s": "TVC:USOIL",       "d": "Crude Oil"},
+                      {"s": "TVC:GOLD",        "d": "Gold"},
+                      {"s": "NASDAQ:TLT",      "d": "20+Y Treasury"}
+                    ]
+                  }
+                ]
+              }
+              </script>
+            </div>
           </div>
         </div>
-        <!-- Forex -->
-        <div class="term-panel">
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js" async>
-            {
-              "width": "100%",
-              "height": 440,
-              "currencies": [
-                "EUR",
-                "USD",
-                "JPY",
-                "GBP",
-                "CHF",
-                "AUD",
-                "CAD",
-                "CNY"
-              ],
-              "isTransparent": true,
-              "colorTheme": "dark",
-              "locale": "en"
-            }
-            </script>
+
+        <!-- Forex column -->
+        <div class="mkt-col">
+          <div class="term-section-label">FOREX <span class="sub">— major cross rates</span></div>
+          <div class="term-panel">
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js" async>
+              {
+                "width": "100%",
+                "height": 440,
+                "currencies": [
+                  "EUR",
+                  "USD",
+                  "JPY",
+                  "GBP",
+                  "CHF",
+                  "AUD",
+                  "CAD",
+                  "CNY"
+                ],
+                "isTransparent": true,
+                "colorTheme": "dark",
+                "locale": "en"
+              }
+              </script>
+            </div>
           </div>
         </div>
-        <!-- Crypto -->
-        <div class="term-panel">
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-            {
-              "colorTheme": "dark",
-              "dateRange": "1D",
-              "showChart": true,
-              "locale": "en",
-              "width": "100%",
-              "height": 440,
-              "isTransparent": true,
-              "showSymbolLogo": true,
-              "showFloatingTooltip": true,
-              "tabs": [
-                {
-                  "title": "Crypto",
-                  "symbols": [
-                    {"s": "BINANCE:BTCUSDT", "d": "Bitcoin"},
-                    {"s": "BINANCE:ETHUSDT", "d": "Ethereum"},
-                    {"s": "BINANCE:SOLUSDT", "d": "Solana"},
-                    {"s": "BINANCE:BNBUSDT", "d": "BNB"},
-                    {"s": "BINANCE:XRPUSDT", "d": "XRP"},
-                    {"s": "BINANCE:DOGEUSDT","d": "Dogecoin"},
-                    {"s": "BINANCE:ADAUSDT", "d": "Cardano"}
-                  ]
-                }
-              ]
-            }
-            </script>
+
+        <!-- Crypto column -->
+        <div class="mkt-col">
+          <div class="term-section-label">CRYPTO <span class="sub">— top by market cap</span></div>
+          <div class="term-panel">
+            <div class="tradingview-widget-container">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+              {
+                "colorTheme": "dark",
+                "dateRange": "1D",
+                "showChart": true,
+                "locale": "en",
+                "width": "100%",
+                "height": 440,
+                "isTransparent": true,
+                "showSymbolLogo": true,
+                "showFloatingTooltip": true,
+                "tabs": [
+                  {
+                    "title": "Crypto",
+                    "symbols": [
+                      {"s": "BINANCE:BTCUSDT", "d": "Bitcoin"},
+                      {"s": "BINANCE:ETHUSDT", "d": "Ethereum"},
+                      {"s": "BINANCE:SOLUSDT", "d": "Solana"},
+                      {"s": "BINANCE:BNBUSDT", "d": "BNB"},
+                      {"s": "BINANCE:XRPUSDT", "d": "XRP"},
+                      {"s": "BINANCE:DOGEUSDT","d": "Dogecoin"},
+                      {"s": "BINANCE:ADAUSDT", "d": "Cardano"}
+                    ]
+                  }
+                ]
+              }
+              </script>
+            </div>
           </div>
         </div>
       </div>
@@ -984,7 +1008,7 @@
         list.innerHTML = '<li><span style="color:var(--term-dim); font-size:0.85rem">No headlines available.</span></li>';
         return;
       }
-      list.innerHTML = items.slice(0, 20).map(it => `
+      list.innerHTML = items.slice(0, 45).map(it => `
         <li>
           <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
           <span class="meta">${esc(it.publisher || '')} · ${relTime(it.publishedTs)}</span>
