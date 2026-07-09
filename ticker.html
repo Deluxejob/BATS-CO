@@ -245,6 +245,182 @@
       background: rgba(255, 182, 88, 0.08);
       border-color: var(--term-amber);
     }
+
+    /* ---------- Wall Street Ratings panel ---------- */
+    .term-analyst-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    @media (min-width: 900px) {
+      .term-analyst-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .analyst-loading, .analyst-error {
+      color: var(--term-dim);
+      font-size: 0.85rem;
+      padding: 0.3rem 0;
+    }
+    .analyst-badge-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.9rem;
+    }
+    .analyst-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.7rem;
+      border-radius: 3px;
+      color: #0a1218;
+      text-transform: uppercase;
+    }
+    .analyst-badge.buy   { background: var(--term-green); }
+    .analyst-badge.hold  { background: var(--term-amber); }
+    .analyst-badge.sell  { background: var(--term-red); color: #fff; }
+    .analyst-badge-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-dim);
+      letter-spacing: 0.03em;
+    }
+    .analyst-subhead {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--term-dim);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin: 0.6rem 0 0.4rem;
+    }
+    .analyst-bar-row {
+      display: grid;
+      grid-template-columns: 100px 34px 1fr;
+      gap: 0.55rem;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 0.22rem 0;
+      color: var(--term-text);
+    }
+    .analyst-bar-row .label { letter-spacing: 0.05em; color: var(--term-dim); }
+    .analyst-bar-row .count { text-align: right; font-weight: 700; }
+    .analyst-bar-track {
+      position: relative;
+      background: var(--term-border-soft);
+      height: 8px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .analyst-bar-fill { height: 100%; border-radius: 2px; }
+    .analyst-bar-fill.strongBuy  { background: var(--term-green); }
+    .analyst-bar-fill.buy        { background: #6be9c0; }
+    .analyst-bar-fill.hold       { background: var(--term-amber); }
+    .analyst-bar-fill.sell       { background: #ff8f6a; }
+    .analyst-bar-fill.strongSell { background: var(--term-red); }
+
+    .analyst-target-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.4rem;
+      margin-bottom: 0.85rem;
+    }
+    .analyst-target-tile {
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border-soft);
+      border-radius: 3px;
+      padding: 0.4rem 0.4rem;
+      text-align: center;
+    }
+    .analyst-target-tile .tlabel {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--term-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .analyst-target-tile .tval {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--term-cyan);
+      margin: 0.15rem 0 0;
+    }
+    .analyst-target-tile .tdelta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      margin-top: 0.05rem;
+      color: var(--term-dim);
+    }
+    .analyst-target-tile .tdelta.pos { color: var(--term-green); }
+    .analyst-target-tile .tdelta.neg { color: var(--term-red); }
+
+    .analyst-target-track-wrap { margin: 1.2rem 0 1.75rem; padding-top: 0.1rem; }
+    .analyst-target-track {
+      position: relative;
+      height: 6px;
+      background: linear-gradient(to right, var(--term-red) 0%, var(--term-amber) 50%, var(--term-green) 100%);
+      border-radius: 3px;
+    }
+    .analyst-target-marker {
+      position: absolute;
+      top: -6px;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 18px;
+      background: var(--term-text);
+      box-shadow: 0 0 0 1px var(--term-panel);
+    }
+    .analyst-target-marker::after {
+      content: attr(data-label);
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--term-text);
+      white-space: nowrap;
+    }
+    .analyst-target-endpts {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--term-dim);
+      margin-top: 0.4rem;
+      letter-spacing: 0.08em;
+    }
+    .analyst-target-endpts strong { color: var(--term-text); font-weight: 600; }
+
+    .analyst-upgrades {
+      list-style: none;
+      padding: 0;
+      margin: 0.2rem 0 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .analyst-upgrades li {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--term-text);
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 0.5rem;
+      padding: 0.22rem 0;
+      border-bottom: 1px dashed var(--term-border-soft);
+      align-items: center;
+    }
+    .analyst-upgrades li:last-child { border-bottom: 0; }
+    .analyst-upgrades li .date { color: var(--term-dim); }
+    .analyst-upgrades li strong { color: var(--term-text); font-weight: 600; }
+    .analyst-upgrades li .action { letter-spacing: 0.05em; font-size: 0.65rem; }
+    .analyst-upgrades li .action.up   { color: var(--term-green); }
+    .analyst-upgrades li .action.down { color: var(--term-red); }
+    .analyst-upgrades li .action.main { color: var(--term-dim); }
+    .analyst-upgrades li .action.init { color: var(--term-cyan); }
   </style>
 </head>
 <body>
@@ -335,6 +511,14 @@
             <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
             <div class="term-panel"><div id="financialsWidgetMount"></div></div>
           </div>
+        </div>
+      </section>
+
+      <!-- Wall Street ratings (analyst consensus via /api/analyst → Yahoo) -->
+      <section class="term-section" id="analystSection">
+        <div class="term-section-label">WALL STREET RATINGS <span class="sub">— analyst consensus via Yahoo Finance</span></div>
+        <div class="term-panel">
+          <div id="analystContent" class="analyst-loading">Loading analyst data&hellip;</div>
         </div>
       </section>
 
@@ -495,6 +679,177 @@
         locale: 'en',
         colorTheme: 'dark',
       });
+
+      // -----------------------------------------------------------------
+      // Wall Street ratings — via /api/analyst Vercel proxy. Hides itself
+      // gracefully for symbols with no analyst coverage (ETFs, indices).
+      // -----------------------------------------------------------------
+      (async function renderAnalyst() {
+        const section = document.getElementById('analystSection');
+        const content = document.getElementById('analystContent');
+        if (!content) return;
+
+        let data;
+        try {
+          const r = await fetch(`/api/analyst?sym=${encodeURIComponent(sym)}`, { cache: 'no-store' });
+          if (!r.ok) throw new Error('http ' + r.status);
+          data = await r.json();
+        } catch (e) {
+          console.warn('Analyst proxy failed:', e);
+          if (section) section.style.display = 'none';
+          return;
+        }
+
+        if (!data || !data.hasAnalysts) {
+          if (section) section.style.display = 'none';
+          return;
+        }
+
+        const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, c => (
+          { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+
+        // ----- Recommendation badge -----
+        const recKey = String(data.recommendation || '').toLowerCase();
+        let badgeClass = 'hold';
+        if (recKey.includes('buy')) badgeClass = 'buy';
+        else if (recKey.includes('sell') || recKey.includes('underperform')) badgeClass = 'sell';
+        else if (recKey.includes('hold') || recKey.includes('neutral')) badgeClass = 'hold';
+        const recLabel = String(data.recommendation || 'N/A').toUpperCase();
+        const meanTxt = (data.meanRating != null && Number.isFinite(data.meanRating))
+          ? data.meanRating.toFixed(2) : '—';
+
+        // ----- Ratings breakdown bars -----
+        const ratings = data.ratings || {};
+        const total = ['strongBuy','buy','hold','sell','strongSell']
+          .reduce((s, k) => s + (Number(ratings[k]) || 0), 0);
+        const nAnalysts = Number(data.analystCount) || total || 0;
+
+        const rows = [
+          { key: 'strongBuy',  label: 'Strong Buy',  count: Number(ratings.strongBuy)  || 0 },
+          { key: 'buy',        label: 'Buy',         count: Number(ratings.buy)        || 0 },
+          { key: 'hold',       label: 'Hold',        count: Number(ratings.hold)       || 0 },
+          { key: 'sell',       label: 'Sell',        count: Number(ratings.sell)       || 0 },
+          { key: 'strongSell', label: 'Strong Sell', count: Number(ratings.strongSell) || 0 },
+        ];
+        const barMax = Math.max(1, ...rows.map(r => r.count));
+        const barsHtml = rows.map(r => `
+          <div class="analyst-bar-row">
+            <div class="label">${r.label}</div>
+            <div class="count">${r.count}</div>
+            <div class="analyst-bar-track"><div class="analyst-bar-fill ${r.key}" style="width:${(r.count / barMax) * 100}%"></div></div>
+          </div>
+        `).join('');
+
+        // ----- Price target tiles + bar -----
+        const tgt = data.priceTarget || {};
+        const lo   = Number.isFinite(tgt.low)     ? tgt.low     : null;
+        const hi   = Number.isFinite(tgt.high)    ? tgt.high    : null;
+        const mean = Number.isFinite(tgt.mean)    ? tgt.mean    : null;
+        const cur  = Number.isFinite(tgt.current) ? tgt.current : null;
+
+        const fmtP = (n) => n == null ? '—' : ('$' + Math.round(n).toLocaleString());
+        const pctStr = (t) => (t == null || cur == null || cur === 0) ? ''
+          : (((t - cur) / cur * 100).toFixed(1) + '%');
+        const pctClass = (t) => (t == null || cur == null || cur === 0) ? ''
+          : (t - cur >= 0 ? 'pos' : 'neg');
+        const withSign = (t) => {
+          const s = pctStr(t);
+          if (!s) return '';
+          return (t - cur >= 0 ? '+' : '') + s;
+        };
+
+        let trackHtml = '';
+        if (lo != null && hi != null && hi > lo) {
+          const range = hi - lo;
+          const clamp = (v) => Math.max(0, Math.min(100, ((v - lo) / range) * 100));
+          const meanMk = mean != null
+            ? `<div class="analyst-target-marker" style="left:${clamp(mean)}%" data-label="Mean ${fmtP(mean)}"></div>` : '';
+          const curMk  = cur != null
+            ? `<div class="analyst-target-marker" style="left:${clamp(cur)}%;background:var(--term-cyan)" data-label="Now $${cur.toFixed(2)}"></div>` : '';
+          trackHtml = `
+            <div class="analyst-target-track-wrap">
+              <div class="analyst-target-track">${meanMk}${curMk}</div>
+              <div class="analyst-target-endpts">
+                <span>LOW <strong>${fmtP(lo)}</strong></span>
+                <span>HIGH <strong>${fmtP(hi)}</strong></span>
+              </div>
+            </div>
+          `;
+        }
+
+        const anyTarget = (lo != null) || (hi != null) || (mean != null);
+        const targetHtml = anyTarget ? `
+          <p class="analyst-subhead">12-Month Price Target</p>
+          <div class="analyst-target-summary">
+            <div class="analyst-target-tile">
+              <div class="tlabel">Low</div>
+              <div class="tval">${fmtP(lo)}</div>
+              <div class="tdelta ${pctClass(lo)}">${withSign(lo)}</div>
+            </div>
+            <div class="analyst-target-tile">
+              <div class="tlabel">Mean</div>
+              <div class="tval">${fmtP(mean)}</div>
+              <div class="tdelta ${pctClass(mean)}">${withSign(mean)}</div>
+            </div>
+            <div class="analyst-target-tile">
+              <div class="tlabel">High</div>
+              <div class="tval">${fmtP(hi)}</div>
+              <div class="tdelta ${pctClass(hi)}">${withSign(hi)}</div>
+            </div>
+          </div>
+          ${trackHtml}
+        ` : '';
+
+        // ----- Recent rating changes -----
+        const upgrades = Array.isArray(data.upgrades) ? data.upgrades.slice(0, 5) : [];
+        const upgradeHtml = upgrades.length ? `
+          <p class="analyst-subhead">Recent Rating Changes</p>
+          <ul class="analyst-upgrades">
+            ${upgrades.map(u => {
+              const dt = u.date
+                ? new Date(u.date * 1000).toISOString().slice(5, 10).replace('-', '/')
+                : '—';
+              const actKey = String(u.action || '').toLowerCase();
+              const actLabel = actKey === 'up'   ? '↑ upgrade'
+                             : actKey === 'down' ? '↓ downgrade'
+                             : actKey === 'init' ? '+ initiate'
+                             : actKey === 'main' ? '∼ maintain'
+                             : actKey === 'reit' ? '∼ reiterate'
+                             : (u.action || '');
+              const actClass = actKey === 'up'   ? 'up'
+                             : actKey === 'down' ? 'down'
+                             : actKey === 'init' ? 'init'
+                             : 'main';
+              return `
+                <li>
+                  <span class="date">${dt}</span>
+                  <span>${esc(u.firm || '—')} → <strong>${esc(u.toGrade || '—')}</strong></span>
+                  <span class="action ${actClass}">${actLabel}</span>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+        ` : '';
+
+        content.className = '';
+        content.innerHTML = `
+          <div class="analyst-badge-row">
+            <span class="analyst-badge ${badgeClass}">${esc(recLabel)}</span>
+            <span class="analyst-badge-sub">Mean rating ${meanTxt} / 5.00 &middot; ${nAnalysts} analyst${nAnalysts === 1 ? '' : 's'}</span>
+          </div>
+          <div class="term-analyst-grid">
+            <div>
+              <p class="analyst-subhead">Ratings Breakdown</p>
+              ${barsHtml}
+            </div>
+            <div>
+              ${targetHtml}
+              ${upgradeHtml}
+            </div>
+          </div>
+        `;
+      })();
 
       // -----------------------------------------------------------------
       // News — via our /api/ticker-news Vercel proxy. Yahoo's search

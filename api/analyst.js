@@ -1,0 +1,124 @@
+// Vercel serverless function — proxies Yahoo Finance's quoteSummary
+// endpoint to get analyst recommendations and price targets.
+//
+// Yahoo's quoteSummary requires a "crumb" (session token) as of mid-2024,
+// so we run a 3-step dance server-side:
+//   1. GET fc.yahoo.com to seed cookies (A1, A3, etc.)
+//   2. GET /v1/test/getcrumb with those cookies to receive a fresh crumb
+//   3. GET /v10/finance/quoteSummary/<SYM>?crumb=... with cookies + crumb
+//
+// Returns a compact JSON payload the ticker page can render as tiles.
+// Cached at Vercel's edge for 15 minutes — analyst ratings change slowly
+// and this endpoint is the slowest part of the ticker page load.
+//
+// GET /api/analyst?sym=NVDA
+//   → { symbol, recommendation, meanRating, analystCount,
+//       ratings: { strongBuy, buy, hold, sell, strongSell },
+//       priceTarget: { low, mean, high, current } }
+
+const YAHOO_UA = 'Mozilla/5.0 (BATS.CO analyst proxy)';
+
+async function getCrumb() {
+  // 1) Cookie primer. Yahoo's fc.yahoo.com hands back A1/A3 cookies
+  //    the crumb endpoint keys off of.
+  const primer = await fetch('https://fc.yahoo.com/', {
+    headers: { 'User-Agent': YAHOO_UA },
+    redirect: 'follow',
+  });
+  const setCookies = primer.headers.getSetCookie
+    ? primer.headers.getSetCookie()
+    : (primer.headers.get('set-cookie') || '').split(/,(?=[^;]+=[^;]+;)/);
+  const cookieHeader = (setCookies || [])
+    .map(c => (c || '').split(';')[0])
+    .filter(Boolean)
+    .join('; ');
+
+  // 2) Ask for the crumb using those cookies.
+  const crumbRes = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', {
+    headers: { 'User-Agent': YAHOO_UA, 'Cookie': cookieHeader },
+  });
+  const crumb = (await crumbRes.text()).trim();
+  if (!crumb) throw new Error('empty crumb');
+  return { crumb, cookieHeader };
+}
+
+function toNum(field) {
+  if (!field) return null;
+  const v = field.raw;
+  return (typeof v === 'number' && Number.isFinite(v)) ? v : null;
+}
+
+export default async function handler(req, res) {
+  const raw = String(req.query.sym || '').toUpperCase().trim();
+  if (!/^[A-Z0-9.\-]{1,10}$/.test(raw)) {
+    return res.status(400).json({ error: 'invalid symbol' });
+  }
+
+  try {
+    const { crumb, cookieHeader } = await getCrumb();
+
+    const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory';
+    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(raw)}` +
+                `?modules=${modules}&crumb=${encodeURIComponent(crumb)}`;
+    const r = await fetch(url, {
+      headers: { 'User-Agent': YAHOO_UA, 'Cookie': cookieHeader },
+    });
+    if (!r.ok) throw new Error('quoteSummary status ' + r.status);
+    const data = await r.json();
+    const result = data && data.quoteSummary && data.quoteSummary.result;
+    if (!result || !result.length) {
+      // Not an error — probably an ETF or index without analyst coverage.
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=300');
+      return res.status(200).json({ symbol: raw, hasAnalysts: false });
+    }
+
+    const r0 = result[0];
+    const fd = r0.financialData || {};
+    const trend = (r0.recommendationTrend && r0.recommendationTrend.trend) || [];
+    const upgrades = ((r0.upgradeDowngradeHistory && r0.upgradeDowngradeHistory.history) || [])
+      .slice(0, 8)
+      .map(h => ({
+        date: h.epochGradeDate || 0,
+        firm: String(h.firm || ''),
+        toGrade:   String(h.toGrade || ''),
+        fromGrade: String(h.fromGrade || ''),
+        action:    String(h.action || ''),
+      }));
+
+    // First trend row is current-month aggregate: {period:"0m",strongBuy,buy,hold,sell,strongSell}
+    const cur = trend[0] || {};
+    const ratings = {
+      strongBuy:  Number(cur.strongBuy)  || 0,
+      buy:        Number(cur.buy)        || 0,
+      hold:       Number(cur.hold)       || 0,
+      sell:       Number(cur.sell)       || 0,
+      strongSell: Number(cur.strongSell) || 0,
+    };
+    const totalRatings = ratings.strongBuy + ratings.buy + ratings.hold + ratings.sell + ratings.strongSell;
+
+    const payload = {
+      symbol: raw,
+      hasAnalysts: (Number(fd.numberOfAnalystOpinions && fd.numberOfAnalystOpinions.raw) || totalRatings) > 0,
+      recommendation: String(fd.recommendationKey || '').replace(/_/g, ' '),
+      meanRating: toNum(fd.recommendationMean),
+      analystCount: toNum(fd.numberOfAnalystOpinions) || totalRatings || null,
+      ratings,
+      priceTarget: {
+        low:     toNum(fd.targetLowPrice),
+        mean:    toNum(fd.targetMeanPrice),
+        median:  toNum(fd.targetMedianPrice),
+        high:    toNum(fd.targetHighPrice),
+        current: toNum(fd.currentPrice),
+      },
+      upgrades,
+    };
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=300');
+    return res.status(200).json(payload);
+  } catch (err) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(502).json({ error: String((err && err.message) || err) });
+  }
+}
