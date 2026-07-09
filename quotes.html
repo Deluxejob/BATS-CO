@@ -4,19 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quotes Overview — BATS.CO</title>
-  <meta name="description" content="Market snapshot: indices, top gainers, top losers, most active tickers, and market news. Type any ticker to jump to a dedicated page with chart, technicals, fundamentals and news." />
+  <meta name="description" content="Market snapshot: mini charts of the major indices, market internals (new highs/lows, % above 50/200 DMA), top gainers, top losers, most active, and market news. Type any ticker to jump to a dedicated page." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <style>
+    /* Wider than the rest of the site so we can fit the finviz-style grids */
+    main.explainer.quotes-wide {
+      max-width: 1600px;
+    }
+
     /* Ticker lookup search bar */
     .ticker-search {
       display: flex;
       gap: 0.5rem;
-      max-width: 480px;
-      margin: 1.25rem 0;
+      max-width: 520px;
+      margin: 1.25rem 0 0.35rem;
     }
     .ticker-search input {
       flex: 1;
@@ -51,15 +56,38 @@
     .ticker-search-hint {
       color: var(--text-dim);
       font-size: 0.85rem;
-      margin: 0;
+      margin: 0 0 1rem;
     }
-    .quotes-grid {
+
+    /* Grid of mini widgets (indices + market internals) */
+    .mini-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 1.5rem;
+      gap: 0.75rem;
+      margin: 0.75rem 0 1.75rem;
     }
-    @media (min-width: 960px) {
-      .quotes-grid { grid-template-columns: 1fr 1fr; }
+    @media (min-width: 640px) {
+      .mini-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1080px) {
+      .mini-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .mini-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.6rem 0.6rem 0.4rem;
+    }
+    .mini-card-title {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      margin: 0 0 0.25rem 0.35rem;
+    }
+    .mini-card .tradingview-widget-container {
+      min-height: 180px;
     }
   </style>
 </head>
@@ -119,16 +147,11 @@
     </nav>
   </header>
 
-  <main class="explainer">
+  <main class="explainer quotes-wide">
 
     <section class="explainer-hero">
       <p class="eyebrow">QUOTES OVERVIEW</p>
-      <h1>Look up a ticker, or scan today&rsquo;s movers</h1>
-      <p class="lede">
-        Search any US stock or ETF to pull up its chart, key statistics, technicals, and current news.
-        Below that: a live snapshot of the major indices, today&rsquo;s biggest gainers and losers, and the
-        current market headlines.
-      </p>
+      <h1>Look up a ticker, or scan today&rsquo;s market</h1>
       <form class="ticker-search" id="tickerSearchForm">
         <input type="text" id="tickerSearchInput" placeholder="Enter ticker (e.g. AAPL, NVDA, SPY)" autocomplete="off" spellcheck="false" required />
         <button type="submit">Go &rarr;</button>
@@ -136,72 +159,35 @@
       <p class="ticker-search-hint">Any US-listed stock or ETF. Ticker only &mdash; not the company name.</p>
     </section>
 
-    <!-- MARKET OVERVIEW -->
-    <section id="overview">
+    <!-- Row 1: Mini charts of the major indices -->
+    <section id="index-minis">
       <div class="section-head">
-        <h2>Market Overview</h2>
-        <p>Indices, bond yields, commodities, and sectors. Click any tab to switch categories.</p>
+        <h2>Major indices</h2>
+        <p>Live intraday charts of the four indices most institutions benchmark against.</p>
       </div>
-      <div class="card">
-        <div class="tradingview-widget-container">
-          <div class="tradingview-widget-container__widget"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-          {
-            "colorTheme": "dark",
-            "dateRange": "12M",
-            "showChart": true,
-            "locale": "en",
-            "width": "100%",
-            "height": "500",
-            "largeChartUrl": "",
-            "isTransparent": true,
-            "showSymbolLogo": true,
-            "showFloatingTooltip": true,
-            "tabs": [
-              {
-                "title": "Indices",
-                "symbols": [
-                  {"s": "FOREXCOM:SPXUSD", "d": "S&P 500"},
-                  {"s": "FOREXCOM:NSXUSD", "d": "Nasdaq 100"},
-                  {"s": "FOREXCOM:DJI", "d": "Dow 30"},
-                  {"s": "AMEX:IWM", "d": "Russell 2000 (IWM)"}
-                ]
-              },
-              {
-                "title": "Bonds",
-                "symbols": [
-                  {"s": "FRED:DGS10", "d": "10Y Yield"},
-                  {"s": "FRED:DGS2", "d": "2Y Yield"},
-                  {"s": "AMEX:HYG", "d": "High Yield"},
-                  {"s": "NASDAQ:TLT", "d": "20+ Year Treasury"}
-                ]
-              },
-              {
-                "title": "Commodities",
-                "symbols": [
-                  {"s": "TVC:GOLD", "d": "Gold"},
-                  {"s": "TVC:SILVER", "d": "Silver"},
-                  {"s": "CAPITALCOM:COPPER", "d": "Copper"},
-                  {"s": "TVC:USOIL", "d": "WTI Crude"},
-                  {"s": "TVC:UKOIL", "d": "Brent Crude"},
-                  {"s": "CAPITALCOM:NATURALGAS", "d": "Natural Gas"},
-                  {"s": "CAPITALCOM:DXY", "d": "US Dollar"}
-                ]
-              }
-            ]
-          }
-          </script>
-        </div>
-      </div>
+      <div class="mini-grid" id="indexMinis"></div>
     </section>
 
-    <!-- SCREENER: GAINERS / LOSERS / MOST ACTIVE -->
+    <!-- Row 2: Market internals — breadth stats -->
+    <section id="internals">
+      <div class="section-head">
+        <h2>Market internals</h2>
+        <p>
+          How <em>broadly</em> stocks are participating in the market&rsquo;s move. When most stocks are above their 50-day
+          or 200-day moving averages, the rally is healthy. When new highs dry up and new lows spike, trouble is
+          coming under the surface even if the index is still holding.
+        </p>
+      </div>
+      <div class="mini-grid" id="internalsMinis"></div>
+    </section>
+
+    <!-- Row 3: Gainers / losers / most active -->
     <section id="movers">
       <div class="section-head">
-        <h2>Today&rsquo;s Movers</h2>
+        <h2>Today&rsquo;s movers</h2>
         <p>
-          Top gainers, top losers, and the most active tickers in the US market.
-          The tabs at the top of the widget switch between them. Updates continuously during market hours.
+          Top gainers, top losers, and the most active tickers in the US market. Tabs at the top of the widget
+          switch categories. Updates continuously during market hours.
         </p>
       </div>
       <div class="card">
@@ -215,7 +201,7 @@
             "showChart": true,
             "locale": "en",
             "width": "100%",
-            "height": 550,
+            "height": 580,
             "largeChartUrl": "",
             "isTransparent": true,
             "showSymbolLogo": true,
@@ -235,10 +221,10 @@
       </div>
     </section>
 
-    <!-- NEWS -->
+    <!-- Row 4: News -->
     <section class="news" id="news">
       <div class="section-head">
-        <h2>Market News</h2>
+        <h2>Market news</h2>
         <p>Broad stock-market headlines pulled from Yahoo Finance, refreshed hourly.</p>
       </div>
       <div class="card">
@@ -262,6 +248,11 @@
 
   <script src="app.js"></script>
   <script>
+    (function () {
+      const yearEl = document.getElementById('footerYear');
+      if (yearEl) yearEl.textContent = new Date().getUTCFullYear();
+    })();
+
     // Ticker search → navigate to ticker.html?sym=XXX
     (function () {
       const form  = document.getElementById('tickerSearchForm');
@@ -271,12 +262,103 @@
         e.preventDefault();
         const raw = (input.value || '').trim().toUpperCase();
         if (!raw) return;
-        // Strip anything that isn't a ticker character (letters, digits, dots, hyphens)
         const sym = raw.replace(/[^A-Z0-9.\-]/g, '');
         if (!sym) return;
         window.location.href = `ticker.html?sym=${encodeURIComponent(sym)}`;
       });
       input.focus();
+    })();
+
+    // Small TradingView Symbol Overview widget factory. We inject via DOM API
+    // rather than a template literal so the embedded script's closing tag
+    // can't prematurely terminate this outer inline block during HTML parsing.
+    function mountMiniOverview(mountEl, tvSymbol, displayLabel) {
+      const container = document.createElement('div');
+      container.className = 'tradingview-widget-container';
+      const widgetDiv = document.createElement('div');
+      widgetDiv.className = 'tradingview-widget-container__widget';
+      container.appendChild(widgetDiv);
+      const s = document.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+      s.text = JSON.stringify({
+        symbols: [[displayLabel, `${tvSymbol}|1D`]],
+        chartOnly: false,
+        width: '100%',
+        height: 200,
+        locale: 'en',
+        colorTheme: 'dark',
+        autosize: false,
+        showVolume: false,
+        showMA: false,
+        hideDateRanges: true,
+        hideMarketStatus: false,
+        hideSymbolLogo: true,
+        scalePosition: 'right',
+        scaleMode: 'Normal',
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        fontSize: '10',
+        noTimeScale: true,
+        valuesTracking: '1',
+        changeMode: 'price-and-percent',
+        chartType: 'area',
+        lineWidth: 2,
+        dateRanges: ['1d|1'],
+        isTransparent: true,
+      });
+      container.appendChild(s);
+      mountEl.appendChild(container);
+    }
+
+    // Row 1: four mini index charts (SPY, QQQ, DIA, IWM)
+    (function renderIndexMinis() {
+      const grid = document.getElementById('indexMinis');
+      if (!grid) return;
+      const items = [
+        { title: 'S&P 500',      sym: 'AMEX:SPY',      label: 'SPY'  },
+        { title: 'Nasdaq 100',   sym: 'NASDAQ:QQQ',    label: 'QQQ'  },
+        { title: 'Dow 30',       sym: 'AMEX:DIA',      label: 'DIA'  },
+        { title: 'Russell 2000', sym: 'AMEX:IWM',      label: 'IWM'  },
+      ];
+      for (const it of items) {
+        const card = document.createElement('div');
+        card.className = 'mini-card';
+        const t = document.createElement('div');
+        t.className = 'mini-card-title';
+        t.textContent = it.title;
+        card.appendChild(t);
+        mountMiniOverview(card, it.sym, it.label);
+        grid.appendChild(card);
+      }
+    })();
+
+    // Row 2: four market internals (breadth stats)
+    // These are the standard stockcharts.com breadth indexes mirrored on
+    // TradingView under the INDEX: namespace. Symbol keys:
+    //   MMFI = S&P 500 stocks above 50-day MA (%)
+    //   MMTH = S&P 500 stocks above 200-day MA (%)
+    //   MAHN = NYSE new 52-week highs
+    //   MALN = NYSE new 52-week lows
+    (function renderInternalMinis() {
+      const grid = document.getElementById('internalsMinis');
+      if (!grid) return;
+      const items = [
+        { title: 'S&P 500 above 50-day MA',  sym: 'INDEX:MMFI', label: '% above 50DMA'  },
+        { title: 'S&P 500 above 200-day MA', sym: 'INDEX:MMTH', label: '% above 200DMA' },
+        { title: 'NYSE new 52-week highs',   sym: 'INDEX:MAHN', label: 'New highs' },
+        { title: 'NYSE new 52-week lows',    sym: 'INDEX:MALN', label: 'New lows' },
+      ];
+      for (const it of items) {
+        const card = document.createElement('div');
+        card.className = 'mini-card';
+        const t = document.createElement('div');
+        t.className = 'mini-card-title';
+        t.textContent = it.title;
+        card.appendChild(t);
+        mountMiniOverview(card, it.sym, it.label);
+        grid.appendChild(card);
+      }
     })();
 
     // Yahoo-backed market news list — same shape as markets.html card
@@ -311,7 +393,7 @@
         list.innerHTML = '<li class="spy-news-loading">No headlines available.</li>';
         return;
       }
-      list.innerHTML = items.slice(0, 12).map(it => `
+      list.innerHTML = items.slice(0, 15).map(it => `
         <li>
           <a class="spy-news-title" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
           <span class="spy-news-meta-inline">${esc(it.publisher || '')} &middot; ${relTime(it.publishedTs)}</span>
