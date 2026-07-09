@@ -398,6 +398,31 @@
       color: var(--term-dim);
       margin: 0.75rem 0 0;
     }
+    .term-news-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.85rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--term-border-soft);
+    }
+    .term-news-more {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--term-amber);
+      background: transparent;
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.5rem 1.1rem;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .term-news-more:hover {
+      background: rgba(255, 182, 88, 0.08);
+      border-color: var(--term-amber);
+    }
   </style>
 </head>
 <body>
@@ -436,10 +461,6 @@
         </div>
       </a>
       <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
-    </div>
-    <div class="market-toggle" role="tablist" aria-label="Choose market">
-      <a href="index.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
-      <a href="index.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
     </div>
     <nav class="site-nav">
       <a href="index.html#gauge">Score</a>
@@ -660,6 +681,9 @@
         <ul class="term-news-list" id="marketNewsList">
           <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
         </ul>
+        <div class="term-news-actions">
+          <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
+        </div>
         <p class="term-news-meta" id="marketNewsMeta"></p>
       </div>
     </section>
@@ -976,10 +1000,14 @@
       }
     })();
 
-    // Market news (Yahoo-backed) — terminal-styled compact list
+    // Market news (Yahoo-backed) — terminal-styled compact list with
+    // progressive reveal. Renders 15 items initially; each click on
+    // "SHOW MORE" reveals the next 15 (up to 60 total). Button hides
+    // when everything is shown.
     (async function renderNews() {
       const list = document.getElementById('marketNewsList');
       const meta = document.getElementById('marketNewsMeta');
+      const moreBtn = document.getElementById('newsMoreBtn');
       if (!list) return;
       let payload;
       try {
@@ -1008,14 +1036,39 @@
         list.innerHTML = '<li><span style="color:var(--term-dim); font-size:0.85rem">No headlines available.</span></li>';
         return;
       }
-      list.innerHTML = items.slice(0, 45).map(it => `
-        <li>
-          <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
-          <span class="meta">${esc(it.publisher || '')} · ${relTime(it.publishedTs)}</span>
-        </li>
-      `).join('');
+
+      const MAX_ITEMS = 60;
+      const PAGE = 15;
+      const total  = Math.min(items.length, MAX_ITEMS);
+      let shown = 0;
+
+      function render(n) {
+        shown = Math.min(n, total);
+        list.innerHTML = items.slice(0, shown).map(it => `
+          <li>
+            <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
+            <span class="meta">${esc(it.publisher || '')} · ${relTime(it.publishedTs)}</span>
+          </li>
+        `).join('');
+        if (moreBtn) {
+          if (shown >= total) {
+            moreBtn.hidden = true;
+          } else {
+            const remaining = total - shown;
+            const next = Math.min(PAGE, remaining);
+            moreBtn.hidden = false;
+            moreBtn.textContent = `SHOW ${next} MORE HEADLINES ↓`;
+          }
+        }
+      }
+
+      render(PAGE);
+      if (moreBtn) {
+        moreBtn.addEventListener('click', () => render(shown + PAGE));
+      }
+
       if (meta && payload.generatedAt) {
-        meta.textContent = `LAST REFRESHED: ${new Date(payload.generatedAt).toLocaleString()}`;
+        meta.textContent = `LAST REFRESHED: ${new Date(payload.generatedAt).toLocaleString()} · ${total} HEADLINES AVAILABLE`;
       }
     })();
   </script>
