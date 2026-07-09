@@ -4,73 +4,246 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ticker Lookup — BATS.CO</title>
-  <meta name="description" content="Pull up any US stock or ETF: large interactive chart, technical analysis, fundamentals, and ticker-specific news headlines." />
+  <meta name="description" content="Pull up any US stock or ETF: large interactive chart, key statistics, financials, technicals, and ticker-specific news." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <style>
+    /* ============================================================
+       Terminal theme, scoped to this page — mirrors quotes.html so
+       the two research pages share a visual language.
+       ============================================================ */
+    :root {
+      --term-bg:      #08111a;
+      --term-panel:   #101821;
+      --term-panel-2: #0d1520;
+      --term-border:  #1c2734;
+      --term-border-soft: #172131;
+      --term-text:    #d5dee9;
+      --term-dim:     #7b8697;
+      --term-amber:   #ffb658;
+      --term-cyan:    #6ee7ff;
+      --term-green:   #22d39a;
+      --term-red:     #ff5374;
+    }
+    body { background: var(--term-bg); }
+    main.terminal {
+      max-width: 1720px;
+      margin: 0 auto;
+      padding: 0.75rem 1.25rem 3rem;
+      color: var(--term-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .term-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding: 1rem 0 0.75rem;
+      border-bottom: 1px solid var(--term-border);
+      margin-bottom: 1rem;
+    }
+    .term-header .title-block { min-width: 0; }
+    .term-header .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      margin: 0;
+    }
+    .term-ticker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--term-cyan);
+      margin: 0.1rem 0 0;
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+    .term-ticker-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--term-dim);
+      letter-spacing: 0.05em;
+      margin: 0.35rem 0 0;
+    }
+
     .ticker-search {
       display: flex;
-      gap: 0.5rem;
-      max-width: 480px;
-      margin: 1rem 0;
+      gap: 0.4rem;
+      max-width: 460px;
     }
     .ticker-search input {
       flex: 1;
       font: inherit;
-      font-size: 1.05rem;
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
       font-weight: 600;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      background: var(--bg-card);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.55rem 0.85rem;
+      background: var(--term-panel);
+      color: var(--term-text);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.5rem 0.75rem;
     }
     .ticker-search input:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.15);
+      border-color: var(--term-amber);
+      box-shadow: 0 0 0 2px rgba(255, 182, 88, 0.15);
     }
     .ticker-search button {
       font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
       font-weight: 700;
-      background: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--term-amber);
       color: #0a1218;
-      border: 1px solid var(--accent);
-      border-radius: 8px;
-      padding: 0.55rem 1.1rem;
+      border: 1px solid var(--term-amber);
+      border-radius: 3px;
+      padding: 0.5rem 0.9rem;
       cursor: pointer;
     }
     .ticker-search button:hover { filter: brightness(1.1); }
-    .ticker-headline {
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin: 0.75rem 0 0.25rem;
-      letter-spacing: 0.03em;
+
+    .term-section { margin-bottom: 1.25rem; }
+    .term-section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
-    .ticker-grid {
+    .term-section-label::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--term-amber);
+      border-radius: 1px;
+    }
+    .term-section-label .sub {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-size: 0.72rem;
+    }
+    .term-panel {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 0.6rem 0.75rem 0.65rem;
+    }
+
+    /* Two-column grid for Stats + Financials */
+    .grid-2col { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+    @media (min-width: 1100px) {
+      .grid-2col { grid-template-columns: 1fr 1fr; }
+    }
+    .mkt-col { display: flex; flex-direction: column; }
+
+    /* Empty state */
+    .term-empty {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--term-dim);
+      font-size: 0.9rem;
+    }
+    .term-empty code {
+      color: var(--term-cyan);
+      background: var(--term-panel-2);
+      padding: 0.1rem 0.45rem;
+      border-radius: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      margin: 0 0.15rem;
+    }
+
+    /* News list — same shape as quotes.html for a shared look */
+    .term-news-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.1rem 0 0;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 1.25rem;
-      margin-top: 1.25rem;
+      column-gap: 1.5rem;
     }
-    @media (min-width: 960px) {
-      .ticker-grid.two-col { grid-template-columns: 1fr 1fr; }
+    @media (min-width: 1000px) {
+      .term-news-list { grid-template-columns: repeat(2, 1fr); }
     }
-    .ticker-empty {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 2rem 1.5rem;
-      text-align: center;
-      color: var(--text-dim);
+    @media (min-width: 1400px) {
+      .term-news-list { grid-template-columns: repeat(3, 1fr); }
+    }
+    .term-news-list li {
+      padding: 0.28rem 0;
+      border-bottom: 1px solid var(--term-border-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .term-news-list a {
+      color: var(--term-text);
+      text-decoration: none;
+      font-size: 0.78rem;
+      line-height: 1.25;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .term-news-list a:hover { color: var(--term-cyan); }
+    .term-news-list .meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--term-dim);
+      letter-spacing: 0.03em;
+    }
+    .term-news-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      margin: 0.75rem 0 0;
+    }
+    .term-news-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.85rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--term-border-soft);
+    }
+    .term-news-more {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--term-amber);
+      background: transparent;
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.5rem 1.1rem;
+      cursor: pointer;
+    }
+    .term-news-more:hover {
+      background: rgba(255, 182, 88, 0.08);
+      border-color: var(--term-amber);
     }
   </style>
 </head>
@@ -108,10 +281,6 @@
       </a>
       <p class="breadcrumb"><a href="quotes.html">← Back to Quotes Overview</a></p>
     </div>
-    <div class="market-toggle" role="tablist" aria-label="Choose market">
-      <a href="index.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
-      <a href="index.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
-    </div>
     <nav class="site-nav">
       <a href="index.html#gauge">Score</a>
       <a href="markets.html">Markets</a>
@@ -126,78 +295,69 @@
     </nav>
   </header>
 
-  <main class="explainer">
+  <main class="terminal">
 
-    <section class="explainer-hero">
-      <p class="eyebrow">TICKER LOOKUP</p>
-      <h1 id="tickerPageTitle">Look up a ticker</h1>
-      <div class="ticker-headline" id="tickerHeadline"></div>
+    <div class="term-header">
+      <div class="title-block">
+        <p class="eyebrow">TICKER // LOOKUP</p>
+        <h1 class="term-ticker" id="tickerHeadline">—</h1>
+        <p class="term-ticker-sub" id="tickerSub">Enter a symbol below</p>
+      </div>
       <form class="ticker-search" id="tickerSearchForm">
-        <input type="text" id="tickerSearchInput" placeholder="Enter another ticker" autocomplete="off" spellcheck="false" required />
-        <button type="submit">Go &rarr;</button>
+        <input type="text" id="tickerSearchInput" placeholder="Search another ticker" autocomplete="off" spellcheck="false" required />
+        <button type="submit">GO &rarr;</button>
       </form>
-    </section>
-
-    <!-- Empty state (shown when no ?sym= is provided) -->
-    <div id="emptyState" class="ticker-empty" style="display:none">
-      <p>
-        Enter a US stock or ETF ticker above to load its chart, technicals, fundamentals, and news.
-        Try <code>AAPL</code>, <code>NVDA</code>, <code>SPY</code>, or <code>TSLA</code>.
-      </p>
     </div>
 
-    <!-- Ticker content (shown when ?sym= is present) -->
+    <!-- Empty state (no ?sym= provided) -->
+    <div id="emptyState" class="term-empty" style="display:none">
+      Enter a US stock or ETF ticker above to load its chart, key stats, financials, and news.
+      Try <code>AAPL</code>, <code>NVDA</code>, <code>SPY</code>, or <code>TSLA</code>.
+    </div>
+
+    <!-- Ticker content -->
     <div id="tickerContent" style="display:none">
 
-      <!-- Large chart -->
-      <section id="chart-section">
-        <div class="section-head">
-          <h2 id="chartHeading">Chart</h2>
-          <p>Interactive chart. Pick a time period below the price.</p>
-        </div>
-        <div class="card">
-          <div id="chartWidgetMount"></div>
+      <!-- Chart -->
+      <section class="term-section">
+        <div class="term-section-label">CHART <span class="sub">— 1D / 5D / 1M / 3M / 6M / YTD / 1Y / 5Y / All</span></div>
+        <div class="term-panel"><div id="chartWidgetMount"></div></div>
+      </section>
+
+      <!-- Key stats + Financials -->
+      <section class="term-section">
+        <div class="grid-2col">
+          <div class="mkt-col">
+            <div class="term-section-label">KEY STATISTICS <span class="sub">— market cap, PE, EPS, sector</span></div>
+            <div class="term-panel"><div id="infoWidgetMount"></div></div>
+          </div>
+          <div class="mkt-col">
+            <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
+            <div class="term-panel"><div id="financialsWidgetMount"></div></div>
+          </div>
         </div>
       </section>
 
-      <!-- Technicals + Fundamentals side-by-side -->
-      <div class="ticker-grid two-col">
-        <section id="technicals-section">
-          <div class="section-head">
-            <h2>Technical Analysis</h2>
-            <p>Rolled-up buy/sell/neutral signal from ~30 popular indicators. Adjust the interval below.</p>
-          </div>
-          <div class="card">
-            <div id="techWidgetMount"></div>
-          </div>
-        </section>
+      <!-- Technicals -->
+      <section class="term-section">
+        <div class="term-section-label">TECHNICAL ANALYSIS <span class="sub">— rolled up from ~30 popular indicators</span></div>
+        <div class="term-panel"><div id="techWidgetMount"></div></div>
+      </section>
 
-        <section id="info-section">
-          <div class="section-head">
-            <h2>Fundamentals</h2>
-            <p>Company overview — market cap, PE, sector, and other key statistics.</p>
+      <!-- News -->
+      <section class="term-section">
+        <div class="term-section-label">NEWS <span class="sub">— Yahoo Finance, filtered by ticker</span></div>
+        <div class="term-panel">
+          <ul class="term-news-list" id="tickerNewsList">
+            <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
+          </ul>
+          <div class="term-news-actions">
+            <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
           </div>
-          <div class="card">
-            <div id="infoWidgetMount"></div>
-          </div>
-        </section>
-      </div>
-
-      <!-- Ticker-specific news -->
-      <section id="news-section">
-        <div class="section-head">
-          <h2>News &amp; headlines</h2>
-          <p>Ticker-specific news pulled by TradingView from its news partners.</p>
-        </div>
-        <div class="card">
-          <div id="newsWidgetMount"></div>
+          <p class="term-news-meta" id="tickerNewsMeta"></p>
         </div>
       </section>
 
-    </div>
-
-    <div class="next-nav">
-      <a class="btn-primary" href="quotes.html">&larr; Back to Quotes Overview</a>
     </div>
 
   </main>
@@ -208,25 +368,25 @@
 
   <script src="app.js"></script>
   <script>
-    // Read ?sym=XXX from URL, normalize, and drive all the widgets.
     (function () {
       const yearEl = document.getElementById('footerYear');
       if (yearEl) yearEl.textContent = new Date().getUTCFullYear();
 
+      // -----------------------------------------------------------------
+      // Parse the ?sym= query param and drive all widgets
+      // -----------------------------------------------------------------
       const params = new URLSearchParams(window.location.search);
       let sym = (params.get('sym') || '').trim().toUpperCase();
-      // Normalize BRK-B → BRK.B (TradingView convention for class shares)
+      // Normalize: BRK-B → BRK.B, strip anything not a ticker char
       sym = sym.replace(/-/g, '.').replace(/[^A-Z0-9.]/g, '');
 
       const emptyState  = document.getElementById('emptyState');
       const tickerCont  = document.getElementById('tickerContent');
-      const pageTitle   = document.getElementById('tickerPageTitle');
       const headlineEl  = document.getElementById('tickerHeadline');
-      const chartHead   = document.getElementById('chartHeading');
+      const subEl       = document.getElementById('tickerSub');
       const searchForm  = document.getElementById('tickerSearchForm');
       const searchInput = document.getElementById('tickerSearchInput');
 
-      // Search form: submit → navigate to same page with new ?sym=
       searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const raw = (searchInput.value || '').trim().toUpperCase();
@@ -243,19 +403,19 @@
         return;
       }
 
-      // We have a ticker → render all widgets
+      // We have a ticker → render everything
       document.title = `${sym} — BATS.CO`;
-      pageTitle.textContent = 'Viewing:';
       headlineEl.textContent = sym;
-      chartHead.textContent = `${sym} — Chart`;
+      subEl.textContent = 'Currently viewing — type in the box to switch';
       searchInput.placeholder = `Search another ticker (currently ${sym})`;
       tickerCont.style.display = '';
       emptyState.style.display = 'none';
 
-      // Helper: build a TradingView embed <script> configured with the given
-      // widget path and config object, and append it into a target mount. Using
-      // DOM API (createElement) rather than a template literal so the closing
-      // tag of the injected element doesn't prematurely end THIS inline block.
+      // -----------------------------------------------------------------
+      // TradingView widget factory
+      // Builds the widget via DOM API so the injected script's closing
+      // tag doesn't prematurely end this outer inline block.
+      // -----------------------------------------------------------------
       function mountTvWidget(mountId, scriptPath, config) {
         const mount = document.getElementById(mountId);
         if (!mount) return;
@@ -274,20 +434,14 @@
         mount.appendChild(container);
       }
 
-      // We don't know the exchange from the ticker alone. Pass the bare ticker
-      // and TradingView resolves it against its symbol registry — works for
-      // any major US-listed name. The widgets show a "symbol not available"
-      // note if the resolver fails; users can retype with an exchange prefix
-      // like NASDAQ:XXX to be explicit.
-      const shortLabel = sym;
-      const tvSymbol = sym; // no prefix — let TradingView pick the exchange
+      const tvSymbol = sym; // let TradingView resolve exchange
 
       // 1) Large Symbol Overview chart
       mountTvWidget('chartWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js', {
-        symbols: [[shortLabel, `${tvSymbol}|1D`]],
+        symbols: [[sym, `${tvSymbol}|1D`]],
         chartOnly: false,
         width: '100%',
-        height: 500,
+        height: 460,
         locale: 'en',
         colorTheme: 'dark',
         autosize: false,
@@ -298,7 +452,7 @@
         hideSymbolLogo: false,
         scalePosition: 'right',
         scaleMode: 'Normal',
-        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        fontFamily: 'JetBrains Mono, ui-monospace, monospace',
         fontSize: '11',
         noTimeScale: false,
         valuesTracking: '1',
@@ -309,7 +463,28 @@
         isTransparent: true,
       });
 
-      // 2) Technical Analysis (buy/sell gauge)
+      // 2) Key statistics (Symbol Info widget — market cap, PE, EPS, sector, description)
+      mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
+        symbol: tvSymbol,
+        width: '100%',
+        locale: 'en',
+        colorTheme: 'dark',
+        isTransparent: true,
+      });
+
+      // 3) Financials & Earnings (Financials widget — revenue, EPS, estimates)
+      mountTvWidget('financialsWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-financials.js', {
+        symbol: tvSymbol,
+        width: '100%',
+        height: 500,
+        colorTheme: 'dark',
+        isTransparent: true,
+        displayMode: 'regular',
+        largeChartUrl: '',
+        locale: 'en',
+      });
+
+      // 4) Technical Analysis (buy/sell gauge)
       mountTvWidget('techWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js', {
         interval: '1D',
         width: '100%',
@@ -321,26 +496,83 @@
         colorTheme: 'dark',
       });
 
-      // 3) Symbol Info (fundamentals overview: PE, market cap, sector, etc.)
-      mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
-        symbol: tvSymbol,
-        width: '100%',
-        locale: 'en',
-        colorTheme: 'dark',
-        isTransparent: true,
-      });
+      // -----------------------------------------------------------------
+      // News — via our /api/ticker-news Vercel proxy. Yahoo's search
+      // endpoint IS reachable but not CORS-permissive from the browser,
+      // so we bounce the request through a small serverless function
+      // that adds Access-Control-Allow-Origin. Same underlying data as
+      // the market-news scraper, just per-ticker on demand.
+      // -----------------------------------------------------------------
+      (async function renderTickerNews() {
+        const list = document.getElementById('tickerNewsList');
+        const meta = document.getElementById('tickerNewsMeta');
+        const moreBtn = document.getElementById('newsMoreBtn');
+        if (!list) return;
 
-      // 4) News timeline filtered to this symbol
-      mountTvWidget('newsWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js', {
-        feedMode: 'symbol',
-        symbol: tvSymbol,
-        colorTheme: 'dark',
-        isTransparent: true,
-        displayMode: 'regular',
-        width: '100%',
-        height: 500,
-        locale: 'en',
-      });
+        let items = [];
+        try {
+          const r = await fetch(`/api/ticker-news?sym=${encodeURIComponent(sym)}`, { cache: 'no-store' });
+          if (!r.ok) throw new Error('http ' + r.status);
+          const payload = await r.json();
+          items = Array.isArray(payload.items) ? payload.items : [];
+        } catch (e) {
+          console.warn('Ticker news proxy failed:', e);
+          list.innerHTML = '<li><span style="color:var(--term-dim); font-size:0.85rem">Couldn’t load news for ' + sym + '.</span></li>';
+          if (moreBtn) moreBtn.hidden = true;
+          return;
+        }
+
+        if (!items.length) {
+          list.innerHTML = '<li><span style="color:var(--term-dim); font-size:0.85rem">No recent news for ' + sym + '.</span></li>';
+          if (moreBtn) moreBtn.hidden = true;
+          return;
+        }
+
+        const now = Date.now() / 1000;
+        const relTime = (ts) => {
+          if (!ts) return '';
+          const d = now - ts;
+          if (d < 60)      return 'just now';
+          if (d < 3600)    return `${Math.round(d / 60)} min ago`;
+          if (d < 86400)   return `${Math.round(d / 3600)} hr ago`;
+          if (d < 7*86400) return `${Math.round(d / 86400)} day ago`;
+          return new Date(ts * 1000).toISOString().slice(0, 10);
+        };
+        const esc = (s) => String(s || '').replace(/[<>&"']/g, c => (
+          { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+
+        const PAGE = 12;
+        const total = items.length;
+        let shown = 0;
+
+        function render(n) {
+          shown = Math.min(n, total);
+          list.innerHTML = items.slice(0, shown).map(it => `
+            <li>
+              <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
+              <span class="meta">${esc(it.publisher)} · ${relTime(it.publishedAt)}</span>
+            </li>
+          `).join('');
+          if (moreBtn) {
+            if (shown >= total) {
+              moreBtn.hidden = true;
+            } else {
+              moreBtn.hidden = false;
+              moreBtn.textContent = `SHOW ${Math.min(PAGE, total - shown)} MORE HEADLINES ↓`;
+            }
+          }
+        }
+
+        render(PAGE);
+        if (moreBtn) {
+          moreBtn.addEventListener('click', () => render(shown + PAGE));
+        }
+
+        if (meta) {
+          meta.textContent = `${total} HEADLINES FOUND FOR ${sym.toUpperCase()}`;
+        }
+      })();
     })();
   </script>
 </body>
