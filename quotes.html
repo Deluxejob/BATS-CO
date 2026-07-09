@@ -544,29 +544,36 @@
           </div>
         </div>
 
-        <!-- Forex column -->
+        <!-- Rates column — Treasury yield curve + Fed funds -->
         <div class="mkt-col">
-          <div class="term-section-label">FOREX <span class="sub">— major cross rates</span></div>
+          <div class="term-section-label">RATES <span class="sub">— US Treasury yield curve</span></div>
           <div class="term-panel">
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js" async>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
               {
+                "colorTheme": "dark",
+                "dateRange": "12M",
+                "showChart": true,
+                "locale": "en",
                 "width": "100%",
                 "height": 440,
-                "currencies": [
-                  "EUR",
-                  "USD",
-                  "JPY",
-                  "GBP",
-                  "CHF",
-                  "AUD",
-                  "CAD",
-                  "CNY"
-                ],
                 "isTransparent": true,
-                "colorTheme": "dark",
-                "locale": "en"
+                "showSymbolLogo": true,
+                "showFloatingTooltip": true,
+                "tabs": [
+                  {
+                    "title": "Rates",
+                    "symbols": [
+                      {"s": "FRED:FEDFUNDS", "d": "Fed Funds Rate"},
+                      {"s": "FRED:DGS3MO",   "d": "3-Month T-Bill"},
+                      {"s": "FRED:DGS2",     "d": "2-Year Treasury"},
+                      {"s": "FRED:DGS5",     "d": "5-Year Treasury"},
+                      {"s": "FRED:DGS10",    "d": "10-Year Treasury"},
+                      {"s": "FRED:DGS30",    "d": "30-Year Treasury"}
+                    ]
+                  }
+                ]
               }
               </script>
             </div>
@@ -784,7 +791,10 @@
       }
     })();
 
-    // Row 2: breadth tilt gauges — computed live from our sector-ETF CSVs
+    // Row 2: breadth tilt gauges — computed live from our sector-ETF CSVs.
+    // CSVs are fetched once at page load (they only change nightly). The live
+    // sectors_live.json is re-polled every 60s so the "Advancing today" gauge
+    // updates without a page refresh during market hours.
     (async function renderBreadthGauges() {
       const mount = document.getElementById('internalsGauges');
       if (!mount) return;
@@ -806,51 +816,14 @@
       }
       async function loadLive() {
         try {
-          const r = await fetch('data/sectors_live.json', { cache: 'no-store' });
+          // Cache-bust the JSON so we always hit the origin even through
+          // browser HTTP caches / Vercel CDN — the whole point of this poll
+          // is to see values that changed since page load.
+          const r = await fetch('data/sectors_live.json?t=' + Date.now(), { cache: 'no-store' });
           if (!r.ok) return null;
           return await r.json();
         } catch (e) { return null; }
       }
-
-      const [live, ...sectors] = await Promise.all([loadLive(), ...SECTORS.map(loadCsv)]);
-      const valid = sectors.filter(s => s && s.rows.length >= 200);
-      if (!valid.length) {
-        mount.innerHTML = '<em style="color:var(--term-dim); font-size:0.85rem">Couldn’t compute breadth from local data.</em>';
-        return;
-      }
-
-      const nowSec = Math.floor(Date.now() / 1000);
-      const liveIsFresh = live?.generatedAtTs && (nowSec - live.generatedAtTs) < 4 * 3600;
-      const stats = valid.map(s => {
-        const closes = s.rows.map(r => r.px);
-        const lastCsvClose = closes[closes.length - 1];
-        const liveQ = liveIsFresh ? live.sectors?.[s.sym] : null;
-        const current = liveQ?.price ?? lastCsvClose;
-        const ma50  = closes.slice(-50 ).reduce((a,b)=>a+b, 0) / 50;
-        const ma200 = closes.slice(-200).reduce((a,b)=>a+b, 0) / 200;
-        const yr = closes.slice(-252);
-        const yrHigh = Math.max(...yr);
-        const yrLow  = Math.min(...yr);
-        return {
-          sym: s.sym,
-          above50:  current > ma50,
-          above200: current > ma200,
-          nearHigh: current >= yrHigh * 0.97,
-          nearLow:  current <= yrLow  * 1.03,
-          up: liveQ ? liveQ.changePct > 0 : null,
-        };
-      });
-
-      const n = stats.length;
-      const count = (pred) => stats.filter(pred).length;
-      const pct50   = Math.round(count(s => s.above50)  / n * 100);
-      const pct200  = Math.round(count(s => s.above200) / n * 100);
-      const highs   = count(s => s.nearHigh);
-      const lows    = count(s => s.nearLow);
-      const upDown  = { up: count(s => s.up === true), dn: count(s => s.up === false) };
-      const advPct  = (upDown.up + upDown.dn) > 0
-        ? Math.round(upDown.up / (upDown.up + upDown.dn) * 100)
-        : null;
 
       function tiltLabel(pos, opts = {}) {
         const bearAt = opts.bearAt ?? 40;
@@ -862,62 +835,119 @@
         return                         { text: 'BALANCED',         cls: '' };
       }
 
-      const cards = [
-        {
-          label: 'Sectors above 50-day MA',
-          value: `${pct50}<span class="unit">%</span>`,
-          gaugePos: pct50,
-          tilt: tiltLabel(pct50),
-          endsL: '0%', endsR: '100%',
-        },
-        {
-          label: 'Sectors above 200-day MA',
-          value: `${pct200}<span class="unit">%</span>`,
-          gaugePos: pct200,
-          tilt: tiltLabel(pct200),
-          endsL: '0%', endsR: '100%',
-        },
-        (advPct == null)
-          ? {
-              label: 'Advancing today',
-              value: '<span style="color:var(--term-dim); font-size:0.85rem">market closed</span>',
-              gaugePos: 50,
-              tilt: { text: 'NO LIVE DATA', cls: '' },
-              endsL: 'ALL RED', endsR: 'ALL GREEN',
-            }
-          : {
-              label: 'Advancing today',
-              value: `${upDown.up}<span class="unit">/${upDown.up + upDown.dn}</span>`,
-              gaugePos: advPct,
-              tilt: tiltLabel(advPct),
-              endsL: 'ALL RED', endsR: 'ALL GREEN',
-            },
-        (function () {
-          const net = highs - lows;
-          const pos = ((net + n) / (2 * n)) * 100;
-          const tilt = tiltLabel(pos, { bearAt: 45, bullAt: 55 });
-          const val = (highs === 0 && lows === 0)
-            ? '<span style="color:var(--term-dim); font-size:0.85rem">none</span>'
-            : `${highs}<span class="unit">↑</span> &nbsp; ${lows}<span class="unit">↓</span>`;
-          return {
-            label: 'New 52-wk highs vs lows',
-            value: val,
-            gaugePos: pos,
-            tilt,
-            endsL: 'LOWS', endsR: 'HIGHS',
-          };
-        })(),
-      ];
+      // One-time CSV load (they only change nightly)
+      const sectorsCsv = await Promise.all(SECTORS.map(loadCsv));
+      const valid = sectorsCsv.filter(s => s && s.rows.length >= 200);
+      if (!valid.length) {
+        mount.innerHTML = '<em style="color:var(--term-dim); font-size:0.85rem">Couldn’t compute breadth from local data.</em>';
+        return;
+      }
 
-      mount.innerHTML = cards.map(c => `
-        <div class="brd-card">
-          <div class="brd-label">${c.label}</div>
-          <div class="brd-value">${c.value}</div>
-          <div class="brd-gauge" style="--pos: ${c.gaugePos.toFixed(1)}%"></div>
-          <div class="brd-ends"><span>${c.endsL}</span><span>${c.endsR}</span></div>
-          <div class="brd-tilt ${c.tilt.cls}">${c.tilt.text}</div>
-        </div>
-      `).join('');
+      async function refresh() {
+        const live = await loadLive();
+        const nowSec = Math.floor(Date.now() / 1000);
+        // 24h threshold — we want the "up today" info even if the bot has
+        // been sluggish. The gauges themselves reveal staleness via the
+        // change values.
+        const liveIsFresh = live?.generatedAtTs && (nowSec - live.generatedAtTs) < 24 * 3600;
+        const ageMin = live?.generatedAtTs ? Math.max(0, Math.floor((nowSec - live.generatedAtTs) / 60)) : null;
+
+        const stats = valid.map(s => {
+          const closes = s.rows.map(r => r.px);
+          const lastCsvClose = closes[closes.length - 1];
+          const liveQ = liveIsFresh ? live.sectors?.[s.sym] : null;
+          const current = liveQ?.price ?? lastCsvClose;
+          const ma50  = closes.slice(-50 ).reduce((a,b)=>a+b, 0) / 50;
+          const ma200 = closes.slice(-200).reduce((a,b)=>a+b, 0) / 200;
+          const yr = closes.slice(-252);
+          const yrHigh = Math.max(...yr);
+          const yrLow  = Math.min(...yr);
+          return {
+            sym: s.sym,
+            above50:  current > ma50,
+            above200: current > ma200,
+            nearHigh: current >= yrHigh * 0.97,
+            nearLow:  current <= yrLow  * 1.03,
+            up: liveQ && Number.isFinite(liveQ.changePct) ? liveQ.changePct > 0 : null,
+          };
+        });
+
+        const n = stats.length;
+        const count = (pred) => stats.filter(pred).length;
+        const pct50   = Math.round(count(s => s.above50)  / n * 100);
+        const pct200  = Math.round(count(s => s.above200) / n * 100);
+        const highs   = count(s => s.nearHigh);
+        const lows    = count(s => s.nearLow);
+        const upDown  = { up: count(s => s.up === true), dn: count(s => s.up === false) };
+        const advPct  = (upDown.up + upDown.dn) > 0
+          ? Math.round(upDown.up / (upDown.up + upDown.dn) * 100)
+          : null;
+
+        const cards = [
+          {
+            label: 'Sectors above 50-day MA',
+            value: `${pct50}<span class="unit">%</span>`,
+            gaugePos: pct50,
+            tilt: tiltLabel(pct50),
+            endsL: '0%', endsR: '100%',
+          },
+          {
+            label: 'Sectors above 200-day MA',
+            value: `${pct200}<span class="unit">%</span>`,
+            gaugePos: pct200,
+            tilt: tiltLabel(pct200),
+            endsL: '0%', endsR: '100%',
+          },
+          (advPct == null)
+            ? {
+                label: 'Advancing today',
+                value: '<span style="color:var(--term-dim); font-size:0.85rem">no live data</span>',
+                gaugePos: 50,
+                tilt: { text: ageMin != null ? `last data ${ageMin}m ago` : 'NO LIVE DATA', cls: '' },
+                endsL: 'ALL RED', endsR: 'ALL GREEN',
+              }
+            : {
+                label: 'Advancing today',
+                value: `${upDown.up}<span class="unit">/${upDown.up + upDown.dn}</span>`,
+                gaugePos: advPct,
+                tilt: tiltLabel(advPct),
+                endsL: 'ALL RED', endsR: 'ALL GREEN',
+              },
+          (function () {
+            const net = highs - lows;
+            const pos = ((net + n) / (2 * n)) * 100;
+            const tilt = tiltLabel(pos, { bearAt: 45, bullAt: 55 });
+            const val = (highs === 0 && lows === 0)
+              ? '<span style="color:var(--term-dim); font-size:0.85rem">none</span>'
+              : `${highs}<span class="unit">↑</span> &nbsp; ${lows}<span class="unit">↓</span>`;
+            return {
+              label: 'New 52-wk highs vs lows',
+              value: val,
+              gaugePos: pos,
+              tilt,
+              endsL: 'LOWS', endsR: 'HIGHS',
+            };
+          })(),
+        ];
+
+        mount.innerHTML = cards.map(c => `
+          <div class="brd-card">
+            <div class="brd-label">${c.label}</div>
+            <div class="brd-value">${c.value}</div>
+            <div class="brd-gauge" style="--pos: ${c.gaugePos.toFixed(1)}%"></div>
+            <div class="brd-ends"><span>${c.endsL}</span><span>${c.endsR}</span></div>
+            <div class="brd-tilt ${c.tilt.cls}">${c.tilt.text}</div>
+          </div>
+        `).join('');
+      } // end refresh()
+
+      // Initial render
+      await refresh();
+      // Auto-refresh every 60s so the gauges update during market hours
+      // without a page refresh. Pauses when the tab is hidden.
+      setInterval(() => {
+        if (!document.hidden) refresh();
+      }, 60_000);
     })();
 
     // Movers — 3 scrollable lists from data/movers.json (Yahoo screener via our bot)
