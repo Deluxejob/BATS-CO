@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ticker Lookup — BATS.CO</title>
+  <meta name="description" content="Pull up any US stock or ETF: large interactive chart, technical analysis, fundamentals, and ticker-specific news headlines." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .ticker-search {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 480px;
+      margin: 1rem 0;
+    }
+    .ticker-search input {
+      flex: 1;
+      font: inherit;
+      font-size: 1.05rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.85rem;
+    }
+    .ticker-search input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.15);
+    }
+    .ticker-search button {
+      font: inherit;
+      font-weight: 700;
+      background: var(--accent);
+      color: #0a1218;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+    }
+    .ticker-search button:hover { filter: brightness(1.1); }
+    .ticker-headline {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0.75rem 0 0.25rem;
+      letter-spacing: 0.03em;
+    }
+    .ticker-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    @media (min-width: 960px) {
+      .ticker-grid.two-col { grid-template-columns: 1fr 1fr; }
+    }
+    .ticker-empty {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TradingView top ticker tape -->
+  <div class="ticker-tape-wrap">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
+          {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"},
+          {"proName": "FOREXCOM:DJI",    "title": "Dow 30"},
+          {"proName": "AMEX:IWM",        "title": "Russell 2000"}
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "locale": "en"
+      }
+      </script>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="quotes.html">← Back to Quotes Overview</a></p>
+    </div>
+    <div class="market-toggle" role="tablist" aria-label="Choose market">
+      <a href="index.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
+      <a href="index.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="markets.html">Markets</a>
+      <a href="quotes.html">Quotes</a>
+      <a href="pe-ratio.html">PE Ratio</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="momentum.html">Momentum</a>
+      <a href="extremes.html">Extremes</a>
+      <a href="consumer.html">Consumer</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">TICKER LOOKUP</p>
+      <h1 id="tickerPageTitle">Look up a ticker</h1>
+      <div class="ticker-headline" id="tickerHeadline"></div>
+      <form class="ticker-search" id="tickerSearchForm">
+        <input type="text" id="tickerSearchInput" placeholder="Enter another ticker" autocomplete="off" spellcheck="false" required />
+        <button type="submit">Go &rarr;</button>
+      </form>
+    </section>
+
+    <!-- Empty state (shown when no ?sym= is provided) -->
+    <div id="emptyState" class="ticker-empty" style="display:none">
+      <p>
+        Enter a US stock or ETF ticker above to load its chart, technicals, fundamentals, and news.
+        Try <code>AAPL</code>, <code>NVDA</code>, <code>SPY</code>, or <code>TSLA</code>.
+      </p>
+    </div>
+
+    <!-- Ticker content (shown when ?sym= is present) -->
+    <div id="tickerContent" style="display:none">
+
+      <!-- Large chart -->
+      <section id="chart-section">
+        <div class="section-head">
+          <h2 id="chartHeading">Chart</h2>
+          <p>Interactive chart. Pick a time period below the price.</p>
+        </div>
+        <div class="card">
+          <div id="chartWidgetMount"></div>
+        </div>
+      </section>
+
+      <!-- Technicals + Fundamentals side-by-side -->
+      <div class="ticker-grid two-col">
+        <section id="technicals-section">
+          <div class="section-head">
+            <h2>Technical Analysis</h2>
+            <p>Rolled-up buy/sell/neutral signal from ~30 popular indicators. Adjust the interval below.</p>
+          </div>
+          <div class="card">
+            <div id="techWidgetMount"></div>
+          </div>
+        </section>
+
+        <section id="info-section">
+          <div class="section-head">
+            <h2>Fundamentals</h2>
+            <p>Company overview — market cap, PE, sector, and other key statistics.</p>
+          </div>
+          <div class="card">
+            <div id="infoWidgetMount"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Ticker-specific news -->
+      <section id="news-section">
+        <div class="section-head">
+          <h2>News &amp; headlines</h2>
+          <p>Ticker-specific news pulled by TradingView from its news partners.</p>
+        </div>
+        <div class="card">
+          <div id="newsWidgetMount"></div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="quotes.html">&larr; Back to Quotes Overview</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Read ?sym=XXX from URL, normalize, and drive all the widgets.
+    (function () {
+      const yearEl = document.getElementById('footerYear');
+      if (yearEl) yearEl.textContent = new Date().getUTCFullYear();
+
+      const params = new URLSearchParams(window.location.search);
+      let sym = (params.get('sym') || '').trim().toUpperCase();
+      // Normalize BRK-B → BRK.B (TradingView convention for class shares)
+      sym = sym.replace(/-/g, '.').replace(/[^A-Z0-9.]/g, '');
+
+      const emptyState  = document.getElementById('emptyState');
+      const tickerCont  = document.getElementById('tickerContent');
+      const pageTitle   = document.getElementById('tickerPageTitle');
+      const headlineEl  = document.getElementById('tickerHeadline');
+      const chartHead   = document.getElementById('chartHeading');
+      const searchForm  = document.getElementById('tickerSearchForm');
+      const searchInput = document.getElementById('tickerSearchInput');
+
+      // Search form: submit → navigate to same page with new ?sym=
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const raw = (searchInput.value || '').trim().toUpperCase();
+        if (!raw) return;
+        const clean = raw.replace(/[^A-Z0-9.\-]/g, '');
+        if (!clean) return;
+        window.location.href = `ticker.html?sym=${encodeURIComponent(clean)}`;
+      });
+
+      if (!sym) {
+        emptyState.style.display = '';
+        tickerCont.style.display = 'none';
+        searchInput.focus();
+        return;
+      }
+
+      // We have a ticker → render all widgets
+      document.title = `${sym} — BATS.CO`;
+      pageTitle.textContent = 'Viewing:';
+      headlineEl.textContent = sym;
+      chartHead.textContent = `${sym} — Chart`;
+      searchInput.placeholder = `Search another ticker (currently ${sym})`;
+      tickerCont.style.display = '';
+      emptyState.style.display = 'none';
+
+      // Helper: build a TradingView embed <script> configured with the given
+      // widget path and config object, and append it into a target mount. Using
+      // DOM API (createElement) rather than a template literal so the closing
+      // tag of the injected element doesn't prematurely end THIS inline block.
+      function mountTvWidget(mountId, scriptPath, config) {
+        const mount = document.getElementById(mountId);
+        if (!mount) return;
+        mount.innerHTML = '';
+        const container = document.createElement('div');
+        container.className = 'tradingview-widget-container';
+        const widgetDiv = document.createElement('div');
+        widgetDiv.className = 'tradingview-widget-container__widget';
+        container.appendChild(widgetDiv);
+        const s = document.createElement('script');
+        s.type = 'text/javascript';
+        s.async = true;
+        s.src = scriptPath;
+        s.text = JSON.stringify(config);
+        container.appendChild(s);
+        mount.appendChild(container);
+      }
+
+      // We don't know the exchange from the ticker alone. Pass the bare ticker
+      // and TradingView resolves it against its symbol registry — works for
+      // any major US-listed name. The widgets show a "symbol not available"
+      // note if the resolver fails; users can retype with an exchange prefix
+      // like NASDAQ:XXX to be explicit.
+      const shortLabel = sym;
+      const tvSymbol = sym; // no prefix — let TradingView pick the exchange
+
+      // 1) Large Symbol Overview chart
+      mountTvWidget('chartWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js', {
+        symbols: [[shortLabel, `${tvSymbol}|1D`]],
+        chartOnly: false,
+        width: '100%',
+        height: 500,
+        locale: 'en',
+        colorTheme: 'dark',
+        autosize: false,
+        showVolume: true,
+        showMA: false,
+        hideDateRanges: false,
+        hideMarketStatus: false,
+        hideSymbolLogo: false,
+        scalePosition: 'right',
+        scaleMode: 'Normal',
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        fontSize: '11',
+        noTimeScale: false,
+        valuesTracking: '1',
+        changeMode: 'price-and-percent',
+        chartType: 'area',
+        lineWidth: 2,
+        dateRanges: ['1d|1','5d|5','1m|30','3m|60','6m|1D','ytd|1D','12m|1D','60m|1W','all|1M'],
+        isTransparent: true,
+      });
+
+      // 2) Technical Analysis (buy/sell gauge)
+      mountTvWidget('techWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js', {
+        interval: '1D',
+        width: '100%',
+        isTransparent: true,
+        height: 440,
+        symbol: tvSymbol,
+        showIntervalTabs: true,
+        locale: 'en',
+        colorTheme: 'dark',
+      });
+
+      // 3) Symbol Info (fundamentals overview: PE, market cap, sector, etc.)
+      mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
+        symbol: tvSymbol,
+        width: '100%',
+        locale: 'en',
+        colorTheme: 'dark',
+        isTransparent: true,
+      });
+
+      // 4) News timeline filtered to this symbol
+      mountTvWidget('newsWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js', {
+        feedMode: 'symbol',
+        symbol: tvSymbol,
+        colorTheme: 'dark',
+        isTransparent: true,
+        displayMode: 'regular',
+        width: '100%',
+        height: 500,
+        locale: 'en',
+      });
+    })();
+  </script>
+</body>
+</html>

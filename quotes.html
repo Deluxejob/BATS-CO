@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quotes Overview — BATS.CO</title>
+  <meta name="description" content="Market snapshot: indices, top gainers, top losers, most active tickers, and market news. Type any ticker to jump to a dedicated page with chart, technicals, fundamentals and news." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Ticker lookup search bar */
+    .ticker-search {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 480px;
+      margin: 1.25rem 0;
+    }
+    .ticker-search input {
+      flex: 1;
+      font: inherit;
+      font-size: 1.1rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+    }
+    .ticker-search input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.15);
+    }
+    .ticker-search button {
+      font: inherit;
+      font-weight: 700;
+      background: var(--accent);
+      color: #0a1218;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.65rem 1.25rem;
+      cursor: pointer;
+    }
+    .ticker-search button:hover { filter: brightness(1.1); }
+    .ticker-search-hint {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin: 0;
+    }
+    .quotes-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 960px) {
+      .quotes-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TradingView top ticker tape -->
+  <div class="ticker-tape-wrap">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
+          {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"},
+          {"proName": "FOREXCOM:DJI",    "title": "Dow 30"},
+          {"proName": "AMEX:IWM",        "title": "Russell 2000"},
+          {"proName": "AMEX:SPY",        "title": "SPY"},
+          {"proName": "NASDAQ:QQQ",      "title": "QQQ"},
+          {"proName": "TVC:GOLD",        "title": "Gold"},
+          {"proName": "CAPITALCOM:DXY",  "title": "DXY"}
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "locale": "en"
+      }
+      </script>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <div class="market-toggle" role="tablist" aria-label="Choose market">
+      <a href="index.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
+      <a href="index.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="markets.html">Markets</a>
+      <a href="quotes.html">Quotes</a>
+      <a href="pe-ratio.html">PE Ratio</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="momentum.html">Momentum</a>
+      <a href="extremes.html">Extremes</a>
+      <a href="consumer.html">Consumer</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">QUOTES OVERVIEW</p>
+      <h1>Look up a ticker, or scan today&rsquo;s movers</h1>
+      <p class="lede">
+        Search any US stock or ETF to pull up its chart, key statistics, technicals, and current news.
+        Below that: a live snapshot of the major indices, today&rsquo;s biggest gainers and losers, and the
+        current market headlines.
+      </p>
+      <form class="ticker-search" id="tickerSearchForm">
+        <input type="text" id="tickerSearchInput" placeholder="Enter ticker (e.g. AAPL, NVDA, SPY)" autocomplete="off" spellcheck="false" required />
+        <button type="submit">Go &rarr;</button>
+      </form>
+      <p class="ticker-search-hint">Any US-listed stock or ETF. Ticker only &mdash; not the company name.</p>
+    </section>
+
+    <!-- MARKET OVERVIEW -->
+    <section id="overview">
+      <div class="section-head">
+        <h2>Market Overview</h2>
+        <p>Indices, bond yields, commodities, and sectors. Click any tab to switch categories.</p>
+      </div>
+      <div class="card">
+        <div class="tradingview-widget-container">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+          {
+            "colorTheme": "dark",
+            "dateRange": "12M",
+            "showChart": true,
+            "locale": "en",
+            "width": "100%",
+            "height": "500",
+            "largeChartUrl": "",
+            "isTransparent": true,
+            "showSymbolLogo": true,
+            "showFloatingTooltip": true,
+            "tabs": [
+              {
+                "title": "Indices",
+                "symbols": [
+                  {"s": "FOREXCOM:SPXUSD", "d": "S&P 500"},
+                  {"s": "FOREXCOM:NSXUSD", "d": "Nasdaq 100"},
+                  {"s": "FOREXCOM:DJI", "d": "Dow 30"},
+                  {"s": "AMEX:IWM", "d": "Russell 2000 (IWM)"}
+                ]
+              },
+              {
+                "title": "Bonds",
+                "symbols": [
+                  {"s": "FRED:DGS10", "d": "10Y Yield"},
+                  {"s": "FRED:DGS2", "d": "2Y Yield"},
+                  {"s": "AMEX:HYG", "d": "High Yield"},
+                  {"s": "NASDAQ:TLT", "d": "20+ Year Treasury"}
+                ]
+              },
+              {
+                "title": "Commodities",
+                "symbols": [
+                  {"s": "TVC:GOLD", "d": "Gold"},
+                  {"s": "TVC:SILVER", "d": "Silver"},
+                  {"s": "CAPITALCOM:COPPER", "d": "Copper"},
+                  {"s": "TVC:USOIL", "d": "WTI Crude"},
+                  {"s": "TVC:UKOIL", "d": "Brent Crude"},
+                  {"s": "CAPITALCOM:NATURALGAS", "d": "Natural Gas"},
+                  {"s": "CAPITALCOM:DXY", "d": "US Dollar"}
+                ]
+              }
+            ]
+          }
+          </script>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREENER: GAINERS / LOSERS / MOST ACTIVE -->
+    <section id="movers">
+      <div class="section-head">
+        <h2>Today&rsquo;s Movers</h2>
+        <p>
+          Top gainers, top losers, and the most active tickers in the US market.
+          The tabs at the top of the widget switch between them. Updates continuously during market hours.
+        </p>
+      </div>
+      <div class="card">
+        <div class="tradingview-widget-container">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js" async>
+          {
+            "colorTheme": "dark",
+            "dateRange": "1D",
+            "exchange": "US",
+            "showChart": true,
+            "locale": "en",
+            "width": "100%",
+            "height": 550,
+            "largeChartUrl": "",
+            "isTransparent": true,
+            "showSymbolLogo": true,
+            "showFloatingTooltip": true,
+            "plotLineColorGrowing": "rgba(41, 98, 255, 1)",
+            "plotLineColorFalling": "rgba(41, 98, 255, 1)",
+            "gridLineColor": "rgba(240, 243, 250, 0)",
+            "scaleFontColor": "rgba(120, 123, 134, 1)",
+            "belowLineFillColorGrowing": "rgba(41, 98, 255, 0.12)",
+            "belowLineFillColorFalling": "rgba(41, 98, 255, 0.12)",
+            "belowLineFillColorGrowingBottom": "rgba(41, 98, 255, 0)",
+            "belowLineFillColorFallingBottom": "rgba(41, 98, 255, 0)",
+            "symbolActiveColor": "rgba(41, 98, 255, 0.12)"
+          }
+          </script>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEWS -->
+    <section class="news" id="news">
+      <div class="section-head">
+        <h2>Market News</h2>
+        <p>Broad stock-market headlines pulled from Yahoo Finance, refreshed hourly.</p>
+      </div>
+      <div class="card">
+        <h3>Broad market &mdash; <span class="spy-source">via Yahoo Finance</span></h3>
+        <ul class="spy-news-list" id="marketNewsList">
+          <li class="spy-news-loading">Loading headlines&hellip;</li>
+        </ul>
+        <p class="spy-news-meta" id="marketNewsMeta"></p>
+      </div>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the BATS</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Ticker search → navigate to ticker.html?sym=XXX
+    (function () {
+      const form  = document.getElementById('tickerSearchForm');
+      const input = document.getElementById('tickerSearchInput');
+      if (!form || !input) return;
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const raw = (input.value || '').trim().toUpperCase();
+        if (!raw) return;
+        // Strip anything that isn't a ticker character (letters, digits, dots, hyphens)
+        const sym = raw.replace(/[^A-Z0-9.\-]/g, '');
+        if (!sym) return;
+        window.location.href = `ticker.html?sym=${encodeURIComponent(sym)}`;
+      });
+      input.focus();
+    })();
+
+    // Yahoo-backed market news list — same shape as markets.html card
+    (async function renderNews() {
+      const list = document.getElementById('marketNewsList');
+      const meta = document.getElementById('marketNewsMeta');
+      if (!list) return;
+      let payload;
+      try {
+        const r = await fetch('data/market_news.json', { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        payload = await r.json();
+      } catch (e) {
+        list.innerHTML = '<li class="spy-news-loading">Couldn’t load market news right now.</li>';
+        return;
+      }
+      const now = Date.now() / 1000;
+      const relTime = (ts) => {
+        if (!ts) return '';
+        const d = now - ts;
+        if (d < 60)      return 'just now';
+        if (d < 3600)    return `${Math.round(d / 60)} min ago`;
+        if (d < 86400)   return `${Math.round(d / 3600)} hr ago`;
+        if (d < 7*86400) return `${Math.round(d / 86400)} day ago`;
+        return new Date(ts * 1000).toISOString().slice(0, 10);
+      };
+      const esc = (s) => String(s || '').replace(/[<>&"']/g, c => (
+        { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+      const items = payload.items || [];
+      if (!items.length) {
+        list.innerHTML = '<li class="spy-news-loading">No headlines available.</li>';
+        return;
+      }
+      list.innerHTML = items.slice(0, 12).map(it => `
+        <li>
+          <a class="spy-news-title" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
+          <span class="spy-news-meta-inline">${esc(it.publisher || '')} &middot; ${relTime(it.publishedTs)}</span>
+        </li>
+      `).join('');
+      if (meta && payload.generatedAt) {
+        meta.textContent = `Last refreshed: ${new Date(payload.generatedAt).toLocaleString()}`;
+      }
+    })();
+  </script>
+</body>
+</html>
