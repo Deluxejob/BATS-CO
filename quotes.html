@@ -423,6 +423,151 @@
       background: rgba(255, 182, 88, 0.08);
       border-color: var(--term-amber);
     }
+
+    /* ---------- Sector heatmap (moved from markets.html) ---------- */
+    .sector-heat-block { }
+    .chart-periods {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.6rem;
+    }
+    .chart-period-btn {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--term-dim);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.32rem 0.7rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .chart-period-btn:hover { color: var(--term-text); border-color: var(--term-border-soft); }
+    .chart-period-btn.active {
+      background: var(--term-amber);
+      color: #0a1218;
+      border-color: var(--term-amber);
+    }
+    .sector-heat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 6px;
+    }
+    .sector-tile {
+      padding: 0.75rem 0.75rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #e6edf6;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-height: 92px;
+      justify-content: space-between;
+      transition: transform 0.12s;
+      cursor: pointer;
+    }
+    .sector-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+    .sector-tile .sector-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.15;
+      color: #f4f7fb;
+    }
+    .sector-tile .sector-ticker {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.65rem;
+      opacity: 0.85;
+      color: rgba(255, 255, 255, 0.75);
+    }
+    .sector-tile .sector-change {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .sector-tile .sector-price {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 0.2rem;
+    }
+    .sector-heat-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      margin: 0.65rem 0 0;
+      line-height: 1.5;
+    }
+    .sector-heat-meta strong { color: var(--term-text); font-weight: 600; }
+
+    /* Sector chart modal — terminal-themed */
+    .sector-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(4, 8, 18, 0.85);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .sector-modal-backdrop.open { display: flex; }
+    .sector-modal {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 6px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sector-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--term-border);
+    }
+    .sector-modal-head h3 {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      color: var(--term-cyan);
+      letter-spacing: 0.03em;
+    }
+    .sector-modal-head .sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      margin-top: 0.2rem;
+      letter-spacing: 0.05em;
+    }
+    .sector-modal-close {
+      background: transparent;
+      border: 1px solid var(--term-border);
+      color: var(--term-dim);
+      border-radius: 3px;
+      font: inherit;
+      font-size: 1.05rem;
+      line-height: 1;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+    }
+    .sector-modal-close:hover { color: var(--term-text); border-color: var(--term-amber); }
+    .sector-modal-body {
+      padding: 0.75rem 1rem 1rem;
+      overflow: auto;
+    }
+    .sector-modal .tradingview-widget-container {
+      width: 100%;
+      min-height: 480px;
+    }
   </style>
 </head>
 <body>
@@ -503,6 +648,38 @@
         <em style="color:var(--term-dim); font-size:0.85rem">Loading breadth stats&hellip;</em>
       </div>
     </section>
+
+    <!-- Row 2b: Sector heatmap — moved from markets.html -->
+    <section class="term-section">
+      <div class="term-section-label">SECTOR HEATMAP <span class="sub">— 11 SPDR sector ETFs, sorted best-to-worst</span></div>
+      <div class="term-panel sector-heat-block">
+        <div class="chart-periods" id="sectorHeatPeriods" role="tablist" aria-label="Sector heatmap time period">
+          <button type="button" class="chart-period-btn active" data-period="1d"  role="tab">1 DAY</button>
+          <button type="button" class="chart-period-btn"        data-period="1w"  role="tab">1 WEEK</button>
+          <button type="button" class="chart-period-btn"        data-period="1m"  role="tab">1 MONTH</button>
+          <button type="button" class="chart-period-btn"        data-period="ytd" role="tab">YTD</button>
+          <button type="button" class="chart-period-btn"        data-period="1y"  role="tab">1 YEAR</button>
+        </div>
+        <div class="sector-heat-grid" id="sectorHeatGrid">
+          <em style="color:var(--term-dim); font-size:0.85rem">Loading sector data&hellip;</em>
+        </div>
+        <p class="sector-heat-meta" id="sectorHeatMeta"></p>
+      </div>
+    </section>
+
+    <!-- Sector chart modal — opens when a tile is clicked -->
+    <div class="sector-modal-backdrop" id="sectorModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="sectorModalTitle">
+      <div class="sector-modal">
+        <div class="sector-modal-head">
+          <div>
+            <h3 id="sectorModalTitle">Sector</h3>
+            <div class="sub" id="sectorModalSub">Live chart with time periods</div>
+          </div>
+          <button type="button" class="sector-modal-close" id="sectorModalClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="sector-modal-body" id="sectorModalBody"></div>
+      </div>
+    </div>
 
     <!-- Row 3: Futures / Forex / Crypto — 3 columns, each with its own label -->
     <section class="term-section">
@@ -1100,6 +1277,277 @@
       if (meta && payload.generatedAt) {
         meta.textContent = `LAST REFRESHED: ${new Date(payload.generatedAt).toLocaleString()} · ${total} HEADLINES AVAILABLE`;
       }
+    })();
+
+    // ==========================================================================
+    // SECTOR HEATMAP — 11 SPDR ETFs, tiles colored by change.
+    // (Moved from markets.html — same code, same data sources.)
+    // Two data sources:
+    //   - data/sectors/*.csv    → daily closes (updated once after US market close)
+    //   - data/sectors_live.json → intraday quotes, refreshed every 10 min during
+    //     market hours by the update-sectors-intraday workflow. Used ONLY for
+    //     the "1 day" bucket when the JSON is fresh (< 4 hrs old).
+    // ==========================================================================
+    (async function renderSectorHeatmap() {
+      const SECTORS = [
+        { sym: 'xlk',  name: 'Technology' },
+        { sym: 'xlf',  name: 'Financials' },
+        { sym: 'xle',  name: 'Energy' },
+        { sym: 'xlv',  name: 'Health Care' },
+        { sym: 'xli',  name: 'Industrials' },
+        { sym: 'xly',  name: 'Cons. Discretionary' },
+        { sym: 'xlp',  name: 'Cons. Staples' },
+        { sym: 'xlu',  name: 'Utilities' },
+        { sym: 'xlb',  name: 'Materials' },
+        { sym: 'xlre', name: 'Real Estate' },
+        { sym: 'xlc',  name: 'Comm. Services' },
+      ];
+
+      const PERIODS = {
+        '1d':  { label: '1 day',   lookback: 1,   floor: 1.2 },
+        '1w':  { label: '1 week',  lookback: 5,   floor: 2.5 },
+        '1m':  { label: '1 month', lookback: 21,  floor: 4.0 },
+        'ytd': { label: 'YTD',     lookback: 'ytd', floor: 5.0 },
+        '1y':  { label: '1 year',  lookback: 252, floor: 10.0 },
+      };
+
+      // Intraday data is preferred for the 1-day bucket ONLY while it's actually
+      // still fresh (≤ 4 hrs old — covers market hours + a short buffer).
+      const LIVE_MAX_AGE_SEC = 4 * 3600;
+
+      const grid = document.getElementById('sectorHeatGrid');
+      const meta = document.getElementById('sectorHeatMeta');
+      const bar  = document.getElementById('sectorHeatPeriods');
+      if (!grid) return;
+
+      async function loadRows(sym) {
+        const r = await fetch(`data/sectors/${sym}.csv`, { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        const txt = await r.text();
+        const rows = [];
+        for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+          const [d, c] = ln.split(',');
+          const px = parseFloat(c);
+          if (isFinite(px)) rows.push({ d, px });
+        }
+        return rows;
+      }
+
+      async function loadLive() {
+        try {
+          const r = await fetch('data/sectors_live.json', { cache: 'no-store' });
+          if (!r.ok) return null;
+          return await r.json();
+        } catch (e) {
+          return null;
+        }
+      }
+
+      const [loaded, live] = await Promise.all([
+        Promise.all(SECTORS.map(async (s) => {
+          try {
+            const rows = await loadRows(s.sym);
+            return { ...s, rows };
+          } catch (e) {
+            return { ...s, rows: null };
+          }
+        })),
+        loadLive(),
+      ]);
+
+      const nowSec = Math.floor(Date.now() / 1000);
+      const liveAgeSec = live && live.generatedAtTs ? nowSec - live.generatedAtTs : Infinity;
+      const liveIsFresh = live && live.sectors && liveAgeSec < LIVE_MAX_AGE_SEC;
+
+      function changeForPeriod(rows, period, sym) {
+        if (!rows || rows.length < 2) return null;
+        const last = rows[rows.length - 1];
+
+        if (period.lookback === 1 && liveIsFresh && live.sectors[sym]) {
+          const q = live.sectors[sym];
+          return {
+            last: { d: '(intraday)', px: q.price },
+            baseline: { d: '(yesterday close)', px: q.prevClose },
+            chg: q.changePct,
+            source: 'live',
+          };
+        }
+
+        let baseline = null;
+        if (period.lookback === 'ytd') {
+          const lastYr = parseInt(last.d.slice(0, 4), 10);
+          for (let i = rows.length - 1; i >= 0; i--) {
+            const yr = parseInt(rows[i].d.slice(0, 4), 10);
+            if (yr < lastYr) { baseline = rows[i]; break; }
+          }
+        } else {
+          const idx = rows.length - 1 - period.lookback;
+          if (idx >= 0) baseline = rows[idx];
+        }
+        if (!baseline) return null;
+        return { last, baseline, chg: (last.px / baseline.px - 1) * 100, source: 'csv' };
+      }
+
+      function colorFor(chg, maxAbs) {
+        if (!isFinite(chg)) return { bg: 'rgba(90,100,120,0.2)', border: 'rgba(255,255,255,0.06)' };
+        const intensity = Math.min(1.0, Math.abs(chg) / maxAbs);
+        if (chg > 0) {
+          const alpha = 0.15 + intensity * 0.75;
+          return { bg: `rgba(34, 197, 94, ${alpha.toFixed(3)})`, border: 'rgba(74, 222, 128, 0.35)' };
+        }
+        if (chg < 0) {
+          const alpha = 0.15 + intensity * 0.75;
+          return { bg: `rgba(248, 113, 113, ${alpha.toFixed(3)})`, border: 'rgba(248, 113, 113, 0.35)' };
+        }
+        return { bg: 'rgba(90, 100, 120, 0.35)', border: 'rgba(255, 255, 255, 0.1)' };
+      }
+
+      function render(periodKey) {
+        const period = PERIODS[periodKey];
+        const results = loaded.map(s => {
+          const info = changeForPeriod(s.rows, period, s.sym);
+          return { ...s, info };
+        });
+        const chgs = results.map(r => r.info?.chg).filter(v => isFinite(v));
+        const maxAbs = Math.max(period.floor, ...chgs.map(Math.abs));
+
+        const sorted = results.slice().sort((a, b) => (b.info?.chg ?? -1e9) - (a.info?.chg ?? -1e9));
+
+        grid.innerHTML = sorted.map(r => {
+          if (!r.info || !isFinite(r.info.chg)) {
+            return `<div class="sector-tile" data-sym="${r.sym}" data-name="${r.name}" style="background:rgba(90,100,120,0.2)">
+              <div class="sector-name">${r.name}</div>
+              <div class="sector-ticker">${r.sym.toUpperCase()}</div>
+              <div class="sector-change" style="color:#a8b3c4">&mdash;</div>
+            </div>`;
+          }
+          const col = colorFor(r.info.chg, maxAbs);
+          const sign = r.info.chg >= 0 ? '+' : '';
+          return `<div class="sector-tile" data-sym="${r.sym}" data-name="${r.name}" style="background:${col.bg}; border-color:${col.border};">
+            <div>
+              <div class="sector-name">${r.name}</div>
+              <div class="sector-ticker">${r.sym.toUpperCase()}</div>
+            </div>
+            <div>
+              <div class="sector-change">${sign}${r.info.chg.toFixed(2)}%</div>
+              <div class="sector-price">$${r.info.last.px.toFixed(2)}</div>
+            </div>
+          </div>`;
+        }).join('');
+
+        const anyGood = results.find(r => r.info);
+        if (anyGood && meta) {
+          const usingLive = anyGood.info.source === 'live';
+          let dataLine;
+          if (usingLive) {
+            const ageMin = Math.max(1, Math.round(liveAgeSec / 60));
+            const ageHr  = Math.round(liveAgeSec / 3600);
+            let freshness;
+            if (liveAgeSec < 30 * 60) {
+              freshness = `live quotes refreshed ${ageMin} min ago (updates every 10 min during market hours)`;
+            } else if (liveAgeSec < 3 * 3600) {
+              freshness = `most recent intraday snapshot from ${ageMin} min ago`;
+            } else {
+              freshness = `most recent intraday snapshot from ${ageHr} hr ago (market may be closed)`;
+            }
+            dataLine =
+              `Showing <strong>${period.label}</strong> intraday change vs yesterday's close ` +
+              `&mdash; ${freshness}.`;
+          } else {
+            dataLine =
+              `Showing <strong>${period.label}</strong> change: ${anyGood.info.last.d} close vs ${anyGood.info.baseline.d} close. ` +
+              `Data refreshes daily via GitHub Actions after US market close.`;
+          }
+          meta.innerHTML =
+            dataLine + ` Tiles are sorted best-to-worst and colored by move size ` +
+            `(green = up, red = down, intensity relative to the strongest sector in this window).`;
+        }
+      }
+
+      if (bar) {
+        bar.addEventListener('click', (e) => {
+          const btn = e.target.closest('.chart-period-btn');
+          if (!btn) return;
+          bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+          render(btn.dataset.period);
+        });
+      }
+      render('1d');
+
+      // === Sector chart modal ===
+      // Click any sector tile → modal opens with a TradingView Symbol Overview
+      // widget for that ETF. Close via X button, backdrop click, or ESC.
+      const backdrop   = document.getElementById('sectorModalBackdrop');
+      const modalBody  = document.getElementById('sectorModalBody');
+      const modalTitle = document.getElementById('sectorModalTitle');
+      const modalSub   = document.getElementById('sectorModalSub');
+      const closeBtn   = document.getElementById('sectorModalClose');
+
+      function openSectorModal(sym, name) {
+        const ticker = sym.toUpperCase();
+        modalTitle.textContent = `${name} (${ticker})`;
+        modalSub.textContent = 'Live chart — pick a time period below the price';
+        // Build via DOM API so the injected TradingView script's closing
+        // tag doesn't prematurely end this outer inline block.
+        modalBody.innerHTML = '';
+        const container = document.createElement('div');
+        container.className = 'tradingview-widget-container';
+        const widgetDiv = document.createElement('div');
+        widgetDiv.className = 'tradingview-widget-container__widget';
+        container.appendChild(widgetDiv);
+        const tvScript = document.createElement('script');
+        tvScript.type = 'text/javascript';
+        tvScript.async = true;
+        tvScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+        tvScript.text = JSON.stringify({
+          symbols: [[`${name} (${ticker})`, `AMEX:${ticker}|1D`]],
+          chartOnly: false,
+          width: '100%',
+          height: 480,
+          locale: 'en',
+          colorTheme: 'dark',
+          autosize: false,
+          showVolume: false,
+          showMA: false,
+          hideDateRanges: false,
+          hideMarketStatus: false,
+          hideSymbolLogo: true,
+          scalePosition: 'right',
+          scaleMode: 'Normal',
+          fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+          fontSize: '11',
+          noTimeScale: false,
+          valuesTracking: '1',
+          changeMode: 'price-and-percent',
+          chartType: 'area',
+          lineWidth: 2,
+          dateRanges: ['1d|1','5d|5','1m|30','3m|60','6m|1D','ytd|1D','12m|1D','60m|1W','all|1M'],
+          isTransparent: true,
+        });
+        container.appendChild(tvScript);
+        modalBody.appendChild(container);
+        backdrop.classList.add('open');
+      }
+
+      function closeSectorModal() {
+        backdrop.classList.remove('open');
+        modalBody.innerHTML = '';
+      }
+
+      grid.addEventListener('click', (e) => {
+        const tile = e.target.closest('.sector-tile');
+        if (!tile) return;
+        const sym = tile.dataset.sym;
+        const name = tile.dataset.name;
+        if (sym && name) openSectorModal(sym, name);
+      });
+      if (closeBtn) closeBtn.addEventListener('click', closeSectorModal);
+      if (backdrop) backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeSectorModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (backdrop && e.key === 'Escape' && backdrop.classList.contains('open')) closeSectorModal();
+      });
     })();
   </script>
 </body>
