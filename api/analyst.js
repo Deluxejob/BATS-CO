@@ -58,7 +58,8 @@ export default async function handler(req, res) {
     const { crumb, cookieHeader } = await getCrumb();
 
     const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory,' +
-                    'defaultKeyStatistics,majorHoldersBreakdown,calendarEvents,summaryDetail';
+                    'defaultKeyStatistics,majorHoldersBreakdown,calendarEvents,summaryDetail,' +
+                    'assetProfile';
     const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(raw)}` +
                 `?modules=${modules}&crumb=${encodeURIComponent(crumb)}`;
     const r = await fetch(url, {
@@ -121,6 +122,23 @@ export default async function handler(req, res) {
       dividendRate:          toNum(sdet.dividendRate),
     };
 
+    // Company profile — sector, industry, HQ, employees, website, and the
+    // long business summary. Yahoo bios are usually 500-1500 chars, so the
+    // frontend truncates + expands on demand.
+    const ap = r0.assetProfile || {};
+    const employees = (ap.fullTimeEmployees != null && Number.isFinite(ap.fullTimeEmployees))
+      ? ap.fullTimeEmployees : null;
+    const profile = {
+      description: String(ap.longBusinessSummary || '').trim(),
+      sector:   String(ap.sector   || '').trim(),
+      industry: String(ap.industry || '').trim(),
+      city:     String(ap.city     || '').trim(),
+      state:    String(ap.state    || '').trim(),
+      country:  String(ap.country  || '').trim(),
+      employees,
+      website:  String(ap.website  || '').trim(),
+    };
+
     const payload = {
       symbol: raw,
       hasAnalysts: (Number(fd.numberOfAnalystOpinions && fd.numberOfAnalystOpinions.raw) || totalRatings) > 0,
@@ -137,6 +155,7 @@ export default async function handler(req, res) {
       },
       upgrades,
       overview,
+      profile,
     };
 
     res.setHeader('Access-Control-Allow-Origin', '*');

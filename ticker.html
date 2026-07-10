@@ -486,6 +486,70 @@
     .analyst-upgrades li .action.down { color: var(--term-red); }
     .analyst-upgrades li .action.main { color: var(--term-dim); }
     .analyst-upgrades li .action.init { color: var(--term-cyan); }
+
+    /* ---------- Company Profile ---------- */
+    /* Sector · industry · HQ · employees · website strip */
+    .prof-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--term-dim);
+      letter-spacing: 0.05em;
+      margin: 0 0 0.55rem;
+      line-height: 1.55;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.7rem;
+    }
+    .prof-meta .prof-lbl {
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-right: 0.25rem;
+    }
+    .prof-meta strong { color: var(--term-text); font-weight: 500; }
+    .prof-meta a { color: var(--term-cyan); text-decoration: none; }
+    .prof-meta a:hover { text-decoration: underline; }
+    /* Description body — mono for the terminal aesthetic; some Yahoo bios
+       hard-wrap paragraphs via \n, so preserve those with pre-wrap. */
+    .prof-body {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      line-height: 1.6;
+      color: var(--term-text);
+      margin: 0.4rem 0 0;
+      white-space: pre-wrap;
+    }
+    .prof-body-collapsed {
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .prof-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.7rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid var(--term-border-soft);
+    }
+    .prof-more {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--term-amber);
+      background: transparent;
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .prof-more:hover {
+      background: rgba(255, 182, 88, 0.08);
+      border-color: var(--term-amber);
+    }
   </style>
 </head>
 <body>
@@ -575,6 +639,11 @@
             <div class="term-section-label" style="margin-top:0.85rem">OWNERSHIP &amp; EVENTS <span class="sub">— who holds it, when it reports</span></div>
             <div class="term-panel">
               <div id="overviewContent" class="analyst-loading">Loading company data&hellip;</div>
+            </div>
+
+            <div class="term-section-label" style="margin-top:0.85rem">COMPANY PROFILE <span class="sub">— business summary via Yahoo Finance</span></div>
+            <div class="term-panel">
+              <div id="profileContent" class="analyst-loading">Loading company profile&hellip;</div>
             </div>
           </div>
           <div class="mkt-col">
@@ -826,6 +895,65 @@
         el.innerHTML = tiles + eventsHtml;
       }
 
+      // ----- Company Profile helper (also shares the /api/analyst fetch) -----
+      // Yahoo's business summaries can be 500-1500 chars; we collapse the
+      // description to ~5 lines with a SHOW FULL PROFILE button. Meta strip
+      // renders the small sector/industry/HQ/employees/website line above.
+      function renderProfile(pf) {
+        const el = document.getElementById('profileContent');
+        if (!el) return;
+        if (!pf || !(pf.description || pf.sector || pf.industry)) {
+          el.className = 'ov-empty';
+          el.textContent = 'No company profile available for this ticker.';
+          return;
+        }
+        const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, c => (
+          { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        const cleanHost = (url) => {
+          try { return new URL(url).hostname.replace(/^www\./, ''); }
+          catch (e) { return url.replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+        };
+        const metaBits = [];
+        if (pf.sector)   metaBits.push(`<span><span class="prof-lbl">Sector</span><strong>${esc(pf.sector)}</strong></span>`);
+        if (pf.industry) metaBits.push(`<span><span class="prof-lbl">Industry</span><strong>${esc(pf.industry)}</strong></span>`);
+        const hqParts = [pf.city, pf.state, pf.country].filter(Boolean);
+        if (hqParts.length) metaBits.push(`<span><span class="prof-lbl">HQ</span><strong>${esc(hqParts.join(', '))}</strong></span>`);
+        if (Number.isFinite(pf.employees) && pf.employees > 0) {
+          metaBits.push(`<span><span class="prof-lbl">Employees</span><strong>${pf.employees.toLocaleString()}</strong></span>`);
+        }
+        if (pf.website) {
+          const host = cleanHost(pf.website);
+          metaBits.push(`<span><span class="prof-lbl">Web</span><a href="${esc(pf.website)}" target="_blank" rel="noopener noreferrer">${esc(host)} &#8599;</a></span>`);
+        }
+        const metaHtml = metaBits.length ? `<p class="prof-meta">${metaBits.join('')}</p>` : '';
+
+        const desc = String(pf.description || '').trim();
+        const bodyHtml = desc
+          ? `<div class="prof-body prof-body-collapsed" id="profBody">${esc(desc)}</div>`
+          : `<div class="prof-body" style="color:var(--term-dim)">(No business summary provided.)</div>`;
+        // Rough "long enough to warrant expanding" heuristic: 5 lines of ~85 mono
+        // chars ≈ 425 chars, so show the toggle when the bio is meaningfully longer.
+        const showToggle = desc.length > 420;
+        const actionsHtml = showToggle
+          ? `<div class="prof-actions"><button type="button" id="profMoreBtn" class="prof-more">SHOW FULL PROFILE &darr;</button></div>`
+          : '';
+
+        el.className = '';
+        el.innerHTML = metaHtml + bodyHtml + actionsHtml;
+
+        if (showToggle) {
+          const btn = document.getElementById('profMoreBtn');
+          const body = document.getElementById('profBody');
+          let expanded = false;
+          btn.addEventListener('click', () => {
+            expanded = !expanded;
+            body.classList.toggle('prof-body-collapsed', !expanded);
+            btn.textContent = expanded ? 'SHOW LESS ↑' : 'SHOW FULL PROFILE ↓';
+          });
+        }
+      }
+
       (async function renderAnalyst() {
         const section = document.getElementById('analystSection');
         const content = document.getElementById('analystContent');
@@ -842,11 +970,15 @@
           if (section) section.style.display = 'none';
           const ovEl = document.getElementById('overviewContent');
           if (ovEl) {
-            const ovSection = ovEl.closest('.mkt-col');
             // Just show a subtle empty state; don't hide the section since
             // the Key Statistics widget above it is still valuable.
             ovEl.className = 'ov-empty';
             ovEl.textContent = 'Ownership data unavailable right now.';
+          }
+          const profEl = document.getElementById('profileContent');
+          if (profEl) {
+            profEl.className = 'ov-empty';
+            profEl.textContent = 'Company profile unavailable right now.';
           }
           return;
         }
@@ -855,6 +987,8 @@
         // analyst coverage — index funds and ETFs still have holders,
         // and (occasionally) a next-earnings/ex-div date.
         renderOverview(data && data.overview);
+        // Same for the Company Profile panel.
+        renderProfile(data && data.profile);
 
         if (!data || !data.hasAnalysts) {
           if (section) section.style.display = 'none';
