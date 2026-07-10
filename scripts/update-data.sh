@@ -104,6 +104,10 @@ fetch_yahoo_daily "SPY"   "$DATA_DIR/spy.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "RSP"   "$DATA_DIR/rsp.csv" "1051660800"   # 2003-04-30
 fetch_yahoo_daily "MDY"   "$DATA_DIR/mdy.csv" "799545600"    # 1995-05-04 (MDY inception)
 fetch_yahoo_daily "IWM"   "$DATA_DIR/iwm.csv" "959299200"    # 2000-05-26 (IWM inception)
+# US vs international breadth: VTI = Total US, VEU = All-World ex-US.
+# Ratio VTI/VEU used by the Rates & Ratios section on the dashboard.
+fetch_yahoo_daily "VTI"   "$DATA_DIR/vti.csv" "990662400"    # 2001-05-24 (VTI inception)
+fetch_yahoo_daily "VEU"   "$DATA_DIR/veu.csv" "1172793600"   # 2007-03-02 (VEU inception)
 
 # --- State Street Select SPDR sector ETFs (for the sector heatmap) ---
 mkdir -p "$DATA_DIR/sectors"

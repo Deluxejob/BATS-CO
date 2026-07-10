@@ -834,58 +834,51 @@
           <p class="rd-note" id="yieldCurveNote">Loading yield curve&hellip;</p>
         </div>
 
-        <!-- DOLLAR INDEX CARD -->
-        <div class="card idx-card">
-          <div class="idx-header">
-            <h3>US Dollar Index (DXY)</h3>
-            <div class="idx-desc">
-              Broad measure of USD strength against a basket of six major currencies
-              (EUR, JPY, GBP, CAD, SEK, CHF). Rising = dollar strengthening.
-              Green dot = live during trading hours.
+        <!-- 10Y - 2Y TREASURY SPREAD (moved from the Ratios section — sits
+             next to the yield curve because both are pure rates cards). -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>10Y &minus; 2Y Treasury yield spread</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current spread</span> <span class="rd-num" id="ysCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Regime</span> <span class="rd-num" id="ysRegime">&ndash;</span></div>
             </div>
           </div>
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-            {
-              "symbols": [["US Dollar Index (DXY)", "CAPITALCOM:DXY|1D"]],
-              "chartOnly": false,
-              "width": "100%",
-              "height": 280,
-              "locale": "en",
-              "colorTheme": "dark",
-              "autosize": false,
-              "showVolume": false,
-              "showMA": false,
-              "hideDateRanges": false,
-              "hideMarketStatus": false,
-              "hideSymbolLogo": true,
-              "scalePosition": "right",
-              "scaleMode": "Normal",
-              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-              "fontSize": "10",
-              "noTimeScale": false,
-              "valuesTracking": "1",
-              "changeMode": "price-and-percent",
-              "chartType": "area",
-              "lineWidth": 2,
-              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
-              "isTransparent": true
-            }
-            </script>
+          <svg id="ysChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="10Y-2Y Treasury yield spread since 1990"></svg>
+          <p class="rd-note" id="ysNote">Loading yield spread&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              The gap between the 10-year and 2-year US Treasury yields. In normal times
+              long yields sit above short yields (positive spread) because investors want
+              extra compensation for locking money up longer. When the spread inverts
+              (goes negative), bond markets are pricing in near-term stress and lower
+              rates ahead &mdash; historically a recession signal.
+            </p>
+            <ul>
+              <li><strong>Above +100 bp:</strong> steep &mdash; economy expanding, Fed easing or on hold.</li>
+              <li><strong>0 to +100 bp:</strong> flat &mdash; late-cycle, tightening biting.</li>
+              <li><strong>Below 0 (inverted):</strong> classic pre-recession signal. Every US recession since 1970 has been preceded by an inversion of this spread by 6-24 months.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Track record since 1990:</strong> spread inverted before all four US
+              recessions in the chart (1990, 2001, 2008, 2020) plus the 2022&ndash;2024
+              inversion (deepest since 1981). Shaded bars mark official NBER recession
+              periods; note how the spread inverts <em>before</em> each shaded region.
+            </p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- RATIOS: GOLD/SILVER + SPX/GOLD + GOLD/OIL + 10Y-2Y SPREAD -->
+    <!-- RATIOS: GOLD/SILVER + SPX/GOLD + GOLD/OIL + VTI/VEU (US vs intl) -->
     <section id="ratios">
       <div class="section-head">
         <h2>Ratios &amp; spreads</h2>
         <p>
           Four long-running cross-market signals: precious-metals contrarian pair,
-          stocks-vs-gold risk appetite, commodities stress, and the classic recession
-          indicator.
+          stocks-vs-gold risk appetite, commodities stress, and US vs. international
+          equity leadership.
         </p>
       </div>
       <div class="ratios-grid">
@@ -988,36 +981,38 @@
           </div>
         </div>
 
-        <!-- 10Y - 2Y TREASURY SPREAD (with NBER recession shading) -->
+        <!-- VTI / VEU RATIO — US total market vs All-World ex-US.
+             Rising = US winning; falling = international winning. -->
         <div class="card">
           <div class="rd-card-head">
-            <h3>10Y &minus; 2Y Treasury yield spread</h3>
+            <h3>US vs. International (VTI / VEU)</h3>
             <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current spread</span> <span class="rd-num" id="ysCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Regime</span> <span class="rd-num" id="ysRegime">&ndash;</span></div>
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="vveuCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2007</span> <span class="rd-num" id="vveuMedian">&ndash;</span></div>
             </div>
           </div>
-          <svg id="ysChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="10Y-2Y Treasury yield spread since 1990"></svg>
-          <p class="rd-note" id="ysNote">Loading yield spread&hellip;</p>
+          <svg id="vveuChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="VTI/VEU ratio — US vs international stocks"></svg>
+          <p class="rd-note" id="vveuNote">Loading US/international ratio&hellip;</p>
           <div class="ratio-explainer">
             <h4>How to read this</h4>
             <p>
-              The gap between the 10-year and 2-year US Treasury yields. In normal times
-              long yields sit above short yields (positive spread) because investors want
-              extra compensation for locking money up longer. When the spread inverts
-              (goes negative), bond markets are pricing in near-term stress and lower
-              rates ahead &mdash; historically a recession signal.
+              This ratio compares the price of the Vanguard Total US Stock Market ETF
+              (<strong>VTI</strong>) to the Vanguard FTSE All-World ex-US ETF
+              (<strong>VEU</strong>). It's the cleanest one-line snapshot of who's
+              winning between US stocks and everyone else &mdash; a barometer of global
+              equity leadership.
             </p>
             <ul>
-              <li><strong>Above +100 bp:</strong> steep &mdash; economy expanding, Fed easing or on hold.</li>
-              <li><strong>0 to +100 bp:</strong> flat &mdash; late-cycle, tightening biting.</li>
-              <li><strong>Below 0 (inverted):</strong> classic pre-recession signal. Every US recession since 1970 has been preceded by an inversion of this spread by 6-24 months.</li>
+              <li><strong>Rising:</strong> US stocks outperforming international &mdash; earnings, tech dominance, dollar strength, or all three usually driving it.</li>
+              <li><strong>Falling:</strong> International outperforming US &mdash; often coincides with a weaker dollar, commodity booms, or US mega-cap valuations coming down.</li>
+              <li><strong>Flat/rangebound:</strong> No clear regime, roughly equal returns.</li>
             </ul>
             <p class="ratio-history">
-              <strong>Track record since 1990:</strong> spread inverted before all four US
-              recessions in the chart (1990, 2001, 2008, 2020) plus the 2022&ndash;2024
-              inversion (deepest since 1981). Shaded bars mark official NBER recession
-              periods; note how the spread inverts <em>before</em> each shaded region.
+              <strong>Regime history:</strong> the 2000s were a "lost decade" for US
+              stocks &mdash; international outperformed and the ratio fell. From
+              roughly 2010 onward, US mega-cap tech drove the ratio steadily higher,
+              hitting new records year after year through the mid-2020s. Sustained
+              turns in this line have historically marked multi-year leadership shifts.
             </p>
           </div>
         </div>
@@ -1324,17 +1319,19 @@
       return out;
     }
 
-    let gold, silver, spx, oil, yields;
+    let gold, silver, spx, oil, yields, vti, veu;
     try {
-      [gold, silver, spx, oil, yields] = await Promise.all([
+      [gold, silver, spx, oil, yields, vti, veu] = await Promise.all([
         loadCsv('data/gold.csv'),
         loadCsv('data/silver.csv'),
         loadCsv('data/spx.csv'),
         loadCsv('data/oil.csv'),
         loadYieldsHistory('data/yields_history.csv'),
+        loadCsv('data/vti.csv'),
+        loadCsv('data/veu.csv'),
       ]);
     } catch (e) {
-      ['gsrNote','sgrNote','goRNote','ysNote'].forEach(id => {
+      ['gsrNote','sgrNote','goRNote','ysNote','vveuNote'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = 'Failed to load ratio data.';
       });
@@ -1503,6 +1500,43 @@
       document.getElementById('goRNote').innerHTML =
         `As of <strong>${goLast.d}</strong>: ratio <strong>${fmt(goLast.v, 1)}</strong> ` +
         `(${devTxt} vs median <strong>${fmt(goMedian, 1)}</strong>) — ${posture}.`;
+    }
+
+    // === VTI / VEU ratio — US total market vs All-World ex-US ===
+    // Rising line = US outperforming; falling = international outperforming.
+    // VEU inception 2007-03-02, so the ratio series starts there.
+    const vtiMap = map(vti), veuMap = map(veu);
+    const vveuRatio = joinedRatio(
+      vti.filter(r => r.d >= '2007-03-08'),  // VEU's first trading day
+      veu, vtiMap, veuMap
+    );
+    const vveuMedian = median(vveuRatio.map(r => r.v));
+    const vveuLast = vveuRatio[vveuRatio.length - 1];
+    document.getElementById('vveuCurrent').textContent = fmt(vveuLast?.v, 2);
+    document.getElementById('vveuMedian').textContent = fmt(vveuMedian, 2);
+    drawChart(document.getElementById('vveuChart'), vveuRatio, {
+      median: vveuMedian, color: '#64d3ff', currentDigits: 2, medianDigits: 2,
+    });
+    if (vveuLast) {
+      const dev = vveuMedian ? ((vveuLast.v / vveuMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      // Multi-month trend read using ~63 trading days (~3 months) trailing change
+      const lookback = 63;
+      const prior = vveuRatio.length > lookback ? vveuRatio[vveuRatio.length - 1 - lookback] : null;
+      const trendPct = prior ? ((vveuLast.v / prior.v) - 1) * 100 : null;
+      let posture;
+      if (trendPct == null) {
+        posture = 'not enough history for a trend read';
+      } else if (trendPct >= 3) {
+        posture = 'US stocks pulling ahead — ratio rising, US leadership';
+      } else if (trendPct <= -3) {
+        posture = 'international pulling ahead — ratio falling, US losing edge';
+      } else {
+        posture = 'roughly flat — no clear leadership over the last quarter';
+      }
+      document.getElementById('vveuNote').innerHTML =
+        `As of <strong>${vveuLast.d}</strong>: ratio <strong>${fmt(vveuLast.v, 2)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(vveuMedian, 2)}</strong>) — ${posture}.`;
     }
 
     // === 10Y - 2Y Treasury spread with NBER recession shading ===
