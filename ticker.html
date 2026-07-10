@@ -154,6 +154,33 @@
       .grid-2col { grid-template-columns: 1fr 1fr; }
     }
     .mkt-col { display: flex; flex-direction: column; }
+    /* Right column has only Financials; stretch that panel to the bottom
+       of the (potentially taller) left column so the two bottoms line up. */
+    .grid-2col > .mkt-col:nth-child(2) > .term-panel:last-child {
+      flex: 1;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+    }
+    #financialsWidgetMount,
+    #financialsWidgetMount > .tradingview-widget-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: 0;
+    }
+    #financialsWidgetMount .tradingview-widget-container__widget {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+    }
+    #financialsWidgetMount iframe {
+      flex: 1;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 500px;
+    }
 
     /* Empty state */
     .term-empty {
@@ -796,10 +823,12 @@
       });
 
       // 3) Financials & Earnings (Financials widget — revenue, EPS, estimates)
+      // autosize:true lets the widget fill its parent container so its bottom
+      // lines up with the (potentially taller) left column when the Company
+      // Profile is expanded.
       mountTvWidget('financialsWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-financials.js', {
         symbol: tvSymbol,
-        width: '100%',
-        height: 500,
+        autosize: true,
         colorTheme: 'dark',
         isTransparent: true,
         displayMode: 'regular',
