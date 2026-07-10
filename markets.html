@@ -174,6 +174,123 @@
     @media (max-width: 900px) {
       .ratios-grid { grid-template-columns: 1fr; }
     }
+
+    /* ---------- Terminal-style news (matches the quotes.html news block).
+       Colors are scoped to .news-terminal so nothing else on the page picks
+       them up. If the surrounding page is narrower than quotes.html, the
+       grid just drops to 2 or 1 column and the styling still holds. */
+    .news-terminal {
+      --term-panel: #101821;
+      --term-border: #1c2734;
+      --term-border-soft: #172131;
+      --term-text: #d5dee9;
+      --term-dim: #7b8697;
+      --term-amber: #ffb658;
+      --term-cyan: #6ee7ff;
+    }
+    .news-terminal .term-section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .news-terminal .term-section-label::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--term-amber);
+      border-radius: 1px;
+    }
+    .news-terminal .term-section-label .sub {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-size: 0.72rem;
+    }
+    .news-terminal .term-panel {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 0.6rem 0.75rem 0.65rem;
+    }
+    .news-terminal .term-news-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.1rem 0 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      column-gap: 1.5rem;
+    }
+    @media (min-width: 1000px) {
+      .news-terminal .term-news-list { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1400px) {
+      .news-terminal .term-news-list { grid-template-columns: repeat(3, 1fr); }
+    }
+    .news-terminal .term-news-list li {
+      padding: 0.28rem 0;
+      border-bottom: 1px solid var(--term-border-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .news-terminal .term-news-list a {
+      color: var(--term-text);
+      text-decoration: none;
+      font-size: 0.78rem;
+      line-height: 1.25;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .news-terminal .term-news-list a:hover { color: var(--term-cyan); }
+    .news-terminal .term-news-list .meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--term-dim);
+      letter-spacing: 0.03em;
+    }
+    .news-terminal .term-news-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      margin: 0.75rem 0 0;
+    }
+    .news-terminal .term-news-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.85rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--term-border-soft);
+    }
+    .news-terminal .term-news-more {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--term-amber);
+      background: transparent;
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.5rem 1.1rem;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .news-terminal .term-news-more:hover {
+      background: rgba(255, 182, 88, 0.08);
+      border-color: var(--term-amber);
+    }
   </style>
 </head>
 <body>
@@ -908,27 +1025,17 @@
       </div>
     </section>
 
-    <!-- NEWS -->
-    <section class="news" id="news">
-      <div class="section-head">
-        <h2>Market News</h2>
-        <p>Broad stock-market headlines on the left, S&P 500 (SPY) specific news on the right.</p>
-      </div>
-      <div class="technicals-grid">
-        <div class="card">
-          <h3>Broad market &mdash; <span class="spy-source">via Yahoo Finance</span></h3>
-          <ul class="spy-news-list" id="marketNewsList">
-            <li class="spy-news-loading">Loading headlines&hellip;</li>
-          </ul>
-          <p class="spy-news-meta" id="marketNewsMeta"></p>
+    <!-- NEWS — terminal-styled, matches the market news block on quotes.html -->
+    <section class="news news-terminal" id="news">
+      <div class="term-section-label">MARKET NEWS <span class="sub">&mdash; Yahoo Finance, refreshed hourly</span></div>
+      <div class="term-panel">
+        <ul class="term-news-list" id="marketNewsList">
+          <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
+        </ul>
+        <div class="term-news-actions">
+          <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
         </div>
-        <div class="card">
-          <h3>S&P 500 (SPY) &mdash; <span class="spy-source">via Yahoo Finance</span></h3>
-          <ul class="spy-news-list" id="spyNewsList">
-            <li class="spy-news-loading">Loading headlines&hellip;</li>
-          </ul>
-          <p class="spy-news-meta" id="spyNewsMeta"></p>
-        </div>
+        <p class="term-news-meta" id="marketNewsMeta"></p>
       </div>
     </section>
 
@@ -1111,65 +1218,78 @@
   // No custom JS needed; the widgets self-initialize from their inline scripts.)
 
   // ==========================================================================
-  // NEWS LISTS — both cards fetch a Yahoo-backed JSON and render a list.
-  //   - Broad market news: data/market_news.json (query "S&P 500")
-  //   - SPY-specific news: data/spy_news.json  (query "SPY")
-  // Both refreshed hourly during market hours via GitHub Actions.
+  // MARKET NEWS — terminal-styled feed, matches the block on quotes.html.
+  // Fetches data/market_news.json (query "S&P 500"), refreshed hourly by
+  // GitHub Actions. Renders 15 items initially with a progressive-reveal
+  // "SHOW MORE" button up to 60 total.
   // ==========================================================================
-  (async function renderNewsCards() {
-    const CARDS = [
-      { listId: 'marketNewsList', metaId: 'marketNewsMeta', url: 'data/market_news.json' },
-      { listId: 'spyNewsList',    metaId: 'spyNewsMeta',    url: 'data/spy_news.json'    },
-    ];
-
+  (async function renderNews() {
+    const list = document.getElementById('marketNewsList');
+    const meta = document.getElementById('marketNewsMeta');
+    const moreBtn = document.getElementById('newsMoreBtn');
+    if (!list) return;
+    let payload;
+    try {
+      const r = await fetch('data/market_news.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      payload = await r.json();
+    } catch (e) {
+      list.innerHTML = '<li><span style="color:var(--term-dim); font-size:0.85rem">Couldn’t load market news.</span></li>';
+      return;
+    }
     const now = Date.now() / 1000;
     const relTime = (ts) => {
       if (!ts) return '';
-      const diff = now - ts;
-      if (diff < 60)      return 'just now';
-      if (diff < 3600)    return `${Math.round(diff / 60)} min ago`;
-      if (diff < 86400)   return `${Math.round(diff / 3600)} hr ago`;
-      if (diff < 7 * 86400) return `${Math.round(diff / 86400)} day ago`;
-      const d = new Date(ts * 1000);
-      return d.toISOString().slice(0, 10);
+      const d = now - ts;
+      if (d < 60)      return 'just now';
+      if (d < 3600)    return `${Math.round(d / 60)} min ago`;
+      if (d < 86400)   return `${Math.round(d / 3600)} hr ago`;
+      if (d < 7*86400) return `${Math.round(d / 86400)} day ago`;
+      return new Date(ts * 1000).toISOString().slice(0, 10);
     };
-    const escape = (s) => String(s || '').replace(/[<>&"']/g, c => (
+    const esc = (s) => String(s || '').replace(/[<>&"']/g, c => (
       { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
     ));
+    const items = payload.items || [];
+    if (!items.length) {
+      list.innerHTML = '<li><span style="color:var(--term-dim); font-size:0.85rem">No headlines available.</span></li>';
+      return;
+    }
 
-    async function renderOne({ listId, metaId, url }) {
-      const list = document.getElementById(listId);
-      const meta = document.getElementById(metaId);
-      if (!list) return;
-      let payload;
-      try {
-        const r = await fetch(url, { cache: 'no-store' });
-        if (!r.ok) throw new Error('http ' + r.status);
-        payload = await r.json();
-      } catch (e) {
-        list.innerHTML = '<li class="spy-news-loading">Couldn\'t load headlines right now.</li>';
-        return;
-      }
-      const items = payload.items || [];
-      if (!items.length) {
-        list.innerHTML = '<li class="spy-news-loading">No headlines available right now.</li>';
-        return;
-      }
-      list.innerHTML = items.map(it => `
+    const MAX_ITEMS = 60;
+    const PAGE = 15;
+    const total = Math.min(items.length, MAX_ITEMS);
+    let shown = 0;
+
+    function render(n) {
+      shown = Math.min(n, total);
+      list.innerHTML = items.slice(0, shown).map(it => `
         <li>
-          <a href="${escape(it.link)}" target="_blank" rel="noopener noreferrer">${escape(it.title)}</a>
-          <span class="spy-news-byline">
-            <span class="spy-news-publisher">${escape(it.publisher || 'Yahoo Finance')}</span>
-            &middot; ${escape(relTime(it.publishedAt))}
-          </span>
+          <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>
+          <span class="meta">${esc(it.publisher || '')} · ${relTime(it.publishedAt)}</span>
         </li>
       `).join('');
-      if (meta && payload.fetchedAt) {
-        meta.textContent = `Feed refreshed ${relTime(payload.fetchedAt)}. Refreshes hourly via GitHub Actions.`;
+      if (moreBtn) {
+        if (shown >= total) {
+          moreBtn.hidden = true;
+        } else {
+          const next = Math.min(PAGE, total - shown);
+          moreBtn.hidden = false;
+          moreBtn.textContent = `SHOW ${next} MORE HEADLINES ↓`;
+        }
       }
     }
 
-    await Promise.all(CARDS.map(renderOne));
+    render(PAGE);
+    if (moreBtn) {
+      moreBtn.addEventListener('click', () => render(shown + PAGE));
+    }
+
+    if (meta && payload.generatedAt) {
+      meta.textContent = `LAST REFRESHED: ${new Date(payload.generatedAt).toLocaleString()} · ${total} HEADLINES AVAILABLE`;
+    } else if (meta && payload.fetchedAt) {
+      meta.textContent = `LAST REFRESHED: ${new Date(payload.fetchedAt * 1000).toLocaleString()} · ${total} HEADLINES AVAILABLE`;
+    }
   })();
 
   // (DXY now uses a TradingView Symbol Overview widget — self-initializing,
