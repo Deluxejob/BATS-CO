@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Markets — BATS.CO</title>
-  <meta name="description" content="Live charts, technical indicators, and market news — BATS.CO markets hub." />
+  <title>Dashboard — BATS.CO</title>
+  <meta name="description" content="Live charts of the major indices, commodities, currencies, rates, and volatility — BATS.CO dashboard." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -109,12 +109,16 @@
       color: var(--text-dim);
     }
 
-    /* Index dashboard cards — each wraps a TradingView Symbol Overview widget */
+    /* Dashboard cards — each wraps a TradingView Symbol Overview widget.
+       Locked to 2 columns on desktop; stacks to 1 on narrow screens. */
     .idx-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
       margin-top: 1rem;
+    }
+    @media (max-width: 900px) {
+      .idx-grid { grid-template-columns: 1fr; }
     }
     .idx-card { padding: 1rem 1.1rem; }
     .idx-header { margin-bottom: .5rem; }
@@ -216,7 +220,7 @@
     </div>
     <nav class="site-nav">
       <a href="index.html#gauge">Score</a>
-      <a href="markets.html">Markets</a>
+      <a href="markets.html">Dashboard</a>
       <a href="quotes.html">Quotes</a>
       <a href="pe-ratio.html">PE Ratio</a>
       <a href="concentration.html">Concentration</a>
@@ -231,118 +235,19 @@
   <main>
 
     <section class="explainer-hero">
-      <p class="eyebrow">MARKETS HUB</p>
-      <h1>Charts, indicators, and headlines</h1>
+      <p class="eyebrow">DASHBOARD</p>
+      <h1>Dashboard</h1>
       <p class="lede">
-        Live delayed data from TradingView — the same tools the pros use, embedded for free.
-        Use the chart below to explore any ticker, timeframe, or indicator you want.
+        All the key markets on one page — equities, developed and emerging markets, commodities,
+        currencies, rates, and volatility. Live delayed charts from TradingView.
       </p>
     </section>
 
-    <!-- TECHNICAL INDICATORS + MARKET OVERVIEW -->
-    <section class="technicals">
-      <div class="section-head">
-        <h2>At-a-glance indicators</h2>
-        <p>Common technical signals everyone watches — moving averages, oscillators, pivots.</p>
-      </div>
-      <div class="technicals-grid">
-        <div class="card">
-          <h3>Technical Summary — SPY</h3>
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-            {
-              "interval": "1D",
-              "width": "100%",
-              "isTransparent": true,
-              "height": 450,
-              "symbol": "AMEX:SPY",
-              "showIntervalTabs": true,
-              "locale": "en",
-              "colorTheme": "dark"
-            }
-            </script>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Market Overview</h3>
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-            {
-              "colorTheme": "dark",
-              "dateRange": "12M",
-              "showChart": true,
-              "locale": "en",
-              "width": "100%",
-              "height": "450",
-              "largeChartUrl": "",
-              "isTransparent": true,
-              "showSymbolLogo": true,
-              "showFloatingTooltip": true,
-              "tabs": [
-                {
-                  "title": "Indices",
-                  "symbols": [
-                    {"s": "FOREXCOM:SPXUSD", "d": "S&P 500"},
-                    {"s": "FOREXCOM:NSXUSD", "d": "Nasdaq 100"},
-                    {"s": "FOREXCOM:DJI", "d": "Dow 30"},
-                    {"s": "AMEX:IWM", "d": "Russell 2000 (IWM)"}
-                  ]
-                },
-                {
-                  "title": "Bonds",
-                  "symbols": [
-                    {"s": "FRED:DGS10", "d": "10Y Yield"},
-                    {"s": "FRED:DGS2", "d": "2Y Yield"},
-                    {"s": "AMEX:HYG", "d": "High Yield"},
-                    {"s": "NASDAQ:TLT", "d": "20+ Year Treasury"}
-                  ]
-                },
-                {
-                  "title": "Commodities",
-                  "symbols": [
-                    {"s": "TVC:GOLD", "d": "Gold"},
-                    {"s": "TVC:SILVER", "d": "Silver"},
-                    {"s": "CAPITALCOM:COPPER", "d": "Copper"},
-                    {"s": "TVC:PLATINUM", "d": "Platinum"},
-                    {"s": "TVC:USOIL", "d": "WTI Crude"},
-                    {"s": "TVC:UKOIL", "d": "Brent Crude"},
-                    {"s": "CAPITALCOM:NATURALGAS", "d": "Natural Gas"},
-                    {"s": "CAPITALCOM:DXY", "d": "US Dollar"}
-                  ]
-                },
-                {
-                  "title": "Sectors",
-                  "symbols": [
-                    {"s": "AMEX:XLK",  "d": "Technology"},
-                    {"s": "AMEX:XLF",  "d": "Financials"},
-                    {"s": "AMEX:XLE",  "d": "Energy"},
-                    {"s": "AMEX:XLV",  "d": "Health Care"},
-                    {"s": "AMEX:XLI",  "d": "Industrials"},
-                    {"s": "AMEX:XLY",  "d": "Cons. Discretionary"},
-                    {"s": "AMEX:XLP",  "d": "Cons. Staples"},
-                    {"s": "AMEX:XLU",  "d": "Utilities"},
-                    {"s": "AMEX:XLB",  "d": "Materials"},
-                    {"s": "AMEX:XLRE", "d": "Real Estate"},
-                    {"s": "AMEX:XLC",  "d": "Comm. Services"}
-                  ]
-                }
-              ]
-            }
-            </script>
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- INDEX DASHBOARDS -->
+    <!-- DASHBOARDS -->
     <section id="dashboards">
       <div class="section-head">
-        <h2>Index dashboards</h2>
-        <p>Four core US equity indices with live streaming prices. Click any range button on a card (1D/5D/1M/3M/6M/YTD/1Y/5Y/All) to zoom in or out. The green dot next to the ETF name = live during US market hours.</p>
+        <h2>Dashboards</h2>
+        <p>The core markets on one page — US equity indices, developed and emerging markets, commodities, the dollar, the 10-year yield, and volatility. Click any range button (1D/5D/1M/3M/6M/YTD/1Y/5Y/All) on a card to zoom in or out. Green dot = live during US market hours.</p>
       </div>
       <div class="idx-grid">
         <div class="card idx-card">
@@ -466,6 +371,302 @@
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
             {
               "symbols": [["Small Caps (IWM)", "AMEX:IWM|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Intl Developed</h3>
+            <div class="idx-desc">iShares MSCI EAFE &mdash; developed markets outside US &amp; Canada (Europe, Japan, Australia).</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Intl Developed (EFA)", "AMEX:EFA|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Emerging Markets</h3>
+            <div class="idx-desc">iShares MSCI EM &mdash; China, India, Taiwan, Brazil, and other developing economies.</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Emerging Markets (EEM)", "AMEX:EEM|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Gold</h3>
+            <div class="idx-desc">Spot gold price in USD per troy ounce &mdash; the classic inflation and crisis hedge.</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Gold", "TVC:GOLD|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Silver</h3>
+            <div class="idx-desc">Spot silver price in USD per troy ounce &mdash; more volatile industrial cousin of gold.</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Silver", "TVC:SILVER|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>Crude Oil</h3>
+            <div class="idx-desc">West Texas Intermediate &mdash; the US benchmark crude oil price in USD per barrel.</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["Crude Oil (WTI)", "TVC:USOIL|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>US Dollar</h3>
+            <div class="idx-desc">DXY &mdash; broad measure of USD strength vs. a basket of 6 major currencies (EUR, JPY, GBP, CAD, SEK, CHF).</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["US Dollar (DXY)", "CAPITALCOM:DXY|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>10-Year Treasury Yield</h3>
+            <div class="idx-desc">Current yield on the 10-year US Treasury note (%). Rising = borrowing costs going up.</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["10-Year Treasury Yield", "TVC:US10Y|1D"]],
+              "chartOnly": false,
+              "width": "100%",
+              "height": 280,
+              "locale": "en",
+              "colorTheme": "dark",
+              "autosize": false,
+              "showVolume": false,
+              "showMA": false,
+              "hideDateRanges": false,
+              "hideMarketStatus": false,
+              "hideSymbolLogo": true,
+              "scalePosition": "right",
+              "scaleMode": "Normal",
+              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+              "fontSize": "10",
+              "noTimeScale": false,
+              "valuesTracking": "1",
+              "changeMode": "price-and-percent",
+              "chartType": "area",
+              "lineWidth": 2,
+              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
+              "isTransparent": true
+            }
+            </script>
+          </div>
+        </div>
+
+        <div class="card idx-card">
+          <div class="idx-header">
+            <h3>VIX</h3>
+            <div class="idx-desc">CBOE Volatility Index &mdash; expected 30-day S&amp;P 500 volatility. The market's fear gauge; spikes on selloffs.</div>
+          </div>
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+            {
+              "symbols": [["VIX (Volatility Index)", "TVC:VIX|1D"]],
               "chartOnly": false,
               "width": "100%",
               "height": 280,
