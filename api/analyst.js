@@ -144,9 +144,11 @@ export default async function handler(req, res) {
     // Yahoo's `earnings` module gives the last ~4 quarters + one current-
     // quarter estimate. `earningsTrend.trend` gives forward-looking EPS
     // estimates keyed by period ("-1y","0y","+1y","+2y","0q","+1q").
-    const eChart = (r0.earnings && r0.earnings.earningsChart) || {};
-    const trend  = (r0.earningsTrend && r0.earningsTrend.trend) || [];
-    const findPeriod = (p) => trend.find(t => t && t.period === p);
+    // NB: local name shadows the `trend` var above (recommendationTrend);
+    // scoped in this block below so the two never collide.
+    const eChart  = (r0.earnings && r0.earnings.earningsChart) || {};
+    const eTrend  = (r0.earningsTrend && r0.earningsTrend.trend) || [];
+    const findPeriod = (p) => eTrend.find(t => t && t.period === p);
     const trendPt = (p) => {
       const t = findPeriod(p);
       if (!t) return null;
