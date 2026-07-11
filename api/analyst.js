@@ -167,28 +167,34 @@ export default async function handler(req, res) {
       };
     };
 
-    // Past fiscal-year EPS derived from earnings.financialsChart.yearly
-    // (net income) ÷ current sharesOutstanding. Approximate — treats
-    // share count as if it were constant over history — but usually
-    // within 5-10% of Yahoo's reported historical EPS, which is close
-    // enough to fill in prior-year bars that earningsTrend omits.
-    // NB: post-split reporting is already normalized by Yahoo, so
-    // current shares match historical EPS conventions.
-    const finYearly = (r0.earnings && r0.earnings.financialsChart && r0.earnings.financialsChart.yearly) || [];
+    // Past fiscal-year data from earnings.financialsChart.yearly — includes
+    // both total revenue and total net income. Two things we do with this:
+    //   (1) Derive a rough EPS = netIncome ÷ current sharesOutstanding to
+    //       backfill missing prior-year bars on the EPS chart. Approximate
+    //       but usually within ~5-10% of Yahoo's reported historical EPS.
+    //   (2) Feed the Revenue-vs-Earnings grouped chart directly (raw $).
+    const finChart   = (r0.earnings && r0.earnings.financialsChart) || {};
+    const finYearly  = Array.isArray(finChart.yearly)    ? finChart.yearly    : [];
+    const finQtrRaw  = Array.isArray(finChart.quarterly) ? finChart.quarterly : [];
     const currentShares = toNum(ks.sharesOutstanding);
-    const pastAnnualDerived = (Array.isArray(finYearly) ? finYearly : [])
-      .map(y => {
-        const yr = toNum(y && y.date);
-        const ni = toNum(y && y.earnings);
-        if (!Number.isFinite(yr) || !Number.isFinite(ni)) return null;
-        if (!Number.isFinite(currentShares) || currentShares <= 0) return null;
-        return {
-          year:       yr,
-          epsDerived: ni / currentShares,
-          netIncome:  ni,
-        };
-      })
-      .filter(Boolean);
+
+    const pastAnnualDerived = finYearly.map(y => {
+      const yr = toNum(y && y.date);
+      const ni = toNum(y && y.earnings);
+      const rev = toNum(y && y.revenue);
+      if (!Number.isFinite(yr)) return null;
+      const epsDerived = (Number.isFinite(ni) && Number.isFinite(currentShares) && currentShares > 0)
+        ? ni / currentShares : null;
+      return { year: yr, epsDerived, netIncome: ni, revenue: rev };
+    }).filter(x => x && (Number.isFinite(x.netIncome) || Number.isFinite(x.revenue)));
+
+    // Quarterly revenue + net income for the Revenue-vs-Earnings chart.
+    // Fiscal-quarter labels ("2Q2024") match earnings.earningsChart.quarterly.
+    const finQuarterly = finQtrRaw.map(q => ({
+      period:    String(q && q.date || ''),
+      revenue:   toNum(q && q.revenue),
+      netIncome: toNum(q && q.earnings),
+    })).filter(q => q.period && (Number.isFinite(q.revenue) || Number.isFinite(q.netIncome)));
 
     const earnings = {
       // Recent quarterly EPS: actual + prior estimate at reporting time.
@@ -220,6 +226,9 @@ export default async function handler(req, res) {
       // Frontend uses these to fill any past fiscal year the earningsTrend
       // response left blank.
       pastAnnualDerived,
+      // Quarterly revenue + net income (raw $, from financialsChart) — feeds
+      // the Revenue-vs-Earnings grouped chart on ticker.html.
+      finQuarterly,
       sharesOutstanding: currentShares,
     };
 

@@ -656,6 +656,84 @@
       margin: 0.5rem 0 0;
       letter-spacing: 0.03em;
     }
+
+    /* ---------- Revenue vs. Earnings (grouped bar chart + toggle) ---------- */
+    .re-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+    .re-title-block { min-width: 0; }
+    .re-readout {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-text);
+      letter-spacing: 0.03em;
+      margin-top: 0.15rem;
+      min-height: 1.1em;
+    }
+    .re-readout .rk { color: var(--term-dim); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.62rem; margin-right: 0.2rem; }
+    .re-readout .rv { font-weight: 700; }
+    .re-readout .rv.rev { color: var(--term-cyan); }
+    .re-readout .rv.ern { color: var(--term-amber); }
+    .re-readout .dot { color: var(--term-border); margin: 0 0.5rem; }
+
+    .re-toggle {
+      display: inline-flex;
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-radius: 999px;
+      padding: 2px;
+      flex-shrink: 0;
+    }
+    .re-tab {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--term-dim);
+      background: transparent;
+      border: none;
+      border-radius: 999px;
+      padding: 0.35rem 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .re-tab:hover { color: var(--term-text); }
+    .re-tab.active {
+      background: var(--term-cyan);
+      color: #0a1218;
+    }
+    .re-chart-wrap { position: relative; }
+
+    /* SVG shared with earn-chart (grid/axis colors) */
+    .re-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .re-chart .axis-label {
+      fill: var(--term-dim);
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .re-chart .axis-line { stroke: var(--term-border); stroke-width: 1; }
+    .re-chart .grid-line {
+      stroke: var(--term-border);
+      stroke-width: 1;
+      opacity: 0.4;
+      stroke-dasharray: 2 3;
+    }
+    /* Whole-group hover highlight — dims non-hovered groups so the readout
+       up top reads unambiguously */
+    .re-chart .re-group { transition: opacity 0.12s; cursor: default; }
+    .re-chart.hovering .re-group { opacity: 0.55; }
+    .re-chart.hovering .re-group.re-active { opacity: 1; }
   </style>
 </head>
 <body>
@@ -778,6 +856,23 @@
                 <div class="earn-loading">Loading annual earnings&hellip;</div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Revenue vs. Earnings ($) — grouped chart with Annual/Quarterly toggle -->
+        <div class="term-panel earn-panel" id="revEarnPanel" style="margin-top:0.75rem">
+          <div class="re-header-row">
+            <div class="re-title-block">
+              <div class="earn-title">REVENUE vs. EARNINGS <span class="sub">— total dollars, quarterly &amp; annual</span></div>
+              <div id="reReadout" class="re-readout">&nbsp;</div>
+            </div>
+            <div class="re-toggle" role="tablist" aria-label="Time period">
+              <button type="button" class="re-tab" data-view="annual"    role="tab">Annual</button>
+              <button type="button" class="re-tab active" data-view="quarterly" role="tab">Quarterly</button>
+            </div>
+          </div>
+          <div id="revEarnChart" class="re-chart-wrap">
+            <div class="earn-loading">Loading revenue &amp; earnings&hellip;</div>
           </div>
         </div>
       </section>
@@ -1335,6 +1430,198 @@
         } else {
           aWrap.innerHTML = '<div class="earn-empty">No annual EPS trend data available.</div>';
         }
+
+        // ---- Revenue vs. Earnings ($ total, with Annual/Quarterly toggle) ----
+        renderRevEarn(er);
+      }
+
+      // Format a big $ number as $XX.XB / $XXM (compact SI-ish)
+      function fmtBigDollar(v) {
+        if (!Number.isFinite(v)) return '—';
+        const abs = Math.abs(v);
+        if (abs >= 1e12) return '$' + (v / 1e12).toFixed(2) + 'T';
+        if (abs >= 1e9)  return '$' + (v / 1e9).toFixed(2)  + 'B';
+        if (abs >= 1e6)  return '$' + (v / 1e6).toFixed(0)  + 'M';
+        return '$' + Math.round(v).toLocaleString();
+      }
+      function fmtDollarShort(v) {
+        // For axis labels — coarser than fmtBigDollar
+        if (!Number.isFinite(v)) return '';
+        const abs = Math.abs(v);
+        if (abs >= 1e12) return (v / 1e12).toFixed(1) + 'T';
+        if (abs >= 1e9)  return Math.round(v / 1e9) + 'B';
+        if (abs >= 1e6)  return Math.round(v / 1e6) + 'M';
+        return String(Math.round(v));
+      }
+
+      // Grouped bar chart — one group per period, 2 bars per group
+      // (revenue = cyan, net income = amber). Hover a group to highlight
+      // it and update the readout above the chart.
+      function drawRevEarnChart(svgEl, data, onHover) {
+        if (!svgEl || !data.length) return;
+        const W = 720, H = 300;
+        const M = { top: 20, right: 12, bottom: 34, left: 56 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        const allVals = data.flatMap(d => [d.revenue, d.netIncome]).filter(Number.isFinite);
+        if (!allVals.length) return;
+        const rawMax = Math.max(...allVals, 0);
+        const rawMin = Math.min(...allVals, 0);
+        const pad = Math.max((rawMax - rawMin) * 0.12, Math.abs(rawMax) * 0.1, 1);
+        const yMax = rawMax + pad;
+        const yMin = rawMin < 0 ? rawMin - pad : 0;
+
+        const n = data.length;
+        const groupW = plotW / n;
+        const barPairW = Math.min(groupW * 0.7, 100);
+        const barW = barPairW / 2 - 3;  // 3px gap between the pair
+        const groupX = (i) => M.left + groupW * i + (groupW - barPairW) / 2;
+        const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+        // "Nice" y-axis step in $B
+        const range = yMax - yMin;
+        const niceStep = (r) => {
+          const raw = r / 5;
+          const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const norm = raw / mag;
+          const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+          return step * mag;
+        };
+        const step = niceStep(range);
+
+        let s = '';
+        // Grid + axis labels
+        for (let v = Math.ceil(yMin / step) * step; v <= yMax + 1e-6; v += step) {
+          const y = yFor(v);
+          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+          s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmtDollarShort(v)}</text>`;
+        }
+        // Zero baseline stroke if needed
+        if (yMin < 0) {
+          const y0 = yFor(0);
+          s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="#c9d3e0" stroke-width="1" opacity="0.55"/>`;
+        }
+
+        const y0 = yFor(0);
+        data.forEach((d, i) => {
+          const x = groupX(i);
+          const drawBar = (val, offset, color) => {
+            if (!Number.isFinite(val)) return '';
+            const yb = yFor(val);
+            const top = Math.min(yb, y0);
+            const h = Math.abs(yb - y0);
+            return `<rect x="${(x + offset).toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" fill="${color}" rx="1"/>`;
+          };
+          s += `<g class="re-group" data-idx="${i}">`;
+          // Wider transparent hit rect so hover works on the whole group
+          s += `<rect x="${(M.left + groupW * i).toFixed(1)}" y="${M.top}" width="${groupW.toFixed(1)}" height="${plotH}" fill="transparent"/>`;
+          s += drawBar(d.revenue,   0,               '#6ee7ff');
+          s += drawBar(d.netIncome, barW + 3,        '#ffb658');
+          // Period label
+          s += `<text class="axis-label" x="${(x + barPairW / 2).toFixed(1)}" y="${(M.top + plotH + 18).toFixed(1)}" text-anchor="middle">${d.label}</text>`;
+          s += `</g>`;
+        });
+
+        // Axes on top
+        s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svgEl.innerHTML = s;
+
+        // Hover wiring: highlight the group under the cursor and fire the callback.
+        const groups = svgEl.querySelectorAll('.re-group');
+        groups.forEach(g => {
+          g.addEventListener('mouseenter', () => {
+            svgEl.classList.add('hovering');
+            groups.forEach(x => x.classList.remove('re-active'));
+            g.classList.add('re-active');
+            const i = parseInt(g.getAttribute('data-idx'), 10);
+            if (onHover) onHover(data[i], i);
+          });
+        });
+        svgEl.addEventListener('mouseleave', () => {
+          svgEl.classList.remove('hovering');
+          groups.forEach(x => x.classList.remove('re-active'));
+          // Default readout back to the latest period
+          if (onHover) onHover(data[data.length - 1], data.length - 1);
+        });
+      }
+
+      function renderRevEarn(er) {
+        const panel = document.getElementById('revEarnPanel');
+        const wrap  = document.getElementById('revEarnChart');
+        const readout = document.getElementById('reReadout');
+        const tabs = panel ? [...panel.querySelectorAll('.re-tab')] : [];
+        if (!panel || !wrap) return;
+
+        // Build both datasets. Quarterly → er.finQuarterly (period like "2Q2024").
+        // Annual → er.pastAnnualDerived (year + revenue + netIncome).
+        const shortQ = (p) => { const m = /^(\d)Q(\d{4})$/.exec(p); return m ? `Q${m[1]} FY${m[2].slice(2)}` : p; };
+        const parseFQ = (p) => { const m = /^(\d)Q(\d{4})$/.exec(p); return m ? { q: +m[1], y: +m[2] } : null; };
+        const fqKey = (p) => { const pq = parseFQ(p); return pq ? pq.y * 10 + pq.q : 0; };
+
+        const qData = (er?.finQuarterly || [])
+          .filter(q => q.period && (Number.isFinite(q.revenue) || Number.isFinite(q.netIncome)))
+          .slice()
+          .sort((a, b) => fqKey(a.period) - fqKey(b.period))
+          .map(q => ({ label: shortQ(q.period), revenue: q.revenue, netIncome: q.netIncome, key: q.period }));
+
+        const aData = (er?.pastAnnualDerived || [])
+          .filter(y => Number.isFinite(y.year) && (Number.isFinite(y.revenue) || Number.isFinite(y.netIncome)))
+          .slice()
+          .sort((a, b) => a.year - b.year)
+          .map(y => ({ label: 'FY' + String(y.year).slice(2), revenue: y.revenue, netIncome: y.netIncome, key: String(y.year) }));
+
+        if (!qData.length && !aData.length) {
+          panel.style.display = 'none';
+          return;
+        }
+
+        function updateReadout(row) {
+          if (!row) { readout.innerHTML = '&nbsp;'; return; }
+          readout.innerHTML =
+            `<span class="rl">${row.label}</span>` +
+            `<span class="dot">·</span>` +
+            `<span class="rk">Rev</span><span class="rv rev">${fmtBigDollar(row.revenue)}</span>` +
+            `<span class="dot">·</span>` +
+            `<span class="rk">Earn</span><span class="rv ern">${fmtBigDollar(row.netIncome)}</span>`;
+        }
+
+        function draw(view) {
+          const data = view === 'annual' ? aData : qData;
+          if (!data.length) {
+            wrap.innerHTML = `<div class="earn-empty">No ${view} data available.</div>`;
+            readout.innerHTML = '&nbsp;';
+            return;
+          }
+          wrap.innerHTML = `<svg class="re-chart" id="reSvg"></svg>`;
+          drawRevEarnChart(document.getElementById('reSvg'), data, updateReadout);
+          updateReadout(data[data.length - 1]);
+        }
+
+        // Default view: quarterly unless we don't have any, in which case annual.
+        const initial = qData.length ? 'quarterly' : 'annual';
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.view === initial));
+        // Disable the "quarterly" tab if we lack quarterly data (and vice-versa)
+        tabs.forEach(t => {
+          const has = (t.dataset.view === 'annual') ? aData.length : qData.length;
+          t.disabled = !has;
+          t.style.opacity = has ? '' : '0.4';
+          t.style.cursor  = has ? 'pointer' : 'not-allowed';
+        });
+        draw(initial);
+
+        // Click handlers (idempotent — clear old listeners by cloning the node)
+        tabs.forEach(t => {
+          t.addEventListener('click', () => {
+            if (t.disabled) return;
+            tabs.forEach(x => x.classList.toggle('active', x === t));
+            draw(t.dataset.view);
+          });
+        });
       }
 
       (async function renderAnalyst() {
