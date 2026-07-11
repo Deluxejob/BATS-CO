@@ -167,6 +167,29 @@ export default async function handler(req, res) {
       };
     };
 
+    // Past fiscal-year EPS derived from earnings.financialsChart.yearly
+    // (net income) ÷ current sharesOutstanding. Approximate — treats
+    // share count as if it were constant over history — but usually
+    // within 5-10% of Yahoo's reported historical EPS, which is close
+    // enough to fill in prior-year bars that earningsTrend omits.
+    // NB: post-split reporting is already normalized by Yahoo, so
+    // current shares match historical EPS conventions.
+    const finYearly = (r0.earnings && r0.earnings.financialsChart && r0.earnings.financialsChart.yearly) || [];
+    const currentShares = toNum(ks.sharesOutstanding);
+    const pastAnnualDerived = (Array.isArray(finYearly) ? finYearly : [])
+      .map(y => {
+        const yr = toNum(y && y.date);
+        const ni = toNum(y && y.earnings);
+        if (!Number.isFinite(yr) || !Number.isFinite(ni)) return null;
+        if (!Number.isFinite(currentShares) || currentShares <= 0) return null;
+        return {
+          year:       yr,
+          epsDerived: ni / currentShares,
+          netIncome:  ni,
+        };
+      })
+      .filter(Boolean);
+
     const earnings = {
       // Recent quarterly EPS: actual + prior estimate at reporting time.
       // Uses earnings.earningsChart.quarterly (~4 quarters with clean
@@ -189,9 +212,15 @@ export default async function handler(req, res) {
       nextQuarterEst: trendPt('+1q'),
       // Annual EPS timeline: try to catch as much history + future as
       // Yahoo has. -2y/-1y are prior-year actuals when populated; 0y is
-      // this year's consensus; +1y/+2y/+3y are forward estimates. Yahoo
-      // returns null for periods it doesn't have; filter(Boolean) drops them.
+      // this year's *current* consensus (year not yet closed); +1y/+2y/+3y
+      // are forward estimates. Yahoo returns null for periods it doesn't
+      // have; filter(Boolean) drops them.
       annual: ['-2y', '-1y', '0y', '+1y', '+2y', '+3y'].map(trendPt).filter(Boolean),
+      // Prior-year actuals backfill (derived from net income ÷ shares).
+      // Frontend uses these to fill any past fiscal year the earningsTrend
+      // response left blank.
+      pastAnnualDerived,
+      sharesOutstanding: currentShares,
     };
 
     const payload = {

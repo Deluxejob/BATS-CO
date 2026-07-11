@@ -1181,48 +1181,108 @@
         const aWrap = document.getElementById('annualEpsChart');
         if (!section || !qWrap || !aWrap) return;
 
-        // Format a Yahoo "2Q2024" period as compact "Q2 '24"
+        // Fiscal-quarter helpers. Everything in the quarterly chart uses
+        // Yahoo's fiscal-quarter labels ("1Q2026" = fiscal Q1 of FY2026,
+        // which for NVDA is Feb-Apr 2025). Mixing calendar quarters would
+        // produce out-of-order bars for tickers whose fiscal year doesn't
+        // align with the calendar year.
         const shortQ = (p) => {
           const m = /^(\d)Q(\d{4})$/.exec(p);
-          if (m) return `Q${m[1]} '${m[2].slice(2)}`;
-          return p;
+          return m ? `Q${m[1]} '${m[2].slice(2)}` : p;
+        };
+        const parseFQ = (p) => {
+          const m = /^(\d)Q(\d{4})$/.exec(p);
+          return m ? { q: +m[1], y: +m[2] } : null;
+        };
+        const fqKey = (p) => {
+          const pq = parseFQ(p);
+          return pq ? pq.y * 10 + pq.q : 0;
+        };
+        const nextFQ = (p) => {
+          const pq = parseFQ(p);
+          if (!pq) return null;
+          let q = pq.q + 1, y = pq.y;
+          if (q > 4) { q = 1; y += 1; }
+          return `${q}Q${y}`;
         };
 
         // ---- Quarterly ----
-        const qData = [];
+        const qMap = new Map();  // fiscal period → { label, value, kind }
         (er?.quarterly || []).forEach(q => {
-          if (Number.isFinite(q.actual)) qData.push({ label: shortQ(q.period), value: q.actual, kind: 'actual' });
+          if (Number.isFinite(q.actual)) {
+            qMap.set(q.period, { label: shortQ(q.period), value: q.actual, kind: 'actual' });
+          }
         });
-        // Add current-quarter estimate if it's not already covered by the last actual
+
+        // Establish the fiscal-quarter label for the "current" (upcoming)
+        // estimate: prefer Yahoo's own period+year fields; fall back to
+        // incrementing from the last reported actual.
         const cq = er?.currentQuarterEst;
-        if (cq && Number.isFinite(cq.estimate) && cq.period && cq.year) {
-          const cqPeriod = `${cq.period.charAt(0)}Q${cq.year}`;
-          const already = qData.find(d => d.label === shortQ(cqPeriod));
-          if (!already) qData.push({ label: shortQ(cqPeriod), value: cq.estimate, kind: 'estimate' });
-        }
-        // Optionally add next-quarter estimate for a fuller forward view
-        const nq = er?.nextQuarterEst;
-        if (nq && Number.isFinite(nq.eps) && nq.endDate) {
-          // endDate is like "2025-09-30" — build a "3Q2025"-shaped label
-          const m = /^(\d{4})-(\d{2})-\d{2}/.exec(nq.endDate);
-          if (m) {
-            const qNum = Math.ceil(parseInt(m[2], 10) / 3);
-            const lbl = shortQ(`${qNum}Q${m[1]}`);
-            if (!qData.find(d => d.label === lbl)) {
-              qData.push({ label: lbl, value: nq.eps, kind: 'estimate' });
-            }
+        let currentQPeriod = null;
+        if (cq && Number.isFinite(cq.estimate)) {
+          if (cq.period && cq.year) {
+            currentQPeriod = `${cq.period.charAt(0)}Q${cq.year}`;
+          } else {
+            // Increment from the latest actual we have
+            const latest = [...qMap.keys()].sort((a, b) => fqKey(b) - fqKey(a))[0];
+            currentQPeriod = latest ? nextFQ(latest) : null;
+          }
+          if (currentQPeriod && !qMap.has(currentQPeriod)) {
+            qMap.set(currentQPeriod, { label: shortQ(currentQPeriod), value: cq.estimate, kind: 'estimate' });
           }
         }
 
-        // ---- Annual ----
-        // Yahoo's earningsTrend only reliably fills a couple of years around
-        // the current one. To backfill prior years, sum quarterly EPS actuals
-        // by their fiscal-year label ("XQYYYY" → year YYYY) when we have all
-        // four quarters. Merge those computed past-year totals with whatever
-        // Yahoo gives us from earningsTrend and dedup by year.
-        const aByYear = new Map();  // year (string) -> { value, kind, source }
+        // Next-quarter estimate: label is one fiscal quarter after the
+        // current-quarter estimate (NOT derived from endDate's calendar
+        // month — that mislabels off-fiscal-year tickers).
+        const nq = er?.nextQuarterEst;
+        if (nq && Number.isFinite(nq.eps) && currentQPeriod) {
+          const nqPeriod = nextFQ(currentQPeriod);
+          if (nqPeriod && !qMap.has(nqPeriod)) {
+            qMap.set(nqPeriod, { label: shortQ(nqPeriod), value: nq.eps, kind: 'estimate' });
+          }
+        }
 
-        // 1) Start with computed past-year EPS from summed quarterly actuals.
+        // Emit in chronological fiscal-quarter order
+        const qData = [...qMap.entries()]
+          .sort((a, b) => fqKey(a[0]) - fqKey(b[0]))
+          .map(([, v]) => v);
+
+        // ---- Annual ----
+        // Precedence (best → worst): summed quarterly actuals > earningsTrend
+        // (-Ny actuals + 0y current-year estimate + forward estimates) >
+        // derived EPS from financialsChart.yearly / current shares (approx
+        // past-year backfill when Yahoo's earningsTrend leaves prior years
+        // blank).
+        // Kind: only negative-period trend rows (`-1y`, `-2y`) and summed/
+        // derived past years are actuals; `0y` is the current fiscal year
+        // *in progress* — an estimate, not an actual.
+        const aByYear = new Map();  // year (string) -> { value, kind, source, rank }
+        const setYear = (yr, entry) => {
+          const cur = aByYear.get(yr);
+          if (!cur || entry.rank < cur.rank) aByYear.set(yr, entry);
+        };
+
+        // 1) Derived past-year EPS from net income ÷ shares (rank 3 — worst
+        //    precedence, only fills gaps).
+        (er?.pastAnnualDerived || []).forEach(row => {
+          if (!Number.isFinite(row.year) || !Number.isFinite(row.epsDerived)) return;
+          setYear(String(row.year), {
+            value: row.epsDerived, kind: 'actual', source: 'derived', rank: 3,
+          });
+        });
+
+        // 2) Overlay analyst-trend rows (rank 2 — better than derived).
+        (er?.annual || []).forEach(t => {
+          if (!Number.isFinite(t.eps)) return;
+          const yr = t.endDate ? t.endDate.slice(0, 4) : t.period;
+          const isPastActual = t.period && t.period.startsWith('-');
+          const kind = isPastActual ? 'actual' : 'estimate';
+          setYear(yr, { value: t.eps, kind, source: 'trend', rank: 2 });
+        });
+
+        // 3) Best of all: summed-quarterly EPS when we have all four
+        //    fiscal quarters for a year (rank 1). Overrides everything.
         const quarterlyByYear = new Map();
         (er?.quarterly || []).forEach(q => {
           if (!Number.isFinite(q.actual)) return;
@@ -1233,33 +1293,14 @@
           quarterlyByYear.get(yr).push({ q: parseInt(m[1], 10), eps: q.actual });
         });
         for (const [yr, qs] of quarterlyByYear) {
-          // Only count a year as complete when we have all 4 fiscal quarters
           const seen = new Set(qs.map(x => x.q));
           if (seen.size === 4) {
             const sum = qs.reduce((s, x) => s + x.eps, 0);
-            aByYear.set(yr, { value: sum, kind: 'actual', source: 'summed' });
+            setYear(yr, { value: sum, kind: 'actual', source: 'summed', rank: 1 });
           }
         }
 
-        // 2) Overlay analyst-trend data (both prior-year actuals and forward
-        //    estimates). Prior-year rows overwrite the computed sum only if
-        //    we don't have a complete quarterly set — otherwise the summed
-        //    number is more accurate.
-        (er?.annual || []).forEach(t => {
-          if (!Number.isFinite(t.eps)) return;
-          const yr = t.endDate ? t.endDate.slice(0, 4) : t.period;
-          const forward = t.period && t.period.startsWith('+');
-          const priorOrCurrent = t.period && (t.period.startsWith('-') || t.period === '0y');
-          const kind = forward ? 'estimate' : (priorOrCurrent ? 'actual' : 'estimate');
-          const existing = aByYear.get(yr);
-          if (existing && existing.source === 'summed' && !forward) {
-            // Keep our summed-actual — more trustworthy than Yahoo's trend row
-            return;
-          }
-          aByYear.set(yr, { value: t.eps, kind, source: 'trend' });
-        });
-
-        // 3) Emit chart data sorted chronologically
+        // 4) Emit sorted chronologically
         const aData = [...aByYear.entries()]
           .sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10))
           .map(([yr, v]) => ({ label: yr, value: v.value, kind: v.kind }));
