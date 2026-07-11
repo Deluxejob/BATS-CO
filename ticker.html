@@ -753,6 +753,68 @@
     .re-readout .rv.est { color: var(--term-dim); }
     .re-readout .rv.beat  { color: var(--term-green); }
     .re-readout .rv.miss  { color: var(--term-red); }
+
+    /* ---------- EPS Trend / EPS Revisions (4 mini charts side-by-side) ---------- */
+    .eps-trend-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    @media (min-width: 700px) {
+      .eps-trend-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1100px) {
+      .eps-trend-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .eps-mini-card {
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border-soft);
+      border-radius: 3px;
+      padding: 0.55rem 0.55rem 0.5rem;
+      min-width: 0;
+    }
+    .eps-mini-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+    }
+    .eps-mini-title .sub {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      display: block;
+      font-size: 0.6rem;
+      margin-top: 0.1rem;
+    }
+    .eps-mini-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .eps-mini-chart .axis-label {
+      fill: var(--term-dim);
+      font-size: 9px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .eps-mini-chart .axis-line { stroke: var(--term-border); stroke-width: 1; }
+    .eps-mini-chart .grid-line {
+      stroke: var(--term-border);
+      stroke-width: 1;
+      opacity: 0.35;
+      stroke-dasharray: 2 3;
+    }
+    .eps-mini-empty {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-dim);
+      padding: 1rem 0;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -921,6 +983,26 @@
                 <div class="earn-loading">Loading earnings trends&hellip;</div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EPS TREND — how consensus has moved over the last 90 days per period -->
+      <section class="term-section" id="epsTrendSection">
+        <div class="term-section-label">EPS TREND <span class="sub">— how consensus has moved: 90d → today</span></div>
+        <div class="term-panel earn-panel">
+          <div id="epsTrendGrid" class="eps-trend-grid">
+            <div class="earn-loading">Loading EPS trend&hellip;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EPS REVISIONS — how many analysts have raised or lowered their estimate -->
+      <section class="term-section" id="epsRevSection">
+        <div class="term-section-label">EPS REVISIONS <span class="sub">— analysts raising vs. lowering estimates</span></div>
+        <div class="term-panel earn-panel">
+          <div id="epsRevGrid" class="eps-trend-grid">
+            <div class="earn-loading">Loading EPS revisions&hellip;</div>
           </div>
         </div>
       </section>
@@ -1530,6 +1612,9 @@
         renderRevEarn(er);
         // ---- Earnings Trends dot plot (estimate vs actual per quarter) ----
         renderEarnTrends(er, overview);
+        // ---- EPS Trend (how consensus has moved) + EPS Revisions ---------
+        renderEpsTrend(er?.epsTrendHistory);
+        renderEpsRevisions(er?.epsRevisions);
       }
 
       // Format a big $ number as $XX.XB / $XXM (compact SI-ish)
@@ -1976,6 +2061,195 @@
         updateReadout(data[data.length - 1]);
       }
 
+      // Small grouped bar chart used by EPS Trend + EPS Revisions mini-cards.
+      // opts: { fmtValue (fn), color (hex), colors (array per bar), yFromZero }
+      function drawEpsMiniChart(svgEl, data, opts = {}) {
+        if (!svgEl || !data.length) return;
+        const clean = data.filter(d => Number.isFinite(d.value));
+        if (!clean.length) { svgEl.innerHTML = ''; return; }
+
+        const W = 300, H = 180;
+        const M = { top: 24, right: 6, bottom: 24, left: 34 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        const vals = clean.map(d => d.value);
+        const rawMax = Math.max(...vals, 0);
+        const rawMin = Math.min(...vals, 0);
+        const range = Math.max(rawMax - rawMin, Math.abs(rawMax) * 0.1, 0.5);
+        const pad = range * 0.18;
+        // yFromZero=true → always anchor y-axis at 0. Useful for count-based
+        // charts (revisions). For value charts we zoom into the range so
+        // small revisions become visible.
+        const yMax = rawMax + pad;
+        const yMin = opts.yFromZero
+          ? Math.min(0, rawMin - pad)
+          : (rawMin < 0 ? rawMin - pad : Math.max(0, rawMin - pad));
+
+        const n = clean.length;
+        const groupW = plotW / n;
+        const barW = Math.min(groupW * 0.7, 40);
+        const xFor = (i) => M.left + groupW * i + (groupW - barW) / 2;
+        const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+        const fmtValue = opts.fmtValue || ((v) => v.toFixed(2));
+
+        const niceStep = (r) => {
+          const raw = r / 3;
+          if (raw <= 0) return 1;
+          const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const norm = raw / mag;
+          const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+          return step * mag;
+        };
+        const step = niceStep(yMax - yMin);
+        const fmtAxis = opts.fmtAxis || fmtValue;
+
+        let s = '';
+        // Y grid + labels
+        for (let v = Math.ceil(yMin / step) * step; v <= yMax + 1e-9; v += step) {
+          const y = yFor(v);
+          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+          s += `<text class="axis-label" x="${M.left - 4}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmtAxis(v)}</text>`;
+        }
+        // Bars
+        const y0 = yFor(Math.max(0, yMin));
+        clean.forEach((d, i) => {
+          const x = xFor(i);
+          const yBar = yFor(d.value);
+          const top = Math.min(yBar, y0);
+          const h = Math.abs(yBar - y0);
+          const color = opts.colors ? opts.colors[i] : (opts.color || '#6ee7ff');
+          const fill = d.dim ? color + '55' : color;
+          s += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" ` +
+               `height="${Math.max(h, 1).toFixed(1)}" fill="${fill}" stroke="${color}" stroke-width="1" rx="1"/>`;
+          // Value label above the bar (or below if the value is negative)
+          const valTxt = fmtValue(d.value);
+          const labelY = d.value >= (yMin < 0 ? 0 : yMin) ? (top - 4) : (top + h + 10);
+          s += `<text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" ` +
+               `fill="${color}" font-size="9.5" font-weight="700" font-family="'JetBrains Mono', monospace">${valTxt}</text>`;
+          // X-axis time-slice label
+          s += `<text class="axis-label" x="${(x + barW / 2).toFixed(1)}" y="${(M.top + plotH + 14).toFixed(1)}" text-anchor="middle">${d.label}</text>`;
+        });
+        // Axes
+        s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svgEl.innerHTML = s;
+      }
+
+      // Period labels shown above each mini card
+      const PERIOD_LABELS = {
+        '0q':  { title: 'CURRENT QTR',  hint: (endDate) => monYr(endDate) },
+        '+1q': { title: 'NEXT QTR',     hint: (endDate) => monYr(endDate) },
+        '0y':  { title: 'CURRENT YEAR', hint: (endDate) => (endDate || '').slice(0, 4) },
+        '+1y': { title: 'NEXT YEAR',    hint: (endDate) => (endDate || '').slice(0, 4) },
+      };
+      const MON_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      function monYr(endDate) {
+        const m = /^(\d{4})-(\d{2})/.exec(String(endDate || ''));
+        return m ? `${MON_NAMES[parseInt(m[2], 10) - 1]} ${m[1]}` : '';
+      }
+
+      // Render EPS Trend — 4 mini bar charts, one per period. Each shows
+      // 5 time-snapshot bars (90d ago → today) so you can eyeball how the
+      // consensus has moved.
+      function renderEpsTrend(rows) {
+        const section = document.getElementById('epsTrendSection');
+        const grid = document.getElementById('epsTrendGrid');
+        if (!section || !grid) return;
+        const valid = (rows || []).filter(r => [r.d90, r.d60, r.d30, r.d7, r.current]
+          .some(v => Number.isFinite(v)));
+        if (!valid.length) {
+          if (section) section.style.display = 'none';
+          return;
+        }
+        // Bar colors gradient — older (dim) to current (bright amber)
+        const colors = ['#3a4552', '#5a6979', '#8a97a8', '#c9a860', '#ffb658'];
+
+        grid.innerHTML = valid.map((r, i) => {
+          const meta = PERIOD_LABELS[r.period] || { title: r.period.toUpperCase(), hint: () => '' };
+          const bars = [
+            { label: '90d', value: r.d90 },
+            { label: '60d', value: r.d60 },
+            { label: '30d', value: r.d30 },
+            { label: '7d',  value: r.d7  },
+            { label: 'Now', value: r.current },
+          ];
+          const finite = bars.filter(b => Number.isFinite(b.value));
+          if (finite.length < 2) {
+            return `<div class="eps-mini-card">
+              <div class="eps-mini-title">${meta.title}<span class="sub">${meta.hint(r.endDate)}</span></div>
+              <div class="eps-mini-empty">Not enough data</div>
+            </div>`;
+          }
+          return `<div class="eps-mini-card">
+            <div class="eps-mini-title">${meta.title}<span class="sub">${meta.hint(r.endDate)}</span></div>
+            <svg class="eps-mini-chart" id="epsTrendSvg${i}"></svg>
+          </div>`;
+        }).join('');
+
+        // Draw each SVG
+        valid.forEach((r, i) => {
+          const svg = document.getElementById(`epsTrendSvg${i}`);
+          if (!svg) return;
+          const bars = [
+            { label: '90d', value: r.d90 },
+            { label: '60d', value: r.d60 },
+            { label: '30d', value: r.d30 },
+            { label: '7d',  value: r.d7  },
+            { label: 'Now', value: r.current },
+          ];
+          drawEpsMiniChart(svg, bars, {
+            colors,
+            fmtValue: (v) => (Math.abs(v) < 10 ? '$' + v.toFixed(2) : '$' + v.toFixed(1)),
+            fmtAxis:  (v) => (Math.abs(v) < 10 ? '$' + v.toFixed(2) : '$' + v.toFixed(1)),
+          });
+        });
+      }
+
+      // Render EPS Revisions — 4 mini charts, one per period. Each shows
+      // green bars for "raised" and red bars for "lowered" over the last
+      // 7 and 30 days.
+      function renderEpsRevisions(rows) {
+        const section = document.getElementById('epsRevSection');
+        const grid = document.getElementById('epsRevGrid');
+        if (!section || !grid) return;
+        const valid = (rows || []).filter(r => [r.up7, r.up30, r.down7, r.down30]
+          .some(v => Number.isFinite(v)));
+        if (!valid.length) {
+          if (section) section.style.display = 'none';
+          return;
+        }
+
+        grid.innerHTML = valid.map((r, i) => {
+          const meta = PERIOD_LABELS[r.period] || { title: r.period.toUpperCase(), hint: () => '' };
+          return `<div class="eps-mini-card">
+            <div class="eps-mini-title">${meta.title}<span class="sub">${meta.hint(r.endDate)}</span></div>
+            <svg class="eps-mini-chart" id="epsRevSvg${i}"></svg>
+          </div>`;
+        }).join('');
+
+        valid.forEach((r, i) => {
+          const svg = document.getElementById(`epsRevSvg${i}`);
+          if (!svg) return;
+          const bars = [
+            { label: 'Up 7d',   value: Number.isFinite(r.up7)    ? r.up7    : 0 },
+            { label: 'Up 30d',  value: Number.isFinite(r.up30)   ? r.up30   : 0 },
+            { label: 'Dn 7d',   value: Number.isFinite(r.down7)  ? r.down7  : 0 },
+            { label: 'Dn 30d',  value: Number.isFinite(r.down30) ? r.down30 : 0 },
+          ];
+          const colors = ['#22d39a', '#22d39a', '#ff5374', '#ff5374'];
+          drawEpsMiniChart(svg, bars, {
+            colors,
+            yFromZero: true,
+            fmtValue: (v) => String(Math.round(v)),
+            fmtAxis:  (v) => String(Math.round(v)),
+          });
+        });
+      }
+
       (async function renderAnalyst() {
         const section = document.getElementById('analystSection');
         const content = document.getElementById('analystContent');
@@ -2002,10 +2276,12 @@
             profEl.className = 'ov-empty';
             profEl.textContent = 'Company profile unavailable right now.';
           }
-          // Hide the earnings section entirely when the API fails — there's
-          // nothing sensible to show without live data.
-          const earnSection = document.getElementById('earningsSection');
-          if (earnSection) earnSection.style.display = 'none';
+          // Hide the earnings + trend + revisions sections when the API
+          // fails — nothing sensible to show without live data.
+          ['earningsSection', 'epsTrendSection', 'epsRevSection'].forEach(id => {
+            const s = document.getElementById(id);
+            if (s) s.style.display = 'none';
+          });
           return;
         }
 

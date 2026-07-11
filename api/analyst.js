@@ -279,6 +279,38 @@ export default async function handler(req, res) {
       // are forward estimates. Yahoo returns null for periods it doesn't
       // have; filter(Boolean) drops them.
       annual: ['-2y', '-1y', '0y', '+1y', '+2y', '+3y'].map(trendPt).filter(Boolean),
+      // EPS Trend — how consensus for each near-term period has moved
+      // over the last 90 days. Yahoo returns this per-period inside the
+      // earningsTrend module.
+      epsTrendHistory: ['0q', '+1q', '0y', '+1y'].map(period => {
+        const t = eTrend.find(x => x && x.period === period);
+        if (!t) return null;
+        const et = t.epsTrend || {};
+        return {
+          period,
+          endDate: String(t.endDate || ''),
+          current: toNum(et.current),
+          d7:      toNum(et['7daysAgo']),
+          d30:     toNum(et['30daysAgo']),
+          d60:     toNum(et['60daysAgo']),
+          d90:     toNum(et['90daysAgo']),
+        };
+      }).filter(x => x && (Number.isFinite(x.current) || Number.isFinite(x.d90))),
+      // EPS Revisions — how many analysts have raised or lowered their
+      // estimate for each period over the last 7 / 30 days.
+      epsRevisions: ['0q', '+1q', '0y', '+1y'].map(period => {
+        const t = eTrend.find(x => x && x.period === period);
+        if (!t) return null;
+        const er = t.epsRevisions || {};
+        return {
+          period,
+          endDate: String(t.endDate || ''),
+          up7:    toNum(er.upLast7days),
+          up30:   toNum(er.upLast30days),
+          down7:  toNum(er.downLast7days),
+          down30: toNum(er.downLast30days),
+        };
+      }).filter(x => x && [x.up7, x.up30, x.down7, x.down30].some(v => Number.isFinite(v))),
       // Prior-year actuals backfill (derived from net income ÷ shares).
       // Frontend uses these to fill any past fiscal year the earningsTrend
       // response left blank.
