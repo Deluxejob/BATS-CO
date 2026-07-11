@@ -311,6 +311,19 @@ export default async function handler(req, res) {
           down30: toNum(er.downLast30days),
         };
       }).filter(x => x && [x.up7, x.up30, x.down7, x.down30].some(v => Number.isFinite(v))),
+      // Earnings growth estimates — expected YoY EPS growth (decimal
+      // fraction, e.g. 0.5695 = +56.95%) for each of the 4 near-term
+      // periods. Same source that populates the "Growth Estimates" table
+      // on Yahoo's Analysis tab.
+      growth: ['0q', '+1q', '0y', '+1y'].map(period => {
+        const t = eTrend.find(x => x && x.period === period);
+        if (!t) return null;
+        return {
+          period,
+          endDate: String(t.endDate || ''),
+          rate: toNum(t.growth),
+        };
+      }).filter(x => x && Number.isFinite(x.rate)),
       // Prior-year actuals backfill (derived from net income ÷ shares).
       // Frontend uses these to fill any past fiscal year the earningsTrend
       // response left blank.

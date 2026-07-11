@@ -815,6 +815,34 @@
       padding: 1rem 0;
       text-align: center;
     }
+
+    /* ---------- Earnings Growth Estimates (single wide 4-bar chart) ---------- */
+    .growth-chart-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .growth-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .growth-chart .axis-label {
+      fill: var(--term-dim);
+      font-size: 10.5px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .growth-chart .axis-label.strong {
+      fill: var(--term-text);
+      font-weight: 600;
+    }
+    .growth-chart .axis-line { stroke: var(--term-border); stroke-width: 1; }
+    .growth-chart .grid-line {
+      stroke: var(--term-border);
+      stroke-width: 1;
+      opacity: 0.35;
+      stroke-dasharray: 2 3;
+    }
+    .growth-chart .zero-line { stroke: #c9d3e0; stroke-width: 1; opacity: 0.55; }
   </style>
 </head>
 <body>
@@ -1003,6 +1031,16 @@
         <div class="term-panel earn-panel">
           <div id="epsRevGrid" class="eps-trend-grid">
             <div class="earn-loading">Loading EPS revisions&hellip;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EARNINGS GROWTH ESTIMATES — expected YoY EPS growth per period -->
+      <section class="term-section" id="growthSection">
+        <div class="term-section-label">EARNINGS GROWTH ESTIMATES <span class="sub">— expected year-over-year EPS growth</span></div>
+        <div class="term-panel earn-panel">
+          <div id="growthChart" class="growth-chart-wrap">
+            <div class="earn-loading">Loading growth estimates&hellip;</div>
           </div>
         </div>
       </section>
@@ -1615,6 +1653,8 @@
         // ---- EPS Trend (how consensus has moved) + EPS Revisions ---------
         renderEpsTrend(er?.epsTrendHistory);
         renderEpsRevisions(er?.epsRevisions);
+        // ---- Earnings Growth Estimates (YoY EPS growth per period) --------
+        renderGrowth(er?.growth);
       }
 
       // Format a big $ number as $XX.XB / $XXM (compact SI-ish)
@@ -2250,6 +2290,104 @@
         });
       }
 
+      // Earnings Growth Estimates — single wide 4-bar chart showing the
+      // ticker's expected YoY EPS growth for Current Qtr, Next Qtr,
+      // Current Year, Next Year. Positive growth = green, negative = red.
+      function drawGrowthChart(svgEl, rows) {
+        if (!svgEl) return;
+        const clean = rows.filter(r => Number.isFinite(r.rate));
+        if (!clean.length) { svgEl.innerHTML = ''; return; }
+
+        const W = 780, H = 300;
+        const M = { top: 34, right: 24, bottom: 46, left: 66 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        const vals = clean.map(r => r.rate);
+        const rawMax = Math.max(...vals, 0);
+        const rawMin = Math.min(...vals, 0);
+        const range = Math.max(rawMax - rawMin, 0.2);
+        const pad = range * 0.18;
+        const yMax = rawMax + pad;
+        const yMin = Math.min(0, rawMin - pad);
+
+        const n = clean.length;
+        const groupW = plotW / n;
+        const barW = Math.min(groupW * 0.5, 110);
+        const xFor = (i) => M.left + groupW * i + (groupW - barW) / 2;
+        const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+        const y0 = yFor(0);
+
+        // "Nice" y-axis step in decimal terms (0.05 = 5%, 0.2 = 20%, …)
+        const niceStep = (r) => {
+          if (r <= 0.1) return 0.02;
+          if (r <= 0.25) return 0.05;
+          if (r <= 0.5) return 0.1;
+          if (r <= 1) return 0.2;
+          if (r <= 2) return 0.5;
+          return 1;
+        };
+        const step = niceStep(yMax - yMin);
+        const fmtPct = (v) => (v * 100).toFixed(Math.abs(v * 100) < 10 ? 1 : 0) + '%';
+
+        let s = '';
+        // Y grid + labels
+        for (let v = Math.ceil(yMin / step) * step; v <= yMax + 1e-9; v += step) {
+          const y = yFor(v);
+          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+          s += `<text class="axis-label" x="${M.left - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmtPct(v)}</text>`;
+        }
+        // Zero baseline
+        s += `<line class="zero-line" x1="${M.left}" x2="${W - M.right}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}"/>`;
+
+        // Bars
+        clean.forEach((r, i) => {
+          const x = xFor(i);
+          const yBar = yFor(r.rate);
+          const top = Math.min(yBar, y0);
+          const h = Math.abs(yBar - y0);
+          const positive = r.rate >= 0;
+          const color = positive ? '#22d39a' : '#ff5374';
+          s += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" ` +
+               `fill="${color}" fill-opacity="0.85" stroke="${color}" stroke-width="1.5" rx="2"/>`;
+          // Value label
+          const valTxt = fmtPct(r.rate);
+          const labelY = positive ? (top - 8) : (top + h + 16);
+          s += `<text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" ` +
+               `fill="${color}" font-size="15" font-weight="700" font-family="'JetBrains Mono', monospace">${valTxt}</text>`;
+          // X-axis: period title + fiscal-end hint on a second line
+          const meta = PERIOD_LABELS[r.period] || { title: r.period.toUpperCase(), hint: () => '' };
+          s += `<text class="axis-label strong" x="${(x + barW / 2).toFixed(1)}" y="${(M.top + plotH + 20).toFixed(1)}" text-anchor="middle" font-size="12">${meta.title}</text>`;
+          const hint = meta.hint(r.endDate);
+          if (hint) {
+            s += `<text class="axis-label" x="${(x + barW / 2).toFixed(1)}" y="${(M.top + plotH + 36).toFixed(1)}" text-anchor="middle" font-size="10">${hint}</text>`;
+          }
+        });
+
+        // Axes
+        s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svgEl.innerHTML = s;
+      }
+
+      function renderGrowth(rows) {
+        const section = document.getElementById('growthSection');
+        const wrap = document.getElementById('growthChart');
+        if (!section || !wrap) return;
+        const clean = (rows || []).filter(r => Number.isFinite(r.rate));
+        if (!clean.length) {
+          if (section) section.style.display = 'none';
+          return;
+        }
+        wrap.innerHTML = `<svg class="growth-chart" id="growthSvg"></svg>` +
+          `<p class="earn-note" style="max-width:780px; margin:0.55rem auto 0; text-align:center">` +
+          `Expected year-over-year EPS growth per period (analyst consensus via Yahoo Finance).</p>`;
+        drawGrowthChart(document.getElementById('growthSvg'), clean);
+      }
+
       (async function renderAnalyst() {
         const section = document.getElementById('analystSection');
         const content = document.getElementById('analystContent');
@@ -2276,9 +2414,9 @@
             profEl.className = 'ov-empty';
             profEl.textContent = 'Company profile unavailable right now.';
           }
-          // Hide the earnings + trend + revisions sections when the API
-          // fails — nothing sensible to show without live data.
-          ['earningsSection', 'epsTrendSection', 'epsRevSection'].forEach(id => {
+          // Hide the earnings + trend + revisions + growth sections when
+          // the API fails — nothing sensible to show without live data.
+          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection'].forEach(id => {
             const s = document.getElementById(id);
             if (s) s.style.display = 'none';
           });
