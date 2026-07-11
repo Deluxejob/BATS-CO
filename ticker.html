@@ -1278,20 +1278,29 @@
         const y0 = yFor(0);
         clean.forEach((d, i) => {
           const x = xFor(i);
-          const isEst = d.kind === 'estimate';
+          const isEst = d.kind === 'estimate' || d.kind === 'derived';
+          const isDerived = d.kind === 'derived';
           const yBar = yFor(d.value);
           const top = Math.min(yBar, y0);
           const h = Math.abs(yBar - y0);
-          const fill   = isEst ? 'rgba(110, 231, 255, 0.16)' : 'rgba(255, 182, 88, 0.9)';
+          // Actual → solid amber. Real estimate → dashed cyan w/ light fill.
+          // Derived (extrapolated) → dotted cyan w/ even lighter fill.
+          const fill   = isDerived ? 'rgba(110, 231, 255, 0.08)'
+                       : isEst      ? 'rgba(110, 231, 255, 0.16)'
+                       : 'rgba(255, 182, 88, 0.9)';
           const stroke = isEst ? '#6ee7ff' : '#ffb658';
-          const dash   = isEst ? ' stroke-dasharray="4 2"' : '';
+          const dash   = isDerived ? ' stroke-dasharray="1.5 2.5"'
+                       : isEst      ? ' stroke-dasharray="4 2"' : '';
+          const opacityAttr = isDerived ? ' opacity="0.85"' : '';
           s += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" ` +
-               `fill="${fill}" stroke="${stroke}" stroke-width="1.5"${dash}/>`;
-          // Value label above bar (below if negative)
-          const valTxt = fmt$(d.value);
+               `fill="${fill}" stroke="${stroke}" stroke-width="1.5"${dash}${opacityAttr}/>`;
+          // Value label above bar (below if negative). Derived bars get an
+          // asterisk suffix so users can tell they're extrapolated at a glance.
+          const valTxt = fmt$(d.value) + (isDerived ? '*' : '');
           const labelY = d.value >= 0 ? (top - 5) : (top + h + 12);
+          const labelFill = isDerived ? '#7b8697' : stroke;
           s += `<text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" ` +
-               `fill="${stroke}" font-size="10.5" font-weight="700" font-family="'JetBrains Mono', monospace">${valTxt}</text>`;
+               `fill="${labelFill}" font-size="10.5" font-weight="700" font-family="'JetBrains Mono', monospace">${valTxt}</text>`;
           // X-axis period label
           s += `<text class="axis-label" x="${(x + barW / 2).toFixed(1)}" y="${(M.top + plotH + 16).toFixed(1)}" text-anchor="middle">${d.label}</text>`;
         });
@@ -1378,6 +1387,27 @@
           }
         }
 
+        // Extrapolate 2 more forward quarters when we have both real Yahoo
+        // forward estimates (current-Q + next-Q). Yahoo genuinely caps at
+        // +1q; the extension applies the observed quarterly growth rate
+        // (nextQ / currentQ) to project +2q and +3q. Marked kind='derived'
+        // so the drawing code can style them distinct from real estimates.
+        if (currentQPeriod && cq && Number.isFinite(cq.estimate)
+            && nq && Number.isFinite(nq.eps) && cq.estimate > 0) {
+          const qGrowth = nq.eps / cq.estimate - 1;
+          let lastPeriod = nextFQ(currentQPeriod);  // +1q
+          let lastVal = nq.eps;
+          for (let i = 0; i < 2; i++) {
+            const p = nextFQ(lastPeriod);
+            if (!p || qMap.has(p)) break;
+            // Slight growth decay each step out to reflect widening uncertainty
+            const decay = i === 0 ? 1 : 0.9;
+            lastVal = lastVal * (1 + qGrowth * decay);
+            qMap.set(p, { label: shortQ(p), value: lastVal, kind: 'derived' });
+            lastPeriod = p;
+          }
+        }
+
         // Emit in chronological fiscal-quarter order
         const qData = [...qMap.entries()]
           .sort((a, b) => fqKey(a[0]) - fqKey(b[0]))
@@ -1435,7 +1465,28 @@
           }
         }
 
-        // 4) Emit sorted chronologically
+        // 4) Extrapolate 2 more forward years when we have both real
+        //    Yahoo annuals (0y + +1y). Applies the observed year-over-year
+        //    growth rate with mild decay for the second projection.
+        const zeroY   = (er?.annual || []).find(t => t.period === '0y'  && Number.isFinite(t.eps));
+        const plusOne = (er?.annual || []).find(t => t.period === '+1y' && Number.isFinite(t.eps));
+        if (zeroY && plusOne && zeroY.eps > 0) {
+          const yGrowth = plusOne.eps / zeroY.eps - 1;
+          const plusOneYr = plusOne.endDate ? parseInt(plusOne.endDate.slice(0, 4), 10) : null;
+          if (Number.isFinite(plusOneYr)) {
+            let lastVal = plusOne.eps;
+            for (let i = 0; i < 2; i++) {
+              const yrLabel = String(plusOneYr + 1 + i);
+              if (aByYear.has(yrLabel)) continue;
+              const decay = i === 0 ? 1 : 0.85;
+              lastVal = lastVal * (1 + yGrowth * decay);
+              // Use rank 5 so anything real always wins
+              aByYear.set(yrLabel, { value: lastVal, kind: 'derived', source: 'extrap', rank: 5 });
+            }
+          }
+        }
+
+        // 5) Emit sorted chronologically
         const aData = [...aByYear.entries()]
           .sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10))
           .map(([yr, v]) => ({ label: yr, value: v.value, kind: v.kind }));
@@ -1456,7 +1507,7 @@
         if (qData.length >= 2) {
           qWrap.innerHTML = `<svg class="earn-chart" id="qEpsSvg"></svg>` +
             legend('Actual', 'Consensus estimate') +
-            `<p class="earn-note">Reported EPS for recent quarters plus the upcoming quarter's consensus. Yahoo's feed caps forward quarterly estimates at ~1 quarter ahead — see the annual chart for further-out consensus.</p>`;
+            `<p class="earn-note">Reported EPS for recent quarters plus the upcoming quarter's consensus. Yahoo's feed caps forward quarterly estimates at ~1 quarter ahead; bars beyond that marked with * are extrapolated from the observed quarterly growth rate.</p>`;
           drawEarnBarChart(document.getElementById('qEpsSvg'), qData);
         } else {
           qWrap.innerHTML = '<div class="earn-empty">No quarterly EPS data available.</div>';
@@ -1465,7 +1516,7 @@
         if (aData.length >= 2) {
           aWrap.innerHTML = `<svg class="earn-chart" id="aEpsSvg"></svg>` +
             legend('Actual (reported)', 'Consensus estimate') +
-            `<p class="earn-note">Prior fiscal-year actuals (summed from reported quarterly EPS when Yahoo has the full year) alongside the current-year and forward analyst consensus. Depth of history varies by ticker.</p>`;
+            `<p class="earn-note">Prior fiscal-year actuals alongside the current-year and forward analyst consensus. Bars marked with * are extrapolated from the observed year-over-year growth rate (Yahoo's feed tops out at +1y).</p>`;
           drawEarnBarChart(document.getElementById('aEpsSvg'), aData);
         } else {
           aWrap.innerHTML = '<div class="earn-empty">No annual EPS trend data available.</div>';
@@ -1725,10 +1776,14 @@
         // Plot each period's dots
         data.forEach((d, i) => {
           const x = xFor(i);
-          // Estimate dot: hollow circle (grey)
+          // Estimate dot: hollow grey circle. Extrapolated (isDerived) →
+          // smaller dotted circle so users can tell it's extrapolated.
           if (Number.isFinite(d.estimate)) {
             const y = yFor(d.estimate);
-            s += `<circle class="et-est-dot" data-idx="${i}" data-y="${y.toFixed(1)}" data-v="${d.estimate}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="none" stroke="#7b8697" stroke-width="1.6"/>`;
+            const r = d.isDerived ? 5 : 7;
+            const strokeW = d.isDerived ? 1.2 : 1.6;
+            const dash = d.isDerived ? ' stroke-dasharray="1.5 2"' : '';
+            s += `<circle class="et-est-dot" data-idx="${i}" data-y="${y.toFixed(1)}" data-v="${d.estimate}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="none" stroke="#7b8697" stroke-width="${strokeW}"${dash}/>`;
           }
           // Actual dot: filled circle (green if beat, red if miss)
           if (Number.isFinite(d.actual)) {
@@ -1749,7 +1804,8 @@
             subLine1 = `<text class="axis-label ${cls}" x="${x.toFixed(1)}" y="${(M.top + plotH + 30).toFixed(1)}" text-anchor="middle" font-weight="700">${isBeat ? 'Beat' : 'Miss'}</text>`;
             subLine2 = `<text class="axis-label ${cls}" x="${x.toFixed(1)}" y="${(M.top + plotH + 43).toFixed(1)}" text-anchor="middle" font-weight="700">${sign}$${diff.toFixed(2)}</text>`;
           } else if (d.isFuture) {
-            subLine1 = `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 30).toFixed(1)}" text-anchor="middle" style="fill:#7b8697">—</text>`;
+            const mid = d.isDerived ? 'proj.' : '—';
+            subLine1 = `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 30).toFixed(1)}" text-anchor="middle" style="fill:#7b8697">${mid}</text>`;
             if (d.reportDate) {
               subLine2 = `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 43).toFixed(1)}" text-anchor="middle" style="fill:#d5dee9">${d.reportDate}</text>`;
             }
@@ -1847,17 +1903,44 @@
 
         // Add next-quarter estimate (one further out)
         const nq = er?.nextQuarterEst;
+        let nqPeriod = null;
         if (nq && Number.isFinite(nq.eps) && currentQPeriod) {
-          const nqp = nextFQ(currentQPeriod);
-          if (nqp && !points.has(nqp)) {
-            points.set(nqp, {
-              period: nqp,
-              label: shortQ(nqp),
+          nqPeriod = nextFQ(currentQPeriod);
+          if (nqPeriod && !points.has(nqPeriod)) {
+            points.set(nqPeriod, {
+              period: nqPeriod,
+              label: shortQ(nqPeriod),
               estimate: nq.eps,
               actual: null,
               isFuture: true,
               reportDate: '',
             });
+          }
+        }
+
+        // Extrapolate 2 more forward quarters (+2q, +3q) when we have both
+        // real Yahoo estimates. Uses the observed quarterly growth
+        // (nextQ / currentQ) with mild decay for the second projection.
+        // isDerived=true → drawn as a smaller/dotted marker.
+        if (cq && Number.isFinite(cq.estimate) && cq.estimate > 0
+            && nq && Number.isFinite(nq.eps) && nqPeriod) {
+          const qGrowth = nq.eps / cq.estimate - 1;
+          let lastPeriod = nqPeriod, lastVal = nq.eps;
+          for (let i = 0; i < 2; i++) {
+            const p = nextFQ(lastPeriod);
+            if (!p || points.has(p)) break;
+            const decay = i === 0 ? 1 : 0.9;
+            lastVal = lastVal * (1 + qGrowth * decay);
+            points.set(p, {
+              period: p,
+              label: shortQ(p),
+              estimate: lastVal,
+              actual: null,
+              isFuture: true,
+              isDerived: true,
+              reportDate: '',
+            });
+            lastPeriod = p;
           }
         }
 
