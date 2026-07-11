@@ -577,6 +577,85 @@
       background: rgba(255, 182, 88, 0.08);
       border-color: var(--term-amber);
     }
+
+    /* ---------- Earnings bar charts (Quarterly + Annual EPS) ---------- */
+    .earn-panel { padding: 0.75rem 0.85rem 0.85rem; }
+    .earn-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+    }
+    .earn-title .sub {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: none;
+    }
+    .earn-chart-wrap { position: relative; }
+    .earn-loading {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--term-dim);
+      padding: 1.5rem 0;
+      text-align: center;
+    }
+    .earn-empty {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--term-dim);
+      padding: 1.5rem 0;
+      text-align: center;
+    }
+    .earn-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .earn-chart .axis-label {
+      fill: var(--term-dim);
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .earn-chart .axis-line { stroke: var(--term-border); stroke-width: 1; }
+    .earn-chart .grid-line {
+      stroke: var(--term-border);
+      stroke-width: 1;
+      opacity: 0.4;
+      stroke-dasharray: 2 3;
+    }
+    .earn-legend {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--term-dim);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin: 0.6rem 0 0;
+      padding-top: 0.55rem;
+      border-top: 1px solid var(--term-border-soft);
+      letter-spacing: 0.03em;
+    }
+    .legend-swatch {
+      display: inline-block;
+      width: 14px;
+      height: 10px;
+      vertical-align: middle;
+      border-radius: 1px;
+      margin-right: 0.4rem;
+    }
+    .legend-swatch.actual   { background: rgba(255, 182, 88, 0.85); border: 1px solid #ffb658; }
+    .legend-swatch.estimate { background: rgba(110, 231, 255, 0.18); border: 1px dashed #6ee7ff; }
+    .earn-note {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--term-dim);
+      margin: 0.5rem 0 0;
+      letter-spacing: 0.03em;
+    }
   </style>
 </head>
 <body>
@@ -676,6 +755,29 @@
           <div class="mkt-col">
             <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
             <div class="term-panel"><div id="financialsWidgetMount"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Earnings — quarterly + annual EPS bar charts (via /api/analyst) -->
+      <section class="term-section" id="earningsSection">
+        <div class="term-section-label">EARNINGS <span class="sub">— quarterly + annual EPS, actuals vs. estimates</span></div>
+        <div class="grid-2col">
+          <div class="mkt-col">
+            <div class="term-panel earn-panel">
+              <div class="earn-title">QUARTERLY EPS <span class="sub">— recent actuals &amp; upcoming estimate</span></div>
+              <div id="quarterlyEpsChart" class="earn-chart-wrap">
+                <div class="earn-loading">Loading quarterly earnings&hellip;</div>
+              </div>
+            </div>
+          </div>
+          <div class="mkt-col">
+            <div class="term-panel earn-panel">
+              <div class="earn-title">ANNUAL EPS <span class="sub">— prior year, current estimate, forward outlook</span></div>
+              <div id="annualEpsChart" class="earn-chart-wrap">
+                <div class="earn-loading">Loading annual earnings&hellip;</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -983,6 +1085,177 @@
         }
       }
 
+      // ----- Earnings bar-chart renderer -----
+      // One SVG chart. Each entry: {label, value, kind:'actual'|'estimate'}.
+      // Actuals draw solid amber; estimates draw dashed cyan outline.
+      function drawEarnBarChart(svgEl, data) {
+        if (!svgEl) return;
+        const clean = data.filter(d => Number.isFinite(d.value));
+        if (!clean.length) {
+          svgEl.innerHTML = '';
+          return false;
+        }
+
+        const W = 560, H = 240;
+        const M = { top: 26, right: 15, bottom: 34, left: 46 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        const vals = clean.map(d => d.value);
+        const rawMax = Math.max(...vals, 0);
+        const rawMin = Math.min(...vals, 0);
+        const pad = Math.max((rawMax - rawMin) * 0.18, Math.abs(rawMax) * 0.15, 0.5);
+        const yMax = rawMax + pad;
+        const yMin = rawMin < 0 ? rawMin - pad : 0;
+
+        const n = clean.length;
+        const groupW = plotW / n;
+        const barW = Math.min(groupW * 0.62, 68);
+        const xFor = (i) => M.left + groupW * i + (groupW - barW) / 2;
+        const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+        // Y-axis "nice" step
+        const range = yMax - yMin;
+        const niceStep = (r) => {
+          const raw = r / 4;
+          const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const norm = raw / mag;
+          const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+          return step * mag;
+        };
+        const step = niceStep(range);
+        const fmt$ = (v) => (Math.abs(v) < 10 ? '$' + v.toFixed(2) : '$' + v.toFixed(1));
+
+        let s = '';
+        // Y grid + labels
+        for (let v = Math.ceil(yMin / step) * step; v <= yMax + 1e-9; v += step) {
+          const y = yFor(v);
+          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+          s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt$(v)}</text>`;
+        }
+        // Zero baseline (draws darker if we have negatives)
+        if (yMin < 0) {
+          const y0 = yFor(0);
+          s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="#c9d3e0" stroke-width="1" opacity="0.55"/>`;
+        }
+
+        // Bars + labels
+        const y0 = yFor(0);
+        clean.forEach((d, i) => {
+          const x = xFor(i);
+          const isEst = d.kind === 'estimate';
+          const yBar = yFor(d.value);
+          const top = Math.min(yBar, y0);
+          const h = Math.abs(yBar - y0);
+          const fill   = isEst ? 'rgba(110, 231, 255, 0.16)' : 'rgba(255, 182, 88, 0.9)';
+          const stroke = isEst ? '#6ee7ff' : '#ffb658';
+          const dash   = isEst ? ' stroke-dasharray="4 2"' : '';
+          s += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" ` +
+               `fill="${fill}" stroke="${stroke}" stroke-width="1.5"${dash}/>`;
+          // Value label above bar (below if negative)
+          const valTxt = fmt$(d.value);
+          const labelY = d.value >= 0 ? (top - 5) : (top + h + 12);
+          s += `<text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" ` +
+               `fill="${stroke}" font-size="10.5" font-weight="700" font-family="'JetBrains Mono', monospace">${valTxt}</text>`;
+          // X-axis period label
+          s += `<text class="axis-label" x="${(x + barW / 2).toFixed(1)}" y="${(M.top + plotH + 16).toFixed(1)}" text-anchor="middle">${d.label}</text>`;
+        });
+
+        // Axes
+        s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svgEl.innerHTML = s;
+        return true;
+      }
+
+      // ----- Earnings section renderer -----
+      // Uses the same /api/analyst fetch. Renders two charts:
+      //   • Quarterly EPS  — recent actuals + upcoming quarter estimate
+      //   • Annual EPS     — prior year actual + current + forward outlook
+      function renderEarnings(er) {
+        const section = document.getElementById('earningsSection');
+        const qWrap = document.getElementById('quarterlyEpsChart');
+        const aWrap = document.getElementById('annualEpsChart');
+        if (!section || !qWrap || !aWrap) return;
+
+        // Format a Yahoo "2Q2024" period as compact "Q2 '24"
+        const shortQ = (p) => {
+          const m = /^(\d)Q(\d{4})$/.exec(p);
+          if (m) return `Q${m[1]} '${m[2].slice(2)}`;
+          return p;
+        };
+
+        // ---- Quarterly ----
+        const qData = [];
+        (er?.quarterly || []).forEach(q => {
+          if (Number.isFinite(q.actual)) qData.push({ label: shortQ(q.period), value: q.actual, kind: 'actual' });
+        });
+        // Add current-quarter estimate if it's not already covered by the last actual
+        const cq = er?.currentQuarterEst;
+        if (cq && Number.isFinite(cq.estimate) && cq.period && cq.year) {
+          const cqPeriod = `${cq.period.charAt(0)}Q${cq.year}`;
+          const already = qData.find(d => d.label === shortQ(cqPeriod));
+          if (!already) qData.push({ label: shortQ(cqPeriod), value: cq.estimate, kind: 'estimate' });
+        }
+        // Optionally add next-quarter estimate for a fuller forward view
+        const nq = er?.nextQuarterEst;
+        if (nq && Number.isFinite(nq.eps) && nq.endDate) {
+          // endDate is like "2025-09-30" — build a "3Q2025"-shaped label
+          const m = /^(\d{4})-(\d{2})-\d{2}/.exec(nq.endDate);
+          if (m) {
+            const qNum = Math.ceil(parseInt(m[2], 10) / 3);
+            const lbl = shortQ(`${qNum}Q${m[1]}`);
+            if (!qData.find(d => d.label === lbl)) {
+              qData.push({ label: lbl, value: nq.eps, kind: 'estimate' });
+            }
+          }
+        }
+
+        // ---- Annual ----
+        const aData = [];
+        (er?.annual || []).forEach(t => {
+          if (!Number.isFinite(t.eps)) return;
+          const yr = t.endDate ? t.endDate.slice(0, 4) : '';
+          // -1y = prior fiscal year actual; everything else is a forward estimate
+          const kind = t.period === '-1y' ? 'actual' : 'estimate';
+          aData.push({ label: yr || t.period, value: t.eps, kind });
+        });
+
+        const anyData = qData.length || aData.length;
+        if (!er || !anyData) {
+          if (section) section.style.display = 'none';
+          return;
+        }
+
+        // Legend text differs between the two charts to explain what "actual" means
+        const legend = (actualLbl, estLbl) => `
+          <p class="earn-legend">
+            <span><span class="legend-swatch actual"></span>${actualLbl}</span>
+            <span><span class="legend-swatch estimate"></span>${estLbl}</span>
+          </p>`;
+
+        if (qData.length >= 2) {
+          qWrap.innerHTML = `<svg class="earn-chart" id="qEpsSvg"></svg>` +
+            legend('Actual', 'Consensus estimate') +
+            `<p class="earn-note">Reported EPS (GAAP or non-GAAP as Yahoo publishes it) for the most recent quarters plus the upcoming quarter's consensus.</p>`;
+          drawEarnBarChart(document.getElementById('qEpsSvg'), qData);
+        } else {
+          qWrap.innerHTML = '<div class="earn-empty">No quarterly EPS data available.</div>';
+        }
+
+        if (aData.length >= 2) {
+          aWrap.innerHTML = `<svg class="earn-chart" id="aEpsSvg"></svg>` +
+            legend('Prior year (trailing)', 'Consensus estimate') +
+            `<p class="earn-note">Prior fiscal year vs. the analyst consensus for the current and next two years.</p>`;
+          drawEarnBarChart(document.getElementById('aEpsSvg'), aData);
+        } else {
+          aWrap.innerHTML = '<div class="earn-empty">No annual EPS trend data available.</div>';
+        }
+      }
+
       (async function renderAnalyst() {
         const section = document.getElementById('analystSection');
         const content = document.getElementById('analystContent');
@@ -1009,6 +1282,10 @@
             profEl.className = 'ov-empty';
             profEl.textContent = 'Company profile unavailable right now.';
           }
+          // Hide the earnings section entirely when the API fails — there's
+          // nothing sensible to show without live data.
+          const earnSection = document.getElementById('earningsSection');
+          if (earnSection) earnSection.style.display = 'none';
           return;
         }
 
@@ -1018,6 +1295,8 @@
         renderOverview(data && data.overview);
         // Same for the Company Profile panel.
         renderProfile(data && data.profile);
+        // Earnings bar charts — quarterly + annual EPS.
+        renderEarnings(data && data.earnings);
 
         if (!data || !data.hasAnalysts) {
           if (section) section.style.display = 'none';

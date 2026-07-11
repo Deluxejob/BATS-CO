@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
     const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory,' +
                     'defaultKeyStatistics,majorHoldersBreakdown,calendarEvents,summaryDetail,' +
-                    'assetProfile';
+                    'assetProfile,earnings,earningsTrend';
     const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(raw)}` +
                 `?modules=${modules}&crumb=${encodeURIComponent(crumb)}`;
     const r = await fetch(url, {
@@ -139,6 +139,47 @@ export default async function handler(req, res) {
       website:  String(ap.website  || '').trim(),
     };
 
+    // Earnings — quarterly (recent actuals + upcoming quarter estimate) and
+    // annual (prior year actual, current estimate, forward estimates).
+    // Yahoo's `earnings` module gives the last ~4 quarters + one current-
+    // quarter estimate. `earningsTrend.trend` gives forward-looking EPS
+    // estimates keyed by period ("-1y","0y","+1y","+2y","0q","+1q").
+    const eChart = (r0.earnings && r0.earnings.earningsChart) || {};
+    const trend  = (r0.earningsTrend && r0.earningsTrend.trend) || [];
+    const findPeriod = (p) => trend.find(t => t && t.period === p);
+    const trendPt = (p) => {
+      const t = findPeriod(p);
+      if (!t) return null;
+      const ee = t.earningsEstimate || {};
+      return {
+        period:  p,
+        endDate: String(t.endDate || ''),
+        eps:     toNum(ee.avg),
+        low:     toNum(ee.low),
+        high:    toNum(ee.high),
+        numAnalysts: toNum(ee.numberOfAnalysts),
+      };
+    };
+
+    const earnings = {
+      // Recent quarterly EPS: actual + prior estimate at reporting time
+      quarterly: (Array.isArray(eChart.quarterly) ? eChart.quarterly : []).map(q => ({
+        period:   String(q.date || ''),   // e.g. "2Q2024"
+        actual:   toNum(q.actual),
+        estimate: toNum(q.estimate),
+      })).filter(q => q.period),
+      // Current quarter estimate (what analysts expect for the upcoming report)
+      currentQuarterEst: {
+        period:   String(eChart.currentQuarterEstimateDate || ''),  // e.g. "2Q"
+        year:     toNum(eChart.currentQuarterEstimateYear),
+        estimate: toNum(eChart.currentQuarterEstimate),
+      },
+      // Next-quarter estimate (looking further ahead)
+      nextQuarterEst: trendPt('+1q'),
+      // Annual EPS timeline: prior year, current year, next two years
+      annual: ['-1y', '0y', '+1y', '+2y'].map(trendPt).filter(Boolean),
+    };
+
     const payload = {
       symbol: raw,
       hasAnalysts: (Number(fd.numberOfAnalystOpinions && fd.numberOfAnalystOpinions.raw) || totalRatings) > 0,
@@ -156,6 +197,7 @@ export default async function handler(req, res) {
       upgrades,
       overview,
       profile,
+      earnings,
     };
 
     res.setHeader('Access-Control-Allow-Origin', '*');
