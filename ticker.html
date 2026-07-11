@@ -154,9 +154,11 @@
       .grid-2col { grid-template-columns: 1fr 1fr; }
     }
     .mkt-col { display: flex; flex-direction: column; }
-    /* Right column has only Financials; stretch that panel to the bottom
-       of the (potentially taller) left column so the two bottoms line up. */
-    .grid-2col > .mkt-col:nth-child(2) > .term-panel:last-child {
+    /* Right column of the Stats+Financials row: stretch the Financials
+       panel so its bottom lines up with the (potentially taller) left
+       column. Scoped by :has(#financialsWidgetMount) so this doesn't leak
+       into other grid-2col rows (e.g. Rev-vs-Earn / Earnings Trends). */
+    .grid-2col > .mkt-col > .term-panel:has(#financialsWidgetMount) {
       flex: 1;
       min-height: 500px;
       display: flex;
@@ -1663,8 +1665,10 @@
       // quarterlies + currentQuarterEst + nextQuarterEst).
       function drawEarnTrendsChart(svgEl, data, onHover) {
         if (!svgEl || !data.length) return;
-        const W = 500, H = 320;
-        const M = { top: 18, right: 22, bottom: 60, left: 46 };
+        // Same viewBox aspect ratio as the Revenue-vs-Earnings chart (2.4:1)
+        // so both cards render at identical heights when they sit side-by-side.
+        const W = 720, H = 300;
+        const M = { top: 16, right: 22, bottom: 60, left: 46 };
         const plotW = W - M.left - M.right;
         const plotH = H - M.top - M.bottom;
 
