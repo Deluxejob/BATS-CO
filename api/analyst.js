@@ -68,6 +68,30 @@ function fiscalEndToISO(fmt) {
   return d.toISOString().slice(0, 10);
 }
 
+// Finnhub peers endpoint — returns tickers of companies in the same
+// industry as the queried symbol. Free tier, but requires an API key
+// stored in the FINNHUB_API_KEY environment variable on Vercel. When
+// the key isn't set (or the call fails), we return null and the
+// frontend hides the peer companies section gracefully.
+async function fetchFinnhubPeers(sym) {
+  const key = process.env.FINNHUB_API_KEY;
+  if (!key) return null;
+  const url = `https://finnhub.io/api/v1/stock/peers?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(key)}`;
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': 'BATS.CO peers proxy' } });
+    if (!r.ok) return null;
+    const arr = await r.json();
+    if (!Array.isArray(arr)) return null;
+    // Finnhub's first element is always the queried ticker itself — drop it.
+    // Also filter out anything that isn't a plain ticker string.
+    return arr
+      .filter(t => typeof t === 'string' && /^[A-Z0-9.\-]{1,10}$/.test(t) && t !== sym.toUpperCase())
+      .slice(0, 12);
+  } catch (e) {
+    return null;
+  }
+}
+
 // Nasdaq's public analyst-forecast endpoint. Free, no API key, returns
 // quarterly and yearly EPS consensus (with low/high/analyst count) going
 // out 5 quarters and up to 4 years — the source of the deeper forward
@@ -110,12 +134,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch Yahoo quoteSummary (crumb-gated) and Nasdaq's public forecast
-    // endpoint in parallel — they're independent data sources and we don't
-    // want the Nasdaq call to add serial latency to the Yahoo one.
-    const [{ crumb, cookieHeader }, nasdaqForecast] = await Promise.all([
+    // Fetch Yahoo quoteSummary (crumb-gated), Nasdaq's public forecast
+    // endpoint, and Finnhub peers in parallel — three independent data
+    // sources, no reason to serialize them.
+    const [{ crumb, cookieHeader }, nasdaqForecast, peers] = await Promise.all([
       getCrumb(),
       fetchNasdaqForecast(raw),
+      fetchFinnhubPeers(raw),
     ]);
 
     const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory,' +
@@ -357,6 +382,9 @@ export default async function handler(req, res) {
       overview,
       profile,
       earnings,
+      // Peer companies (same industry) — from Finnhub. Empty array or
+      // null when no FINNHUB_API_KEY env var is set on Vercel.
+      peers,
     };
 
     res.setHeader('Access-Control-Allow-Origin', '*');

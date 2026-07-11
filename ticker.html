@@ -843,6 +843,36 @@
       stroke-dasharray: 2 3;
     }
     .growth-chart .zero-line { stroke: #c9d3e0; stroke-width: 1; opacity: 0.55; }
+
+    /* ---------- Peer Companies (pill list) ---------- */
+    .peers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .peer-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--term-cyan);
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem;
+      text-decoration: none;
+      transition: background 0.12s, border-color 0.12s, transform 0.12s;
+      display: inline-block;
+    }
+    .peer-pill:hover {
+      background: rgba(110, 231, 255, 0.08);
+      border-color: var(--term-cyan);
+      transform: translateY(-1px);
+    }
+    .peers-empty {
+      color: var(--term-dim);
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -1049,6 +1079,16 @@
       <section class="term-section">
         <div class="term-section-label">TECHNICAL ANALYSIS <span class="sub">— rolled up from ~30 popular indicators</span></div>
         <div class="term-panel"><div id="techWidgetMount"></div></div>
+      </section>
+
+      <!-- Peer companies (same industry, via Finnhub) -->
+      <section class="term-section" id="peersSection">
+        <div class="term-section-label">PEER COMPANIES <span class="sub">— same industry (click a ticker to jump)</span></div>
+        <div class="term-panel">
+          <div id="peersList" class="peers-list">
+            <span style="color:var(--term-dim); font-size:0.85rem">Loading peers&hellip;</span>
+          </div>
+        </div>
       </section>
 
       <!-- News -->
@@ -1279,6 +1319,27 @@
 
         el.className = '';
         el.innerHTML = tiles + eventsHtml;
+      }
+
+      // ----- Peer Companies helper (uses /api/analyst.peers from Finnhub) -----
+      // Data comes back as an array of ticker strings (self-symbol already
+      // filtered out server-side). Rendered as a wrap of pill-shaped links
+      // to ticker.html?sym=X. Hides the section when we didn't get any
+      // (e.g. Finnhub key not set on Vercel, or ETF/index without peers).
+      function renderPeers(peers) {
+        const section = document.getElementById('peersSection');
+        const list = document.getElementById('peersList');
+        if (!section || !list) return;
+        if (!Array.isArray(peers) || !peers.length) {
+          section.style.display = 'none';
+          return;
+        }
+        const esc = (s) => String(s).replace(/[<>&"']/g, c => (
+          { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        list.innerHTML = peers.map(t =>
+          `<a class="peer-pill" href="ticker.html?sym=${encodeURIComponent(t)}">${esc(t)}</a>`
+        ).join('');
       }
 
       // ----- Company Profile helper (also shares the /api/analyst fetch) -----
@@ -2414,9 +2475,9 @@
             profEl.className = 'ov-empty';
             profEl.textContent = 'Company profile unavailable right now.';
           }
-          // Hide the earnings + trend + revisions + growth sections when
-          // the API fails — nothing sensible to show without live data.
-          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection'].forEach(id => {
+          // Hide the earnings + trend + revisions + growth + peers sections
+          // when the API fails — nothing sensible to show without live data.
+          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection'].forEach(id => {
             const s = document.getElementById(id);
             if (s) s.style.display = 'none';
           });
@@ -2429,6 +2490,8 @@
         renderOverview(data && data.overview);
         // Same for the Company Profile panel.
         renderProfile(data && data.profile);
+        // Peer companies (same industry) — pill row of clickable tickers.
+        renderPeers(data && data.peers);
         // Earnings bar charts — quarterly + annual EPS + Rev-vs-Earn +
         // Earnings Trends dot plot. Wrapped in try/catch so any bug in
         // the earnings render can never block the Wall Street ratings /
