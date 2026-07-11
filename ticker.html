@@ -1215,14 +1215,54 @@
         }
 
         // ---- Annual ----
-        const aData = [];
+        // Yahoo's earningsTrend only reliably fills a couple of years around
+        // the current one. To backfill prior years, sum quarterly EPS actuals
+        // by their fiscal-year label ("XQYYYY" → year YYYY) when we have all
+        // four quarters. Merge those computed past-year totals with whatever
+        // Yahoo gives us from earningsTrend and dedup by year.
+        const aByYear = new Map();  // year (string) -> { value, kind, source }
+
+        // 1) Start with computed past-year EPS from summed quarterly actuals.
+        const quarterlyByYear = new Map();
+        (er?.quarterly || []).forEach(q => {
+          if (!Number.isFinite(q.actual)) return;
+          const m = /^(\d)Q(\d{4})$/.exec(q.period);
+          if (!m) return;
+          const yr = m[2];
+          if (!quarterlyByYear.has(yr)) quarterlyByYear.set(yr, []);
+          quarterlyByYear.get(yr).push({ q: parseInt(m[1], 10), eps: q.actual });
+        });
+        for (const [yr, qs] of quarterlyByYear) {
+          // Only count a year as complete when we have all 4 fiscal quarters
+          const seen = new Set(qs.map(x => x.q));
+          if (seen.size === 4) {
+            const sum = qs.reduce((s, x) => s + x.eps, 0);
+            aByYear.set(yr, { value: sum, kind: 'actual', source: 'summed' });
+          }
+        }
+
+        // 2) Overlay analyst-trend data (both prior-year actuals and forward
+        //    estimates). Prior-year rows overwrite the computed sum only if
+        //    we don't have a complete quarterly set — otherwise the summed
+        //    number is more accurate.
         (er?.annual || []).forEach(t => {
           if (!Number.isFinite(t.eps)) return;
-          const yr = t.endDate ? t.endDate.slice(0, 4) : '';
-          // -1y = prior fiscal year actual; everything else is a forward estimate
-          const kind = t.period === '-1y' ? 'actual' : 'estimate';
-          aData.push({ label: yr || t.period, value: t.eps, kind });
+          const yr = t.endDate ? t.endDate.slice(0, 4) : t.period;
+          const forward = t.period && t.period.startsWith('+');
+          const priorOrCurrent = t.period && (t.period.startsWith('-') || t.period === '0y');
+          const kind = forward ? 'estimate' : (priorOrCurrent ? 'actual' : 'estimate');
+          const existing = aByYear.get(yr);
+          if (existing && existing.source === 'summed' && !forward) {
+            // Keep our summed-actual — more trustworthy than Yahoo's trend row
+            return;
+          }
+          aByYear.set(yr, { value: t.eps, kind, source: 'trend' });
         });
+
+        // 3) Emit chart data sorted chronologically
+        const aData = [...aByYear.entries()]
+          .sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10))
+          .map(([yr, v]) => ({ label: yr, value: v.value, kind: v.kind }));
 
         const anyData = qData.length || aData.length;
         if (!er || !anyData) {
@@ -1240,7 +1280,7 @@
         if (qData.length >= 2) {
           qWrap.innerHTML = `<svg class="earn-chart" id="qEpsSvg"></svg>` +
             legend('Actual', 'Consensus estimate') +
-            `<p class="earn-note">Reported EPS (GAAP or non-GAAP as Yahoo publishes it) for the most recent quarters plus the upcoming quarter's consensus.</p>`;
+            `<p class="earn-note">Reported EPS for recent quarters plus the upcoming quarter's consensus. Yahoo's feed caps forward quarterly estimates at ~1 quarter ahead — see the annual chart for further-out consensus.</p>`;
           drawEarnBarChart(document.getElementById('qEpsSvg'), qData);
         } else {
           qWrap.innerHTML = '<div class="earn-empty">No quarterly EPS data available.</div>';
@@ -1248,8 +1288,8 @@
 
         if (aData.length >= 2) {
           aWrap.innerHTML = `<svg class="earn-chart" id="aEpsSvg"></svg>` +
-            legend('Prior year (trailing)', 'Consensus estimate') +
-            `<p class="earn-note">Prior fiscal year vs. the analyst consensus for the current and next two years.</p>`;
+            legend('Actual (reported)', 'Consensus estimate') +
+            `<p class="earn-note">Prior fiscal-year actuals (summed from reported quarterly EPS when Yahoo has the full year) alongside the current-year and forward analyst consensus. Depth of history varies by ticker.</p>`;
           drawEarnBarChart(document.getElementById('aEpsSvg'), aData);
         } else {
           aWrap.innerHTML = '<div class="earn-empty">No annual EPS trend data available.</div>';

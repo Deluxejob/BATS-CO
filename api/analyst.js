@@ -164,9 +164,14 @@ export default async function handler(req, res) {
     };
 
     const earnings = {
-      // Recent quarterly EPS: actual + prior estimate at reporting time
+      // Recent quarterly EPS: actual + prior estimate at reporting time.
+      // Uses earnings.earningsChart.quarterly (~4 quarters with clean
+      // fiscal-quarter labels like "1Q2026"). We deliberately DON'T merge
+      // earningsHistory here — its records use report-date-based calendar
+      // quarters, which double-count against fiscal labels for any ticker
+      // with an off-calendar fiscal year (NVDA, AAPL, etc.).
       quarterly: (Array.isArray(eChart.quarterly) ? eChart.quarterly : []).map(q => ({
-        period:   String(q.date || ''),   // e.g. "2Q2024"
+        period:   String(q.date || ''),
         actual:   toNum(q.actual),
         estimate: toNum(q.estimate),
       })).filter(q => q.period),
@@ -176,10 +181,13 @@ export default async function handler(req, res) {
         year:     toNum(eChart.currentQuarterEstimateYear),
         estimate: toNum(eChart.currentQuarterEstimate),
       },
-      // Next-quarter estimate (looking further ahead)
+      // Next-quarter estimate (looking further ahead — Yahoo caps at +1q)
       nextQuarterEst: trendPt('+1q'),
-      // Annual EPS timeline: prior year, current year, next two years
-      annual: ['-1y', '0y', '+1y', '+2y'].map(trendPt).filter(Boolean),
+      // Annual EPS timeline: try to catch as much history + future as
+      // Yahoo has. -2y/-1y are prior-year actuals when populated; 0y is
+      // this year's consensus; +1y/+2y/+3y are forward estimates. Yahoo
+      // returns null for periods it doesn't have; filter(Boolean) drops them.
+      annual: ['-2y', '-1y', '0y', '+1y', '+2y', '+3y'].map(trendPt).filter(Boolean),
     };
 
     const payload = {
