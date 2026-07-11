@@ -250,13 +250,20 @@
       color: var(--term-dim);
       margin: 0.75rem 0 0;
     }
+    /* News actions row: meta text on the left, SHOW MORE button on the
+       lower right. Falls back to stacking on very narrow viewports. */
     .term-news-actions {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
       margin-top: 0.85rem;
       padding-top: 0.75rem;
       border-top: 1px solid var(--term-border-soft);
     }
+    .term-news-actions .term-news-meta { margin: 0; flex: 1 1 auto; }
+    .term-news-actions .term-news-more { flex: 0 0 auto; margin-left: auto; }
     .term-news-more {
       font: inherit;
       font-family: 'JetBrains Mono', monospace;
@@ -932,9 +939,9 @@
             <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
           </ul>
           <div class="term-news-actions">
+            <p class="term-news-meta" id="tickerNewsMeta"></p>
             <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
           </div>
-          <p class="term-news-meta" id="tickerNewsMeta"></p>
         </div>
       </section>
 
@@ -2120,12 +2127,12 @@
           { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
         ));
 
-        // Show 20 headlines on first load. The API aggregates ~4 Yahoo
-        // queries and returns up to 80 unique items (typically 30-60 for
-        // an actively-covered ticker, roughly a quarter's worth), and each
-        // "SHOW MORE" click reveals another 20 for people who want to dig
-        // into older coverage.
-        const PAGE = 20;
+        // Show 15 headlines on first load, with a SHOW MORE button in the
+        // lower right of the actions row that reveals another 15 per click.
+        // 15 (not 20) so the button actually appears on tickers Yahoo caps
+        // in the high teens — with 20 initial + a 17-item response, the
+        // button would have hidden itself and defeated the point.
+        const PAGE = 15;
         const total = items.length;
         let shown = 0;
 
