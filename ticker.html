@@ -1388,25 +1388,25 @@
         }
 
         // Extrapolate 2 more forward quarters when we have both real Yahoo
-        // forward estimates (current-Q + next-Q). Yahoo genuinely caps at
-        // +1q; the extension applies the observed quarterly growth rate
-        // (nextQ / currentQ) to project +2q and +3q. Marked kind='derived'
-        // so the drawing code can style them distinct from real estimates.
-        if (currentQPeriod && cq && Number.isFinite(cq.estimate)
-            && nq && Number.isFinite(nq.eps) && cq.estimate > 0) {
-          const qGrowth = nq.eps / cq.estimate - 1;
-          let lastPeriod = nextFQ(currentQPeriod);  // +1q
-          let lastVal = nq.eps;
-          for (let i = 0; i < 2; i++) {
-            const p = nextFQ(lastPeriod);
-            if (!p || qMap.has(p)) break;
-            // Slight growth decay each step out to reflect widening uncertainty
-            const decay = i === 0 ? 1 : 0.9;
-            lastVal = lastVal * (1 + qGrowth * decay);
-            qMap.set(p, { label: shortQ(p), value: lastVal, kind: 'derived' });
-            lastPeriod = p;
+        // forward estimates (current-Q + next-Q). Wrapped in try/catch so a
+        // bug in extrapolation can't block the analyst-ratings render that
+        // runs below renderEarnings in the parent function.
+        try {
+          if (currentQPeriod && cq && Number.isFinite(cq.estimate)
+              && nq && Number.isFinite(nq.eps) && cq.estimate > 0) {
+            const qGrowth = nq.eps / cq.estimate - 1;
+            let lastPeriod = nextFQ(currentQPeriod);
+            let lastVal = nq.eps;
+            for (let i = 0; i < 2; i++) {
+              const p = nextFQ(lastPeriod);
+              if (!p || qMap.has(p)) break;
+              const decay = i === 0 ? 1 : 0.9;
+              lastVal = lastVal * (1 + qGrowth * decay);
+              qMap.set(p, { label: shortQ(p), value: lastVal, kind: 'derived' });
+              lastPeriod = p;
+            }
           }
-        }
+        } catch (e) { console.warn('quarterly extrapolation failed:', e); }
 
         // Emit in chronological fiscal-quarter order
         const qData = [...qMap.entries()]
@@ -1466,25 +1466,26 @@
         }
 
         // 4) Extrapolate 2 more forward years when we have both real
-        //    Yahoo annuals (0y + +1y). Applies the observed year-over-year
-        //    growth rate with mild decay for the second projection.
-        const zeroY   = (er?.annual || []).find(t => t.period === '0y'  && Number.isFinite(t.eps));
-        const plusOne = (er?.annual || []).find(t => t.period === '+1y' && Number.isFinite(t.eps));
-        if (zeroY && plusOne && zeroY.eps > 0) {
-          const yGrowth = plusOne.eps / zeroY.eps - 1;
-          const plusOneYr = plusOne.endDate ? parseInt(plusOne.endDate.slice(0, 4), 10) : null;
-          if (Number.isFinite(plusOneYr)) {
-            let lastVal = plusOne.eps;
-            for (let i = 0; i < 2; i++) {
-              const yrLabel = String(plusOneYr + 1 + i);
-              if (aByYear.has(yrLabel)) continue;
-              const decay = i === 0 ? 1 : 0.85;
-              lastVal = lastVal * (1 + yGrowth * decay);
-              // Use rank 5 so anything real always wins
-              aByYear.set(yrLabel, { value: lastVal, kind: 'derived', source: 'extrap', rank: 5 });
+        //    Yahoo annuals (0y + +1y). Wrapped in try/catch — same reason
+        //    as the quarterly extrapolation.
+        try {
+          const zeroY   = (er?.annual || []).find(t => t.period === '0y'  && Number.isFinite(t.eps));
+          const plusOne = (er?.annual || []).find(t => t.period === '+1y' && Number.isFinite(t.eps));
+          if (zeroY && plusOne && zeroY.eps > 0) {
+            const yGrowth = plusOne.eps / zeroY.eps - 1;
+            const plusOneYr = plusOne.endDate ? parseInt(plusOne.endDate.slice(0, 4), 10) : null;
+            if (Number.isFinite(plusOneYr)) {
+              let lastVal = plusOne.eps;
+              for (let i = 0; i < 2; i++) {
+                const yrLabel = String(plusOneYr + 1 + i);
+                if (aByYear.has(yrLabel)) continue;
+                const decay = i === 0 ? 1 : 0.85;
+                lastVal = lastVal * (1 + yGrowth * decay);
+                aByYear.set(yrLabel, { value: lastVal, kind: 'derived', source: 'extrap', rank: 5 });
+              }
             }
           }
-        }
+        } catch (e) { console.warn('annual extrapolation failed:', e); }
 
         // 5) Emit sorted chronologically
         const aData = [...aByYear.entries()]
@@ -2010,9 +2011,16 @@
         // Same for the Company Profile panel.
         renderProfile(data && data.profile);
         // Earnings bar charts — quarterly + annual EPS + Rev-vs-Earn +
-        // Earnings Trends dot plot. Trends chart uses overview.nextEarningsDate
-        // to label the upcoming quarter's expected report date.
-        renderEarnings(data && data.earnings, data && data.overview);
+        // Earnings Trends dot plot. Wrapped in try/catch so any bug in
+        // the earnings render can never block the Wall Street ratings /
+        // price-target rendering that comes below in this function.
+        try {
+          renderEarnings(data && data.earnings, data && data.overview);
+        } catch (e) {
+          console.warn('renderEarnings failed:', e);
+          const earnSection = document.getElementById('earningsSection');
+          if (earnSection) earnSection.style.display = 'none';
+        }
 
         if (!data || !data.hasAnalysts) {
           if (section) section.style.display = 'none';
