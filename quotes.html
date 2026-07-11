@@ -453,10 +453,16 @@
       color: #0a1218;
       border-color: var(--term-amber);
     }
+    /* Sector heatmap is exactly 11 tiles. On any reasonable laptop-and-up
+       screen (≥1100px), force one row of 11 columns so it never wraps to
+       9+2. Below that, fall back to a packed grid that adapts. */
     .sector-heat-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 6px;
+    }
+    @media (min-width: 1100px) {
+      .sector-heat-grid { grid-template-columns: repeat(11, minmax(0, 1fr)); }
     }
     .sector-tile {
       padding: 0.75rem 0.75rem;
