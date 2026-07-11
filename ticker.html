@@ -734,6 +734,16 @@
     .re-chart .re-group { transition: opacity 0.12s; cursor: default; }
     .re-chart.hovering .re-group { opacity: 0.55; }
     .re-chart.hovering .re-group.re-active { opacity: 1; }
+
+    /* Earnings Trends dot plot — reuses .re-chart axis/grid styles plus a
+       few plot-specific extras (crosshair when a period is hovered). */
+    .re-chart .et-crosshair { stroke: var(--term-dim); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.55; }
+    .re-chart .et-beat  { fill: var(--term-green); }
+    .re-chart .et-miss  { fill: var(--term-red); }
+    .re-chart .et-est   { fill: var(--term-dim); }
+    .re-readout .rv.est { color: var(--term-dim); }
+    .re-readout .rv.beat  { color: var(--term-green); }
+    .re-readout .rv.miss  { color: var(--term-red); }
   </style>
 </head>
 <body>
@@ -867,20 +877,41 @@
           </div>
         </div>
 
-        <!-- Revenue vs. Earnings ($) — grouped chart with Annual/Quarterly toggle -->
-        <div class="term-panel earn-panel" id="revEarnPanel" style="margin-top:0.75rem">
-          <div class="re-header-row">
-            <div class="re-title-block">
-              <div class="earn-title">REVENUE vs. EARNINGS <span class="sub">— total dollars, quarterly &amp; annual</span></div>
-              <div id="reReadout" class="re-readout">&nbsp;</div>
-            </div>
-            <div class="re-toggle" role="tablist" aria-label="Time period">
-              <button type="button" class="re-tab" data-view="annual"    role="tab">Annual</button>
-              <button type="button" class="re-tab active" data-view="quarterly" role="tab">Quarterly</button>
+        <!-- Bottom row: two charts side-by-side.
+             Left: Revenue vs. Earnings ($) grouped bars w/ Annual/Quarterly toggle.
+             Right: Earnings Trends dot plot — estimate vs actual per quarter,
+                    with beat/miss labels + upcoming-quarter estimate. -->
+        <div class="grid-2col" style="margin-top:0.75rem">
+          <div class="mkt-col">
+            <div class="term-panel earn-panel" id="revEarnPanel">
+              <div class="re-header-row">
+                <div class="re-title-block">
+                  <div class="earn-title">REVENUE vs. EARNINGS <span class="sub">— total $</span></div>
+                  <div id="reReadout" class="re-readout">&nbsp;</div>
+                </div>
+                <div class="re-toggle" role="tablist" aria-label="Time period">
+                  <button type="button" class="re-tab" data-view="annual"    role="tab">Annual</button>
+                  <button type="button" class="re-tab active" data-view="quarterly" role="tab">Quarterly</button>
+                </div>
+              </div>
+              <div id="revEarnChart" class="re-chart-wrap">
+                <div class="earn-loading">Loading revenue &amp; earnings&hellip;</div>
+              </div>
             </div>
           </div>
-          <div id="revEarnChart" class="re-chart-wrap">
-            <div class="earn-loading">Loading revenue &amp; earnings&hellip;</div>
+
+          <div class="mkt-col">
+            <div class="term-panel earn-panel" id="earnTrendsPanel">
+              <div class="re-header-row">
+                <div class="re-title-block">
+                  <div class="earn-title">EARNINGS TRENDS <span class="sub">— estimate vs. actual EPS</span></div>
+                  <div id="etReadout" class="re-readout">&nbsp;</div>
+                </div>
+              </div>
+              <div id="earnTrendsChart" class="re-chart-wrap">
+                <div class="earn-loading">Loading earnings trends&hellip;</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1270,7 +1301,7 @@
       // Uses the same /api/analyst fetch. Renders two charts:
       //   • Quarterly EPS  — recent actuals + upcoming quarter estimate
       //   • Annual EPS     — prior year actual + current + forward outlook
-      function renderEarnings(er) {
+      function renderEarnings(er, overview) {
         const section = document.getElementById('earningsSection');
         const qWrap = document.getElementById('quarterlyEpsChart');
         const aWrap = document.getElementById('annualEpsChart');
@@ -1433,6 +1464,8 @@
 
         // ---- Revenue vs. Earnings ($ total, with Annual/Quarterly toggle) ----
         renderRevEarn(er);
+        // ---- Earnings Trends dot plot (estimate vs actual per quarter) ----
+        renderEarnTrends(er, overview);
       }
 
       // Format a big $ number as $XX.XB / $XXM (compact SI-ish)
@@ -1624,6 +1657,225 @@
         });
       }
 
+      // Earnings Trends dot plot — estimate vs actual EPS per quarter,
+      // with beat/miss labels below and upcoming-quarter estimate. Uses the
+      // same /api/analyst.earnings data as the EPS bar charts (earningsChart
+      // quarterlies + currentQuarterEst + nextQuarterEst).
+      function drawEarnTrendsChart(svgEl, data, onHover) {
+        if (!svgEl || !data.length) return;
+        const W = 500, H = 320;
+        const M = { top: 18, right: 22, bottom: 60, left: 46 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        // Y range based on ALL est+actual points
+        const vals = data.flatMap(d => [d.estimate, d.actual]).filter(Number.isFinite);
+        if (vals.length < 2) return;
+        const rawMax = Math.max(...vals);
+        const rawMin = Math.min(...vals);
+        const pad = Math.max((rawMax - rawMin) * 0.20, Math.abs(rawMax) * 0.10, 0.10);
+        const yMax = rawMax + pad;
+        const yMin = Math.max(0, rawMin - pad);
+
+        const n = data.length;
+        const groupW = plotW / n;
+        const xFor = (i) => M.left + groupW * i + groupW / 2;
+        const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+        // "Nice" step for the y-axis
+        const range = yMax - yMin;
+        const niceStep = (r) => {
+          const raw = r / 4;
+          const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const norm = raw / mag;
+          const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+          return step * mag;
+        };
+        const step = niceStep(range);
+        const fmt$ = (v) => (Math.abs(v) < 10 ? v.toFixed(2) : v.toFixed(1));
+
+        let s = '';
+        // Y grid + labels
+        for (let v = Math.ceil(yMin / step) * step; v <= yMax + 1e-6; v += step) {
+          const y = yFor(v);
+          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+          s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt$(v)}</text>`;
+        }
+        // Bottom axis line
+        s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        // Crosshair placeholder (drawn/updated on hover)
+        s += `<g id="et-cross" style="display:none">` +
+             `<line class="et-crosshair" x1="0" x2="0" y1="${M.top}" y2="${M.top + plotH}"/>` +
+             `<line class="et-crosshair" x1="${M.left}" x2="${W - M.right}" y1="0" y2="0"/>` +
+             `</g>`;
+
+        // Plot each period's dots
+        data.forEach((d, i) => {
+          const x = xFor(i);
+          // Estimate dot: hollow circle (grey)
+          if (Number.isFinite(d.estimate)) {
+            const y = yFor(d.estimate);
+            s += `<circle class="et-est-dot" data-idx="${i}" data-y="${y.toFixed(1)}" data-v="${d.estimate}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="none" stroke="#7b8697" stroke-width="1.6"/>`;
+          }
+          // Actual dot: filled circle (green if beat, red if miss)
+          if (Number.isFinite(d.actual)) {
+            const y = yFor(d.actual);
+            const isBeat = Number.isFinite(d.estimate) ? d.actual >= d.estimate : true;
+            const cls = isBeat ? 'et-beat' : 'et-miss';
+            s += `<circle class="et-act-dot ${cls}" data-idx="${i}" data-y="${y.toFixed(1)}" data-v="${d.actual}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6.5" stroke="#0a1218" stroke-width="1.5"/>`;
+          }
+          // Period label
+          s += `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 16).toFixed(1)}" text-anchor="middle">${d.label}</text>`;
+          // Beat/Miss (past) or "—" + date (future) below the period label
+          let subLine1 = '', subLine2 = '';
+          if (Number.isFinite(d.actual) && Number.isFinite(d.estimate)) {
+            const diff = d.actual - d.estimate;
+            const isBeat = diff >= 0;
+            const sign = diff >= 0 ? '+' : '';
+            const cls = isBeat ? 'et-beat' : 'et-miss';
+            subLine1 = `<text class="axis-label ${cls}" x="${x.toFixed(1)}" y="${(M.top + plotH + 30).toFixed(1)}" text-anchor="middle" font-weight="700">${isBeat ? 'Beat' : 'Miss'}</text>`;
+            subLine2 = `<text class="axis-label ${cls}" x="${x.toFixed(1)}" y="${(M.top + plotH + 43).toFixed(1)}" text-anchor="middle" font-weight="700">${sign}$${diff.toFixed(2)}</text>`;
+          } else if (d.isFuture) {
+            subLine1 = `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 30).toFixed(1)}" text-anchor="middle" style="fill:#7b8697">—</text>`;
+            if (d.reportDate) {
+              subLine2 = `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 43).toFixed(1)}" text-anchor="middle" style="fill:#d5dee9">${d.reportDate}</text>`;
+            }
+          }
+          s += subLine1 + subLine2;
+          // Invisible hover hit-target
+          s += `<rect class="et-hit" data-idx="${i}" x="${(M.left + groupW * i).toFixed(1)}" y="${M.top}" width="${groupW.toFixed(1)}" height="${plotH}" fill="transparent"/>`;
+        });
+
+        svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svgEl.innerHTML = s;
+
+        // Hover: show crosshair at the actual dot (or the estimate if no
+        // actual), fire onHover(data[i]) to update the readout.
+        const cross = svgEl.querySelector('#et-cross');
+        const vLine = cross.querySelector('line:nth-child(1)');
+        const hLine = cross.querySelector('line:nth-child(2)');
+        svgEl.querySelectorAll('.et-hit').forEach(hit => {
+          hit.addEventListener('mouseenter', () => {
+            const i = parseInt(hit.getAttribute('data-idx'), 10);
+            const d = data[i];
+            const x = xFor(i);
+            const focusY = Number.isFinite(d.actual)   ? yFor(d.actual)
+                        : Number.isFinite(d.estimate) ? yFor(d.estimate)
+                        : null;
+            if (focusY == null) return;
+            vLine.setAttribute('x1', x.toFixed(1));
+            vLine.setAttribute('x2', x.toFixed(1));
+            hLine.setAttribute('y1', focusY.toFixed(1));
+            hLine.setAttribute('y2', focusY.toFixed(1));
+            cross.style.display = '';
+            if (onHover) onHover(d, i);
+          });
+        });
+        svgEl.addEventListener('mouseleave', () => {
+          cross.style.display = 'none';
+          if (onHover) onHover(data[data.length - 1], data.length - 1);
+        });
+      }
+
+      function renderEarnTrends(er, overview) {
+        const panel = document.getElementById('earnTrendsPanel');
+        const wrap  = document.getElementById('earnTrendsChart');
+        const readout = document.getElementById('etReadout');
+        if (!panel || !wrap) return;
+
+        const shortQ = (p) => { const m = /^(\d)Q(\d{4})$/.exec(p); return m ? `Q${m[1]} FY${m[2].slice(2)}` : p; };
+        const parseFQ = (p) => { const m = /^(\d)Q(\d{4})$/.exec(p); return m ? { q: +m[1], y: +m[2] } : null; };
+        const fqKey = (p) => { const pq = parseFQ(p); return pq ? pq.y * 10 + pq.q : 0; };
+        const nextFQ = (p) => { const pq = parseFQ(p); if (!pq) return null; let q = pq.q + 1, y = pq.y; if (q > 4) { q = 1; y += 1; } return `${q}Q${y}`; };
+
+        // Build a period → point map, starting with past reports.
+        const points = new Map();
+        (er?.quarterly || []).forEach(q => {
+          if (!q.period) return;
+          points.set(q.period, {
+            period: q.period,
+            label: shortQ(q.period),
+            estimate: q.estimate,
+            actual: q.actual,
+            isFuture: false,
+          });
+        });
+
+        // Add current-quarter estimate (upcoming report)
+        const cq = er?.currentQuarterEst;
+        let currentQPeriod = null;
+        if (cq && Number.isFinite(cq.estimate)) {
+          if (cq.period && cq.year) {
+            currentQPeriod = `${cq.period.charAt(0)}Q${cq.year}`;
+          } else {
+            const latest = [...points.keys()].sort((a, b) => fqKey(b) - fqKey(a))[0];
+            currentQPeriod = latest ? nextFQ(latest) : null;
+          }
+          if (currentQPeriod && !points.has(currentQPeriod)) {
+            // If overview has next earnings date, format it like "Nov 20"
+            let reportDate = '';
+            if (overview && Number.isFinite(overview.nextEarningsDate)) {
+              try {
+                const d = new Date(overview.nextEarningsDate * 1000);
+                reportDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+              } catch (e) { /* ignore */ }
+            }
+            points.set(currentQPeriod, {
+              period: currentQPeriod,
+              label: shortQ(currentQPeriod),
+              estimate: cq.estimate,
+              actual: null,
+              isFuture: true,
+              reportDate,
+            });
+          }
+        }
+
+        // Add next-quarter estimate (one further out)
+        const nq = er?.nextQuarterEst;
+        if (nq && Number.isFinite(nq.eps) && currentQPeriod) {
+          const nqp = nextFQ(currentQPeriod);
+          if (nqp && !points.has(nqp)) {
+            points.set(nqp, {
+              period: nqp,
+              label: shortQ(nqp),
+              estimate: nq.eps,
+              actual: null,
+              isFuture: true,
+              reportDate: '',
+            });
+          }
+        }
+
+        const data = [...points.values()].sort((a, b) => fqKey(a.period) - fqKey(b.period));
+        if (data.length < 2) {
+          panel.style.display = 'none';
+          return;
+        }
+
+        function updateReadout(row) {
+          if (!row) { readout.innerHTML = '&nbsp;'; return; }
+          let html = `<span class="rl">${row.label}</span>`;
+          if (Number.isFinite(row.estimate)) {
+            html += `<span class="dot">·</span><span class="rk">Est</span><span class="rv est">$${row.estimate.toFixed(2)}</span>`;
+          }
+          if (Number.isFinite(row.actual)) {
+            const isBeat = Number.isFinite(row.estimate) ? row.actual >= row.estimate : true;
+            html += `<span class="dot">·</span><span class="rk">Actual</span><span class="rv ${isBeat ? 'beat' : 'miss'}">$${row.actual.toFixed(2)}</span>`;
+          } else if (row.isFuture && row.reportDate) {
+            html += `<span class="dot">·</span><span class="rk">Reports</span><span class="rv">${row.reportDate}</span>`;
+          }
+          readout.innerHTML = html;
+        }
+
+        wrap.innerHTML = `<svg class="re-chart" id="etSvg"></svg>`;
+        drawEarnTrendsChart(document.getElementById('etSvg'), data, updateReadout);
+        updateReadout(data[data.length - 1]);
+      }
+
       (async function renderAnalyst() {
         const section = document.getElementById('analystSection');
         const content = document.getElementById('analystContent');
@@ -1663,8 +1915,10 @@
         renderOverview(data && data.overview);
         // Same for the Company Profile panel.
         renderProfile(data && data.profile);
-        // Earnings bar charts — quarterly + annual EPS.
-        renderEarnings(data && data.earnings);
+        // Earnings bar charts — quarterly + annual EPS + Rev-vs-Earn +
+        // Earnings Trends dot plot. Trends chart uses overview.nextEarningsDate
+        // to label the upcoming quarter's expected report date.
+        renderEarnings(data && data.earnings, data && data.overview);
 
         if (!data || !data.hasAnalysts) {
           if (section) section.style.display = 'none';
