@@ -1387,26 +1387,37 @@
           }
         }
 
-        // Extrapolate 2 more forward quarters when we have both real Yahoo
-        // forward estimates (current-Q + next-Q). Wrapped in try/catch so a
-        // bug in extrapolation can't block the analyst-ratings render that
-        // runs below renderEarnings in the parent function.
-        try {
-          if (currentQPeriod && cq && Number.isFinite(cq.estimate)
-              && nq && Number.isFinite(nq.eps) && cq.estimate > 0) {
-            const qGrowth = nq.eps / cq.estimate - 1;
-            let lastPeriod = nextFQ(currentQPeriod);
-            let lastVal = nq.eps;
-            for (let i = 0; i < 2; i++) {
-              const p = nextFQ(lastPeriod);
-              if (!p || qMap.has(p)) break;
-              const decay = i === 0 ? 1 : 0.9;
-              lastVal = lastVal * (1 + qGrowth * decay);
-              qMap.set(p, { label: shortQ(p), value: lastVal, kind: 'derived' });
-              lastPeriod = p;
-            }
+        // Extend the forward window with Nasdaq's real analyst consensus.
+        // Nasdaq's quarterlyForecast[] gives ~5 upcoming quarters with
+        // fiscalEnd like "Jul 2026" — we label them "MMM 'YY" (calendar-
+        // month based) so they're easy to read alongside Yahoo's fiscal-
+        // quarter labels for past reports. Skip any period that already
+        // has an entry from Yahoo (dedup by fiscal-quarter key when the
+        // endDate falls in the same quarter).
+        const fwdQ = (er?.forecast && er.forecast.quarterly) || [];
+        if (fwdQ.length) {
+          // Build a set of "fiscal-quarter keys" we already have — using the
+          // year * 10 + quarter number sort key so we can dedup Nasdaq
+          // periods that Yahoo already covered.
+          const seenKeys = new Set();
+          for (const period of qMap.keys()) seenKeys.add(fqKey(period));
+          for (const f of fwdQ) {
+            if (!f.endDate || !Number.isFinite(f.eps)) continue;
+            // Parse endDate ("2026-07-31") to a fiscal-quarter-esque key
+            const m = /^(\d{4})-(\d{2})-\d{2}$/.exec(f.endDate);
+            if (!m) continue;
+            const yr = +m[1], qn = Math.ceil(+m[2] / 3);
+            const key = yr * 10 + qn;
+            if (seenKeys.has(key)) continue;
+            seenKeys.add(key);
+            // Label like "Jul '26" from the fiscalEnd string, falling
+            // back to the endDate month if fiscalEnd was empty.
+            const label = f.fiscalEnd ? f.fiscalEnd.replace(/\s+(\d{2})(\d{2})$/, " '$2") : '';
+            // Use a synthetic period key so the sort still works
+            const syntheticPeriod = `${qn}Q${yr}`;
+            qMap.set(syntheticPeriod, { label: label || syntheticPeriod, value: f.eps, kind: 'estimate' });
           }
-        } catch (e) { console.warn('quarterly extrapolation failed:', e); }
+        }
 
         // Emit in chronological fiscal-quarter order
         const qData = [...qMap.entries()]
@@ -1465,27 +1476,19 @@
           }
         }
 
-        // 4) Extrapolate 2 more forward years when we have both real
-        //    Yahoo annuals (0y + +1y). Wrapped in try/catch — same reason
-        //    as the quarterly extrapolation.
-        try {
-          const zeroY   = (er?.annual || []).find(t => t.period === '0y'  && Number.isFinite(t.eps));
-          const plusOne = (er?.annual || []).find(t => t.period === '+1y' && Number.isFinite(t.eps));
-          if (zeroY && plusOne && zeroY.eps > 0) {
-            const yGrowth = plusOne.eps / zeroY.eps - 1;
-            const plusOneYr = plusOne.endDate ? parseInt(plusOne.endDate.slice(0, 4), 10) : null;
-            if (Number.isFinite(plusOneYr)) {
-              let lastVal = plusOne.eps;
-              for (let i = 0; i < 2; i++) {
-                const yrLabel = String(plusOneYr + 1 + i);
-                if (aByYear.has(yrLabel)) continue;
-                const decay = i === 0 ? 1 : 0.85;
-                lastVal = lastVal * (1 + yGrowth * decay);
-                aByYear.set(yrLabel, { value: lastVal, kind: 'derived', source: 'extrap', rank: 5 });
-              }
-            }
-          }
-        } catch (e) { console.warn('annual extrapolation failed:', e); }
+        // 4) Extend the forward window with Nasdaq's real analyst consensus.
+        //    Rank 4 → lower than Yahoo's earningsTrend (rank 2) for years
+        //    both sources cover, but wins over derived-from-net-income
+        //    (rank 3) and fills years Yahoo omits (typically +2y/+3y).
+        const fwdY = (er?.forecast && er.forecast.yearly) || [];
+        for (const f of fwdY) {
+          if (!f.endDate || !Number.isFinite(f.eps)) continue;
+          const yr = f.endDate.slice(0, 4);
+          const existing = aByYear.get(yr);
+          // Don't overwrite a Yahoo rank-2 entry with rank-4 Nasdaq
+          if (existing && existing.rank <= 2) continue;
+          aByYear.set(yr, { value: f.eps, kind: 'estimate', source: 'nasdaq', rank: 4 });
+        }
 
         // 5) Emit sorted chronologically
         const aData = [...aByYear.entries()]
@@ -1508,7 +1511,7 @@
         if (qData.length >= 2) {
           qWrap.innerHTML = `<svg class="earn-chart" id="qEpsSvg"></svg>` +
             legend('Actual', 'Consensus estimate') +
-            `<p class="earn-note">Reported EPS for recent quarters plus the upcoming quarter's consensus. Yahoo's feed caps forward quarterly estimates at ~1 quarter ahead; bars beyond that marked with * are extrapolated from the observed quarterly growth rate.</p>`;
+            `<p class="earn-note">Reported EPS for recent quarters plus the analyst consensus for upcoming quarters (Yahoo Finance + Nasdaq analyst forecast).</p>`;
           drawEarnBarChart(document.getElementById('qEpsSvg'), qData);
         } else {
           qWrap.innerHTML = '<div class="earn-empty">No quarterly EPS data available.</div>';
@@ -1517,7 +1520,7 @@
         if (aData.length >= 2) {
           aWrap.innerHTML = `<svg class="earn-chart" id="aEpsSvg"></svg>` +
             legend('Actual (reported)', 'Consensus estimate') +
-            `<p class="earn-note">Prior fiscal-year actuals alongside the current-year and forward analyst consensus. Bars marked with * are extrapolated from the observed year-over-year growth rate (Yahoo's feed tops out at +1y).</p>`;
+            `<p class="earn-note">Prior fiscal-year actuals alongside current-year and forward analyst consensus (Yahoo Finance + Nasdaq analyst forecast, typically 2-3 forward years).</p>`;
           drawEarnBarChart(document.getElementById('aEpsSvg'), aData);
         } else {
           aWrap.innerHTML = '<div class="earn-empty">No annual EPS trend data available.</div>';
@@ -1919,29 +1922,31 @@
           }
         }
 
-        // Extrapolate 2 more forward quarters (+2q, +3q) when we have both
-        // real Yahoo estimates. Uses the observed quarterly growth
-        // (nextQ / currentQ) with mild decay for the second projection.
-        // isDerived=true → drawn as a smaller/dotted marker.
-        if (cq && Number.isFinite(cq.estimate) && cq.estimate > 0
-            && nq && Number.isFinite(nq.eps) && nqPeriod) {
-          const qGrowth = nq.eps / cq.estimate - 1;
-          let lastPeriod = nqPeriod, lastVal = nq.eps;
-          for (let i = 0; i < 2; i++) {
-            const p = nextFQ(lastPeriod);
-            if (!p || points.has(p)) break;
-            const decay = i === 0 ? 1 : 0.9;
-            lastVal = lastVal * (1 + qGrowth * decay);
-            points.set(p, {
-              period: p,
-              label: shortQ(p),
-              estimate: lastVal,
+        // Extend forward window with Nasdaq's real analyst-consensus
+        // forecast (up to 5 quarters). Dedup vs. what Yahoo already gave
+        // us by matching on the fiscal-quarter of the endDate.
+        const fwdQ = (er?.forecast && er.forecast.quarterly) || [];
+        if (fwdQ.length) {
+          const seenKeys = new Set();
+          for (const period of points.keys()) seenKeys.add(fqKey(period));
+          for (const f of fwdQ) {
+            if (!f.endDate || !Number.isFinite(f.eps)) continue;
+            const m = /^(\d{4})-(\d{2})-\d{2}$/.exec(f.endDate);
+            if (!m) continue;
+            const yr = +m[1], qn = Math.ceil(+m[2] / 3);
+            const key = yr * 10 + qn;
+            if (seenKeys.has(key)) continue;
+            seenKeys.add(key);
+            const label = f.fiscalEnd ? f.fiscalEnd.replace(/\s+(\d{2})(\d{2})$/, " '$2") : `${qn}Q${yr}`;
+            const syntheticPeriod = `${qn}Q${yr}`;
+            points.set(syntheticPeriod, {
+              period: syntheticPeriod,
+              label,
+              estimate: f.eps,
               actual: null,
               isFuture: true,
-              isDerived: true,
               reportDate: '',
             });
-            lastPeriod = p;
           }
         }
 

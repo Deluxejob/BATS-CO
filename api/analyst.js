@@ -52,6 +52,57 @@ function toNum(field) {
   return (typeof v === 'number' && Number.isFinite(v)) ? v : null;
 }
 
+// Convert a Nasdaq "MMM YYYY" fiscal-end string ("Jul 2026") to a fiscal-
+// quarter-end ISO date ("2026-07-31"). We approximate by using the last
+// day of that calendar month, which matches how Yahoo and Nasdaq both
+// label the end of a fiscal period.
+const MONTH_INDEX = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+function fiscalEndToISO(fmt) {
+  const m = /^([A-Za-z]{3})\s+(\d{4})$/.exec(String(fmt || '').trim());
+  if (!m) return '';
+  const mo = MONTH_INDEX[m[1].slice(0,1).toUpperCase() + m[1].slice(1,3).toLowerCase()];
+  if (mo == null) return '';
+  const yr = parseInt(m[2], 10);
+  // Last day of the given month = day 0 of the next month
+  const d = new Date(Date.UTC(yr, mo + 1, 0));
+  return d.toISOString().slice(0, 10);
+}
+
+// Nasdaq's public analyst-forecast endpoint. Free, no API key, returns
+// quarterly and yearly EPS consensus (with low/high/analyst count) going
+// out 5 quarters and up to 4 years — the source of the deeper forward
+// window this file used to fake with extrapolation.
+async function fetchNasdaqForecast(sym) {
+  const url = `https://api.nasdaq.com/api/analyst/${encodeURIComponent(sym)}/earnings-forecast`;
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (BATS.CO forecast proxy)' } });
+    if (!r.ok) return null;
+    const body = await r.json();
+    const data = body && body.data;
+    if (!data) return null;
+    const qRows = (data.quarterlyForecast && data.quarterlyForecast.rows) || [];
+    const yRows = (data.yearlyForecast    && data.yearlyForecast.rows)    || [];
+    const mapRow = (row) => {
+      const eps = Number(row.consensusEPSForecast);
+      if (!Number.isFinite(eps)) return null;
+      return {
+        fiscalEnd:   String(row.fiscalEnd || ''),
+        endDate:     fiscalEndToISO(row.fiscalEnd),
+        eps,
+        low:         Number.isFinite(Number(row.lowEPSForecast))  ? Number(row.lowEPSForecast)  : null,
+        high:        Number.isFinite(Number(row.highEPSForecast)) ? Number(row.highEPSForecast) : null,
+        numAnalysts: Number.isFinite(Number(row.noOfEstimates))   ? Number(row.noOfEstimates)   : null,
+      };
+    };
+    return {
+      quarterly: qRows.map(mapRow).filter(Boolean),
+      yearly:    yRows.map(mapRow).filter(Boolean),
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   const raw = String(req.query.sym || '').toUpperCase().trim();
   if (!/^[A-Z0-9.\-]{1,10}$/.test(raw)) {
@@ -59,7 +110,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { crumb, cookieHeader } = await getCrumb();
+    // Fetch Yahoo quoteSummary (crumb-gated) and Nasdaq's public forecast
+    // endpoint in parallel — they're independent data sources and we don't
+    // want the Nasdaq call to add serial latency to the Yahoo one.
+    const [{ crumb, cookieHeader }, nasdaqForecast] = await Promise.all([
+      getCrumb(),
+      fetchNasdaqForecast(raw),
+    ]);
 
     const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory,' +
                     'defaultKeyStatistics,majorHoldersBreakdown,calendarEvents,summaryDetail,' +
@@ -230,6 +287,11 @@ export default async function handler(req, res) {
       // the Revenue-vs-Earnings grouped chart on ticker.html.
       finQuarterly,
       sharesOutstanding: currentShares,
+      // Nasdaq's public analyst-forecast endpoint (5 fwd quarters + up to
+      // 4 fwd years with low/mean/high + analyst count). Real consensus,
+      // no API key required. Null when Nasdaq doesn't cover the ticker
+      // (e.g. ETFs, indices).
+      forecast: nasdaqForecast,
     };
 
     const payload = {
