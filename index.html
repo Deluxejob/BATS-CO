@@ -10,6 +10,67 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Compact ticker lookup between the hero gauge and the components grid.
+       Matches the home-page aesthetic (bg-card, accent, Inter) rather than
+       the terminal look used on quotes/ticker pages. */
+    .ticker-lookup {
+      max-width: 720px;
+      margin: 0 auto 2rem;
+      padding: 0 1rem;
+    }
+    .lookup-form {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.7rem 1rem;
+    }
+    .lookup-label {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .lookup-form input {
+      flex: 1;
+      min-width: 140px;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--text);
+      border: none;
+      outline: none;
+      padding: 0.4rem 0;
+    }
+    .lookup-form input::placeholder {
+      color: var(--text-dim);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .lookup-form button {
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: #0a1218;
+      border: none;
+      border-radius: 999px;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+      transition: filter 0.12s, transform 0.12s;
+    }
+    .lookup-form button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  </style>
 </head>
 <body>
 
@@ -89,6 +150,15 @@
         easy-to-read score. Higher = more bullish. Lower = more oversold. It is <em>not</em> investment
         advice — just a clear snapshot of where market sentiment sits right now.
       </p>
+    </section>
+
+    <!-- Ticker lookup — quick jump to any US stock or ETF's detail page -->
+    <section class="ticker-lookup">
+      <form id="homeTickerSearchForm" class="lookup-form">
+        <label for="homeTickerSearchInput" class="lookup-label">Look up any stock or ETF &rarr;</label>
+        <input type="text" id="homeTickerSearchInput" placeholder="AAPL, NVDA, SPY…" autocomplete="off" spellcheck="false" required />
+        <button type="submit">GO</button>
+      </form>
     </section>
 
     <!-- COMPONENTS GRID -->
@@ -173,6 +243,21 @@
   <script>
     window.BATS_DATA_BASE = 'data/';
     window.BATS_BACKTEST_KIND = 'blended';
+
+    // Ticker lookup — navigate to ticker.html?sym=XXX on submit.
+    (function () {
+      const form  = document.getElementById('homeTickerSearchForm');
+      const input = document.getElementById('homeTickerSearchInput');
+      if (!form || !input) return;
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const raw = (input.value || '').trim().toUpperCase();
+        if (!raw) return;
+        const sym = raw.replace(/[^A-Z0-9.\-]/g, '');
+        if (!sym) return;
+        window.location.href = `ticker.html?sym=${encodeURIComponent(sym)}`;
+      });
+    })();
   </script>
   <script src="app.js"></script>
   <script src="backtest.js"></script>
