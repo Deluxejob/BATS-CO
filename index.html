@@ -76,6 +76,98 @@
       transition: filter 0.12s, transform 0.12s;
     }
     .lookup-form button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    /* ==== BATS History chart ==== */
+    .bats-history {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.5rem 1.75rem;
+      box-shadow: var(--shadow);
+    }
+    .bats-history-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem 1.25rem;
+      margin-bottom: 0.9rem;
+    }
+    .bats-history-head h2 { margin: 0 0 0.15rem; }
+    .bats-history-head p  { margin: 0; color: var(--text-dim); font-size: 0.9rem; max-width: 640px; }
+    .bats-history-ranges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.25rem;
+    }
+    .bats-history-ranges button {
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      background: transparent;
+      border: none;
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .bats-history-ranges button:hover { color: var(--text); }
+    .bats-history-ranges button.active {
+      background: var(--accent);
+      color: #0a1218;
+    }
+    .bats-history-chart-wrap {
+      position: relative;
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.5rem;
+    }
+    .bats-history-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .bats-history-current {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1rem;
+      align-items: baseline;
+      margin-top: 0.75rem;
+      font-size: 0.88rem;
+      color: var(--text-dim);
+    }
+    .bats-history-current strong {
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+    .bats-history-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.9rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    .bats-history-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .bats-history-legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body>
@@ -177,6 +269,29 @@
       <div class="components-grid" id="componentsGrid"></div>
     </section>
 
+    <!-- HISTORICAL BATS chart — where has the score been? -->
+    <section class="bats-history" id="batsHistory">
+      <div class="bats-history-head">
+        <div>
+          <h2>Where has the BATS been?</h2>
+          <p>The daily BATS reading over time, computed with the same weights and formulas used on the gauge above.</p>
+        </div>
+        <div class="bats-history-ranges" id="batsHistoryRanges" role="tablist" aria-label="Chart range">
+          <button type="button" data-range="3M">3M</button>
+          <button type="button" data-range="6M">6M</button>
+          <button type="button" data-range="1Y" class="active">1Y</button>
+          <button type="button" data-range="3Y">3Y</button>
+          <button type="button" data-range="5Y">5Y</button>
+          <button type="button" data-range="ALL">All</button>
+        </div>
+      </div>
+      <div class="bats-history-chart-wrap">
+        <svg id="batsHistoryChart" class="bats-history-chart" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" aria-label="BATS score over time"></svg>
+      </div>
+      <div class="bats-history-current" id="batsHistoryCurrent"></div>
+      <div class="bats-history-legend" id="batsHistoryLegend"></div>
+    </section>
+
     <!-- BLENDED BATS BACKTEST — "does the BATS work?" -->
     <section class="backtest" id="backtest">
       <div class="section-head">
@@ -267,6 +382,162 @@
   </script>
   <script src="app.js"></script>
   <script src="backtest.js"></script>
+  <script>
+  // Render the "Where has the BATS been?" line chart. Reads pre-computed
+  // data/bats_history.json (regenerated daily by the workflow).
+  (async function () {
+    const svg      = document.getElementById('batsHistoryChart');
+    const ranges   = document.getElementById('batsHistoryRanges');
+    const currEl   = document.getElementById('batsHistoryCurrent');
+    const legendEl = document.getElementById('batsHistoryLegend');
+    if (!svg || !ranges) return;
+
+    let payload;
+    try {
+      const r = await fetch('data/bats_history.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      payload = await r.json();
+    } catch (e) {
+      svg.innerHTML = '<text x="450" y="170" text-anchor="middle" fill="#8b95a8" font-size="14">Couldn\'t load history right now.</text>';
+      return;
+    }
+
+    const history = payload.history || [];
+    const buckets = payload.buckets || [];
+    if (!history.length || !buckets.length) return;
+
+    // Resolve the CSS variable colors from bucket definitions to real hex
+    // so we can paint SVG bands & the line without relying on CSS variables
+    // inside <svg> (which some renderers handle poorly).
+    const rootStyle = getComputedStyle(document.documentElement);
+    const resolveColor = (cssVar) => {
+      const m = /var\((--[^)]+)\)/.exec(cssVar);
+      if (!m) return cssVar;
+      return rootStyle.getPropertyValue(m[1]).trim() || '#888';
+    };
+    buckets.forEach(b => { b.hex = resolveColor(b.color); });
+
+    // Bucket bounds — bucket i covers [min_i, min_{i+1}) with the last one going to 100.
+    const bandRanges = buckets.map((b, i) => ({
+      label: b.label,
+      hex: b.hex,
+      from: b.min,
+      to: (i + 1 < buckets.length) ? buckets[i + 1].min : 100,
+    }));
+
+    // Legend
+    if (legendEl) {
+      legendEl.innerHTML = bandRanges.map(b =>
+        `<span><i style="background:${b.hex}"></i>${b.label}</span>`
+      ).join('');
+    }
+
+    // Chart geometry (SVG coord space — the viewBox above is 900x340)
+    const W = 900, H = 340;
+    const PAD_L = 42, PAD_R = 14, PAD_T = 10, PAD_B = 26;
+    const plotW = W - PAD_L - PAD_R;
+    const plotH = H - PAD_T - PAD_B;
+
+    // Map score 0-100 → y (invert)
+    const yFor = (s) => PAD_T + (1 - s / 100) * plotH;
+
+    const RANGES = { '3M': 63, '6M': 126, '1Y': 252, '3Y': 756, '5Y': 1260, 'ALL': Infinity };
+    let currentRange = '1Y';
+
+    // Month label helpers (X-axis ticks)
+    const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmtDate = (iso) => {
+      const [y, m, d] = iso.split('-').map(Number);
+      return `${monthShort[m - 1]} ${d}, ${y}`;
+    };
+
+    function draw() {
+      const days = RANGES[currentRange];
+      const rows = days === Infinity ? history : history.slice(-days);
+      if (!rows.length) return;
+      const n = rows.length;
+
+      // Colored horizontal bucket bands (background)
+      let bandsSVG = '';
+      for (const b of bandRanges) {
+        const y1 = yFor(b.to);
+        const y2 = yFor(b.from);
+        // Semi-transparent so the line reads on top; alpha inline.
+        bandsSVG += `<rect x="${PAD_L}" y="${y1}" width="${plotW}" height="${y2 - y1}" fill="${b.hex}" opacity="0.14"/>`;
+      }
+
+      // Y-axis grid + labels at 0, 25, 50, 75, 100
+      let gridSVG = '';
+      for (const s of [0, 25, 50, 75, 100]) {
+        const y = yFor(s);
+        gridSVG += `<line x1="${PAD_L}" x2="${W - PAD_R}" y1="${y}" y2="${y}" stroke="#1f2a44" stroke-width="1" stroke-dasharray="2 3"/>`;
+        gridSVG += `<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" fill="#8b95a8" font-size="10" font-family="JetBrains Mono, monospace">${s}</text>`;
+      }
+
+      // X-axis: pick 4-6 evenly spaced date ticks
+      const tickCount = Math.min(6, Math.max(3, Math.floor(plotW / 130)));
+      let xTicksSVG = '';
+      for (let i = 0; i < tickCount; i++) {
+        const idx = Math.round((n - 1) * (i / (tickCount - 1)));
+        const x = PAD_L + (idx / (n - 1 || 1)) * plotW;
+        const [yy, mm] = rows[idx][0].split('-');
+        const label = currentRange === '3M' || currentRange === '6M'
+          ? `${monthShort[+mm - 1]} ${(+rows[idx][0].split('-')[2])}`
+          : (currentRange === '1Y' ? `${monthShort[+mm - 1]} '${yy.slice(2)}` : `${monthShort[+mm - 1]} ${yy}`);
+        xTicksSVG += `<text x="${x}" y="${H - 8}" text-anchor="middle" fill="#8b95a8" font-size="10" font-family="JetBrains Mono, monospace">${label}</text>`;
+      }
+
+      // Score line — build a smooth polyline path
+      let d = '';
+      for (let i = 0; i < n; i++) {
+        const x = PAD_L + (i / (n - 1 || 1)) * plotW;
+        const y = yFor(rows[i][1]);
+        d += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ' ' + y.toFixed(2) + ' ';
+      }
+
+      // Current-value marker on the far right
+      const last = rows[n - 1];
+      const lastX = PAD_L + plotW;
+      const lastY = yFor(last[1]);
+      const lastBucket = bandRanges.find(b => last[1] >= b.from && last[1] < b.to) || bandRanges[bandRanges.length - 1];
+
+      svg.innerHTML =
+        bandsSVG +
+        gridSVG +
+        xTicksSVG +
+        `<path d="${d}" fill="none" stroke="#e6edf6" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>` +
+        `<circle cx="${lastX}" cy="${lastY}" r="5" fill="${lastBucket.hex}" stroke="#0a0e1a" stroke-width="1.5"/>`;
+
+      // Current reading line under the chart
+      if (currEl) {
+        currEl.innerHTML =
+          `<span>Latest: <strong>${last[1].toFixed(1)}</strong> on <strong>${fmtDate(last[0])}</strong></span>` +
+          `<span>Bucket: <strong style="color:${lastBucket.hex}">${lastBucket.label}</strong></span>` +
+          `<span>Range shown: <strong>${rows.length.toLocaleString()}</strong> trading days</span>`;
+      }
+    }
+
+    // Wire range buttons
+    ranges.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-range]');
+      if (!btn) return;
+      const r = btn.getAttribute('data-range');
+      if (!(r in RANGES)) return;
+      currentRange = r;
+      ranges.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+      draw();
+    });
+
+    draw();
+    // Redraw on resize so the chart adapts to layout changes.
+    let raf;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(draw);
+    });
+  })();
+  </script>
+
   <script>
   // Render the "Real market moments" cards inside the backtest section.
   // Reads pre-computed data/bats_moments.json (regenerated daily by the workflow).

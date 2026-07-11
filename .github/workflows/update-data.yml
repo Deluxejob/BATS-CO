@@ -66,6 +66,9 @@ jobs:
       - name: Regenerate BATS moments (fills in forward returns as time passes)
         run: python scripts/build-bats-moments.py
 
+      - name: Regenerate BATS daily history (line chart on home page)
+        run: python scripts/build-bats-history.py
+
       - name: Commit and push if anything changed
         run: |
           if [ -n "$(git status --porcelain data/)" ]; then
