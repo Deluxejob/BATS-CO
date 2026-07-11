@@ -43,7 +43,11 @@ async function getCrumb() {
 }
 
 function toNum(field) {
-  if (!field) return null;
+  if (field == null) return null;
+  // Yahoo sometimes returns fields as plain numbers (currentQuarterEstimateYear,
+  // fullTimeEmployees, etc.) and sometimes wrapped in { raw, fmt } (most others).
+  // Handle both.
+  if (typeof field === 'number') return Number.isFinite(field) ? field : null;
   const v = field.raw;
   return (typeof v === 'number' && Number.isFinite(v)) ? v : null;
 }
