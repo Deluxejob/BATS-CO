@@ -2120,7 +2120,12 @@
           { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
         ));
 
-        const PAGE = 12;
+        // Show 20 headlines on first load. The API aggregates ~4 Yahoo
+        // queries and returns up to 80 unique items (typically 30-60 for
+        // an actively-covered ticker, roughly a quarter's worth), and each
+        // "SHOW MORE" click reveals another 20 for people who want to dig
+        // into older coverage.
+        const PAGE = 20;
         const total = items.length;
         let shown = 0;
 
