@@ -1013,6 +1013,28 @@
     }
 
     /* ---------- Insider transactions + institutional holders tables ---------- */
+    /* Make the two side-by-side holder cards match heights exactly so
+       whichever table has more rows drives the height and the shorter
+       table's panel stretches to match (with empty space at the bottom
+       rather than a mismatched-height mkt-col). Scoped by :has() so this
+       rule can't leak into any other .grid-2col rows on the page. */
+    .grid-2col:has(#insidersSection) > .mkt-col > .term-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .grid-2col:has(#insidersSection) > .mkt-col > .term-section > .term-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .grid-2col:has(#insidersSection) .holders-table-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
     .holders-table-wrap {
       /* Horizontal scroll on narrow viewports so long institution names /
          insider titles never squish the whole page sideways. */
