@@ -1356,25 +1356,38 @@
         </div>
       </section>
 
-      <!-- Valuation History — forward 12-month P/E over time. Solid line uses
-           earnings the company actually reported in the next 12 months (from
-           SEC XBRL); dashed segment on the right uses analyst consensus for
-           the current forward window. Hides itself for ETFs, ADRs, indices,
-           anything SEC doesn't file. -->
-      <section class="term-section" id="valuationSection" style="display:none">
-        <div class="term-section-label">VALUATION HISTORY <span class="sub">— price ÷ next-12-month EPS (real, then analyst-estimated)</span></div>
-        <div class="term-panel">
-          <div class="valuation-head" id="valuationHead"></div>
-          <div class="valuation-chart-wrap">
-            <svg id="valuationChart" class="valuation-chart" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg"></svg>
-          </div>
-          <div class="valuation-legend">
-            <span class="valuation-legend-item"><span class="valuation-legend-swatch" style="background:var(--term-cyan)"></span>Forward P/E &mdash; using actual reported earnings</span>
-            <span class="valuation-legend-item"><span class="valuation-legend-swatch dashed"></span>Forward P/E &mdash; using current analyst estimate</span>
-          </div>
-          <div class="valuation-note" id="valuationNote"></div>
+      <!-- Valuation History + Earnings Growth Estimates side-by-side (>=1100px).
+           Valuation History is on the left (forward-12M P/E over time from SEC
+           XBRL + analyst consensus); Earnings Growth Estimates on the right
+           (year-over-year growth per period). Stacks on narrow viewports. -->
+      <div class="grid-2col">
+        <div class="mkt-col">
+          <section class="term-section" id="valuationSection" style="display:none">
+            <div class="term-section-label">VALUATION HISTORY <span class="sub">— forward P/E (real, then analyst-est.)</span></div>
+            <div class="term-panel">
+              <div class="valuation-head" id="valuationHead"></div>
+              <div class="valuation-chart-wrap">
+                <svg id="valuationChart" class="valuation-chart" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg"></svg>
+              </div>
+              <div class="valuation-legend">
+                <span class="valuation-legend-item"><span class="valuation-legend-swatch" style="background:var(--term-cyan)"></span>Actual reported earnings</span>
+                <span class="valuation-legend-item"><span class="valuation-legend-swatch dashed"></span>Current analyst estimate</span>
+              </div>
+              <div class="valuation-note" id="valuationNote"></div>
+            </div>
+          </section>
         </div>
-      </section>
+        <div class="mkt-col">
+          <section class="term-section" id="growthSection">
+            <div class="term-section-label">EARNINGS GROWTH ESTIMATES <span class="sub">— expected YoY EPS growth</span></div>
+            <div class="term-panel earn-panel">
+              <div id="growthChart" class="growth-chart-wrap">
+                <div class="earn-loading">Loading growth estimates&hellip;</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
 
       <!-- Financials & Earnings (full-width, compressed height) — sits between
            Valuation History and the Earnings bar-chart section so readers get
@@ -1465,15 +1478,8 @@
         </div>
       </section>
 
-      <!-- EARNINGS GROWTH ESTIMATES — expected YoY EPS growth per period -->
-      <section class="term-section" id="growthSection">
-        <div class="term-section-label">EARNINGS GROWTH ESTIMATES <span class="sub">— expected year-over-year EPS growth</span></div>
-        <div class="term-panel earn-panel">
-          <div id="growthChart" class="growth-chart-wrap">
-            <div class="earn-loading">Loading growth estimates&hellip;</div>
-          </div>
-        </div>
-      </section>
+      <!-- (Earnings Growth Estimates has been moved up to sit beside
+           Valuation History between Wall Street Ratings and Financials.) -->
 
       <!-- Insiders + Institutional holders side-by-side (>=1100px), stacked below.
            Each is a self-hiding section — if only one has data, the other
@@ -2195,8 +2201,10 @@
         const tMin = historical.length ? historical[0].ts : currentTs - 5 * 365 * 86400;
         const tMax = currentTs;
 
-        const W = 900, H = 340;
-        const PAD_L = 42, PAD_R = 14, PAD_T = 14, PAD_B = 28;
+        // Compact viewBox (640x240) — the chart lives in the left column of
+        // a 2-col grid now, no need for full-width dimensions.
+        const W = 640, H = 240;
+        const PAD_L = 36, PAD_R = 10, PAD_T = 10, PAD_B = 22;
         const plotW = W - PAD_L - PAD_R;
         const plotH = H - PAD_T - PAD_B;
         const xFor = t => PAD_L + ((t - tMin) / (tMax - tMin || 1)) * plotW;
