@@ -154,34 +154,36 @@
       .grid-2col { grid-template-columns: 1fr 1fr; }
     }
     .mkt-col { display: flex; flex-direction: column; }
-    /* Right column of the Stats+Financials row: stretch the Financials
-       panel so its bottom lines up with the (potentially taller) left
-       column. Scoped by :has(#financialsWidgetMount) so this doesn't leak
-       into other grid-2col rows (e.g. Rev-vs-Earn / Earnings Trends). */
-    .grid-2col > .mkt-col > .term-panel:has(#financialsWidgetMount) {
+    /* Right column of the top row is now the News panel — stretch it so
+       its bottom lines up with the (potentially taller) left column of
+       stacked Key Stats + Ownership + Profile boxes. Scoped by
+       :has(#tickerNewsList) so this rule can't leak into other .grid-2col
+       rows further down the page (e.g. Rev-vs-Earn / Earnings Trends). */
+    .grid-2col > .mkt-col > .term-panel:has(#tickerNewsList) {
       flex: 1;
       min-height: 500px;
+      max-height: 900px;
       display: flex;
       flex-direction: column;
     }
+    /* Inside the top-news panel, make the list scrollable so a long
+       response (Yahoo caps ~80 headlines) never blows past the panel
+       height, and force single-column since the slot is narrow. */
+    .grid-2col > .mkt-col > .term-panel:has(#tickerNewsList) .term-news-list {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      grid-template-columns: 1fr !important;
+    }
+    /* Standalone Financials section — the widget carries its own fixed
+       400px height (see mountTvWidget call), so we just need to keep the
+       iframe from overflowing the panel. */
     #financialsWidgetMount,
     #financialsWidgetMount > .tradingview-widget-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
       width: 100%;
-      min-height: 0;
-    }
-    #financialsWidgetMount .tradingview-widget-container__widget {
-      flex: 1;
-      width: 100%;
-      min-height: 0;
     }
     #financialsWidgetMount iframe {
-      flex: 1;
       width: 100% !important;
-      height: 100% !important;
-      min-height: 500px;
     }
 
     /* Empty state */
@@ -1174,8 +1176,16 @@
             </div>
           </div>
           <div class="mkt-col">
-            <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
-            <div class="term-panel"><div id="financialsWidgetMount"></div></div>
+            <div class="term-section-label">NEWS <span class="sub">— Yahoo Finance, filtered by ticker</span></div>
+            <div class="term-panel">
+              <ul class="term-news-list" id="tickerNewsList">
+                <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
+              </ul>
+              <div class="term-news-actions">
+                <p class="term-news-meta" id="tickerNewsMeta"></p>
+                <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1186,6 +1196,14 @@
         <div class="term-panel">
           <div id="analystContent" class="analyst-loading">Loading analyst data&hellip;</div>
         </div>
+      </section>
+
+      <!-- Financials & Earnings (full-width, compressed height) — sits between
+           Wall Street Ratings and the Earnings bar-chart section so readers get
+           a quick income-statement snapshot before diving into the EPS detail. -->
+      <section class="term-section" id="financialsSection">
+        <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
+        <div class="term-panel"><div id="financialsWidgetMount"></div></div>
       </section>
 
       <!-- Earnings — quarterly + annual EPS bar charts (via /api/analyst) -->
@@ -1347,20 +1365,6 @@
         </div>
       </section>
 
-      <!-- News -->
-      <section class="term-section">
-        <div class="term-section-label">NEWS <span class="sub">— Yahoo Finance, filtered by ticker</span></div>
-        <div class="term-panel">
-          <ul class="term-news-list" id="tickerNewsList">
-            <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
-          </ul>
-          <div class="term-news-actions">
-            <p class="term-news-meta" id="tickerNewsMeta"></p>
-            <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
-          </div>
-        </div>
-      </section>
-
     </div>
 
   </main>
@@ -1476,12 +1480,13 @@
       });
 
       // 3) Financials & Earnings (Financials widget — revenue, EPS, estimates)
-      // autosize:true lets the widget fill its parent container so its bottom
-      // lines up with the (potentially taller) left column when the Company
-      // Profile is expanded.
+      // Fixed height so the iframe reliably fills the standalone panel below
+      // Wall Street Ratings. (autosize:true fought us here — TradingView
+      // omits the intermediate wrapper div and the 100% chain breaks.)
       mountTvWidget('financialsWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-financials.js', {
         symbol: tvSymbol,
-        autosize: true,
+        width: '100%',
+        height: 400,
         colorTheme: 'dark',
         isTransparent: true,
         displayMode: 'regular',
