@@ -2023,9 +2023,11 @@
         // Extra bottom breathing room when one series dominates the range
         // (e.g. MU at +183% dwarfing peers at +14%). Without this the flat
         // peer lines get crushed against the x-axis and read as invisible.
-        const range = yMax - yMin;
-        if (range > 100) {
-          yMin -= range * 0.08;
+        // NB: `range` (as in the time-range string) is already declared at
+        // the top of this function — use a different name for the y-span.
+        const ySpan = yMax - yMin;
+        if (ySpan > 100) {
+          yMin -= ySpan * 0.08;
         }
 
         const xFor = (t) => PAD_L + ((t - tMin) / (tMax - tMin || 1)) * plotW;
