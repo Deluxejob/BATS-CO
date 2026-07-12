@@ -1279,25 +1279,34 @@
         </div>
       </section>
 
-      <!-- Insider transactions (via Yahoo insiderTransactions module) -->
-      <section class="term-section" id="insidersSection" style="display:none">
-        <div class="term-section-label">INSIDER TRANSACTIONS <span class="sub">— recent trades by officers, directors, and 10%+ owners</span></div>
-        <div class="term-panel">
-          <div class="holders-table-wrap">
-            <table class="holders-table" id="insidersTable"></table>
-          </div>
+      <!-- Insiders + Institutional holders side-by-side (>=1100px), stacked below.
+           Each is a self-hiding section — if only one has data, the other
+           side of the grid just goes empty; the section-level display:none
+           handles that gracefully. -->
+      <div class="grid-2col">
+        <div class="mkt-col">
+          <!-- Insider transactions (via Yahoo insiderTransactions module) -->
+          <section class="term-section" id="insidersSection" style="display:none">
+            <div class="term-section-label">INSIDER TRANSACTIONS <span class="sub">— recent officer/director trades</span></div>
+            <div class="term-panel">
+              <div class="holders-table-wrap">
+                <table class="holders-table" id="insidersTable"></table>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
-
-      <!-- Top institutional holders (via Yahoo institutionOwnership module) -->
-      <section class="term-section" id="institutionsSection" style="display:none">
-        <div class="term-section-label">TOP INSTITUTIONAL HOLDERS <span class="sub">— largest fund/asset-manager positions, change vs last quarter</span></div>
-        <div class="term-panel">
-          <div class="holders-table-wrap">
-            <table class="holders-table" id="institutionsTable"></table>
-          </div>
+        <div class="mkt-col">
+          <!-- Top institutional holders (via Yahoo institutionOwnership module) -->
+          <section class="term-section" id="institutionsSection" style="display:none">
+            <div class="term-section-label">TOP INSTITUTIONAL HOLDERS <span class="sub">— largest fund positions, QoQ change</span></div>
+            <div class="term-panel">
+              <div class="holders-table-wrap">
+                <table class="holders-table" id="institutionsTable"></table>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
 
       <!-- Technicals -->
       <section class="term-section">
