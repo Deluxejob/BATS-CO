@@ -1013,27 +1013,17 @@
     }
 
     /* ---------- Insider transactions + institutional holders tables ---------- */
-    /* Make the two side-by-side holder cards match heights exactly so
-       whichever table has more rows drives the height and the shorter
-       table's panel stretches to match (with empty space at the bottom
-       rather than a mismatched-height mkt-col). Scoped by :has() so this
-       rule can't leak into any other .grid-2col rows on the page. */
+    /* Tight terminal-style density — smaller font, tight row padding,
+       so more rows fit in the same visual footprint. Both cards use
+       display:flex column so the SHOW ALL button pins to the bottom
+       and the table area stays proportional. */
     .grid-2col:has(#insidersSection) > .mkt-col > .term-section {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      min-height: 0;
     }
     .grid-2col:has(#insidersSection) > .mkt-col > .term-section > .term-panel {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      min-height: 0;
-    }
-    .grid-2col:has(#insidersSection) .holders-table-wrap {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
     }
     .holders-table-wrap {
       /* Horizontal scroll on narrow viewports so long institution names /
@@ -1044,43 +1034,143 @@
     .holders-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.85rem;
+      font-size: 0.76rem;
       font-family: 'JetBrains Mono', monospace;
     }
     .holders-table th {
       text-align: left;
       font-weight: 700;
-      font-size: 0.68rem;
+      font-size: 0.6rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--term-dim);
-      padding: 0.55rem 0.85rem;
+      padding: 0.35rem 0.65rem;
       border-bottom: 1px solid var(--term-border);
       white-space: nowrap;
     }
     .holders-table td {
-      padding: 0.5rem 0.85rem;
+      padding: 0.28rem 0.65rem;
       border-bottom: 1px solid var(--term-border-soft);
       color: var(--term-text);
       white-space: nowrap;
       font-variant-numeric: tabular-nums;
+      line-height: 1.3;
     }
     .holders-table tr:last-child td { border-bottom: 0; }
     .holders-table tr:hover td { background: rgba(110, 231, 255, 0.03); }
     .holders-table .num { text-align: right; }
-    .holders-table .name { color: var(--term-text); font-weight: 500; white-space: normal; }
-    .holders-table .title { color: var(--term-dim); font-size: 0.78rem; white-space: normal; }
+    .holders-table .name { color: var(--term-text); font-weight: 500; white-space: normal; line-height: 1.25; }
+    .holders-table .title { color: var(--term-dim); font-size: 0.7rem; white-space: normal; line-height: 1.25; }
     .holders-table .date {
       color: var(--term-dim);
-      font-size: 0.78rem;
+      font-size: 0.7rem;
       font-family: 'JetBrains Mono', monospace;
     }
+    /* SHOW ALL trigger — sits at the bottom of each card when there are
+       hidden rows to reveal. Opens a popup modal with the full table. */
+    .holders-show-all {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--term-amber);
+      background: transparent;
+      border: none;
+      border-top: 1px solid var(--term-border-soft);
+      cursor: pointer;
+      padding: 0.55rem 0.5rem 0.35rem;
+      margin-top: 0.5rem;
+      width: 100%;
+      text-align: center;
+      transition: color 0.12s;
+    }
+    .holders-show-all:hover { color: var(--term-cyan); }
+    /* Muted footer state when there are no hidden rows to reveal — same
+       size as the active SHOW ALL button so the two cards stay height-matched. */
+    .holders-show-all.is-muted {
+      color: var(--term-dim);
+      cursor: default;
+    }
+    .holders-show-all.is-muted:hover { color: var(--term-dim); }
+
+    /* Popup modal for the full holder / insider table */
+    .holders-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 8, 16, 0.75);
+      backdrop-filter: blur(2px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+    .holders-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .holders-modal {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 10px;
+      width: 100%;
+      max-width: 1000px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    }
+    .holders-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--term-border);
+      background: var(--term-panel-2);
+    }
+    .holders-modal-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--term-cyan);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .holders-modal-close {
+      font: inherit;
+      font-size: 1.4rem;
+      line-height: 1;
+      background: transparent;
+      border: 1px solid var(--term-border);
+      color: var(--term-dim);
+      border-radius: 999px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .holders-modal-close:hover {
+      color: var(--term-cyan);
+      border-color: var(--term-cyan);
+    }
+    .holders-modal-body {
+      overflow-y: auto;
+      padding: 0.5rem 1.25rem 1.25rem;
+      flex: 1;
+    }
+
     /* Buy / sell coloring for the insider action pill */
     .insider-action {
       display: inline-block;
-      padding: 0.1rem 0.55rem;
+      padding: 0.05rem 0.5rem;
       border-radius: 4px;
-      font-size: 0.7rem;
+      font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -1387,6 +1477,18 @@
     </div>
 
   </main>
+
+  <!-- Full-table popup for Insider Transactions + Institutional Holders.
+       Populated on demand when the reader clicks a SHOW ALL button. -->
+  <div class="holders-modal-overlay" id="holdersModal" role="dialog" aria-modal="true" aria-hidden="true" hidden>
+    <div class="holders-modal">
+      <div class="holders-modal-head">
+        <div class="holders-modal-title" id="holdersModalTitle">ALL RECORDS</div>
+        <button type="button" class="holders-modal-close" id="holdersModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="holders-modal-body" id="holdersModalBody"></div>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
@@ -2042,6 +2144,105 @@
           <tbody>${rows}</tbody>
         `;
       }
+
+      // ----- Equalize the two holder tables -----
+      // After both renderers run, cap the visible row count on both
+      // tables to min(insidersCount, institutionsCount). If either has
+      // hidden rows, show a SHOW ALL button that opens the popup modal
+      // with every row. Keeps the two cards the same visual height and
+      // stops one from looking half-empty next to a taller neighbor.
+      function equalizeHolderTables() {
+        const insTable   = document.getElementById('insidersTable');
+        const instTable  = document.getElementById('institutionsTable');
+        const insSection  = document.getElementById('insidersSection');
+        const instSection = document.getElementById('institutionsSection');
+        if (!insTable || !instTable || !insSection || !instSection) return;
+
+        const insRows  = insTable.querySelectorAll('tbody tr');
+        const instRows = instTable.querySelectorAll('tbody tr');
+        const nIns  = insRows.length;
+        const nInst = instRows.length;
+        if (!nIns || !nInst) return;
+
+        const target = Math.min(nIns, nInst);
+        insRows.forEach((r, i)  => { r.style.display = (i < target) ? '' : 'none'; });
+        instRows.forEach((r, i) => { r.style.display = (i < target) ? '' : 'none'; });
+
+        setShowAllButton(insSection,  nIns,  target, 'insiders');
+        setShowAllButton(instSection, nInst, target, 'institutions');
+      }
+
+      function setShowAllButton(section, total, shown, kind) {
+        const panel = section.querySelector('.term-panel');
+        if (!panel) return;
+        let btn = panel.querySelector('.holders-show-all');
+        // Always render a footer element on both cards so their heights
+        // match exactly — SHOW ALL when there are hidden rows, otherwise
+        // a muted "N OF N" count so the footer takes the same space.
+        if (!btn) {
+          btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'holders-show-all';
+          panel.appendChild(btn);
+        }
+        // Reset any prior click handler / state so re-renders don't stack them
+        btn.onclick = null;
+        const noun = (kind === 'insiders') ? 'INSIDER TRADES' : 'INSTITUTIONAL HOLDERS';
+        if (total > shown) {
+          btn.classList.remove('is-muted');
+          btn.disabled = false;
+          btn.textContent = `SHOW ALL ${total} ${noun} ↗`;
+          btn.onclick = () => openHoldersModal(kind);
+        } else {
+          btn.classList.add('is-muted');
+          btn.disabled = true;
+          btn.textContent = `${total} ${noun} SHOWN`;
+        }
+      }
+
+      // ----- Full-table popup -----
+      function openHoldersModal(kind) {
+        const srcTable = document.getElementById(kind + 'Table');
+        const overlay  = document.getElementById('holdersModal');
+        const body     = document.getElementById('holdersModalBody');
+        const title    = document.getElementById('holdersModalTitle');
+        if (!srcTable || !overlay || !body || !title) return;
+        const clone = srcTable.cloneNode(true);
+        // Undo the visible-row cap in the modal so every record renders.
+        clone.querySelectorAll('tbody tr').forEach(r => { r.style.display = ''; });
+        clone.classList.add('holders-table');
+        body.innerHTML = '';
+        body.appendChild(clone);
+        title.textContent = (kind === 'insiders')
+          ? 'ALL INSIDER TRANSACTIONS'
+          : 'ALL INSTITUTIONAL HOLDERS';
+        overlay.hidden = false;
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeHoldersModal() {
+        const overlay = document.getElementById('holdersModal');
+        if (!overlay) return;
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        // Hide from the a11y tree after the fade so screen readers skip it.
+        setTimeout(() => { if (!overlay.classList.contains('open')) overlay.hidden = true; }, 200);
+      }
+
+      // Wire modal dismiss once — close button, backdrop click, and ESC.
+      (function wireHoldersModal() {
+        const overlay = document.getElementById('holdersModal');
+        const closeBtn = document.getElementById('holdersModalClose');
+        if (!overlay || !closeBtn) return;
+        closeBtn.addEventListener('click', closeHoldersModal);
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) closeHoldersModal();
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && overlay.classList.contains('open')) closeHoldersModal();
+        });
+      })();
 
       // ----- Company Profile helper (also shares the /api/analyst fetch) -----
       // Yahoo's business summaries can be 500-1500 chars; we collapse the
@@ -3198,6 +3399,10 @@
         // themselves gracefully for ETFs / indices without coverage.
         renderInsiders(data && data.insiders);
         renderInstitutions(data && data.institutions);
+        // Cap both tables' visible rows to the shorter of the two so the
+        // cards line up bottom-to-bottom; SHOW ALL opens a modal with the
+        // full record.
+        equalizeHolderTables();
         // Earnings bar charts — quarterly + annual EPS + Rev-vs-Earn +
         // Earnings Trends dot plot. Wrapped in try/catch so any bug in
         // the earnings render can never block the Wall Street ratings /
