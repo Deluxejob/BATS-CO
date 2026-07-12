@@ -145,7 +145,10 @@ export default async function handler(req, res) {
 
     const modules = 'financialData,recommendationTrend,upgradeDowngradeHistory,' +
                     'defaultKeyStatistics,majorHoldersBreakdown,calendarEvents,summaryDetail,' +
-                    'assetProfile,earnings,earningsTrend';
+                    'assetProfile,earnings,earningsTrend,' +
+                    // Corporate-insider trades + top institutional holders — feeds
+                    // the Insider Transactions + Top Institutional Holders tables.
+                    'insiderTransactions,institutionOwnership';
     const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(raw)}` +
                 `?modules=${modules}&crumb=${encodeURIComponent(crumb)}`;
     const r = await fetch(url, {
@@ -364,6 +367,44 @@ export default async function handler(req, res) {
       forecast: nasdaqForecast,
     };
 
+    // Insider transactions — recent trades by officers, directors, and 10%+
+    // owners. Yahoo returns ~30 most recent; we cap at 15 to keep the table
+    // readable. "action" is derived from Yahoo's `transactionText` which is
+    // freeform ("Sale", "Purchase", "Stock Award", "Sale (Multiple)"), so we
+    // classify into buy/sell/award/other for coloring.
+    const insiderRaw = (r0.insiderTransactions && r0.insiderTransactions.transactions) || [];
+    const classifyInsider = (txt) => {
+      const t = String(txt || '').toLowerCase();
+      if (t.includes('purchase') || t.includes('buy')) return 'buy';
+      if (t.includes('sale') || t.includes('sell')) return 'sell';
+      if (t.includes('award') || t.includes('grant') || t.includes('option')) return 'award';
+      return 'other';
+    };
+    const insiders = insiderRaw.slice(0, 15).map(t => ({
+      date:      toNum(t && t.startDate),         // unix seconds
+      filer:     String((t && t.filerName) || '').trim(),
+      title:     String((t && t.filerRelation) || '').trim(),
+      text:      String((t && t.transactionText) || '').trim(),
+      action:    classifyInsider(t && t.transactionText),
+      shares:    toNum(t && t.shares),
+      value:     toNum(t && t.value),
+      ownership: String((t && t.ownership) || '').trim(),  // "D" (Direct) / "I" (Indirect)
+    })).filter(x => x.filer);
+
+    // Top institutional holders — Vanguard, BlackRock, State Street, etc.
+    // Cap at 15 (Yahoo returns ~10-20). `pctHeld` and `pctChange` are
+    // decimals (0.09 = 9%). `pctChange` is quarter-over-quarter position
+    // change (positive = added, negative = trimmed).
+    const instRaw = (r0.institutionOwnership && r0.institutionOwnership.ownershipList) || [];
+    const institutions = instRaw.slice(0, 15).map(o => ({
+      name:       String((o && o.organization) || '').trim(),
+      reportDate: toNum(o && o.reportDate),  // unix seconds
+      pctHeld:    toNum(o && o.pctHeld),
+      shares:     toNum(o && o.position),
+      value:      toNum(o && o.value),
+      pctChange:  toNum(o && o.pctChange),
+    })).filter(x => x.name);
+
     const payload = {
       symbol: raw,
       hasAnalysts: (Number(fd.numberOfAnalystOpinions && fd.numberOfAnalystOpinions.raw) || totalRatings) > 0,
@@ -385,6 +426,10 @@ export default async function handler(req, res) {
       // Peer companies (same industry) — from Finnhub. Empty array or
       // null when no FINNHUB_API_KEY env var is set on Vercel.
       peers,
+      // Recent insider trades (officers / directors / 10%+ owners).
+      insiders,
+      // Top institutional holders (Vanguard, BlackRock, etc.).
+      institutions,
     };
 
     res.setHeader('Access-Control-Allow-Origin', '*');

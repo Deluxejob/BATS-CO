@@ -1012,6 +1012,71 @@
       padding: 2rem 0;
       text-align: center;
     }
+
+    /* ---------- Insider transactions + institutional holders tables ---------- */
+    .holders-table-wrap {
+      /* Horizontal scroll on narrow viewports so long institution names /
+         insider titles never squish the whole page sideways. */
+      overflow-x: auto;
+      margin: 0 -0.25rem;
+    }
+    .holders-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .holders-table th {
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--term-dim);
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--term-border);
+      white-space: nowrap;
+    }
+    .holders-table td {
+      padding: 0.5rem 0.85rem;
+      border-bottom: 1px solid var(--term-border-soft);
+      color: var(--term-text);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .holders-table tr:last-child td { border-bottom: 0; }
+    .holders-table tr:hover td { background: rgba(110, 231, 255, 0.03); }
+    .holders-table .num { text-align: right; }
+    .holders-table .name { color: var(--term-text); font-weight: 500; white-space: normal; }
+    .holders-table .title { color: var(--term-dim); font-size: 0.78rem; white-space: normal; }
+    .holders-table .date {
+      color: var(--term-dim);
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Buy / sell coloring for the insider action pill */
+    .insider-action {
+      display: inline-block;
+      padding: 0.1rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .insider-action.buy   { background: rgba(34, 211, 154, 0.18); color: var(--term-green); }
+    .insider-action.sell  { background: rgba(255, 83, 116, 0.15); color: var(--term-red); }
+    .insider-action.award { background: rgba(110, 231, 255, 0.12); color: var(--term-cyan); }
+    .insider-action.other { background: var(--term-panel-2);      color: var(--term-dim); }
+    .holders-table .pct-pos { color: var(--term-green); font-weight: 700; }
+    .holders-table .pct-neg { color: var(--term-red);   font-weight: 700; }
+    .holders-table .pct-neu { color: var(--term-dim); }
+    .holders-empty {
+      color: var(--term-dim);
+      font-size: 0.85rem;
+      padding: 1.25rem 0;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -1210,6 +1275,26 @@
         <div class="term-panel earn-panel">
           <div id="growthChart" class="growth-chart-wrap">
             <div class="earn-loading">Loading growth estimates&hellip;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Insider transactions (via Yahoo insiderTransactions module) -->
+      <section class="term-section" id="insidersSection" style="display:none">
+        <div class="term-section-label">INSIDER TRANSACTIONS <span class="sub">— recent trades by officers, directors, and 10%+ owners</span></div>
+        <div class="term-panel">
+          <div class="holders-table-wrap">
+            <table class="holders-table" id="insidersTable"></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Top institutional holders (via Yahoo institutionOwnership module) -->
+      <section class="term-section" id="institutionsSection" style="display:none">
+        <div class="term-section-label">TOP INSTITUTIONAL HOLDERS <span class="sub">— largest fund/asset-manager positions, change vs last quarter</span></div>
+        <div class="term-panel">
+          <div class="holders-table-wrap">
+            <table class="holders-table" id="institutionsTable"></table>
           </div>
         </div>
       </section>
@@ -1732,6 +1817,149 @@
             <span class="compare-legend-val ${cls}">${sign}${v.toFixed(2)}%</span>
           </span>`;
         }).join('');
+      }
+
+      // ----- Insider Transactions (Yahoo insiderTransactions module) -----
+      // Renders a compact table of recent trades by officers/directors/10%+
+      // owners. Each row: date, filer, title, action pill (buy/sell/award),
+      // share count, dollar value. Hides the section for ETFs, indices, and
+      // any ticker Yahoo doesn't have insider filings for.
+      function renderInsiders(insiders) {
+        const section = document.getElementById('insidersSection');
+        const table   = document.getElementById('insidersTable');
+        if (!section || !table) return;
+        if (!Array.isArray(insiders) || !insiders.length) {
+          section.style.display = 'none';
+          return;
+        }
+        section.style.display = '';
+        const esc = (s) => String(s).replace(/[<>&"']/g, c => (
+          { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        const fmtDate = (ts) => {
+          if (!Number.isFinite(ts) || ts <= 0) return '&mdash;';
+          const d = new Date(ts * 1000);
+          const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+          return `${mo} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+        };
+        const fmtShares = (v) => {
+          if (!Number.isFinite(v) || v <= 0) return '&mdash;';
+          if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+          if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+          return v.toLocaleString();
+        };
+        const fmtMoney = (v) => {
+          if (!Number.isFinite(v) || v <= 0) return '&mdash;';
+          if (v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+          if (v >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M';
+          if (v >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'K';
+          return '$' + v.toLocaleString();
+        };
+        const actionLabel = (a, text) => {
+          if (a === 'buy')   return 'BUY';
+          if (a === 'sell')  return 'SELL';
+          if (a === 'award') return 'AWARD';
+          // Fall back to Yahoo's freeform text, truncated
+          const t = String(text || '').toUpperCase();
+          return t.slice(0, 12) || 'OTHER';
+        };
+        const rows = insiders.map(t => `
+          <tr>
+            <td class="date">${fmtDate(t.date)}</td>
+            <td class="name">${esc(t.filer)}</td>
+            <td class="title">${esc(t.title || '')}</td>
+            <td><span class="insider-action ${esc(t.action)}">${actionLabel(t.action, t.text)}</span></td>
+            <td class="num">${fmtShares(t.shares)}</td>
+            <td class="num">${fmtMoney(t.value)}</td>
+          </tr>
+        `).join('');
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>DATE</th>
+              <th>FILER</th>
+              <th>TITLE</th>
+              <th>ACTION</th>
+              <th class="num">SHARES</th>
+              <th class="num">VALUE</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        `;
+      }
+
+      // ----- Top Institutional Holders (Yahoo institutionOwnership module) -----
+      // Compact table of the largest fund/asset-manager positions —
+      // Vanguard, BlackRock, State Street, etc. — with each row showing
+      // ownership %, share count, dollar value, and quarter-over-quarter
+      // position change. Hides gracefully when Yahoo returns nothing.
+      function renderInstitutions(institutions) {
+        const section = document.getElementById('institutionsSection');
+        const table   = document.getElementById('institutionsTable');
+        if (!section || !table) return;
+        if (!Array.isArray(institutions) || !institutions.length) {
+          section.style.display = 'none';
+          return;
+        }
+        section.style.display = '';
+        const esc = (s) => String(s).replace(/[<>&"']/g, c => (
+          { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+        const fmtDate = (ts) => {
+          if (!Number.isFinite(ts) || ts <= 0) return '&mdash;';
+          const d = new Date(ts * 1000);
+          const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+          return `${mo} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+        };
+        const fmtPct = (v) => {
+          if (!Number.isFinite(v)) return '&mdash;';
+          return (v * 100).toFixed(2) + '%';
+        };
+        const fmtChange = (v) => {
+          if (!Number.isFinite(v)) return '<span class="pct-neu">&mdash;</span>';
+          if (Math.abs(v) < 1e-6) return '<span class="pct-neu">flat</span>';
+          const pct = (v * 100).toFixed(2) + '%';
+          const cls = v > 0 ? 'pct-pos' : 'pct-neg';
+          const sign = v > 0 ? '+' : '';
+          return `<span class="${cls}">${sign}${pct}</span>`;
+        };
+        const fmtShares = (v) => {
+          if (!Number.isFinite(v) || v <= 0) return '&mdash;';
+          if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+          if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+          if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+          return v.toLocaleString();
+        };
+        const fmtMoney = (v) => {
+          if (!Number.isFinite(v) || v <= 0) return '&mdash;';
+          if (v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+          if (v >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M';
+          if (v >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'K';
+          return '$' + v.toLocaleString();
+        };
+        const rows = institutions.map(o => `
+          <tr>
+            <td class="name">${esc(o.name)}</td>
+            <td class="date">${fmtDate(o.reportDate)}</td>
+            <td class="num">${fmtPct(o.pctHeld)}</td>
+            <td class="num">${fmtShares(o.shares)}</td>
+            <td class="num">${fmtMoney(o.value)}</td>
+            <td class="num">${fmtChange(o.pctChange)}</td>
+          </tr>
+        `).join('');
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>INSTITUTION</th>
+              <th>REPORTED</th>
+              <th class="num">% HELD</th>
+              <th class="num">SHARES</th>
+              <th class="num">VALUE</th>
+              <th class="num">CHG QoQ</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        `;
       }
 
       // ----- Company Profile helper (also shares the /api/analyst fetch) -----
@@ -2869,7 +3097,7 @@
           }
           // Hide the earnings + trend + revisions + growth + peers sections
           // when the API fails — nothing sensible to show without live data.
-          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection'].forEach(id => {
+          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection', 'insidersSection', 'institutionsSection'].forEach(id => {
             const s = document.getElementById(id);
             if (s) s.style.display = 'none';
           });
@@ -2884,6 +3112,11 @@
         renderProfile(data && data.profile);
         // Peer companies (same industry) — pill row of clickable tickers.
         renderPeers(data && data.peers);
+        // Insider transactions + top institutional holders — sit between
+        // Earnings Growth Estimates and Technical Analysis. Both hide
+        // themselves gracefully for ETFs / indices without coverage.
+        renderInsiders(data && data.insiders);
+        renderInstitutions(data && data.institutions);
         // Earnings bar charts — quarterly + annual EPS + Rev-vs-Earn +
         // Earnings Trends dot plot. Wrapped in try/catch so any bug in
         // the earnings render can never block the Wall Street ratings /
