@@ -1013,24 +1013,28 @@
     }
 
     /* ---------- Valuation History (forward P/E chart) ---------- */
+    /* Sized so total card height ≈ Earnings Growth Estimates card
+       sitting beside it. Compact header strip is inline (not stacked
+       label-over-number) to save vertical space. */
     #valuationSection .term-panel { display: flex; flex-direction: column; }
+    /* Compact single-line header — INLINE label:value pairs to save
+       ~40px of vertical space vs. stacked label-over-number layout. */
     .valuation-head {
       display: flex; flex-wrap: wrap;
-      gap: 0.85rem 2rem; align-items: baseline;
-      padding-bottom: 0.6rem; margin-bottom: 0.6rem;
+      gap: 0.25rem 1.25rem; align-items: baseline;
+      padding-bottom: 0.5rem; margin-bottom: 0.4rem;
       border-bottom: 1px solid var(--term-border-soft);
-    }
-    .valuation-figure { display: flex; flex-direction: column; gap: 0.15rem; }
-    .valuation-figure .lbl {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.6rem; letter-spacing: 0.14em;
+      font-size: 0.78rem;
+    }
+    .valuation-figure { display: inline-flex; align-items: baseline; gap: 0.4rem; }
+    .valuation-figure .lbl {
+      font-size: 0.6rem; letter-spacing: 0.12em;
       color: var(--term-dim); text-transform: uppercase;
     }
     .valuation-figure .num {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.15rem; font-weight: 700;
-      color: var(--term-text);
-      font-variant-numeric: tabular-nums; line-height: 1;
+      font-weight: 700; color: var(--term-text);
+      font-variant-numeric: tabular-nums;
     }
     .valuation-figure .num.accent { color: var(--term-cyan); }
     .valuation-chart-wrap {
@@ -1367,7 +1371,7 @@
             <div class="term-panel">
               <div class="valuation-head" id="valuationHead"></div>
               <div class="valuation-chart-wrap">
-                <svg id="valuationChart" class="valuation-chart" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg"></svg>
+                <svg id="valuationChart" class="valuation-chart" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg"></svg>
               </div>
               <div class="valuation-legend">
                 <span class="valuation-legend-item"><span class="valuation-legend-swatch" style="background:var(--term-cyan)"></span>Actual reported earnings</span>
@@ -2201,10 +2205,11 @@
         const tMin = historical.length ? historical[0].ts : currentTs - 5 * 365 * 86400;
         const tMax = currentTs;
 
-        // Compact viewBox (640x240) — the chart lives in the left column of
-        // a 2-col grid now, no need for full-width dimensions.
-        const W = 640, H = 240;
-        const PAD_L = 36, PAD_R = 10, PAD_T = 10, PAD_B = 22;
+        // Compact viewBox (720x200) — height reduced so the whole
+        // Valuation card is ≈ same total height as the Earnings Growth
+        // Estimates card sitting beside it.
+        const W = 720, H = 200;
+        const PAD_L = 34, PAD_R = 10, PAD_T = 8, PAD_B = 20;
         const plotW = W - PAD_L - PAD_R;
         const plotH = H - PAD_T - PAD_B;
         const xFor = t => PAD_L + ((t - tMin) / (tMax - tMin || 1)) * plotW;
@@ -2263,20 +2268,20 @@
           (dashedPath ? '<path d="' + dashedPath + '" fill="none" stroke="var(--term-cyan)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 4"/>' : '') +
           solidDot + dashDot;
 
-        // Head: current price, current fwd EPS, current fwd P/E
+        // Head: inline "LABEL value · LABEL value ·" strip — one line, tight.
         if (head) {
           const ttmEpsFromSec = quarterly.slice(-4).reduce((s, q) => s + q.eps, 0);
           const fmt = (v, prefix, decimals) => v == null || !Number.isFinite(v) ? '—'
             : (prefix || '') + v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
           head.innerHTML =
-            '<div class="valuation-figure"><div class="lbl">Price</div><div class="num">' + fmt(currentPrice, '$', 2) + '</div></div>' +
-            '<div class="valuation-figure"><div class="lbl">Forward EPS (Est.)</div><div class="num">' + fmt(currentFwdEps, '$', 2) + '</div></div>' +
-            '<div class="valuation-figure"><div class="lbl">Forward P/E</div><div class="num accent">' + (currentFwdPE != null ? currentFwdPE.toFixed(1) + 'x' : '—') + '</div></div>' +
-            '<div class="valuation-figure"><div class="lbl">TTM EPS</div><div class="num">' + fmt(ttmEpsFromSec, '$', 2) + '</div></div>';
+            '<span class="valuation-figure"><span class="lbl">Price</span><span class="num">' + fmt(currentPrice, '$', 2) + '</span></span>' +
+            '<span class="valuation-figure"><span class="lbl">Fwd EPS</span><span class="num">' + fmt(currentFwdEps, '$', 2) + '</span></span>' +
+            '<span class="valuation-figure"><span class="lbl">Fwd P/E</span><span class="num accent">' + (currentFwdPE != null ? currentFwdPE.toFixed(1) + 'x' : '—') + '</span></span>' +
+            '<span class="valuation-figure"><span class="lbl">TTM EPS</span><span class="num">' + fmt(ttmEpsFromSec, '$', 2) + '</span></span>';
         }
         if (note) {
           const src = fwdSourceLabel || 'analyst consensus';
-          note.textContent = 'Historical earnings from SEC XBRL filings. Current forward-EPS estimate: ' + src + '. Y-axis capped at ' + Y_MAX + 'x — a few near-zero-EPS quarters push above this.';
+          note.textContent = 'SEC XBRL earnings · dashed segment uses ' + src + ' · axis capped at ' + Y_MAX + 'x.';
         }
       }
 
