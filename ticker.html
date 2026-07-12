@@ -1012,6 +1012,55 @@
       text-align: center;
     }
 
+    /* ---------- Valuation History (forward P/E chart) ---------- */
+    #valuationSection .term-panel { display: flex; flex-direction: column; }
+    .valuation-head {
+      display: flex; flex-wrap: wrap;
+      gap: 0.85rem 2rem; align-items: baseline;
+      padding-bottom: 0.6rem; margin-bottom: 0.6rem;
+      border-bottom: 1px solid var(--term-border-soft);
+    }
+    .valuation-figure { display: flex; flex-direction: column; gap: 0.15rem; }
+    .valuation-figure .lbl {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem; letter-spacing: 0.14em;
+      color: var(--term-dim); text-transform: uppercase;
+    }
+    .valuation-figure .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.15rem; font-weight: 700;
+      color: var(--term-text);
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .valuation-figure .num.accent { color: var(--term-cyan); }
+    .valuation-chart-wrap {
+      position: relative;
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-radius: 6px; padding: 0.5rem;
+    }
+    .valuation-chart { width: 100%; height: auto; display: block; }
+    .valuation-legend {
+      display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem;
+      margin-top: 0.6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+    }
+    .valuation-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--term-dim); }
+    .valuation-legend-swatch { display: inline-block; width: 24px; height: 2px; border-radius: 2px; }
+    .valuation-legend-swatch.dashed {
+      /* Match the SVG dashed style visually with a mini gradient */
+      background: repeating-linear-gradient(90deg, var(--term-cyan) 0 5px, transparent 5px 8px);
+    }
+    .valuation-note {
+      color: var(--term-dim);
+      opacity: 0.7;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      letter-spacing: 0.04em;
+      margin-top: 0.4rem;
+    }
+
     /* ---------- Insider transactions + institutional holders tables ---------- */
     /* Tight terminal-style density — smaller font, tight row padding,
        so more rows fit in the same visual footprint. Both cards use
@@ -1307,8 +1356,28 @@
         </div>
       </section>
 
+      <!-- Valuation History — forward 12-month P/E over time. Solid line uses
+           earnings the company actually reported in the next 12 months (from
+           SEC XBRL); dashed segment on the right uses analyst consensus for
+           the current forward window. Hides itself for ETFs, ADRs, indices,
+           anything SEC doesn't file. -->
+      <section class="term-section" id="valuationSection" style="display:none">
+        <div class="term-section-label">VALUATION HISTORY <span class="sub">— price ÷ next-12-month EPS (real, then analyst-estimated)</span></div>
+        <div class="term-panel">
+          <div class="valuation-head" id="valuationHead"></div>
+          <div class="valuation-chart-wrap">
+            <svg id="valuationChart" class="valuation-chart" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="valuation-legend">
+            <span class="valuation-legend-item"><span class="valuation-legend-swatch" style="background:var(--term-cyan)"></span>Forward P/E &mdash; using actual reported earnings</span>
+            <span class="valuation-legend-item"><span class="valuation-legend-swatch dashed"></span>Forward P/E &mdash; using current analyst estimate</span>
+          </div>
+          <div class="valuation-note" id="valuationNote"></div>
+        </div>
+      </section>
+
       <!-- Financials & Earnings (full-width, compressed height) — sits between
-           Wall Street Ratings and the Earnings bar-chart section so readers get
+           Valuation History and the Earnings bar-chart section so readers get
            a quick income-statement snapshot before diving into the EPS detail. -->
       <section class="term-section" id="financialsSection">
         <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
@@ -2007,6 +2076,202 @@
       // owners. Each row: date, filer, title, action pill (buy/sell/award),
       // share count, dollar value. Hides the section for ETFs, indices, and
       // any ticker Yahoo doesn't have insider filings for.
+      // ----- Valuation History (forward 12-month P/E over time) -----
+      // Combines three data sources:
+      //  1. Quarterly EPS actuals from SEC XBRL (/api/eps-history)
+      //  2. Daily prices from /api/history (5y)
+      //  3. Analyst consensus forward EPS from the /api/analyst payload
+      //     (Nasdaq's next-4-quarter estimate sum, or Yahoo's +1y estimate).
+      //
+      // For each historical weekly point: forward P/E = price ÷ sum of the
+      // next 4 quarterly EPS ACTUALLY reported. Solid line.
+      //
+      // For the last ~12 months (where next-4-quarter actuals don't exist
+      // yet), we compute a single "current forward P/E" using analyst
+      // consensus and draw a dashed segment from the last solid point to
+      // that current estimate. Reader sees the transition clearly.
+      async function renderValuationHistory(analystData) {
+        const section = document.getElementById('valuationSection');
+        if (!section) return;
+        // Kick off SEC + price fetches in parallel
+        let eps = null, hist = null;
+        try {
+          const [epsR, histR] = await Promise.all([
+            fetch('/api/eps-history?sym=' + encodeURIComponent(sym)),
+            fetch('/api/history?syms=' + encodeURIComponent(sym) + '&range=5y'),
+          ]);
+          if (epsR.ok) eps = await epsR.json();
+          if (histR.ok) hist = await histR.json();
+        } catch (e) {
+          section.style.display = 'none';
+          return;
+        }
+        const quarterly = (eps && eps.quarterlyEps) || [];
+        const priceSeries = (hist && hist.series && hist.series[sym]) || [];
+        if (quarterly.length < 4 || priceSeries.length < 100) {
+          section.style.display = 'none';
+          return;
+        }
+
+        // --- Compute historical forward-hindsight P/E (weekly) ---
+        const quarterlyMs = quarterly.map(q => ({ ms: Date.parse(q.end), eps: q.eps }));
+        const historical = [];
+        // Sample ~weekly by skipping 5 daily points at a time
+        for (let i = 0; i < priceSeries.length; i += 5) {
+          const [ts, close] = priceSeries[i];
+          const T = ts * 1000;
+          const future = [];
+          for (const q of quarterlyMs) {
+            if (q.ms > T) {
+              future.push(q);
+              if (future.length === 4) break;
+            }
+          }
+          if (future.length < 4) continue;  // no 4 subsequent quarters — stop
+          const fwdEps = future.reduce((s, q) => s + q.eps, 0);
+          if (fwdEps <= 0.01) continue;
+          historical.push({ ts, pe: close / fwdEps });
+        }
+
+        // --- Current-forward analyst estimate ---
+        // Prefer sum of next 4 quarterly consensus (Nasdaq forecast). Fall
+        // back to Yahoo's +1y annual estimate. Fall back further to +1q ×
+        // 4 if that's all we've got. Null if nothing usable.
+        let currentFwdEps = null;
+        let fwdSourceLabel = '';
+        const fc = analystData && analystData.earnings && analystData.earnings.forecast;
+        const yQ = analystData && analystData.earnings && analystData.earnings.annual;
+        if (fc && Array.isArray(fc.quarterly) && fc.quarterly.length >= 4) {
+          const nextFour = fc.quarterly.slice(0, 4);
+          const sum = nextFour.reduce((s, q) => s + (Number(q.eps) || 0), 0);
+          if (sum > 0.01) { currentFwdEps = sum; fwdSourceLabel = 'Nasdaq consensus'; }
+        }
+        if (currentFwdEps == null && Array.isArray(yQ)) {
+          const plus1y = yQ.find(y => y && y.period === '+1y');
+          if (plus1y && Number.isFinite(Number(plus1y.eps))) {
+            currentFwdEps = Number(plus1y.eps);
+            fwdSourceLabel = 'Yahoo +1y consensus';
+          }
+        }
+        const currentPrice = priceSeries[priceSeries.length - 1][1];
+        const currentTs = priceSeries[priceSeries.length - 1][0];
+        const currentFwdPE = (currentFwdEps && currentFwdEps > 0.01) ? currentPrice / currentFwdEps : null;
+
+        // If we have literally no forward P/E to draw (neither historical
+        // nor current), give up gracefully.
+        if (!historical.length && currentFwdPE == null) {
+          section.style.display = 'none';
+          return;
+        }
+
+        section.style.display = '';
+        drawValuationChart(historical, currentFwdPE, currentTs, currentPrice, currentFwdEps, fwdSourceLabel, quarterly);
+      }
+
+      function drawValuationChart(historical, currentFwdPE, currentTs, currentPrice, currentFwdEps, fwdSourceLabel, quarterly) {
+        const svg = document.getElementById('valuationChart');
+        const head = document.getElementById('valuationHead');
+        const note = document.getElementById('valuationNote');
+        if (!svg) return;
+
+        // Y-axis auto-scale with a cap. Take the 95th percentile so a
+        // single spike from a near-zero EPS quarter doesn't crush the
+        // meaningful signal. Round up to a nice number.
+        const pes = historical.map(p => p.pe);
+        if (currentFwdPE != null) pes.push(currentFwdPE);
+        pes.sort((a, b) => a - b);
+        const p95 = pes[Math.min(pes.length - 1, Math.floor(pes.length * 0.95))];
+        const niceCap = (v) => {
+          if (v <= 30) return 30;
+          if (v <= 50) return 50;
+          if (v <= 80) return 80;
+          if (v <= 120) return 120;
+          return Math.ceil(v / 50) * 50;
+        };
+        const Y_MAX = niceCap(p95);
+        const Y_MIN = 0;
+
+        // X range: earliest historical timestamp to now
+        const tMin = historical.length ? historical[0].ts : currentTs - 5 * 365 * 86400;
+        const tMax = currentTs;
+
+        const W = 900, H = 340;
+        const PAD_L = 42, PAD_R = 14, PAD_T = 14, PAD_B = 28;
+        const plotW = W - PAD_L - PAD_R;
+        const plotH = H - PAD_T - PAD_B;
+        const xFor = t => PAD_L + ((t - tMin) / (tMax - tMin || 1)) * plotW;
+        const yFor = v => PAD_T + (1 - (Math.min(v, Y_MAX) - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+
+        // Gridlines & y labels — pick ~5 nice steps
+        const stepY = (Y_MAX <= 30) ? 5 : (Y_MAX <= 60) ? 10 : (Y_MAX <= 100) ? 20 : 25;
+        let grid = '';
+        for (let v = stepY; v <= Y_MAX; v += stepY) {
+          const y = yFor(v);
+          grid += '<line x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + y + '" y2="' + y + '" stroke="var(--term-border)" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>';
+          grid += '<text x="' + (PAD_L - 6) + '" y="' + (y + 3) + '" text-anchor="end" fill="var(--term-dim)" font-size="10" font-family="JetBrains Mono, monospace">' + v + 'x</text>';
+        }
+
+        // Year ticks
+        let xTicks = '';
+        const startYear = new Date(tMin * 1000).getUTCFullYear();
+        const endYear = new Date(tMax * 1000).getUTCFullYear();
+        for (let yr = startYear; yr <= endYear; yr++) {
+          const ts = Date.UTC(yr, 0, 1) / 1000;
+          if (ts < tMin || ts > tMax) continue;
+          const x = xFor(ts);
+          xTicks += '<line x1="' + x + '" x2="' + x + '" y1="' + PAD_T + '" y2="' + (H - PAD_B) + '" stroke="var(--term-border)" stroke-width="0.6" opacity="0.35"/>';
+          xTicks += '<text x="' + x + '" y="' + (H - 8) + '" text-anchor="middle" fill="var(--term-dim)" font-size="10" font-family="JetBrains Mono, monospace">' + yr + '</text>';
+        }
+
+        // Solid historical line
+        let solidPath = '';
+        for (let i = 0; i < historical.length; i++) {
+          const p = historical[i];
+          const cmd = (i === 0) ? 'M' : 'L';
+          solidPath += cmd + xFor(p.ts).toFixed(2) + ' ' + yFor(p.pe).toFixed(2) + ' ';
+        }
+
+        // Dashed segment from last historical to current-analyst forward P/E
+        let dashedPath = '';
+        let dashDot = '';
+        if (historical.length && currentFwdPE != null) {
+          const last = historical[historical.length - 1];
+          const x1 = xFor(last.ts), y1 = yFor(last.pe);
+          const x2 = xFor(currentTs), y2 = yFor(currentFwdPE);
+          dashedPath = 'M' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' L' + x2.toFixed(2) + ' ' + y2.toFixed(2);
+          dashDot = '<circle cx="' + x2.toFixed(2) + '" cy="' + y2.toFixed(2) + '" r="4" fill="var(--term-cyan)" stroke="var(--term-panel-2)" stroke-width="1.5" stroke-dasharray="1 1.5"/>';
+        }
+
+        // Solid endpoint dot at the last historical point
+        let solidDot = '';
+        if (historical.length) {
+          const last = historical[historical.length - 1];
+          solidDot = '<circle cx="' + xFor(last.ts).toFixed(2) + '" cy="' + yFor(last.pe).toFixed(2) + '" r="3" fill="var(--term-cyan)" stroke="var(--term-panel-2)" stroke-width="1.5"/>';
+        }
+
+        svg.innerHTML =
+          grid + xTicks +
+          (solidPath ? '<path d="' + solidPath + '" fill="none" stroke="var(--term-cyan)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>' : '') +
+          (dashedPath ? '<path d="' + dashedPath + '" fill="none" stroke="var(--term-cyan)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 4"/>' : '') +
+          solidDot + dashDot;
+
+        // Head: current price, current fwd EPS, current fwd P/E
+        if (head) {
+          const ttmEpsFromSec = quarterly.slice(-4).reduce((s, q) => s + q.eps, 0);
+          const fmt = (v, prefix, decimals) => v == null || !Number.isFinite(v) ? '—'
+            : (prefix || '') + v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+          head.innerHTML =
+            '<div class="valuation-figure"><div class="lbl">Price</div><div class="num">' + fmt(currentPrice, '$', 2) + '</div></div>' +
+            '<div class="valuation-figure"><div class="lbl">Forward EPS (Est.)</div><div class="num">' + fmt(currentFwdEps, '$', 2) + '</div></div>' +
+            '<div class="valuation-figure"><div class="lbl">Forward P/E</div><div class="num accent">' + (currentFwdPE != null ? currentFwdPE.toFixed(1) + 'x' : '—') + '</div></div>' +
+            '<div class="valuation-figure"><div class="lbl">TTM EPS</div><div class="num">' + fmt(ttmEpsFromSec, '$', 2) + '</div></div>';
+        }
+        if (note) {
+          const src = fwdSourceLabel || 'analyst consensus';
+          note.textContent = 'Historical earnings from SEC XBRL filings. Current forward-EPS estimate: ' + src + '. Y-axis capped at ' + Y_MAX + 'x — a few near-zero-EPS quarters push above this.';
+        }
+      }
+
       function renderInsiders(insiders) {
         const section = document.getElementById('insidersSection');
         const table   = document.getElementById('insidersTable');
@@ -3379,7 +3644,7 @@
           }
           // Hide the earnings + trend + revisions + growth + peers sections
           // when the API fails — nothing sensible to show without live data.
-          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection', 'insidersSection', 'institutionsSection'].forEach(id => {
+          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection', 'insidersSection', 'institutionsSection', 'valuationSection'].forEach(id => {
             const s = document.getElementById(id);
             if (s) s.style.display = 'none';
           });
@@ -3399,6 +3664,10 @@
         // themselves gracefully for ETFs / indices without coverage.
         renderInsiders(data && data.insiders);
         renderInstitutions(data && data.institutions);
+        // Valuation history — SEC XBRL + price history + analyst consensus.
+        // Renders under Wall Street Ratings. Runs async (fires its own
+        // fetches); safe to fire-and-forget since it manages its own show/hide.
+        renderValuationHistory(data);
         // Cap both tables' visible rows to the shorter of the two so the
         // cards line up bottom-to-bottom; SHOW ALL opens a modal with the
         // full record.
