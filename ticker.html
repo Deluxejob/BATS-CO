@@ -2020,6 +2020,13 @@
         // Always include zero baseline for reference
         if (yMin > 0) yMin = 0;
         if (yMax < 0) yMax = 0;
+        // Extra bottom breathing room when one series dominates the range
+        // (e.g. MU at +183% dwarfing peers at +14%). Without this the flat
+        // peer lines get crushed against the x-axis and read as invisible.
+        const range = yMax - yMin;
+        if (range > 100) {
+          yMin -= range * 0.08;
+        }
 
         const xFor = (t) => PAD_L + ((t - tMin) / (tMax - tMin || 1)) * plotW;
         const yFor = (v) => PAD_T + (1 - (v - yMin) / (yMax - yMin || 1)) * plotH;
@@ -2062,6 +2069,7 @@
         }
 
         let linesSvg = '';
+        let dotsSvg = '';
         for (const s of norm) {
           let d = '';
           for (let i = 0; i < s.points.length; i++) {
@@ -2069,9 +2077,18 @@
             d += (i === 0 ? 'M' : 'L') + xFor(t).toFixed(2) + ' ' + yFor(v).toFixed(2) + ' ';
           }
           linesSvg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+          // Endpoint dot at the last point — guarantees every series is
+          // visible even when one dominates the y-scale (e.g. MU +183% vs
+          // peers +14% compressing peer lines into a flat band).
+          const last = s.points[s.points.length - 1];
+          if (last) {
+            const cx = xFor(last[0]).toFixed(2);
+            const cy = yFor(last[1]).toFixed(2);
+            dotsSvg += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${s.color}" stroke="var(--term-panel-2)" stroke-width="1.5"/>`;
+          }
         }
 
-        svg.innerHTML = gridSvg + xTickSvg + linesSvg;
+        svg.innerHTML = gridSvg + xTickSvg + linesSvg + dotsSvg;
 
         // Legend row — symbol + last value colored by sign
         legendEl.innerHTML = norm.map(s => {
