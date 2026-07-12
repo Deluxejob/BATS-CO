@@ -3694,11 +3694,39 @@
         renderOverview(data && data.overview);
         // Same for the Company Profile panel.
         renderProfile(data && data.profile);
+
+        // ETFs / indices / anything without company-level data: hide every
+        // section that depends on per-company financials, insider filings,
+        // analyst coverage, etc. Chart + Key Stats + Ownership + News +
+        // Technicals + Financials widget still render (they work fine for
+        // ETFs). This upfront hide is more reliable than trusting each
+        // sub-renderer to hide itself on empty data — a single throw in
+        // renderEarnings could leave "Loading…" placeholders visible below.
+        if (!data || !data.hasAnalysts) {
+          const companyOnly = [
+            'analystSection',
+            'valuationSection',
+            'earningsSection',
+            'epsTrendSection',
+            'epsRevSection',
+            'growthSection',
+            'peersSection',
+            'compareSection',
+            'insidersSection',
+            'institutionsSection',
+          ];
+          for (const id of companyOnly) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+          }
+          return;
+        }
+
         // Peer companies (same industry) — pill row of clickable tickers.
         renderPeers(data && data.peers);
         // Insider transactions + top institutional holders — sit between
         // Earnings Growth Estimates and Technical Analysis. Both hide
-        // themselves gracefully for ETFs / indices without coverage.
+        // themselves gracefully when Yahoo returns nothing.
         renderInsiders(data && data.insiders);
         renderInstitutions(data && data.institutions);
         // Valuation history — SEC XBRL + price history + analyst consensus.
@@ -3719,11 +3747,6 @@
           console.warn('renderEarnings failed:', e);
           const earnSection = document.getElementById('earningsSection');
           if (earnSection) earnSection.style.display = 'none';
-        }
-
-        if (!data || !data.hasAnalysts) {
-          if (section) section.style.display = 'none';
-          return;
         }
 
         const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, c => (
