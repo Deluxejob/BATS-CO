@@ -1393,13 +1393,10 @@
         </div>
       </div>
 
-      <!-- Financials & Earnings (full-width, compressed height) — sits between
-           Valuation History and the Earnings bar-chart section so readers get
-           a quick income-statement snapshot before diving into the EPS detail. -->
-      <section class="term-section" id="financialsSection">
-        <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
-        <div class="term-panel"><div id="financialsWidgetMount"></div></div>
-      </section>
+      <!-- (Financials & Earnings has been moved to the very bottom of
+           the page — the TradingView widget is a "quick look" reference
+           rather than the primary earnings view, and our own EPS bar
+           charts + valuation history above already tell the story.) -->
 
       <!-- Earnings — quarterly + annual EPS bar charts (via /api/analyst) -->
       <section class="term-section" id="earningsSection">
@@ -1546,11 +1543,19 @@
             </div>
           </div>
           <div class="compare-chart-wrap">
-            <svg id="compareChart" class="compare-chart" viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" aria-label="Performance vs peers"></svg>
+            <svg id="compareChart" class="compare-chart" viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" aria-label="Performance vs peers"></svg>
           </div>
           <div class="compare-legend" id="compareLegend"></div>
           <div class="compare-note">All series normalized to 0% at the start of the selected range. Compare up to 4 peers.</div>
         </div>
+      </section>
+
+      <!-- Financials & Earnings — quick TradingView income snapshot at the very
+           bottom of the page. Compact height (400px) since our own EPS charts
+           and valuation history above already cover the primary story. -->
+      <section class="term-section" id="financialsSection">
+        <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
+        <div class="term-panel"><div id="financialsWidgetMount"></div></div>
       </section>
 
     </div>

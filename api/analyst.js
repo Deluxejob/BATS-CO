@@ -73,23 +73,74 @@ function fiscalEndToISO(fmt) {
 // stored in the FINNHUB_API_KEY environment variable on Vercel. When
 // the key isn't set (or the call fails), we return null and the
 // frontend hides the peer companies section gracefully.
+// Fetch peers from Finnhub (industry grouping — broader than the default
+// sub-industry, so semis + semi equipment come back together) AND Yahoo's
+// recommendations-by-symbol endpoint, then merge/dedupe. Two sources
+// increase coverage across GICS classification quirks.
 async function fetchFinnhubPeers(sym) {
   const key = process.env.FINNHUB_API_KEY;
-  if (!key) return null;
-  const url = `https://finnhub.io/api/v1/stock/peers?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(key)}`;
-  try {
-    const r = await fetch(url, { headers: { 'User-Agent': 'BATS.CO peers proxy' } });
-    if (!r.ok) return null;
-    const arr = await r.json();
-    if (!Array.isArray(arr)) return null;
-    // Finnhub's first element is always the queried ticker itself — drop it.
-    // Also filter out anything that isn't a plain ticker string.
-    return arr
-      .filter(t => typeof t === 'string' && /^[A-Z0-9.\-]{1,10}$/.test(t) && t !== sym.toUpperCase())
-      .slice(0, 12);
-  } catch (e) {
-    return null;
+  const filterOk = (arr, self) => (Array.isArray(arr) ? arr : [])
+    .filter(t => typeof t === 'string' && /^[A-Z0-9.\-]{1,10}$/.test(t) && t !== self);
+  const self = sym.toUpperCase();
+
+  // --- Finnhub: grouping=industry (broader) ---
+  const finnhub = (async () => {
+    if (!key) return [];
+    // Two Finnhub calls in parallel: sub-industry (tight, high-quality) +
+    // industry (broader). Union of both gives more coverage than either
+    // alone — some tickers' peers only surface at one level.
+    try {
+      const [subR, indR] = await Promise.all([
+        fetch(`https://finnhub.io/api/v1/stock/peers?symbol=${encodeURIComponent(sym)}&grouping=subIndustry&token=${encodeURIComponent(key)}`,
+          { headers: { 'User-Agent': 'BATS.CO peers proxy' } }),
+        fetch(`https://finnhub.io/api/v1/stock/peers?symbol=${encodeURIComponent(sym)}&grouping=industry&token=${encodeURIComponent(key)}`,
+          { headers: { 'User-Agent': 'BATS.CO peers proxy' } }),
+      ]);
+      const subArr = subR.ok ? await subR.json() : [];
+      const indArr = indR.ok ? await indR.json() : [];
+      // Interleave: prioritize sub-industry (closer matches first), then
+      // append industry ones that weren't already in the sub-industry list.
+      const seen = new Set();
+      const out = [];
+      for (const list of [subArr, indArr]) {
+        for (const t of filterOk(list, self)) {
+          if (!seen.has(t)) { seen.add(t); out.push(t); }
+        }
+      }
+      return out;
+    } catch (e) {
+      return [];
+    }
+  })();
+
+  // --- Yahoo recommendations-by-symbol (usage-based, sometimes catches
+  // adjacencies GICS misses — different signal than Finnhub's classification) ---
+  const yahoo = (async () => {
+    try {
+      const r = await fetch(`https://query1.finance.yahoo.com/v6/finance/recommendationsbysymbol/${encodeURIComponent(sym)}`,
+        { headers: { 'User-Agent': YAHOO_UA } });
+      if (!r.ok) return [];
+      const d = await r.json();
+      const list = (((d && d.finance && d.finance.result) || [])[0] || {}).recommendedSymbols || [];
+      return filterOk(list.map(x => x && x.symbol), self);
+    } catch (e) {
+      return [];
+    }
+  })();
+
+  const [fh, yh] = await Promise.all([finnhub, yahoo]);
+  // Merge: Finnhub first (usually most tickers), then append Yahoo picks
+  // not already in the Finnhub list. Cap at 12.
+  const seen = new Set();
+  const merged = [];
+  for (const list of [fh, yh]) {
+    for (const t of list) {
+      if (!seen.has(t)) { seen.add(t); merged.push(t); }
+      if (merged.length >= 12) break;
+    }
+    if (merged.length >= 12) break;
   }
+  return merged.length ? merged : null;
 }
 
 // Nasdaq's public analyst-forecast endpoint. Free, no API key, returns
