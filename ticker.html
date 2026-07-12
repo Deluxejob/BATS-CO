@@ -1997,9 +1997,9 @@
           return;
         }
 
-        // Chart geometry
-        const W = 900, H = 360;
-        const PAD_L = 46, PAD_R = 14, PAD_T = 12, PAD_B = 28;
+        // Chart geometry — must match the SVG viewBox in the markup (900x220).
+        const W = 900, H = 220;
+        const PAD_L = 42, PAD_R = 12, PAD_T = 10, PAD_B = 22;
         const plotW = W - PAD_L - PAD_R;
         const plotH = H - PAD_T - PAD_B;
 
