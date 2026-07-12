@@ -154,15 +154,12 @@
       .grid-2col { grid-template-columns: 1fr 1fr; }
     }
     .mkt-col { display: flex; flex-direction: column; }
-    /* Right column of the top row is now the News panel — stretch it so
-       its bottom lines up with the (potentially taller) left column of
-       stacked Key Stats + Ownership + Profile boxes. Scoped by
-       :has(#tickerNewsList) so this rule can't leak into other .grid-2col
-       rows further down the page (e.g. Rev-vs-Earn / Earnings Trends). */
+    /* Right column of the top row is the News panel. Its height is
+       synced to the left column via a ResizeObserver at the bottom of
+       the page — with just CSS, `flex: 1` on the news panel would let
+       news content drive the whole grid row height and leave empty
+       space at the bottom of the left column. */
     .grid-2col > .mkt-col > .term-panel:has(#tickerNewsList) {
-      flex: 1;
-      min-height: 500px;
-      max-height: 900px;
       display: flex;
       flex-direction: column;
     }
@@ -1505,6 +1502,54 @@
         locale: 'en',
         colorTheme: 'dark',
       });
+
+      // ----- News panel height matcher -----
+      // Keep the top-right news card exactly the same height as the left
+      // column of stacked Key Stats + Ownership + Profile boxes so the
+      // two columns line up bottom-to-bottom. Measures the LEFT column's
+      // intrinsic content height (its last child's bottom minus its own
+      // top) so that a taller news list can't inflate the grid row and
+      // leave empty space in the left column. ResizeObserver keeps it
+      // synced when Yahoo widgets finish loading or the profile toggle
+      // expands. Only applies at >=1100px (when grid-2col actually goes
+      // side-by-side); on narrow viewports we clear the height so the
+      // stacked layout is unrestricted.
+      (function () {
+        const leftCol   = document.querySelector('.grid-2col > .mkt-col:first-child');
+        const newsList  = document.getElementById('tickerNewsList');
+        const newsPanel = newsList && newsList.closest('.term-panel');
+        const newsCol   = newsPanel && newsPanel.closest('.mkt-col');
+        const newsLabel = newsCol && newsCol.querySelector('.term-section-label');
+        if (!leftCol || !newsPanel || !newsLabel) return;
+
+        const match = () => {
+          if (window.innerWidth < 1100) { newsPanel.style.height = ''; return; }
+          const last = leftCol.lastElementChild;
+          if (!last) return;
+          const intrinsic = last.getBoundingClientRect().bottom - leftCol.getBoundingClientRect().top;
+          const labelH = newsLabel.getBoundingClientRect().height;
+          // Gap that the .term-section-label has above the panel (~0.4rem margin)
+          const target = intrinsic - labelH - 6;
+          newsPanel.style.height = Math.max(320, Math.round(target)) + 'px';
+        };
+
+        // Observe the left column and each of its children — TradingView's
+        // Symbol Info widget takes 1-2 seconds to render its iframe, and
+        // when the iframe grows the parent mkt-col may not fire its own
+        // resize event until layout re-flows. Observing each child catches
+        // those interior changes reliably.
+        const ro = new ResizeObserver(match);
+        ro.observe(leftCol);
+        for (const child of leftCol.children) ro.observe(child);
+        window.addEventListener('resize', match);
+        match();
+        // Belt-and-braces: retry a couple of times so late-arriving widget
+        // layout (Yahoo /api/analyst → profile description expanding, etc.)
+        // gets picked up even if the observers miss the exact frame.
+        setTimeout(match, 400);
+        setTimeout(match, 1500);
+        setTimeout(match, 3500);
+      })();
 
       // -----------------------------------------------------------------
       // Wall Street ratings — via /api/analyst Vercel proxy. Hides itself
