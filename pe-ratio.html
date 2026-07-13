@@ -412,29 +412,35 @@
     `;
 
     // ---- Forward PE (analyst consensus for next 12 months) --------------
-    // Yahoo's v7 quote for SPY includes `forwardPE` (price ÷ consensus
-    // next-12-month EPS). SPY tracks SPX, so this is effectively the
-    // market's forward P/E. Runs async, non-blocking; the tile just stays
-    // "—" if the fetch fails.
+    // Yahoo v7 quote returns forwardPE for the S&P 500 index (^GSPC) but
+    // NOT for its ETF proxies (SPY/VOO/IVV — they come back null). Try
+    // ^GSPC first, then fall back to SPY just in case.
     (async () => {
-      try {
-        const r = await fetch('/api/quote?syms=SPY');
-        if (!r.ok) return;
-        const data = await r.json();
-        const q = data && data.quotes && data.quotes.SPY;
-        if (!q || !Number.isFinite(q.forwardPE)) return;
-        $('statForward').textContent = q.forwardPE.toFixed(2);
-        const sub = $('statForwardSub');
-        if (Number.isFinite(q.trailingPE) && q.forwardPE > 0.5) {
-          // Implied 1-year EPS growth = (trailingPE / forwardPE) - 1
-          const growth = (q.trailingPE / q.forwardPE - 1) * 100;
-          const sign = growth >= 0 ? '+' : '';
-          const cls = growth >= 0 ? 'pos' : 'neg';
-          sub.innerHTML = `Analysts expect <span class="${cls}">${sign}${growth.toFixed(1)}%</span> EPS growth`;
-        } else {
-          sub.textContent = 'Price ÷ next-12-mo EPS consensus';
-        }
-      } catch (e) { /* leave the tile at its default "—" */ }
+      const tryTickers = ['^GSPC', 'SPY'];
+      for (const sym of tryTickers) {
+        try {
+          const r = await fetch('/api/quote?syms=' + encodeURIComponent(sym));
+          if (!r.ok) continue;
+          const data = await r.json();
+          const q = data && data.quotes && data.quotes[sym];
+          if (!q || !Number.isFinite(q.forwardPE)) continue;
+          $('statForward').textContent = q.forwardPE.toFixed(2);
+          const sub = $('statForwardSub');
+          if (Number.isFinite(q.trailingPE) && q.forwardPE > 0.5) {
+            // Implied 1-year EPS growth = (trailingPE / forwardPE) - 1
+            const growth = (q.trailingPE / q.forwardPE - 1) * 100;
+            const sign = growth >= 0 ? '+' : '';
+            const cls = growth >= 0 ? 'pos' : 'neg';
+            sub.innerHTML = `Analysts expect <span class="${cls}">${sign}${growth.toFixed(1)}%</span> EPS growth`;
+          } else {
+            sub.textContent = 'Price ÷ next-12-mo EPS consensus';
+          }
+          return;   // got it; stop iterating
+        } catch (e) { /* try the next ticker */ }
+      }
+      // If we get here, no ticker gave us a forward PE. Leave the tile "—"
+      // and drop a small note into the sublabel explaining why.
+      $('statForwardSub').textContent = 'Not published for the index via free data';
     })();
 
     // --- SVG chart (period-aware) ---

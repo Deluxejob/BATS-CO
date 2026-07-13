@@ -64,9 +64,11 @@ export default async function handler(req, res) {
   const raw = String(req.query.syms || '').toUpperCase().trim();
   // Split, dedupe, sanitize. Cap at 20 (Yahoo v7 has no hard limit but we
   // don't want a runaway request either).
+  // Allow the ^ prefix used for indices (^GSPC, ^DJI, ^IXIC) alongside
+  // the usual A-Z0-9.- ticker chars.
   const syms = Array.from(new Set(
     raw.split(',').map(s => s.trim()).filter(Boolean)
-  )).filter(s => /^[A-Z0-9.\-]{1,10}$/.test(s)).slice(0, 20);
+  )).filter(s => /^\^?[A-Z0-9.\-]{1,10}$/.test(s)).slice(0, 20);
 
   if (!syms.length) {
     return res.status(400).json({ error: 'no valid symbols' });
