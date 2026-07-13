@@ -4,12 +4,97 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Market Ratios — BATS.CO</title>
-  <meta name="description" content="Key market ratios and spreads for quickly reading the state of stocks, bonds, commodities, and currencies at a glance." />
+  <meta name="description" content="Cross-asset ratios and spreads for reading the state of the market at a glance — Gold/Silver, S&P/Gold, Gold/Oil, US vs International, and more." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Ratio card styling — mirrors the rd-* pattern used on markets.html
+       for the Yield Curve and 10Y-2Y Spread cards, so these ratio cards
+       read as siblings of those. */
+    .rd-card-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .rd-card-head h3 { margin: 0; }
+    .rd-key-yields {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+    }
+    .rd-key-yields > div { display: flex; flex-direction: column; align-items: flex-end; }
+    .rd-lbl {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .rd-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .rd-svg { width: 100%; max-width: 100%; display: block; height: auto; }
+    .rd-svg .axis-label { fill: #c9d3e0; font-size: 12px; font-weight: 500; }
+    .rd-svg .axis-line  { stroke: var(--border); stroke-width: 1; }
+    .rd-svg .grid-line  { stroke: var(--border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
+    .rd-svg .avg-line   { stroke: #64d3ff; stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.85; }
+    .rd-note {
+      margin: 0.75rem 0 0;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    /* Per-card explainer that sits below the chart */
+    .ratio-explainer {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+    .ratio-explainer h4 {
+      margin: 0 0 0.4rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .ratio-explainer p { margin: 0 0 0.6rem; }
+    .ratio-explainer ul { margin: 0 0 0.6rem 1.1rem; padding: 0; }
+    .ratio-explainer li { margin-bottom: 0.25rem; }
+    .ratio-explainer strong { color: var(--text); }
+    .ratio-explainer .ratio-history {
+      margin-top: 0.6rem;
+      padding: 0.5rem 0.7rem;
+      background: rgba(100, 211, 255, 0.05);
+      border-left: 2px solid #64d3ff;
+      border-radius: 4px;
+      font-size: 0.82rem;
+    }
+
+    /* Strict 2-column layout for the ratio cards — 2×2 on wide viewports,
+       single column on narrow. */
+    .ratios-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 900px) {
+      .ratios-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
@@ -45,11 +130,162 @@
       <p class="eyebrow">MARKET RATIOS</p>
       <h1>Reading the market in ratios</h1>
       <p class="lede">
-        Content coming soon.
+        Cross-market ratios cut through the noise of individual price moves
+        and show what's happening between two assets. When silver is cheap
+        relative to gold, when stocks are expensive relative to gold, when
+        the US is outperforming the rest of the world &mdash; these
+        long-running ratios tell you which regime the market is in.
       </p>
     </section>
 
-    <!-- Content sections will be added here. -->
+    <!-- RATIOS: GOLD/SILVER + SPX/GOLD + GOLD/OIL + VTI/VEU (US vs intl) -->
+    <section id="ratios">
+      <div class="section-head">
+        <h2>Ratios &amp; spreads</h2>
+        <p>
+          Four long-running cross-market signals: precious-metals contrarian pair,
+          stocks-vs-gold risk appetite, commodities stress, and US vs. international
+          equity leadership.
+        </p>
+      </div>
+      <div class="ratios-grid">
+
+        <!-- GOLD / SILVER RATIO -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>Gold / Silver ratio</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="gsrCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Long-term median</span> <span class="rd-num" id="gsrMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="gsrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Silver ratio chart"></svg>
+          <p class="rd-note" id="gsrNote">Loading gold/silver ratio&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              The Gold/Silver ratio measures how many ounces of silver it takes to buy one
+              ounce of gold. It's a classic contrarian tool in the precious-metals world:
+              when the ratio is unusually <strong>high</strong>, silver is cheap relative to gold and has
+              historically outperformed on the reversal; when it's unusually <strong>low</strong>,
+              silver is expensive and gold tends to catch up.
+            </p>
+            <ul>
+              <li><strong>Above 90:</strong> Silver deeply undervalued vs gold. Rare &mdash; happened in the 2008 crisis, 2020 COVID, 2016 mining crash.</li>
+              <li><strong>60&ndash;80:</strong> Normal historical range. No strong signal.</li>
+              <li><strong>Below 50:</strong> Silver expensive vs gold. Historically the setup where silver's rally has run out of room.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Extremes:</strong> 2020 COVID crash pushed the ratio to ~125 (all-time high).
+              1980 Hunt-brothers silver squeeze pushed it to ~15 (all-time low).
+            </p>
+          </div>
+        </div>
+
+        <!-- S&P 500 / GOLD RATIO -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>S&P 500 / Gold ratio</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="sgrCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="sgrMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="sgrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="S&P 500/Gold ratio chart"></svg>
+          <p class="rd-note" id="sgrNote">Loading S&P 500/gold ratio&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              This ratio compares the S&P 500 index level to the gold price per ounce.
+              It's a barometer of investor risk appetite: how much you'd have to pay in
+              ounces of gold to buy one "share" of the S&P 500.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> stocks growing faster than gold &mdash; risk-on, corporate confidence, positive real growth expectations.</li>
+              <li><strong>Falling:</strong> gold outpacing stocks &mdash; defensive positioning, inflation hedging, or geopolitical stress.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Historical extremes:</strong>
+              1999 dot-com peak: <strong>5.5</strong> (stocks wildly overvalued vs gold).
+              1980 stagflation trough: <strong>~0.2</strong> (gold expensive, stocks depressed).
+              The ratio has trended lower recently &mdash; even though the S&P is at record highs,
+              gold's bull run has outpaced equity gains, compressing the ratio.
+            </p>
+          </div>
+        </div>
+
+        <!-- GOLD / OIL RATIO -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>Gold / Oil ratio</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="goRCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="goRMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="goRChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Oil ratio chart"></svg>
+          <p class="rd-note" id="goRNote">Loading gold/oil ratio&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              How many barrels of oil one ounce of gold buys. Because oil is the world's
+              growth commodity and gold is its defensive one, this ratio flags when the
+              two decouple &mdash; usually because something in the global economy is
+              breaking.
+            </p>
+            <ul>
+              <li><strong>Rising sharply:</strong> oil crashing faster than gold. Deflationary shock, demand destruction, or recession fear. Historically peaks near recession lows.</li>
+              <li><strong>Falling sharply:</strong> oil rallying faster than gold. Inflation, supply shock, or reflation trade. Common in commodity booms.</li>
+              <li><strong>Near median:</strong> normal risk regime, no strong signal.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Historical extremes:</strong>
+              April 2020 (COVID + negative oil day): <strong>~90+</strong> all-time high.
+              2008 GFC oil crash: <strong>~25</strong>.
+              1986 oil-price collapse: <strong>~30+</strong>.
+              2008 pre-GFC oil peak ($147/bbl): <strong>~6</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- VTI / VEU RATIO — US total market vs All-World ex-US.
+             Rising = US winning; falling = international winning. -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>US vs. International (VTI / VEU)</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="vveuCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2007</span> <span class="rd-num" id="vveuMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="vveuChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="VTI/VEU ratio — US vs international stocks"></svg>
+          <p class="rd-note" id="vveuNote">Loading US/international ratio&hellip;</p>
+          <div class="ratio-explainer">
+            <h4>How to read this</h4>
+            <p>
+              This ratio compares the price of the Vanguard Total US Stock Market ETF
+              (<strong>VTI</strong>) to the Vanguard FTSE All-World ex-US ETF
+              (<strong>VEU</strong>). It's the cleanest one-line snapshot of who's
+              winning between US stocks and everyone else &mdash; a barometer of global
+              equity leadership.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> US stocks outperforming international &mdash; earnings, tech dominance, dollar strength, or all three usually driving it.</li>
+              <li><strong>Falling:</strong> International outperforming US &mdash; often coincides with a weaker dollar, commodity booms, or US mega-cap valuations coming down.</li>
+              <li><strong>Flat/rangebound:</strong> No clear regime, roughly equal returns.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Regime history:</strong> the 2000s were a "lost decade" for US
+              stocks &mdash; international outperformed and the ratio fell. From
+              roughly 2010 onward, US mega-cap tech drove the ratio steadily higher,
+              hitting new records year after year through the mid-2020s. Sustained
+              turns in this line have historically marked multi-year leadership shifts.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
 
   </main>
 
@@ -58,5 +294,233 @@
   </footer>
 
   <script src="app.js"></script>
+
+  <script>
+  // ==========================================================================
+  // CROSS-ASSET RATIOS — Gold/Silver + S&P 500/Gold + Gold/Oil + VTI/VEU
+  // All computed from daily CSVs the update workflow writes into /data/.
+  // ==========================================================================
+  (async function renderRatios() {
+    async function loadCsv(url) {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const out = [];
+      for (const ln of (await r.text()).trim().split(/\r?\n/).slice(1)) {
+        const [d, c] = ln.split(',');
+        const px = parseFloat(c);
+        if (isFinite(px)) out.push({ d, px, t: new Date(d).getTime() });
+      }
+      return out;
+    }
+
+    let gold, silver, spx, oil, vti, veu;
+    try {
+      [gold, silver, spx, oil, vti, veu] = await Promise.all([
+        loadCsv('data/gold.csv'),
+        loadCsv('data/silver.csv'),
+        loadCsv('data/spx.csv'),
+        loadCsv('data/oil.csv'),
+        loadCsv('data/vti.csv'),
+        loadCsv('data/veu.csv'),
+      ]);
+    } catch (e) {
+      ['gsrNote','sgrNote','goRNote','vveuNote'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'Failed to load ratio data.';
+      });
+      return;
+    }
+
+    // Build date → close maps for fast joining
+    const map = (rows) => { const m = new Map(); for (const r of rows) m.set(r.d, r.px); return m; };
+    const goldMap = map(gold), silverMap = map(silver), spxMap = map(spx);
+
+    // For each date in numerator, compute ratio if denominator has a value on
+    // that date. If not, hold last known.
+    function joinedRatio(numerator, denominator, numMap, denMap) {
+      const rows = numerator;
+      const out = [];
+      let lastDen = null;
+      for (const r of rows) {
+        const denV = denMap.get(r.d) ?? lastDen;
+        if (denV != null) lastDen = denV;
+        if (denV != null && denV !== 0) {
+          out.push({ d: r.d, t: r.t, v: r.px / denV });
+        }
+      }
+      return out;
+    }
+
+    const gsRatio = joinedRatio(gold, silver, goldMap, silverMap);
+    const sgRatio = joinedRatio(
+      spx.filter(r => r.d >= '2000-08-30'),
+      gold, spxMap, goldMap
+    );
+
+    const median = (arr) => {
+      const s = [...arr].sort((a, b) => a - b);
+      return s.length ? s[Math.floor(s.length / 2)] : null;
+    };
+    const fmt = (v, d = 2) => v == null ? '—' : v.toFixed(d);
+
+    // Render one ratio chart (SVG line + horizontal median line + latest dot)
+    function drawChart(svgEl, rows, opts) {
+      if (!svgEl || rows.length < 10) return;
+      const W = 560, H = 260;
+      const M = { top: 15, right: 50, bottom: 30, left: 45 };
+      const plotW = W - M.left - M.right;
+      const plotH = H - M.top - M.bottom;
+
+      const vals = rows.map(r => r.v);
+      const yMin = Math.min(...vals) * 0.95;
+      const yMax = Math.max(...vals) * 1.05;
+      const first = rows[0], last = rows[rows.length - 1];
+      const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
+      const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+      let s = '';
+      const range = yMax - yMin;
+      const step = range < 1 ? 0.25 : range < 5 ? 1 : range < 20 ? 5 : range < 80 ? 10 : 20;
+      for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
+        const y = yFor(v);
+        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v < 10 ? v.toFixed(1) : Math.round(v)}</text>`;
+      }
+      const yearMs = 365.25 * 24 * 3600 * 1000;
+      const spanYrs = (last.t - first.t) / yearMs;
+      const tickYears = spanYrs > 15 ? 5 : spanYrs > 8 ? 2 : 1;
+      const startYr = new Date(first.t).getUTCFullYear();
+      const endYr = new Date(last.t).getUTCFullYear();
+      for (let y = Math.ceil(startYr / tickYears) * tickYears; y <= endYr; y += tickYears) {
+        const t = new Date(Date.UTC(y, 0, 1)).getTime();
+        if (t < first.t || t > last.t) continue;
+        const x = xFor(t);
+        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${y}</text>`;
+      }
+      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      if (opts.median != null && opts.median >= yMin && opts.median <= yMax) {
+        const y = yFor(opts.median);
+        s += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        s += `<text class="axis-label" x="${W - M.right + 3}" y="${y + 3}" style="fill:#64d3ff">med ${fmt(opts.median, opts.medianDigits || 1)}</text>`;
+      }
+
+      const path = rows.map((r, i) =>
+        (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yFor(r.v).toFixed(1)
+      ).join(' ');
+      s += `<path fill="none" stroke="${opts.color || 'var(--s5)'}" stroke-width="1.4" d="${path}"/>`;
+
+      const xC = xFor(last.t), yC = yFor(last.v);
+      s += `<circle cx="${xC}" cy="${yC}" r="4" fill="${opts.color || 'var(--s5)'}" stroke="#fff" stroke-width="1"/>`;
+      s += `<text x="${xC - 6}" y="${yC - 8}" text-anchor="end" fill="${opts.color || 'var(--s5)'}" font-size="12" font-weight="600">${fmt(last.v, opts.currentDigits || 1)}</text>`;
+
+      svgEl.innerHTML = s;
+    }
+
+    // === Gold / Silver ratio ===
+    const gsMedian = median(gsRatio.map(r => r.v));
+    const gsLast = gsRatio[gsRatio.length - 1];
+    document.getElementById('gsrCurrent').textContent = fmt(gsLast?.v, 1);
+    document.getElementById('gsrMedian').textContent = fmt(gsMedian, 1);
+    drawChart(document.getElementById('gsrChart'), gsRatio, {
+      median: gsMedian, color: '#f4b942', currentDigits: 1, medianDigits: 1,
+    });
+    if (gsLast) {
+      const dev = gsMedian ? ((gsLast.v / gsMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      let posture = 'within normal range';
+      if (gsLast.v >= 90) posture = 'unusually high — silver deeply undervalued relative to gold';
+      else if (gsLast.v <= 50) posture = 'unusually low — silver expensive relative to gold';
+      else if (gsLast.v >= 80) posture = 'elevated — silver on the cheap side';
+      else if (gsLast.v <= 60) posture = 'compressed — silver on the expensive side';
+      document.getElementById('gsrNote').innerHTML =
+        `As of <strong>${gsLast.d}</strong>: ratio <strong>${fmt(gsLast.v, 1)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(gsMedian, 1)}</strong>) — ${posture}.`;
+    }
+
+    // === S&P 500 / Gold ratio ===
+    const sgMedian = median(sgRatio.map(r => r.v));
+    const sgLast = sgRatio[sgRatio.length - 1];
+    document.getElementById('sgrCurrent').textContent = fmt(sgLast?.v, 2);
+    document.getElementById('sgrMedian').textContent = fmt(sgMedian, 2);
+    drawChart(document.getElementById('sgrChart'), sgRatio, {
+      median: sgMedian, color: '#64d3ff', currentDigits: 2, medianDigits: 2,
+    });
+    if (sgLast) {
+      const dev = sgMedian ? ((sgLast.v / sgMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      let posture = 'near the historical median';
+      if (sgLast.v >= 4) posture = 'stretched to the upside — stocks richly valued vs gold';
+      else if (sgLast.v <= 1) posture = 'stretched to the downside — gold richly valued vs stocks';
+      else if (dev > 20) posture = 'above the median — stocks winning the last cycle';
+      else if (dev < -20) posture = 'below the median — gold winning the last cycle';
+      document.getElementById('sgrNote').innerHTML =
+        `As of <strong>${sgLast.d}</strong>: ratio <strong>${fmt(sgLast.v, 2)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(sgMedian, 2)}</strong>) — ${posture}.`;
+    }
+
+    // === Gold / Oil ratio ===
+    const oilMap = map(oil);
+    const goRatio = joinedRatio(gold, oil, goldMap, oilMap);
+    const goMedian = median(goRatio.map(r => r.v));
+    const goLast = goRatio[goRatio.length - 1];
+    document.getElementById('goRCurrent').textContent = fmt(goLast?.v, 1);
+    document.getElementById('goRMedian').textContent = fmt(goMedian, 1);
+    drawChart(document.getElementById('goRChart'), goRatio, {
+      median: goMedian, color: '#f4b942', currentDigits: 1, medianDigits: 1,
+    });
+    if (goLast) {
+      const dev = goMedian ? ((goLast.v / goMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      let posture = 'within normal range';
+      if (goLast.v >= 40) posture = 'sharply elevated — gold vastly outpacing oil, historically a deflationary / recession stress signal';
+      else if (goLast.v >= 25) posture = 'elevated — gold outpacing oil, cautious tone in the commodities complex';
+      else if (goLast.v <= 8) posture = 'compressed — oil boom outpacing gold, historically an inflation / commodity-cycle signal';
+      else if (dev > 30) posture = 'above the median — gold winning vs oil';
+      else if (dev < -30) posture = 'below the median — oil winning vs gold';
+      document.getElementById('goRNote').innerHTML =
+        `As of <strong>${goLast.d}</strong>: ratio <strong>${fmt(goLast.v, 1)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(goMedian, 1)}</strong>) — ${posture}.`;
+    }
+
+    // === VTI / VEU ratio — US total market vs All-World ex-US ===
+    // Rising line = US outperforming; falling = international outperforming.
+    // VEU inception 2007-03-02, so the ratio series starts there.
+    const vtiMap = map(vti), veuMap = map(veu);
+    const vveuRatio = joinedRatio(
+      vti.filter(r => r.d >= '2007-03-08'),
+      veu, vtiMap, veuMap
+    );
+    const vveuMedian = median(vveuRatio.map(r => r.v));
+    const vveuLast = vveuRatio[vveuRatio.length - 1];
+    document.getElementById('vveuCurrent').textContent = fmt(vveuLast?.v, 2);
+    document.getElementById('vveuMedian').textContent = fmt(vveuMedian, 2);
+    drawChart(document.getElementById('vveuChart'), vveuRatio, {
+      median: vveuMedian, color: '#64d3ff', currentDigits: 2, medianDigits: 2,
+    });
+    if (vveuLast) {
+      const dev = vveuMedian ? ((vveuLast.v / vveuMedian) - 1) * 100 : 0;
+      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+      const lookback = 63;
+      const prior = vveuRatio.length > lookback ? vveuRatio[vveuRatio.length - 1 - lookback] : null;
+      const trendPct = prior ? ((vveuLast.v / prior.v) - 1) * 100 : null;
+      let posture;
+      if (trendPct == null) {
+        posture = 'not enough history for a trend read';
+      } else if (trendPct >= 3) {
+        posture = 'US stocks pulling ahead — ratio rising, US leadership';
+      } else if (trendPct <= -3) {
+        posture = 'international pulling ahead — ratio falling, US losing edge';
+      } else {
+        posture = 'roughly flat — no clear leadership over the last quarter';
+      }
+      document.getElementById('vveuNote').innerHTML =
+        `As of <strong>${vveuLast.d}</strong>: ratio <strong>${fmt(vveuLast.v, 2)}</strong> ` +
+        `(${devTxt} vs median <strong>${fmt(vveuMedian, 2)}</strong>) — ${posture}.`;
+    }
+  })();
+  </script>
 </body>
 </html>
