@@ -1000,10 +1000,10 @@
       }
       async function loadLive() {
         try {
-          // Cache-bust the JSON so we always hit the origin even through
-          // browser HTTP caches / Vercel CDN — the whole point of this poll
-          // is to see values that changed since page load.
-          const r = await fetch('data/sectors_live.json?t=' + Date.now(), { cache: 'no-store' });
+          // /api/sectors is a serverless wrapper around data/sectors_live.json —
+          // avoids Vercel's static-file edge cache holding onto stale copies
+          // after the intraday bot pushes a fresh version. See api/sectors.js.
+          const r = await fetch('/api/sectors?t=' + Date.now(), { cache: 'no-store' });
           if (!r.ok) return null;
           return await r.json();
         } catch (e) { return null; }
@@ -1342,7 +1342,9 @@
 
       async function loadLive() {
         try {
-          const r = await fetch('data/sectors_live.json', { cache: 'no-store' });
+          // See api/sectors.js — dynamic route avoids Vercel's static-file
+          // edge cache holding onto pre-bot-commit copies of sectors_live.json.
+          const r = await fetch('/api/sectors', { cache: 'no-store' });
           if (!r.ok) return null;
           return await r.json();
         } catch (e) {
