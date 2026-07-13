@@ -11,6 +11,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <style>
+    /* Wider container than the default 900px explainer — this page hosts
+       many side-by-side charts, so we let it breathe out to 1400px. */
+    main.explainer { max-width: 1400px; }
+    /* Tighter vertical rhythm than the default explainer so a screen full
+       of chart cards stays scannable. */
+    main.explainer section { margin: 1.5rem 0; }
+    .explainer-hero { padding: 1.5rem 0 .35rem; }
+    .explainer-hero .lede { max-width: 900px; }
+
     /* Ratio card styling — mirrors the rd-* pattern used on markets.html
        for the Yield Curve and 10Y-2Y Spread cards, so these ratio cards
        read as siblings of those. */
@@ -53,23 +62,43 @@
       color: var(--text-dim);
     }
 
-    /* Per-card explainer that sits below the chart */
+    /* Per-card explainer sits below the chart, collapsed by default so
+       the page can hold many chart cards without walls of copy. Users
+       click the "How to read this" chevron to expand. */
     .ratio-explainer {
-      margin-top: 1rem;
-      padding-top: 1rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
       border-top: 1px solid var(--border);
       font-size: 0.85rem;
       color: var(--text-dim);
       line-height: 1.55;
     }
-    .ratio-explainer h4 {
-      margin: 0 0 0.4rem;
-      font-size: 0.9rem;
-      color: var(--text);
-      font-weight: 600;
+    .ratio-explainer summary {
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.72rem;
+      color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      padding: 0.15rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      user-select: none;
     }
+    .ratio-explainer summary::-webkit-details-marker { display: none; }
+    .ratio-explainer summary::before {
+      content: '▸';
+      font-size: 0.7rem;
+      transition: transform 0.15s ease;
+      display: inline-block;
+      color: var(--accent);
+    }
+    .ratio-explainer[open] summary::before { transform: rotate(90deg); }
+    .ratio-explainer[open] summary { margin-bottom: 0.55rem; }
+    .ratio-explainer summary:hover { color: var(--text); }
+    .ratio-explainer summary:hover::before { color: var(--text); }
     .ratio-explainer p { margin: 0 0 0.6rem; }
     .ratio-explainer ul { margin: 0 0 0.6rem 1.1rem; padding: 0; }
     .ratio-explainer li { margin-bottom: 0.25rem; }
@@ -84,16 +113,23 @@
     }
 
     /* Strict 2-column layout for the ratio cards — 2×2 on wide viewports,
-       single column on narrow. */
+       single column on narrow. Gap is tight since cards live in a dense
+       page full of charts. */
     .ratios-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
     }
     @media (max-width: 900px) {
       .ratios-grid { grid-template-columns: 1fr; }
     }
+
+    /* Tighten the card padding so the chart fills more of the tile. Scoped
+       to this page so other .card usages elsewhere on the site stay put. */
+    .ratios-grid .card { padding: 0.85rem 0.9rem 0.75rem; }
+    .ratios-grid .rd-card-head { margin-bottom: 0.55rem; }
+    .ratios-grid .rd-note { margin-top: 0.55rem; }
   </style>
 </head>
 <body>
@@ -161,8 +197,8 @@
           </div>
           <svg id="gsrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Silver ratio chart"></svg>
           <p class="rd-note" id="gsrNote">Loading gold/silver ratio&hellip;</p>
-          <div class="ratio-explainer">
-            <h4>How to read this</h4>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
             <p>
               The Gold/Silver ratio measures how many ounces of silver it takes to buy one
               ounce of gold. It's a classic contrarian tool in the precious-metals world:
@@ -179,7 +215,7 @@
               <strong>Extremes:</strong> 2020 COVID crash pushed the ratio to ~125 (all-time high).
               1980 Hunt-brothers silver squeeze pushed it to ~15 (all-time low).
             </p>
-          </div>
+          </details>
         </div>
 
         <!-- S&P 500 / GOLD RATIO -->
@@ -193,8 +229,8 @@
           </div>
           <svg id="sgrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="S&P 500/Gold ratio chart"></svg>
           <p class="rd-note" id="sgrNote">Loading S&P 500/gold ratio&hellip;</p>
-          <div class="ratio-explainer">
-            <h4>How to read this</h4>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
             <p>
               This ratio compares the S&P 500 index level to the gold price per ounce.
               It's a barometer of investor risk appetite: how much you'd have to pay in
@@ -211,7 +247,7 @@
               The ratio has trended lower recently &mdash; even though the S&P is at record highs,
               gold's bull run has outpaced equity gains, compressing the ratio.
             </p>
-          </div>
+          </details>
         </div>
 
         <!-- GOLD / OIL RATIO -->
@@ -225,8 +261,8 @@
           </div>
           <svg id="goRChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Oil ratio chart"></svg>
           <p class="rd-note" id="goRNote">Loading gold/oil ratio&hellip;</p>
-          <div class="ratio-explainer">
-            <h4>How to read this</h4>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
             <p>
               How many barrels of oil one ounce of gold buys. Because oil is the world's
               growth commodity and gold is its defensive one, this ratio flags when the
@@ -245,7 +281,7 @@
               1986 oil-price collapse: <strong>~30+</strong>.
               2008 pre-GFC oil peak ($147/bbl): <strong>~6</strong>.
             </p>
-          </div>
+          </details>
         </div>
 
         <!-- VTI / VEU RATIO — US total market vs All-World ex-US.
@@ -260,8 +296,8 @@
           </div>
           <svg id="vveuChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="VTI/VEU ratio — US vs international stocks"></svg>
           <p class="rd-note" id="vveuNote">Loading US/international ratio&hellip;</p>
-          <div class="ratio-explainer">
-            <h4>How to read this</h4>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
             <p>
               This ratio compares the price of the Vanguard Total US Stock Market ETF
               (<strong>VTI</strong>) to the Vanguard FTSE All-World ex-US ETF
@@ -281,7 +317,7 @@
               hitting new records year after year through the mid-2020s. Sustained
               turns in this line have historically marked multi-year leadership shifts.
             </p>
-          </div>
+          </details>
         </div>
 
       </div>
