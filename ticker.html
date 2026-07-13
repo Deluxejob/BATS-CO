@@ -76,7 +76,49 @@
     .ticker-search {
       display: flex;
       gap: 0.4rem;
-      max-width: 460px;
+      max-width: 680px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    /* Recently-viewed tickers — small pills to the LEFT of the search
+       input. Populated from localStorage; clicking a pill navigates to
+       that ticker page. Hidden by default (`hidden` attribute) until
+       the first ticker has been viewed. */
+    .recent-pills {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      flex-wrap: wrap;
+    }
+    .recent-pills[hidden] { display: none; }
+    .recent-pills-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--term-dim);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding-right: 0.1rem;
+      user-select: none;
+    }
+    .recent-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--term-dim);
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.28rem 0.5rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .recent-pill:hover {
+      color: var(--term-cyan);
+      border-color: var(--term-cyan);
+      background: rgba(110, 231, 255, 0.05);
     }
     .ticker-search input {
       flex: 1;
@@ -1300,6 +1342,7 @@
         <p class="term-ticker-sub" id="tickerSub">Enter a symbol below</p>
       </div>
       <form class="ticker-search" id="tickerSearchForm">
+        <div class="recent-pills" id="recentPills" hidden></div>
         <input type="text" id="tickerSearchInput" placeholder="Search another ticker" autocomplete="off" spellcheck="false" required />
         <button type="submit">GO &rarr;</button>
       </form>
@@ -1606,6 +1649,91 @@
         const clean = raw.replace(/[^A-Z0-9.\-]/g, '');
         if (!clean) return;
         window.location.href = `ticker.html?sym=${encodeURIComponent(clean)}`;
+      });
+
+      // ----- Recently Viewed Tickers (localStorage) -----
+      // Small pills to the left of the search input. Persisted so a
+      // reader can hop between the tickers they've been looking at.
+      const RECENT_KEY = 'bats.recentTickers';
+      const RECENT_MAX = 8;
+
+      function loadRecent() {
+        try {
+          const raw = localStorage.getItem(RECENT_KEY);
+          if (!raw) return [];
+          const arr = JSON.parse(raw);
+          return Array.isArray(arr)
+            ? arr.filter(x => typeof x === 'string' && /^[A-Z0-9.\-]{1,10}$/.test(x))
+            : [];
+        } catch (e) { return []; }
+      }
+      function saveRecent(list) {
+        try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX))); }
+        catch (e) { /* localStorage may be disabled — degrade silently */ }
+      }
+      function rememberTicker(s) {
+        if (!s) return;
+        const list = loadRecent().filter(x => x !== s);
+        list.unshift(s);
+        saveRecent(list);
+      }
+      function drawRecentPills(currentSym) {
+        const container = document.getElementById('recentPills');
+        if (!container) return;
+        const list = loadRecent()
+          .filter(x => x !== currentSym)
+          .slice(0, RECENT_MAX);
+        if (!list.length) {
+          container.hidden = true;
+          container.innerHTML = '';
+          return;
+        }
+        container.hidden = false;
+        container.innerHTML =
+          '<span class="recent-pills-label">Recent</span>' +
+          list.map(t => `<a class="recent-pill" href="ticker.html?sym=${encodeURIComponent(t)}">${t}</a>`).join('');
+      }
+
+      // Remember the current ticker + repaint the pill row on every load.
+      if (sym) rememberTicker(sym);
+      drawRecentPills(sym);
+
+      // ----- Global keystroke capture -----
+      // Type from anywhere on the page (even scrolled to the bottom) and
+      // the characters land in the ticker search box. Ignored when the
+      // user is already typing in another input/textarea/contenteditable.
+      // Enter is handled natively by the form; Escape blurs and clears.
+      document.addEventListener('keydown', (e) => {
+        const active = document.activeElement;
+        const alreadyTyping = active && (
+          active.tagName === 'INPUT' ||
+          active.tagName === 'TEXTAREA' ||
+          active.isContentEditable
+        );
+        // Escape clears + blurs even when focused
+        if (e.key === 'Escape' && active === searchInput) {
+          searchInput.value = '';
+          searchInput.blur();
+          return;
+        }
+        if (alreadyTyping) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        // Backspace pops one char even when not focused — feels natural
+        if (e.key === 'Backspace') {
+          if (!searchInput.value) return;
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.value = searchInput.value.slice(0, -1);
+          searchInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          return;
+        }
+        // Only forward printable ticker chars
+        if (e.key.length !== 1) return;
+        if (!/^[A-Za-z0-9.\-]$/.test(e.key)) return;
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.value = (searchInput.value + e.key).toUpperCase();
+        searchInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       });
 
       if (!sym) {
