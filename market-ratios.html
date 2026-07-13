@@ -320,6 +320,129 @@
           </details>
         </div>
 
+        <!-- SPY / XLF — broad market vs large financials -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>SPY / XLF — S&amp;P 500 vs large financials</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyXlfCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2003</span> <span class="rd-num" id="spyXlfMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="spyXlfChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/XLF ratio — S&P 500 vs financials sector"></svg>
+          <p class="rd-note" id="spyXlfNote">Loading SPY/XLF ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              This ratio compares the S&amp;P 500 ETF (<strong>SPY</strong>) to the Financial Select Sector SPDR
+              (<strong>XLF</strong>) &mdash; large US banks and financials. When the ratio <strong>rises</strong>,
+              the broad market is beating financials; when it <strong>falls</strong>, financials are outperforming
+              (usually because rate hikes or a strong yield curve are helping bank earnings).
+            </p>
+            <ul>
+              <li><strong>Rising sharply:</strong> financials underperforming the market &mdash; often a credit stress or recession-fear signal.</li>
+              <li><strong>Falling:</strong> financials leading &mdash; classic mid-cycle setup, healthy net-interest margins.</li>
+              <li><strong>Near median:</strong> no strong sector rotation, financials tracking the broader market.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Regime examples:</strong> 2008&ndash;2009 GFC: XLF crashed harder than SPY, ratio spiked to record highs.
+              2013&ndash;2018 rate-hike cycle: XLF outperformed, ratio drifted lower. March 2023 (SVB collapse): brief spike as regional
+              bank fear bled into large financials.
+            </p>
+          </details>
+        </div>
+
+        <!-- SPY / KRE — broad market vs regional banks -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>SPY / KRE — S&amp;P 500 vs regional banks</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyKreCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2006</span> <span class="rd-num" id="spyKreMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="spyKreChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/KRE ratio — S&P 500 vs regional banking ETF"></svg>
+          <p class="rd-note" id="spyKreNote">Loading SPY/KRE ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              Same shape as SPY/XLF but scoped to <strong>regional banks</strong> (SPDR S&amp;P Regional Banking ETF,
+              <strong>KRE</strong>). Regional banks live and die by the yield curve, commercial real-estate exposure,
+              and deposit stability &mdash; so this ratio is often the earliest tell that something is breaking in the
+              banking system.
+            </p>
+            <ul>
+              <li><strong>Rising sharply:</strong> regional banks underperforming &mdash; the classic setup before / during a banking crisis.</li>
+              <li><strong>Falling:</strong> regional banks leading &mdash; healthy credit environment, steep yield curve.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Extremes:</strong> March 2020 COVID crash: KRE fell twice as hard as SPY, ratio spiked.
+              March 2023 SVB / Signature / First Republic collapses: sharpest single-month move ever in this series.
+              A watch-list ratio when the yield curve is flat or inverted.
+            </p>
+          </details>
+        </div>
+
+        <!-- SPY / EEM — US vs emerging markets -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>SPY / EEM — US vs emerging markets</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyEemCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2003</span> <span class="rd-num" id="spyEemMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="spyEemChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/EEM ratio — US vs emerging markets"></svg>
+          <p class="rd-note" id="spyEemNote">Loading SPY/EEM ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              How US equities are doing against <strong>emerging markets</strong> (iShares MSCI Emerging Markets ETF,
+              <strong>EEM</strong>). This is the classic dollar-cycle chart: EM tends to win when the dollar is
+              weakening and commodities are rising, and US tends to win when the dollar is strong and tech leads.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> US outperforming EM &mdash; strong dollar, US mega-cap tech leadership, or EM-specific stress (China, Russia, Turkey).</li>
+              <li><strong>Falling:</strong> EM outperforming &mdash; weaker dollar, commodity booms, cheaper EM valuations catching up.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Regime history:</strong> 2003&ndash;2010 was an EM decade &mdash; the ratio fell as commodity-driven EM economies
+              (China, Brazil, Russia) surged. 2011&ndash;present has been a US decade &mdash; mega-cap tech drove the ratio higher
+              year after year, punctuated by brief EM rallies during dollar-weak periods.
+            </p>
+          </details>
+        </div>
+
+        <!-- SPY / MCHI — US vs China -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>SPY / MCHI — US vs China</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyMchiCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2011</span> <span class="rd-num" id="spyMchiMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="spyMchiChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/MCHI ratio — US vs China"></svg>
+          <p class="rd-note" id="spyMchiNote">Loading SPY/MCHI ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              How the S&amp;P 500 is doing against <strong>China</strong> (iShares MSCI China ETF, <strong>MCHI</strong>,
+              which tracks the mainland &amp; Hong Kong-listed large caps). Historically the single largest
+              driver of the EM ratio, isolated here on its own.
+            </p>
+            <ul>
+              <li><strong>Rising sharply:</strong> China underperforming &mdash; often regulatory crackdowns, real-estate stress, or geopolitical friction.</li>
+              <li><strong>Falling:</strong> China outperforming &mdash; policy stimulus, easing tensions, or a value-rotation trade.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Regime shift:</strong> the ratio was roughly range-bound 2011&ndash;2020. From late 2020 onward it broke sharply higher
+              on the tech regulatory crackdown, Evergrande / real-estate crisis, and delisting-fear headlines. Watch for sustained downturns as a
+              contrarian sign that China is bottoming.
+            </p>
+          </details>
+        </div>
+
       </div>
     </section>
 
@@ -349,18 +472,23 @@
       return out;
     }
 
-    let gold, silver, spx, oil, vti, veu;
+    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi;
     try {
-      [gold, silver, spx, oil, vti, veu] = await Promise.all([
+      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi] = await Promise.all([
         loadCsv('data/gold.csv'),
         loadCsv('data/silver.csv'),
         loadCsv('data/spx.csv'),
         loadCsv('data/oil.csv'),
         loadCsv('data/vti.csv'),
         loadCsv('data/veu.csv'),
+        loadCsv('data/spy.csv'),
+        loadCsv('data/sectors/xlf.csv'),
+        loadCsv('data/kre.csv'),
+        loadCsv('data/eem.csv'),
+        loadCsv('data/mchi.csv'),
       ]);
     } catch (e) {
-      ['gsrNote','sgrNote','goRNote','vveuNote'].forEach(id => {
+      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = 'Failed to load ratio data.';
       });
@@ -556,6 +684,84 @@
         `As of <strong>${vveuLast.d}</strong>: ratio <strong>${fmt(vveuLast.v, 2)}</strong> ` +
         `(${devTxt} vs median <strong>${fmt(vveuMedian, 2)}</strong>) — ${posture}.`;
     }
+
+    // === Equity leadership ratios ===
+    // All four use SPY as the numerator so higher ratio = SPY winning, lower
+    // = the paired sector/region winning. A small helper below wraps the
+    // deviation-vs-median posture text since the four blocks are structurally
+    // identical.
+    const spyMap = map(spy);
+    function renderLeadershipRatio(cfg) {
+      const numMap = map(cfg.num);
+      const denMap = map(cfg.den);
+      const series = joinedRatio(cfg.num, cfg.den, numMap, denMap);
+      if (!series.length) return;
+      const med = median(series.map(r => r.v));
+      const last = series[series.length - 1];
+      document.getElementById(cfg.currentId).textContent = fmt(last?.v, cfg.digits);
+      document.getElementById(cfg.medianId).textContent  = fmt(med, cfg.digits);
+      drawChart(document.getElementById(cfg.chartId), series, {
+        median: med, color: cfg.color,
+        currentDigits: cfg.digits, medianDigits: cfg.digits,
+      });
+      if (last) {
+        const dev = med ? ((last.v / med) - 1) * 100 : 0;
+        const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+        let posture;
+        if      (dev >= 30)  posture = cfg.postureHigh;
+        else if (dev <= -30) posture = cfg.postureLow;
+        else if (dev >= 10)  posture = cfg.postureMidHigh;
+        else if (dev <= -10) posture = cfg.postureMidLow;
+        else                 posture = 'near the historical median';
+        document.getElementById(cfg.noteId).innerHTML =
+          `As of <strong>${last.d}</strong>: ratio <strong>${fmt(last.v, cfg.digits)}</strong> ` +
+          `(${devTxt} vs median <strong>${fmt(med, cfg.digits)}</strong>) — ${posture}.`;
+      }
+    }
+
+    renderLeadershipRatio({
+      num: spy, den: xlf,
+      currentId: 'spyXlfCurrent', medianId: 'spyXlfMedian',
+      chartId: 'spyXlfChart', noteId: 'spyXlfNote',
+      color: '#64d3ff', digits: 2,
+      postureHigh:    'stretched — financials deeply lagging the broad market, watch for credit / recession-fear signals',
+      postureMidHigh: 'elevated — financials trailing the market, mild stress tone',
+      postureMidLow:  'compressed — financials outperforming, healthy cyclical tone',
+      postureLow:     'sharply compressed — financials in strong leadership, classic mid-cycle setup',
+    });
+
+    renderLeadershipRatio({
+      num: spy, den: kre,
+      currentId: 'spyKreCurrent', medianId: 'spyKreMedian',
+      chartId: 'spyKreChart', noteId: 'spyKreNote',
+      color: '#f4b942', digits: 2,
+      postureHigh:    'stretched — regional banks deeply underperforming, historical crisis territory',
+      postureMidHigh: 'elevated — regional banks lagging, watch the yield curve and credit spreads',
+      postureMidLow:  'compressed — regional banks outperforming, healthy credit tone',
+      postureLow:     'sharply compressed — regional banks leading, steep-curve setup',
+    });
+
+    renderLeadershipRatio({
+      num: spy, den: eem,
+      currentId: 'spyEemCurrent', medianId: 'spyEemMedian',
+      chartId: 'spyEemChart', noteId: 'spyEemNote',
+      color: '#64d3ff', digits: 2,
+      postureHigh:    'stretched — US dominating emerging markets, strong-dollar / mega-cap regime',
+      postureMidHigh: 'above the median — US winning vs EM',
+      postureMidLow:  'below the median — EM winning vs US',
+      postureLow:     'sharply compressed — EM leading US, historically a dollar-weakening / commodity-boom setup',
+    });
+
+    renderLeadershipRatio({
+      num: spy, den: mchi,
+      currentId: 'spyMchiCurrent', medianId: 'spyMchiMedian',
+      chartId: 'spyMchiChart', noteId: 'spyMchiNote',
+      color: '#f4b942', digits: 2,
+      postureHigh:    'stretched — China deeply underperforming the S&P; watch for policy-stimulus contrarian setup',
+      postureMidHigh: 'above the median — US winning vs China',
+      postureMidLow:  'below the median — China winning vs US',
+      postureLow:     'sharply compressed — China outperforming, potential regime shift',
+    });
   })();
   </script>
 </body>
