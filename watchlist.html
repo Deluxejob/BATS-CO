@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watchlist — BATS.CO</title>
+  <meta name="description" content="Your saved tickers. Stored locally in your browser — no account needed. Click a row to jump to that ticker's page." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Terminal palette — same tokens as quotes.html / ticker.html so the
+       watchlist visually reads as a peer to those pages. */
+    :root {
+      --term-bg:      #08111a;
+      --term-panel:   #101821;
+      --term-panel-2: #0d1520;
+      --term-border:  #1c2734;
+      --term-border-soft: #172131;
+      --term-text:    #d5dee9;
+      --term-dim:     #7b8697;
+      --term-amber:   #ffb658;
+      --term-cyan:    #6ee7ff;
+      --term-green:   #22d39a;
+      --term-red:     #ff5374;
+    }
+    body { background: var(--term-bg); }
+
+    main.terminal {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0.75rem 1.25rem 3rem;
+      color: var(--term-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .term-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding: 1rem 0 0.75rem;
+      border-bottom: 1px solid var(--term-border);
+      margin-bottom: 1rem;
+    }
+    .term-header .title-block { min-width: 0; }
+    .term-header .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      margin: 0;
+    }
+    .term-header h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--term-text);
+      margin: 0.15rem 0 0;
+      letter-spacing: -0.01em;
+    }
+    .term-header .term-ticker-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-dim);
+      letter-spacing: 0.05em;
+      margin: 0.35rem 0 0;
+    }
+
+    .ticker-search {
+      display: flex;
+      gap: 0.4rem;
+      max-width: 460px;
+    }
+    .ticker-search input {
+      flex: 1;
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--term-panel);
+      color: var(--term-text);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.5rem 0.75rem;
+    }
+    .ticker-search input:focus {
+      outline: none;
+      border-color: var(--term-amber);
+      box-shadow: 0 0 0 2px rgba(255, 182, 88, 0.15);
+    }
+    .ticker-search button {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--term-amber);
+      color: #0a1218;
+      border: 1px solid var(--term-amber);
+      border-radius: 3px;
+      padding: 0.5rem 0.9rem;
+      cursor: pointer;
+    }
+    .ticker-search button:hover { filter: brightness(1.1); }
+
+    .term-section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+    .term-section-label .sub {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: none;
+    }
+    .term-panel {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 6px;
+      padding: 0;
+    }
+
+    /* Watchlist table */
+    .wl-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+    }
+    .wl-table th {
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--term-dim);
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--term-border);
+      white-space: nowrap;
+    }
+    .wl-table td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--term-border-soft);
+      color: var(--term-text);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .wl-table tr:last-child td { border-bottom: 0; }
+    .wl-table tr:hover td { background: rgba(110, 231, 255, 0.04); }
+    .wl-table .num { text-align: right; }
+    .wl-table .sym {
+      color: var(--term-cyan);
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.03em;
+    }
+    .wl-table .sym a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .wl-table .sym a:hover { text-decoration: underline; }
+    .wl-table .chg.pos { color: var(--term-green); font-weight: 700; }
+    .wl-table .chg.neg { color: var(--term-red);   font-weight: 700; }
+    .wl-table .chg.neu { color: var(--term-dim); }
+
+    .wl-remove {
+      background: transparent;
+      border: 1px solid var(--term-border);
+      color: var(--term-dim);
+      cursor: pointer;
+      border-radius: 3px;
+      width: 26px;
+      height: 26px;
+      font-size: 0.95rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .wl-remove:hover {
+      color: var(--term-red);
+      border-color: var(--term-red);
+      background: rgba(255, 83, 116, 0.06);
+    }
+
+    /* Mini sparkline column — a 5-day-ish line for quick eyeball */
+    .wl-spark {
+      width: 84px;
+      height: 22px;
+      display: block;
+    }
+
+    /* Empty state */
+    .wl-empty {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .wl-empty strong { color: var(--term-text); font-size: 1.05rem; }
+    .wl-empty .hint {
+      margin-top: 0.75rem;
+      font-size: 0.78rem;
+      color: var(--term-dim);
+    }
+    .wl-empty code {
+      color: var(--term-cyan);
+      background: var(--term-panel-2);
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+
+    .wl-note {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--term-dim);
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--term-border);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+    }
+    .wl-clear {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--term-dim);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    .wl-clear:hover { color: var(--term-red); text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <!-- Top ticker tape (matches quotes / ticker pages) -->
+  <div class="ticker-bar">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
+          {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"},
+          {"proName": "FOREXCOM:DJI",    "title": "Dow 30"},
+          {"proName": "AMEX:IWM",        "title": "Russell 2000"},
+          {"proName": "TVC:GOLD",        "title": "Gold"},
+          {"proName": "CAPITALCOM:DXY",  "title": "DXY"},
+          {"proName": "BINANCE:BTCUSDT", "title": "Bitcoin"}
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "locale": "en"
+      }
+      </script>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="markets.html">Dashboard</a>
+      <a href="quotes.html">Quotes</a>
+      <a href="pe-ratio.html">PE Ratio</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="momentum.html">Momentum</a>
+      <a href="extremes.html">Extremes</a>
+      <a href="consumer.html">Consumer</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="terminal">
+
+    <!-- Page header + ticker lookup -->
+    <div class="term-header">
+      <div class="title-block">
+        <p class="eyebrow">WATCHLIST</p>
+        <h1>Your saved tickers</h1>
+        <p class="term-ticker-sub">Stored locally in this browser &middot; No account needed</p>
+      </div>
+      <form class="ticker-search" id="tickerSearchForm">
+        <input type="text" id="tickerSearchInput" placeholder="Look up a ticker (AAPL, NVDA, SPY…)" autocomplete="off" spellcheck="false" required />
+        <button type="submit">GO &rarr;</button>
+      </form>
+    </div>
+
+    <!-- Watchlist panel -->
+    <section class="term-section">
+      <div class="term-section-label">
+        MY WATCHLIST <span class="sub" id="wlSubLabel"></span>
+      </div>
+      <div class="term-panel">
+        <div id="watchlistContent">
+          <div class="wl-empty">Loading&hellip;</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    document.getElementById('footerYear').textContent = new Date().getUTCFullYear();
+
+    // ---- Ticker-search form: navigate to ticker.html?sym=X on submit ----
+    (function () {
+      const form  = document.getElementById('tickerSearchForm');
+      const input = document.getElementById('tickerSearchInput');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const clean = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+        if (!clean) return;
+        window.location.href = `ticker.html?sym=${encodeURIComponent(clean)}`;
+      });
+    })();
+
+    // ---- Watchlist load + render ----
+    const WL_KEY = 'bats.watchlist';
+
+    function loadWatchlist() {
+      try {
+        const raw = localStorage.getItem(WL_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr)
+          ? arr.filter(x => typeof x === 'string' && /^[A-Z0-9.\-]{1,10}$/.test(x))
+          : [];
+      } catch (e) { return []; }
+    }
+    function saveWatchlist(list) {
+      try { localStorage.setItem(WL_KEY, JSON.stringify(list)); }
+      catch (e) { /* localStorage may be disabled — degrade silently */ }
+    }
+    function removeFromWatchlist(sym) {
+      const list = loadWatchlist().filter(x => x !== sym);
+      saveWatchlist(list);
+      renderWatchlist();
+    }
+    function clearWatchlist() {
+      if (!confirm('Remove every ticker from your watchlist?')) return;
+      saveWatchlist([]);
+      renderWatchlist();
+    }
+
+    function fmtPrice(v) {
+      if (!Number.isFinite(v)) return '—';
+      if (v >= 1000) return '$' + v.toFixed(0);
+      if (v >= 10)   return '$' + v.toFixed(2);
+      return '$' + v.toFixed(3);
+    }
+    function fmtPct(v) {
+      if (!Number.isFinite(v)) return '';
+      const sign = v > 0 ? '+' : '';
+      return sign + v.toFixed(2) + '%';
+    }
+    function chgClass(v) {
+      if (!Number.isFinite(v) || Math.abs(v) < 0.01) return 'neu';
+      return v > 0 ? 'pos' : 'neg';
+    }
+
+    // Draw a tiny 22-tall SVG sparkline from an array of closes.
+    function drawSpark(closes, color) {
+      const n = closes.length;
+      if (n < 2) return '';
+      const W = 84, H = 22, PAD = 2;
+      const lo = Math.min(...closes), hi = Math.max(...closes);
+      const span = (hi - lo) || 1;
+      const xFor = i => PAD + (i / (n - 1)) * (W - 2 * PAD);
+      const yFor = v => PAD + (1 - (v - lo) / span) * (H - 2 * PAD);
+      let d = '';
+      for (let i = 0; i < n; i++) {
+        d += (i === 0 ? 'M' : 'L') + xFor(i).toFixed(1) + ' ' + yFor(closes[i]).toFixed(1) + ' ';
+      }
+      return `<svg class="wl-spark" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+    }
+
+    async function renderWatchlist() {
+      const mount = document.getElementById('watchlistContent');
+      const subLabel = document.getElementById('wlSubLabel');
+      const list = loadWatchlist();
+
+      if (!list.length) {
+        subLabel.textContent = '';
+        mount.innerHTML = `
+          <div class="wl-empty">
+            <strong>Your watchlist is empty.</strong>
+            <div class="hint">
+              Look up any ticker (try <code>AAPL</code>, <code>NVDA</code>, or <code>SPY</code>)
+              and click the ★ next to its symbol to add it here.
+            </div>
+            <div class="hint">
+              Watchlists are stored in this browser only — nothing is uploaded, no account needed.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      subLabel.textContent = `— ${list.length} ${list.length === 1 ? 'ticker' : 'tickers'} · click a row to view details`;
+
+      // Fetch daily closes for every ticker in one shot. /api/history is capped
+      // at 6 symbols per request, so we chunk if the list is larger.
+      const CHUNK = 6;
+      const series = {};
+      for (let i = 0; i < list.length; i += CHUNK) {
+        const chunk = list.slice(i, i + CHUNK);
+        try {
+          const r = await fetch(`/api/history?syms=${encodeURIComponent(chunk.join(','))}&range=1mo`);
+          if (r.ok) {
+            const data = await r.json();
+            Object.assign(series, (data && data.series) || {});
+          }
+        } catch (e) { /* leave those symbols priceless */ }
+      }
+
+      // Build each row using the fetched data
+      const rows = list.map(sym => {
+        const raw = series[sym] || [];
+        let last = null, prev = null, dayPct = null, spark = '';
+        if (raw.length >= 2) {
+          last = raw[raw.length - 1][1];
+          prev = raw[raw.length - 2][1];
+          dayPct = Number.isFinite(last) && Number.isFinite(prev) && prev
+            ? ((last - prev) / prev) * 100 : null;
+        } else if (raw.length === 1) {
+          last = raw[0][1];
+        }
+        if (raw.length >= 3) {
+          // Sparkline of last ~15 closes so we can see the trend at a glance
+          const closes = raw.slice(-15).map(x => x[1]).filter(Number.isFinite);
+          const sparkColor = dayPct != null && dayPct < 0 ? '#ff5374' : '#22d39a';
+          spark = drawSpark(closes, sparkColor);
+        }
+        const clsChg = chgClass(dayPct);
+        return `
+          <tr>
+            <td><button class="wl-remove" data-sym="${sym}" title="Remove from watchlist" aria-label="Remove ${sym}">&times;</button></td>
+            <td class="sym"><a href="ticker.html?sym=${encodeURIComponent(sym)}">${sym}</a></td>
+            <td class="num">${fmtPrice(last)}</td>
+            <td class="num chg ${clsChg}">${fmtPct(dayPct)}</td>
+            <td>${spark}</td>
+          </tr>
+        `;
+      }).join('');
+
+      mount.innerHTML = `
+        <div style="overflow-x:auto">
+          <table class="wl-table">
+            <thead>
+              <tr>
+                <th style="width:36px"></th>
+                <th>SYMBOL</th>
+                <th class="num">LAST</th>
+                <th class="num">CHG %</th>
+                <th>~15D</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="wl-note">
+          <span>Prices are last daily close via Yahoo Finance. Refreshes on page load.</span>
+          <button class="wl-clear" type="button" id="wlClearBtn">CLEAR WATCHLIST</button>
+        </div>
+      `;
+
+      // Wire the remove + clear buttons
+      mount.querySelectorAll('.wl-remove').forEach(btn => {
+        btn.addEventListener('click', () => removeFromWatchlist(btn.getAttribute('data-sym')));
+      });
+      const clearBtn = document.getElementById('wlClearBtn');
+      if (clearBtn) clearBtn.addEventListener('click', clearWatchlist);
+    }
+
+    renderWatchlist();
+
+    // Type-anywhere: same UX as ticker.html — type from anywhere and the
+    // character lands in the search input, focus + scroll follow.
+    (function () {
+      const searchInput = document.getElementById('tickerSearchInput');
+      document.addEventListener('keydown', (e) => {
+        const active = document.activeElement;
+        const alreadyTyping = active && (
+          active.tagName === 'INPUT' ||
+          active.tagName === 'TEXTAREA' ||
+          active.isContentEditable
+        );
+        if (e.key === 'Escape' && active === searchInput) {
+          searchInput.value = '';
+          searchInput.blur();
+          return;
+        }
+        if (alreadyTyping) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key === 'Backspace') {
+          if (!searchInput.value) return;
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.value = searchInput.value.slice(0, -1);
+          return;
+        }
+        if (e.key.length !== 1) return;
+        if (!/^[A-Za-z0-9.\-]$/.test(e.key)) return;
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.value = (searchInput.value + e.key).toUpperCase();
+      });
+    })();
+  </script>
+</body>
+</html>

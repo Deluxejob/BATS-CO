@@ -120,6 +120,33 @@
       border-color: var(--term-cyan);
       background: rgba(110, 231, 255, 0.05);
     }
+
+    /* Ticker headline row — holds the H1 symbol next to a star toggle
+       button. Kept as a flex row so `headlineEl.textContent = sym` in
+       the main IIFE doesn't blow away the star. */
+    .term-ticker-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Star toggle — hollow when the current ticker isn't on the
+       watchlist, filled amber when it is. Click to add / remove. */
+    .star-toggle {
+      font-family: inherit;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--term-dim);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0 0.4rem;
+      transition: color 0.12s, transform 0.08s;
+      user-select: none;
+    }
+    .star-toggle:hover { color: var(--term-amber); transform: scale(1.08); }
+    .star-toggle.starred { color: var(--term-amber); }
+    .star-toggle[hidden] { display: none; }
     .ticker-search input {
       flex: 1;
       font: inherit;
@@ -1329,6 +1356,7 @@
       <a href="extremes.html">Extremes</a>
       <a href="consumer.html">Consumer</a>
       <a href="pe.html">Private Equity</a>
+      <a href="watchlist.html">Watchlist</a>
       <a href="index.html#about">About</a>
     </nav>
   </header>
@@ -1338,7 +1366,10 @@
     <div class="term-header">
       <div class="title-block">
         <p class="eyebrow">TICKER // LOOKUP</p>
-        <h1 class="term-ticker" id="tickerHeadline">—</h1>
+        <div class="term-ticker-row">
+          <h1 class="term-ticker" id="tickerHeadline">—</h1>
+          <button type="button" id="starToggle" class="star-toggle" hidden title="Save to watchlist" aria-label="Save to watchlist">&#9734;</button>
+        </div>
         <p class="term-ticker-sub" id="tickerSub">Enter a symbol below</p>
       </div>
       <form class="ticker-search" id="tickerSearchForm">
@@ -1697,6 +1728,51 @@
       // Remember the current ticker + repaint the pill row on every load.
       if (sym) rememberTicker(sym);
       drawRecentPills(sym);
+
+      // ----- Watchlist star toggle -----
+      // Persists a JSON array of tickers under localStorage key `bats.watchlist`.
+      // The full list is rendered on /watchlist.html; on this page we just
+      // show a ★/☆ button next to the ticker headline for one-click add/remove.
+      const WL_KEY = 'bats.watchlist';
+      function loadWatchlist() {
+        try {
+          const raw = localStorage.getItem(WL_KEY);
+          if (!raw) return [];
+          const arr = JSON.parse(raw);
+          return Array.isArray(arr)
+            ? arr.filter(x => typeof x === 'string' && /^[A-Z0-9.\-]{1,10}$/.test(x))
+            : [];
+        } catch (e) { return []; }
+      }
+      function saveWatchlist(list) {
+        try { localStorage.setItem(WL_KEY, JSON.stringify(list)); }
+        catch (e) {}
+      }
+      function refreshStar() {
+        const btn = document.getElementById('starToggle');
+        if (!btn || !sym) return;
+        btn.hidden = false;
+        const on = loadWatchlist().includes(sym);
+        btn.classList.toggle('starred', on);
+        // U+2605 = ★ filled, U+2606 = ☆ hollow
+        btn.innerHTML = on ? '★' : '☆';
+        btn.title = on ? `Remove ${sym} from watchlist` : `Add ${sym} to watchlist`;
+        btn.setAttribute('aria-label', btn.title);
+      }
+      (function wireStar() {
+        const btn = document.getElementById('starToggle');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          if (!sym) return;
+          const list = loadWatchlist();
+          const idx = list.indexOf(sym);
+          if (idx >= 0) list.splice(idx, 1);
+          else list.unshift(sym);
+          saveWatchlist(list);
+          refreshStar();
+        });
+      })();
+      if (sym) refreshStar();
 
       // ----- Global keystroke capture -----
       // Type from anywhere on the page (even scrolled to the bottom) and
