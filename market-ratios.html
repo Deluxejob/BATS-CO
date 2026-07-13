@@ -443,6 +443,75 @@
           </details>
         </div>
 
+        <!-- XLY / XLP — Consumer Discretionary vs Consumer Staples -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>XLY / XLP — Discretionary vs Staples</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="xlyXlpCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 1998</span> <span class="rd-num" id="xlyXlpMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="xlyXlpChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="XLY/XLP ratio — Consumer Discretionary vs Consumer Staples"></svg>
+          <p class="rd-note" id="xlyXlpNote">Loading XLY/XLP ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              The classic <strong>risk-on / risk-off</strong> ratio for the US consumer.
+              XLY holds discretionary spenders (Amazon, Tesla, Home Depot, McDonald&rsquo;s);
+              XLP holds the staples (Procter &amp; Gamble, Coca-Cola, Walmart).
+              When the ratio <strong>rises</strong>, people are spending on wants over needs
+              &mdash; typically strong-economy behavior. When it <strong>falls</strong>,
+              money rotates to defensive staples &mdash; recession-fear behavior.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> risk-on rotation, healthy consumer, expansion phase.</li>
+              <li><strong>Falling:</strong> defensive rotation, recession fear, contraction phase.</li>
+              <li><strong>Sharp downturn:</strong> often precedes broader market weakness by weeks to months.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Long-term drift:</strong> The ratio has trended steadily higher since the 2009 GFC
+              lows, mostly because Amazon and Tesla dominate XLY. Focus on medium-term trend changes rather than the absolute level.
+              This same ratio also appears on the Consumer page in a different framing.
+            </p>
+          </details>
+        </div>
+
+        <!-- GOLD / DXY — precious metal vs the dollar it's priced in -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>Gold / DXY — Gold vs US Dollar Index</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="goldDxyCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="goldDxyMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="goldDxyChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/DXY ratio — gold vs US Dollar Index"></svg>
+          <p class="rd-note" id="goldDxyNote">Loading gold/dollar ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              Gold is priced in dollars, so the two move against each other by definition
+              &mdash; but the relationship isn&rsquo;t always tight. When both are rising
+              (a &ldquo;dollar-and-gold&rdquo; regime), it usually signals stress in the
+              global financial system: everyone flees to hard assets AND US-dollar cash
+              at the same time. This ratio isolates gold&rsquo;s <em>real</em> strength
+              after removing dollar moves.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> gold outpacing the dollar &mdash; classic inflation-hedge / safe-haven demand, weakening-dollar regime.</li>
+              <li><strong>Falling:</strong> dollar strengthening faster than gold rises (or gold falling as dollar rallies) &mdash; deflationary / strong-dollar regime.</li>
+              <li><strong>Both rising together:</strong> read the note &mdash; the ratio can be flat while both assets rally, which is the &ldquo;financial stress&rdquo; setup.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Regime examples:</strong> 2003&ndash;2011 was a huge run for the ratio &mdash; gold went from
+              ~$300 to $1900 while the dollar mostly weakened. 2011&ndash;2015 saw a sharp reversal (dollar rally,
+              gold correction). 2020&ndash;present: the ratio broke to new all-time highs as gold set records
+              even against a relatively firm dollar.
+            </p>
+          </details>
+        </div>
+
       </div>
     </section>
 
@@ -472,9 +541,9 @@
       return out;
     }
 
-    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi;
+    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp;
     try {
-      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi] = await Promise.all([
+      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp] = await Promise.all([
         loadCsv('data/gold.csv'),
         loadCsv('data/silver.csv'),
         loadCsv('data/spx.csv'),
@@ -486,9 +555,12 @@
         loadCsv('data/kre.csv'),
         loadCsv('data/eem.csv'),
         loadCsv('data/mchi.csv'),
+        loadCsv('data/dxy.csv'),
+        loadCsv('data/sectors/xly.csv'),
+        loadCsv('data/sectors/xlp.csv'),
       ]);
     } catch (e) {
-      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote'].forEach(id => {
+      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote','xlyXlpNote','goldDxyNote'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = 'Failed to load ratio data.';
       });
@@ -761,6 +833,28 @@
       postureMidHigh: 'above the median — US winning vs China',
       postureMidLow:  'below the median — China winning vs US',
       postureLow:     'sharply compressed — China outperforming, potential regime shift',
+    });
+
+    renderLeadershipRatio({
+      num: xly, den: xlp,
+      currentId: 'xlyXlpCurrent', medianId: 'xlyXlpMedian',
+      chartId: 'xlyXlpChart', noteId: 'xlyXlpNote',
+      color: '#64d3ff', digits: 2,
+      postureHigh:    'stretched — Discretionary strongly leading Staples, risk-on tone but watch for exhaustion',
+      postureMidHigh: 'above the median — Discretionary winning, expansion behavior',
+      postureMidLow:  'below the median — Staples winning, defensive rotation',
+      postureLow:     'sharply compressed — Staples strongly leading, classic risk-off / recession-fear regime',
+    });
+
+    renderLeadershipRatio({
+      num: gold, den: dxy,
+      currentId: 'goldDxyCurrent', medianId: 'goldDxyMedian',
+      chartId: 'goldDxyChart', noteId: 'goldDxyNote',
+      color: '#f4b942', digits: 2,
+      postureHigh:    'stretched — gold outpacing the dollar strongly, inflation / safe-haven regime',
+      postureMidHigh: 'above the median — gold winning vs the dollar',
+      postureMidLow:  'below the median — dollar winning vs gold',
+      postureLow:     'sharply compressed — strong-dollar / disinflation regime',
     });
   })();
   </script>
