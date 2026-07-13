@@ -53,6 +53,10 @@ function compactQuote(q) {
     marketCap:              pick('marketCap'),
     fiftyTwoWeekHigh:       pick('fiftyTwoWeekHigh'),
     fiftyTwoWeekLow:        pick('fiftyTwoWeekLow'),
+    // Trailing 12-month PE and analyst-consensus forward 12-month PE.
+    // For SPY/^GSPC these give us the forward-P/E for the whole US market.
+    trailingPE:             pick('trailingPE'),
+    forwardPE:              pick('forwardPE'),
   };
 }
 

@@ -40,9 +40,24 @@
       letter-spacing: 0.06em;
     }
     .per-hero-stat.current .num  { color: var(--s6); }
+    .per-hero-stat.forward .num  { color: var(--s5); }
     .per-hero-stat.avg     .num  { color: #64d3ff; }
     .per-hero-stat.pct     .num  { color: var(--s5); }
     .per-hero-stat.max     .num  { color: var(--s0); }
+    /* Small extra note below the "Forward PE" tile with the implied
+       one-year earnings-growth expectation. Kept subtle so it doesn't
+       fight the main number. */
+    .per-hero-stat .sublabel {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--dim);
+      letter-spacing: 0.02em;
+      margin-top: 0.35rem;
+      display: block;
+      min-height: 0.9rem;
+    }
+    .per-hero-stat .sublabel .pos { color: var(--s6); font-weight: 700; }
+    .per-hero-stat .sublabel .neg { color: var(--s0); font-weight: 700; }
 
     /* --- SVG chart --- */
     .per-chart-wrap {
@@ -162,7 +177,12 @@
       <div class="per-hero-stats">
         <div class="per-hero-stat current">
           <span class="num" id="statCurrent">&ndash;</span>
-          <span class="label">Current PE</span>
+          <span class="label">Current PE (trailing 12mo)</span>
+        </div>
+        <div class="per-hero-stat forward">
+          <span class="num" id="statForward">&ndash;</span>
+          <span class="label">Forward PE (next 12mo est.)</span>
+          <span class="sublabel" id="statForwardSub">&nbsp;</span>
         </div>
         <div class="per-hero-stat avg">
           <span class="num" id="statAvg">&ndash;</span>
@@ -390,6 +410,32 @@
       &nbsp;·&nbsp; median PE: <strong>${median.toFixed(2)}</strong>
       &nbsp;·&nbsp; today's PE is higher than <strong>${percentile.toFixed(0)}%</strong> of historical readings
     `;
+
+    // ---- Forward PE (analyst consensus for next 12 months) --------------
+    // Yahoo's v7 quote for SPY includes `forwardPE` (price ÷ consensus
+    // next-12-month EPS). SPY tracks SPX, so this is effectively the
+    // market's forward P/E. Runs async, non-blocking; the tile just stays
+    // "—" if the fetch fails.
+    (async () => {
+      try {
+        const r = await fetch('/api/quote?syms=SPY');
+        if (!r.ok) return;
+        const data = await r.json();
+        const q = data && data.quotes && data.quotes.SPY;
+        if (!q || !Number.isFinite(q.forwardPE)) return;
+        $('statForward').textContent = q.forwardPE.toFixed(2);
+        const sub = $('statForwardSub');
+        if (Number.isFinite(q.trailingPE) && q.forwardPE > 0.5) {
+          // Implied 1-year EPS growth = (trailingPE / forwardPE) - 1
+          const growth = (q.trailingPE / q.forwardPE - 1) * 100;
+          const sign = growth >= 0 ? '+' : '';
+          const cls = growth >= 0 ? 'pos' : 'neg';
+          sub.innerHTML = `Analysts expect <span class="${cls}">${sign}${growth.toFixed(1)}%</span> EPS growth`;
+        } else {
+          sub.textContent = 'Price ÷ next-12-mo EPS consensus';
+        }
+      } catch (e) { /* leave the tile at its default "—" */ }
+    })();
 
     // --- SVG chart (period-aware) ---
     const chart = $('peChart');
