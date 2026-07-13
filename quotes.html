@@ -1134,8 +1134,11 @@
       }, 60_000);
     })();
 
-    // Movers — 3 scrollable lists from data/movers.json (Yahoo screener via our bot)
-    (async function renderMovers() {
+    // Movers — 3 scrollable lists from /api/movers (Yahoo screener via our bot).
+    // /api/movers is a serverless wrapper around data/movers.json — see
+    // api/movers.js for why (Vercel edge-caches static /data/*.json).
+    // Auto-refreshes every 60s so intraday moves show up without a page reload.
+    (function initMovers() {
       const lists = {
         gainers: document.getElementById('moversGainersList'),
         losers:  document.getElementById('moversLosersList'),
@@ -1149,18 +1152,6 @@
       const metaEl = document.getElementById('moversMeta');
       if (!lists.gainers) return;
 
-      let payload;
-      try {
-        const r = await fetch('data/movers.json', { cache: 'no-store' });
-        if (!r.ok) throw new Error('http ' + r.status);
-        payload = await r.json();
-      } catch (e) {
-        for (const key of ['gainers','losers','actives']) {
-          lists[key].innerHTML = '<li class="mover-loading">Movers data not available.</li>';
-        }
-        return;
-      }
-
       const esc = (s) => String(s || '').replace(/[<>&"']/g, c => (
         { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]
       ));
@@ -1172,7 +1163,7 @@
         return v > 0 ? '+' + s : s;
       };
 
-      function renderList(key) {
+      function renderList(key, payload) {
         const items = payload[key] || [];
         counts[key].textContent = items.length + ' listed';
         if (!items.length) {
@@ -1200,18 +1191,41 @@
         }).join('');
       }
 
-      renderList('gainers');
-      renderList('losers');
-      renderList('actives');
+      let loadedOnce = false;
+      async function refresh() {
+        let payload;
+        try {
+          // Cache-bust so browser HTTP cache doesn't shadow the s-maxage=60 route.
+          const r = await fetch('/api/movers?t=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) throw new Error('http ' + r.status);
+          payload = await r.json();
+        } catch (e) {
+          if (!loadedOnce) {
+            for (const key of ['gainers','losers','actives']) {
+              lists[key].innerHTML = '<li class="mover-loading">Movers data not available.</li>';
+            }
+          }
+          return;
+        }
+        loadedOnce = true;
+        renderList('gainers', payload);
+        renderList('losers',  payload);
+        renderList('actives', payload);
 
-      if (metaEl && payload.generatedAt) {
-        const ageSec = Math.max(0, Math.floor(Date.now()/1000) - payload.generatedAt);
-        const ageTxt = ageSec < 60      ? 'just now' :
-                        ageSec < 3600   ? `${Math.round(ageSec/60)} min ago` :
-                        ageSec < 86400  ? `${Math.round(ageSec/3600)} hr ago` :
-                        new Date(payload.generatedAt * 1000).toISOString().slice(0,10);
-        metaEl.textContent = `LAST REFRESHED: ${ageTxt}`;
+        if (metaEl && payload.generatedAt) {
+          const ageSec = Math.max(0, Math.floor(Date.now()/1000) - payload.generatedAt);
+          const ageTxt = ageSec < 60      ? 'just now' :
+                          ageSec < 3600   ? `${Math.round(ageSec/60)} min ago` :
+                          ageSec < 86400  ? `${Math.round(ageSec/3600)} hr ago` :
+                          new Date(payload.generatedAt * 1000).toISOString().slice(0,10);
+          metaEl.textContent = `LAST REFRESHED: ${ageTxt}`;
+        }
       }
+
+      refresh();
+      setInterval(() => {
+        if (!document.hidden) refresh();
+      }, 60_000);
     })();
 
     // Market news (Yahoo-backed) — terminal-styled compact list with
