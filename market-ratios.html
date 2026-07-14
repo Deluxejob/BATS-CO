@@ -1067,10 +1067,17 @@
     const vals19 = ema(pulse.map(x => x.p), 19);
     const vals39 = ema(pulse.map(x => x.p), 39);
 
-    // Skip first 60 rows so EMAs settle
+    // Skip first 60 rows so EMAs settle. Also carry the matching SPY
+    // close so the chart can overlay it on a second Y axis.
     const series = [];
     for (let i = 60; i < pulse.length; i++) {
-      series.push({ d: pulse[i].d, t: pulse[i].t, v: vals19[i] - vals39[i] });
+      const d = pulse[i].d;
+      series.push({
+        d,
+        t: pulse[i].t,
+        v: vals19[i] - vals39[i],
+        spy: spyMap.get(d),
+      });
     }
     if (!series.length) return;
 
@@ -1104,7 +1111,7 @@
       const svg = document.getElementById('jiChart');
       if (!svg || !rows.length) return;
       const W = 1200, H = 360;
-      const M = { top: 22, right: 25, bottom: 30, left: 55 };
+      const M = { top: 22, right: 60, bottom: 30, left: 55 };
       const plotW = W - M.left - M.right;
       const plotH = H - M.top - M.bottom;
 
@@ -1197,6 +1204,44 @@
         const y = yFor(p10);
         s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#ff5374" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>`;
         s += `<text x="${W - M.right + 3}" y="${y + 3}" fill="#ff5374" font-size="10" opacity="0.85">p10</text>`;
+      }
+
+      // ---- SPY overlay on a right-side Y axis ----
+      const spyVals = rows.map(r => r.spy).filter(v => isFinite(v));
+      if (spyVals.length >= 2) {
+        const spyMin = Math.min(...spyVals);
+        const spyMax = Math.max(...spyVals);
+        const spyPad = (spyMax - spyMin) * 0.08 || 1;
+        const spyLo = spyMin - spyPad;
+        const spyHi = spyMax + spyPad;
+        const yForSpy = v => M.top + plotH - ((v - spyLo) / (spyHi - spyLo)) * plotH;
+
+        // Right-axis price labels — pick a step so ~4 ticks fit
+        const spyRange = spyHi - spyLo;
+        let spyStep;
+        if      (spyRange > 400) spyStep = 100;
+        else if (spyRange > 200) spyStep = 50;
+        else if (spyRange > 100) spyStep = 25;
+        else if (spyRange > 40)  spyStep = 10;
+        else if (spyRange > 15)  spyStep = 5;
+        else                     spyStep = 2;
+        for (let v = Math.ceil(spyLo / spyStep) * spyStep; v <= spyHi; v += spyStep) {
+          const y = yForSpy(v);
+          s += `<text x="${W - M.right + 6}" y="${y + 3}" font-size="10" fill="#ffb658" opacity="0.85" font-family="ui-monospace, monospace">${Math.round(v)}</text>`;
+        }
+
+        // Line
+        const spyPath = rows.filter(r => isFinite(r.spy)).map((r, i) =>
+          (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yForSpy(r.spy).toFixed(1)
+        ).join(' ');
+        s += `<path fill="none" stroke="#ffb658" stroke-width="1.4" opacity="0.85" d="${spyPath}"/>`;
+
+        // Right axis line
+        s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        // Small legend chip top-right — amber square + "SPY (right axis)"
+        s += `<rect x="${W - M.right - 130}" y="${M.top - 4}" width="8" height="8" fill="#ffb658"/>`;
+        s += `<text x="${W - M.right - 118}" y="${M.top + 3}" font-size="10" fill="#ffb658" font-family="ui-monospace, monospace">SPY (right axis)</text>`;
       }
 
       // Latest dot
