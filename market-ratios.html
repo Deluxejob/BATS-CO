@@ -130,6 +130,80 @@
     .ratios-grid .card { padding: 0.85rem 0.9rem 0.75rem; }
     .ratios-grid .rd-card-head { margin-bottom: 0.55rem; }
     .ratios-grid .rd-note { margin-top: 0.55rem; }
+
+    /* --------- Joseph Indicator (proprietary breadth oscillator) ---------
+       Full-width headline chart above the 2-column ratios grid. */
+    .ji-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.25rem 1.15rem;
+    }
+    .ji-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.85rem;
+    }
+    .ji-readout {
+      display: flex;
+      gap: 1.6rem;
+      flex-wrap: wrap;
+    }
+    .ji-readout .kv {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+    .ji-readout .kv .k {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .ji-readout .kv .v {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .ji-readout .kv .v.pos { color: #22d39a; }
+    .ji-readout .kv .v.neg { color: #ff5374; }
+
+    .ji-range-picker {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    .ji-range-picker button {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .ji-range-picker button:hover {
+      color: var(--text);
+      border-color: #ffb658;
+    }
+    .ji-range-picker button.active {
+      background: #ffb658;
+      color: #0a1218;
+      border-color: #ffb658;
+    }
+
+    #jiChart { min-height: 300px; }
   </style>
 </head>
 <body>
@@ -172,6 +246,75 @@
         the US is outperforming the rest of the world &mdash; these
         long-running ratios tell you which regime the market is in.
       </p>
+    </section>
+
+    <!-- JOSEPH INDICATOR — proprietary McClellan-style breadth oscillator.
+         Full-width headline chart. Recomputed client-side from spy.csv + rsp.csv. -->
+    <section id="joseph">
+      <div class="section-head">
+        <h2>The Joseph Indicator</h2>
+        <p>
+          A McClellan-style breadth oscillator, computed from the daily return
+          differential between the equal-weight S&amp;P (<strong>RSP</strong>)
+          and the cap-weight S&amp;P (<strong>SPY</strong>). Positive readings mean
+          breadth is accelerating &mdash; the broad market is beating the megacaps.
+          Negative readings mean breadth is deteriorating &mdash; the megacaps are
+          carrying the index.
+        </p>
+      </div>
+      <div class="card ji-card">
+        <div class="ji-header">
+          <div class="ji-readout">
+            <div class="kv"><span class="k">Latest</span><span class="v" id="jiLatest">&ndash;</span></div>
+            <div class="kv"><span class="k">Date</span><span class="v" id="jiDate">&ndash;</span></div>
+            <div class="kv"><span class="k">10th pctile</span><span class="v" id="jiP10">&ndash;</span></div>
+            <div class="kv"><span class="k">90th pctile</span><span class="v" id="jiP90">&ndash;</span></div>
+          </div>
+          <div class="ji-range-picker" id="jiRangePicker" role="tablist" aria-label="Time range">
+            <button type="button" data-range="3m">3M</button>
+            <button type="button" data-range="6m">6M</button>
+            <button type="button" data-range="ytd">YTD</button>
+            <button type="button" data-range="1y" class="active">1Y</button>
+            <button type="button" data-range="3y">3Y</button>
+            <button type="button" data-range="5y">5Y</button>
+            <button type="button" data-range="all">All</button>
+          </div>
+        </div>
+        <svg id="jiChart" class="rd-svg" viewBox="0 0 1200 360" preserveAspectRatio="none" aria-label="Joseph Indicator chart"></svg>
+        <p class="rd-note" id="jiNote">Loading Joseph Indicator&hellip;</p>
+        <details class="ratio-explainer">
+          <summary>How to read this</summary>
+          <p>
+            The Joseph Indicator uses the same shape as the McClellan Oscillator
+            (short-EMA minus long-EMA), but replaces the McClellan&rsquo;s NYSE
+            advance/decline count with a breadth pulse we can actually compute
+            from public data: <strong>the daily return of RSP minus the daily
+            return of SPY</strong>. RSP holds all 500 S&amp;P stocks equally,
+            SPY is cap-weighted. When the average stock beats the average dollar,
+            breadth is broadening. When megacaps beat the average stock, breadth
+            is narrowing.
+          </p>
+          <p>
+            <strong>Formula:</strong> pulse = 100 &times; (RSP_return &minus; SPY_return).
+            Joseph = EMA<sub>19</sub>(pulse) &minus; EMA<sub>39</sub>(pulse).
+            EMA lengths mirror the classic McClellan (19 and 39 days).
+          </p>
+          <ul>
+            <li><strong>Above the zero line:</strong> breadth accelerating. Broad market outrunning the megacaps &mdash; healthy tape.</li>
+            <li><strong>Below the zero line:</strong> breadth deteriorating. Megacaps carrying the index &mdash; narrow rally, stealth weakness.</li>
+            <li><strong>Zero-line cross from below:</strong> fresh breadth rally &mdash; historically a bullish setup after a market bottom.</li>
+            <li><strong>Zero-line cross from above:</strong> breadth breaking down &mdash; watch for broader trouble.</li>
+            <li><strong>Above the 90th percentile:</strong> unusually strong breadth &mdash; often near bear-market recovery lows.</li>
+            <li><strong>Below the 10th percentile:</strong> unusually narrow tape &mdash; often coincides with market tops or panic-narrow moments.</li>
+          </ul>
+          <p class="ratio-history">
+            <strong>Historical extremes:</strong> the biggest positive readings show up right after major bear-market lows
+            (early 2009, mid-2020, late 2022) when the broad market rebounded harder than megacaps. Deep negatives cluster
+            around narrow-rally moments dominated by a small handful of leaders. Use the range picker above to zoom in on any
+            specific regime.
+          </p>
+        </details>
+      </div>
     </section>
 
     <!-- RATIOS: GOLD/SILVER + SPX/GOLD + GOLD/OIL + VTI/VEU (US vs intl) -->
@@ -857,6 +1000,239 @@
       postureLow:     'sharply compressed — strong-dollar / disinflation regime',
     });
   })();
+
+
+  // ==========================================================================
+  // JOSEPH INDICATOR — a McClellan-style breadth oscillator computed client-side
+  // from spy.csv and rsp.csv. Reactive to the range-picker above the chart.
+  // ==========================================================================
+  (async function renderJosephIndicator() {
+    const RANGE_DAYS = {
+      '3m':  66,
+      '6m':  132,
+      '1y':  252,
+      '3y':  756,
+      '5y':  1260,
+    };
+
+    async function loadCsv(url) {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const out = [];
+      for (const ln of (await r.text()).trim().split(/\r?\n/).slice(1)) {
+        const [d, c] = ln.split(',');
+        const px = parseFloat(c);
+        if (isFinite(px)) out.push({ d, px, t: new Date(d).getTime() });
+      }
+      return out;
+    }
+
+    let spy, rsp;
+    try {
+      [spy, rsp] = await Promise.all([
+        loadCsv('data/spy.csv'),
+        loadCsv('data/rsp.csv'),
+      ]);
+    } catch (e) {
+      const note = document.getElementById('jiNote');
+      if (note) note.textContent = 'Failed to load Joseph Indicator data.';
+      return;
+    }
+
+    // Intersect dates + compute daily returns
+    const spyMap = new Map(spy.map(r => [r.d, r.px]));
+    const rspMap = new Map(rsp.map(r => [r.d, r.px]));
+    const dates = [...spyMap.keys()].filter(d => rspMap.has(d)).sort();
+
+    const pulse = [];
+    let prevSpy = null, prevRsp = null;
+    for (const d of dates) {
+      const s = spyMap.get(d), r = rspMap.get(d);
+      if (prevSpy != null && prevRsp != null && prevSpy > 0 && prevRsp > 0) {
+        const spyR = (s / prevSpy) - 1;
+        const rspR = (r / prevRsp) - 1;
+        pulse.push({ d, t: new Date(d).getTime(), p: 100 * (rspR - spyR) });
+      }
+      prevSpy = s; prevRsp = r;
+    }
+
+    // EMAs
+    function ema(arr, n) {
+      if (!arr.length) return [];
+      const k = 2 / (n + 1);
+      const out = [arr[0]];
+      for (let i = 1; i < arr.length; i++) out.push(arr[i] * k + out[i - 1] * (1 - k));
+      return out;
+    }
+    const vals19 = ema(pulse.map(x => x.p), 19);
+    const vals39 = ema(pulse.map(x => x.p), 39);
+
+    // Skip first 60 rows so EMAs settle
+    const series = [];
+    for (let i = 60; i < pulse.length; i++) {
+      series.push({ d: pulse[i].d, t: pulse[i].t, v: vals19[i] - vals39[i] });
+    }
+    if (!series.length) return;
+
+    // Percentiles across full history
+    const sorted = [...series].map(r => r.v).sort((a, b) => a - b);
+    const pct = (p) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
+    const p10 = pct(0.10), p90 = pct(0.90);
+    const latest = series[series.length - 1];
+
+    // Populate readout
+    const fmt3 = v => (v > 0 ? '+' : '') + v.toFixed(3);
+    const latestEl = document.getElementById('jiLatest');
+    latestEl.textContent = fmt3(latest.v);
+    latestEl.classList.add(latest.v >= 0 ? 'pos' : 'neg');
+    document.getElementById('jiDate').textContent = latest.d;
+    document.getElementById('jiP10').textContent = fmt3(p10);
+    document.getElementById('jiP90').textContent = fmt3(p90);
+
+    // ------- Range selection + redraw -------
+    function sliceForRange(range) {
+      if (range === 'all') return series;
+      if (range === 'ytd') {
+        const yr = latest.d.slice(0, 4);
+        return series.filter(r => r.d >= yr + '-01-01');
+      }
+      const n = RANGE_DAYS[range] || 252;
+      return series.slice(-n);
+    }
+
+    function drawChart(rows) {
+      const svg = document.getElementById('jiChart');
+      if (!svg || !rows.length) return;
+      const W = 1200, H = 360;
+      const M = { top: 22, right: 25, bottom: 30, left: 55 };
+      const plotW = W - M.left - M.right;
+      const plotH = H - M.top - M.bottom;
+
+      const vals = rows.map(r => r.v);
+      const rawMin = Math.min(...vals);
+      const rawMax = Math.max(...vals);
+      const pad = Math.max(0.005, (rawMax - rawMin) * 0.08);
+      const yMin = Math.min(rawMin - pad, -0.005);
+      const yMax = Math.max(rawMax + pad,  0.005);
+
+      const first = rows[0], last = rows[rows.length - 1];
+      const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
+      const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+      let s = '';
+
+      // Y grid — dynamic step based on range magnitude
+      const range = yMax - yMin;
+      let step = 0.02;
+      if      (range > 0.4) step = 0.10;
+      else if (range > 0.2) step = 0.05;
+      else if (range > 0.08) step = 0.02;
+      else if (range > 0.03) step = 0.01;
+      else                   step = 0.005;
+      for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
+        const y = yFor(v);
+        s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v.toFixed(step < 0.01 ? 3 : 2)}</text>`;
+      }
+
+      // Zero baseline
+      const yZero = yFor(0);
+      s += `<line x1="${M.left}" x2="${W - M.right}" y1="${yZero}" y2="${yZero}" stroke="#c9d3e0" stroke-width="1" opacity="0.55"/>`;
+
+      // X ticks — adapt to span
+      const yearMs = 365.25 * 24 * 3600 * 1000;
+      const spanYrs = (last.t - first.t) / yearMs;
+      let tickCount;
+      if      (spanYrs > 15) tickCount = 5;
+      else if (spanYrs > 8)  tickCount = 4;
+      else if (spanYrs > 3)  tickCount = 6;
+      else if (spanYrs > 1)  tickCount = 6;
+      else if (spanYrs > 0.4) tickCount = 6;
+      else                   tickCount = 5;
+      for (let i = 0; i <= tickCount; i++) {
+        const t = first.t + (last.t - first.t) * (i / tickCount);
+        const x = xFor(t);
+        const d = new Date(t);
+        const label = spanYrs > 3
+          ? String(d.getUTCFullYear())
+          : d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
+        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${label}</text>`;
+      }
+      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      // Positive / negative filled areas
+      const pts = rows.map(r => ({ x: xFor(r.t), y: yFor(r.v), v: r.v }));
+      let posArea = '', negArea = '';
+      let inPos = false, inNeg = false;
+      for (let i = 0; i < pts.length; i++) {
+        const pt = pts[i];
+        if (pt.v > 0) {
+          if (!inPos) { posArea += `M${pt.x.toFixed(1)},${yZero} L${pt.x.toFixed(1)},${pt.y.toFixed(1)} `; inPos = true; }
+          else        { posArea += `L${pt.x.toFixed(1)},${pt.y.toFixed(1)} `; }
+          if (inNeg)  { negArea += `L${pt.x.toFixed(1)},${yZero} Z `; inNeg = false; }
+        } else {
+          if (!inNeg) { negArea += `M${pt.x.toFixed(1)},${yZero} L${pt.x.toFixed(1)},${pt.y.toFixed(1)} `; inNeg = true; }
+          else        { negArea += `L${pt.x.toFixed(1)},${pt.y.toFixed(1)} `; }
+          if (inPos)  { posArea += `L${pt.x.toFixed(1)},${yZero} Z `; inPos = false; }
+        }
+      }
+      if (inPos) posArea += `L${pts[pts.length - 1].x.toFixed(1)},${yZero} Z`;
+      if (inNeg) negArea += `L${pts[pts.length - 1].x.toFixed(1)},${yZero} Z`;
+      s += `<path d="${posArea}" fill="#22d39a" fill-opacity="0.30" stroke="none"/>`;
+      s += `<path d="${negArea}" fill="#ff5374" fill-opacity="0.35" stroke="none"/>`;
+
+      // Line
+      const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+      s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.2" d="${path}"/>`;
+
+      // Percentile guide lines (only when visible in range)
+      if (p90 >= yMin && p90 <= yMax) {
+        const y = yFor(p90);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#22d39a" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>`;
+        s += `<text x="${W - M.right + 3}" y="${y + 3}" fill="#22d39a" font-size="10" opacity="0.85">p90</text>`;
+      }
+      if (p10 >= yMin && p10 <= yMax) {
+        const y = yFor(p10);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#ff5374" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>`;
+        s += `<text x="${W - M.right + 3}" y="${y + 3}" fill="#ff5374" font-size="10" opacity="0.85">p10</text>`;
+      }
+
+      // Latest dot
+      const lp = pts[pts.length - 1];
+      const dotColor = lp.v >= 0 ? '#22d39a' : '#ff5374';
+      s += `<circle cx="${lp.x}" cy="${lp.y}" r="4" fill="${dotColor}" stroke="#fff" stroke-width="1"/>`;
+      s += `<text x="${lp.x - 6}" y="${lp.y - 8}" text-anchor="end" fill="${dotColor}" font-size="12" font-weight="600">${(lp.v > 0 ? '+' : '') + lp.v.toFixed(3)}</text>`;
+
+      svg.innerHTML = s;
+    }
+
+    // Note text summarizing latest reading
+    function updateNote() {
+      let posture;
+      if      (latest.v > p90)   posture = 'unusually positive — top decile, breadth is accelerating hard';
+      else if (latest.v > 0)     posture = 'positive — breadth is broadening, broad market outrunning megacaps';
+      else if (latest.v > p10)   posture = 'negative — megacaps outrunning the broad market, narrowing tape';
+      else                       posture = 'unusually negative — bottom decile, breadth is contracting sharply';
+      document.getElementById('jiNote').innerHTML =
+        `Latest reading as of <strong>${latest.d}</strong>: <strong>${fmt3(latest.v)}</strong> — ${posture}. ` +
+        `Historical 10th/90th percentiles: <strong>${fmt3(p10)}</strong> / <strong>${fmt3(p90)}</strong>.`;
+    }
+
+    // Wire up range picker
+    const picker = document.getElementById('jiRangePicker');
+    picker.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-range]');
+      if (!btn) return;
+      picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+      drawChart(sliceForRange(btn.dataset.range));
+    });
+
+    updateNote();
+    drawChart(sliceForRange('1y'));
+  })();
+
   </script>
 </body>
 </html>
