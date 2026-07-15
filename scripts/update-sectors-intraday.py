@@ -13,6 +13,7 @@ but the rest still write. If all fail, the existing JSON is left alone.
 """
 
 from __future__ import annotations
+import datetime as _dt
 import json
 import os
 import sys
@@ -39,14 +40,23 @@ def fetch_quote(symbol: str) -> dict | None:
     Yahoo's meta fields `previousClose` and `regularMarketPreviousClose` come
     back null for many ETFs, and `chartPreviousClose` is the close *before* the
     chart's range starts — not the true previous session close. So we ignore
-    the meta prevClose values entirely and instead take the previous session's
-    close directly from the chart daily-candle series: the second-to-last close
-    when the last row is today's intraday. This matches what every quote
-    provider shows as "% change today".
+    the meta prevClose values entirely and instead pull the previous session's
+    close from the chart daily-candle series.
+
+    We identify "previous session" by DATE, not by array position: look up the
+    session date of the current live quote (regularMarketTime), and take the
+    most recent chart bar whose date is strictly earlier than that. Positional
+    picks like usable[-2] are fragile because Yahoo occasionally drops one of
+    the recent daily bars from a range=5d response (missing yesterday, or
+    duplicating today), which would silently make the % change compare today
+    against TWO days ago. Date-based lookup survives those hiccups.
+
+    Also request range=10d instead of 5d so we always have enough completed
+    bars to find yesterday even if a couple are missing.
     """
     url = (
         f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-        "?interval=1d&range=5d&includePrePost=false"
+        "?interval=1d&range=10d&includePrePost=false"
     )
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -59,6 +69,7 @@ def fetch_quote(symbol: str) -> dict | None:
     try:
         result = payload["chart"]["result"][0]
         meta = result["meta"]
+        stamps = result["timestamp"]
         closes = result["indicators"]["quote"][0]["close"]
     except (KeyError, IndexError, TypeError):
         warn(f"{symbol}: unexpected response shape")
@@ -67,13 +78,23 @@ def fetch_quote(symbol: str) -> dict | None:
     price = meta.get("regularMarketPrice")
     ts = meta.get("regularMarketTime")
 
-    # Take the previous session's close from the last chart row that isn't the
-    # current intraday session. Walk from the end, skipping nulls, and take the
-    # second usable value.
-    prev = None
-    usable = [c for c in closes if c is not None]
-    if len(usable) >= 2:
-        prev = float(usable[-2])
+    # Determine which session date belongs to the current live quote.
+    # Prefer the market_time; fall back to "today in UTC" if it's missing.
+    if ts is not None:
+        today_date = _dt.datetime.fromtimestamp(int(ts), _dt.timezone.utc).date()
+    else:
+        today_date = _dt.datetime.now(_dt.timezone.utc).date()
+
+    # Walk chart bars; keep those from completed prior sessions.
+    completed = []
+    for bar_ts, close in zip(stamps or [], closes or []):
+        if close is None or bar_ts is None:
+            continue
+        bar_date = _dt.datetime.fromtimestamp(int(bar_ts), _dt.timezone.utc).date()
+        if bar_date < today_date:
+            completed.append(float(close))
+
+    prev = completed[-1] if completed else None
     # Final fallback: meta's chartPreviousClose (may be stale but better than nothing)
     if prev is None:
         cpc = meta.get("chartPreviousClose")
