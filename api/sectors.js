@@ -1,39 +1,72 @@
-// Vercel serverless function — serves data/sectors_live.json as a dynamic
-// API route instead of a static file.
+// Vercel serverless function — serves data/sectors_live.json fetched
+// LIVE from GitHub raw content instead of from the deployment disk.
 //
-// Why this exists: Vercel's edge CDN aggressively caches static files, even
-// with `Cache-Control: max-age=0, s-maxage=0, must-revalidate` set on the
-// response. When the intraday-sector bot pushes a fresh sectors_live.json,
-// the deployed build has the new file, but the CDN sometimes keeps serving
-// the previous build's version for hours (X-Vercel-Cache: HIT with a big
-// Age header). Static-file cache invalidation on Vercel is tied to build
-// fingerprints, not runtime headers, so we can't defeat it from vercel.json.
+// Why not read from disk:
+//   Vercel bundles static files into each deployment at build time. Files
+//   pushed to the repo AFTER the deployment don't appear on the deployment
+//   disk until Vercel redeploys. On this project Vercel skips redeploys
+//   when a commit only touches data/*, so the intraday-sector bot's fresh
+//   sectors_live.json commits sit in the repo without ever landing on the
+//   live deployment — the /api/sectors function keeps returning
+//   deploy-time-frozen data even hours after new commits.
 //
-// An API route runs server-side on each request, so the response is bound to
-// runtime cache headers instead. We serve with a short s-maxage=60 so the
-// CDN caches for one minute at most — well below the intraday-bot's 5-minute
-// cadence and any stale-perception threshold.
+// Reading from GitHub's raw content URL at request time decouples data
+// freshness from deployment cadence: GitHub serves the newest committed
+// version of the file within seconds of each push.
 //
-// GET /api/sectors → contents of data/sectors_live.json, verbatim.
+// With s-maxage=60 CDN caching, each Vercel region hits GitHub at most
+// once per minute — well under GitHub's raw content rate limits and
+// well within our intraday bot's 5-minute cadence.
+//
+// GET /api/sectors → live contents of data/sectors_live.json from the
+//   main branch of Deluxejob/BATS-CO, verbatim.
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-export default async function handler(req, res) {
-  try {
-    // process.cwd() is the deployment root for Vercel Node functions.
-    const p = path.join(process.cwd(), 'data', 'sectors_live.json');
-    const txt = await fs.readFile(p, 'utf-8');
-    const data = JSON.parse(txt);
+const RAW_URL =
+  'https://raw.githubusercontent.com/Deluxejob/BATS-CO/main/data/sectors_live.json';
 
-    // Short edge cache — 60s is far below the intraday bot's 5-min cadence
-    // and well below the 4-hour "trust live" threshold the client uses,
-    // so readers always see near-fresh data without hammering the file.
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=30');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json(data);
+async function fetchFromGitHub() {
+  const r = await fetch(RAW_URL, {
+    headers: { 'User-Agent': 'bats.co api/sectors (Vercel serverless)' },
+    // Vercel Node fetch: use force-cache: 'no-store' so the request itself
+    // isn't cached by the runtime — the CDN cache header on our response
+    // is what actually controls how often we hit GitHub.
+    cache: 'no-store',
+  });
+  if (!r.ok) throw new Error('github raw http ' + r.status);
+  return await r.json();
+}
+
+async function fetchFromDisk() {
+  const p = path.join(process.cwd(), 'data', 'sectors_live.json');
+  const txt = await fs.readFile(p, 'utf-8');
+  return JSON.parse(txt);
+}
+
+export default async function handler(req, res) {
+  let data, source = 'github';
+  try {
+    data = await fetchFromGitHub();
   } catch (err) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(502).json({ error: String((err && err.message) || err) });
+    // Fall back to the deployment-bundled file if GitHub is unreachable.
+    // Older but still better than nothing.
+    try {
+      data = await fetchFromDisk();
+      source = 'disk-fallback';
+    } catch (err2) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.status(502).json({
+        error: 'both fetch paths failed',
+        github: String(err && err.message || err),
+        disk:   String(err2 && err2.message || err2),
+      });
+    }
   }
+
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=30');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-BATS-Source', source);
+  return res.status(200).json(data);
 }
