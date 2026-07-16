@@ -266,6 +266,40 @@
       vertical-align: middle;
       border: 1px solid rgba(255,255,255,0.4);
     }
+
+    /* Per-card compact time-range picker (1W..All). Sits between the card
+       header and the chart. Buttons are tight enough to fit 9 on one row
+       inside a 2-col grid tile. */
+    .card-range-picker {
+      display: flex;
+      gap: 0.2rem;
+      flex-wrap: wrap;
+      margin: 0.35rem 0 0.5rem;
+    }
+    .card-range-picker button {
+      font: inherit;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.2rem 0.42rem;
+      cursor: pointer;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .card-range-picker button:hover {
+      color: var(--text);
+      border-color: #ffb658;
+    }
+    .card-range-picker button.active {
+      background: #ffb658;
+      color: #0a1218;
+      border-color: #ffb658;
+    }
   </style>
 </head>
 <body>
@@ -537,6 +571,17 @@
               <div><span class="rd-lbl">Median (since IBIT)</span> <span class="rd-num" id="mstrIbitMedian">&ndash;</span></div>
             </div>
           </div>
+          <div class="card-range-picker" id="mstrIbitRange" role="tablist" aria-label="Time range">
+            <button type="button" data-range="1w">1W</button>
+            <button type="button" data-range="1m">1M</button>
+            <button type="button" data-range="3m">3M</button>
+            <button type="button" data-range="6m" class="active">6M</button>
+            <button type="button" data-range="1y">1Y</button>
+            <button type="button" data-range="3y">3Y</button>
+            <button type="button" data-range="5y">5Y</button>
+            <button type="button" data-range="10y">10Y</button>
+            <button type="button" data-range="all">All</button>
+          </div>
           <svg id="mstrIbitChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="MSTR/IBIT ratio — Strategy vs spot Bitcoin ETF"></svg>
           <p class="rd-note" id="mstrIbitNote">Loading MSTR/IBIT ratio&hellip;</p>
           <details class="ratio-explainer">
@@ -575,6 +620,17 @@
               <div><span class="rd-lbl">Median (since BMNR)</span> <span class="rd-num" id="bmnrEthaMedian">&ndash;</span></div>
             </div>
           </div>
+          <div class="card-range-picker" id="bmnrEthaRange" role="tablist" aria-label="Time range">
+            <button type="button" data-range="1w">1W</button>
+            <button type="button" data-range="1m">1M</button>
+            <button type="button" data-range="3m">3M</button>
+            <button type="button" data-range="6m" class="active">6M</button>
+            <button type="button" data-range="1y">1Y</button>
+            <button type="button" data-range="3y">3Y</button>
+            <button type="button" data-range="5y">5Y</button>
+            <button type="button" data-range="10y">10Y</button>
+            <button type="button" data-range="all">All</button>
+          </div>
           <svg id="bmnrEthaChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="BMNR/ETHA ratio — Bitmine Immersion vs spot Ethereum ETF"></svg>
           <p class="rd-note" id="bmnrEthaNote">Loading BMNR/ETHA ratio&hellip;</p>
           <details class="ratio-explainer">
@@ -610,6 +666,17 @@
               <div><span class="rd-lbl">Median (since ETHA)</span> <span class="rd-num" id="ethaIbitMedian">&ndash;</span></div>
             </div>
           </div>
+          <div class="card-range-picker" id="ethaIbitRange" role="tablist" aria-label="Time range">
+            <button type="button" data-range="1w">1W</button>
+            <button type="button" data-range="1m">1M</button>
+            <button type="button" data-range="3m">3M</button>
+            <button type="button" data-range="6m" class="active">6M</button>
+            <button type="button" data-range="1y">1Y</button>
+            <button type="button" data-range="3y">3Y</button>
+            <button type="button" data-range="5y">5Y</button>
+            <button type="button" data-range="10y">10Y</button>
+            <button type="button" data-range="all">All</button>
+          </div>
           <svg id="ethaIbitChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="ETHA/IBIT ratio — spot Ether ETF vs spot Bitcoin ETF"></svg>
           <p class="rd-note" id="ethaIbitNote">Loading ETHA/IBIT ratio&hellip;</p>
           <details class="ratio-explainer">
@@ -644,6 +711,17 @@
               <div><span class="rd-lbl">Current</span> <span class="rd-num" id="ethaGsolCurrent">&ndash;</span></div>
               <div><span class="rd-lbl">Median (since GSOL)</span> <span class="rd-num" id="ethaGsolMedian">&ndash;</span></div>
             </div>
+          </div>
+          <div class="card-range-picker" id="ethaGsolRange" role="tablist" aria-label="Time range">
+            <button type="button" data-range="1w">1W</button>
+            <button type="button" data-range="1m">1M</button>
+            <button type="button" data-range="3m">3M</button>
+            <button type="button" data-range="6m" class="active">6M</button>
+            <button type="button" data-range="1y">1Y</button>
+            <button type="button" data-range="3y">3Y</button>
+            <button type="button" data-range="5y">5Y</button>
+            <button type="button" data-range="10y">10Y</button>
+            <button type="button" data-range="all">All</button>
           </div>
           <svg id="ethaGsolChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="ETHA/GSOL ratio — spot Ether ETF vs Grayscale Solana Trust"></svg>
           <p class="rd-note" id="ethaGsolNote">Loading ETHA/GSOL ratio&hellip;</p>
@@ -1068,6 +1146,17 @@
             <div><span class="rd-lbl">${r.medianLabel || 'Long-term median'}</span> <span class="rd-num" id="${r.slug}Median">&ndash;</span></div>
           </div>
         </div>
+        <div class="card-range-picker" id="${r.slug}Range" role="tablist" aria-label="Time range">
+          <button type="button" data-range="1w">1W</button>
+          <button type="button" data-range="1m">1M</button>
+          <button type="button" data-range="3m">3M</button>
+          <button type="button" data-range="6m" class="active">6M</button>
+          <button type="button" data-range="1y">1Y</button>
+          <button type="button" data-range="3y">3Y</button>
+          <button type="button" data-range="5y">5Y</button>
+          <button type="button" data-range="10y">10Y</button>
+          <button type="button" data-range="all">All</button>
+        </div>
         <svg id="${r.slug}Chart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="${r.title} ratio"></svg>
         <p class="rd-note" id="${r.slug}Note">Loading&hellip;</p>
         <details class="ratio-explainer">
@@ -1150,8 +1239,11 @@
       const plotH = H - M.top - M.bottom;
 
       const vals = rows.map(r => r.v);
-      const yMin = Math.min(...vals) * 0.95;
-      const yMax = Math.max(...vals) * 1.05;
+      const rawMin = Math.min(...vals);
+      const rawMax = Math.max(...vals);
+      const pad = Math.max((rawMax - rawMin) * 0.10, Math.abs(rawMax) * 0.003);
+      const yMin = rawMin - pad;
+      const yMax = rawMax + pad;
       const first = rows[0], last = rows[rows.length - 1];
       const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
       const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
@@ -1197,8 +1289,18 @@
       svgEl.innerHTML = s;
     }
 
+    // Trading-day-count for each range key. 'all' means the full history.
+    const RANGE_DAYS = { '1w':5, '1m':22, '3m':66, '6m':132, '1y':252, '3y':756, '5y':1260, '10y':2520 };
+    function sliceRange(series, rangeKey) {
+      if (rangeKey === 'all') return series;
+      const n = RANGE_DAYS[rangeKey] || series.length;
+      return series.slice(-n);
+    }
+
     // Shared helper — compute + render one ratio card given num/den arrays
-    // and the card's DOM element IDs.
+    // and the card's DOM element IDs. Wires up the per-card range picker so
+    // clicking 1W..All redraws just the chart on the selected slice; the
+    // header readouts (Current, long-term Median) stay pinned to full history.
     function renderLeadershipRatio(cfg) {
       const numMap = map(cfg.num);
       const denMap = map(cfg.den);
@@ -1210,10 +1312,32 @@
       const medEl = document.getElementById(cfg.medianId);
       if (curEl) curEl.textContent = fmt(last && last.v, cfg.digits);
       if (medEl) medEl.textContent = fmt(med, cfg.digits);
-      drawChart(document.getElementById(cfg.chartId), series, {
-        median: med, color: cfg.color,
-        currentDigits: cfg.digits, medianDigits: cfg.digits,
-      });
+
+      const svgEl = document.getElementById(cfg.chartId);
+      // The prefix before "Chart" gives us the range picker id.
+      const rangeEl = document.getElementById(cfg.chartId.replace(/Chart$/, 'Range'));
+
+      function drawFor(rangeKey) {
+        const slice = sliceRange(series, rangeKey);
+        drawChart(svgEl, slice, {
+          median: med, color: cfg.color,
+          currentDigits: cfg.digits, medianDigits: cfg.digits,
+        });
+      }
+
+      if (rangeEl) {
+        rangeEl.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-range]');
+          if (!btn) return;
+          rangeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+          drawFor(btn.dataset.range);
+        });
+        // Match the default 6M active button set in HTML
+        drawFor('6m');
+      } else {
+        drawFor('all');
+      }
+
       if (last) {
         const dev = med ? ((last.v / med) - 1) * 100 : 0;
         const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
