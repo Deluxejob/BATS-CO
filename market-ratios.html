@@ -1132,7 +1132,6 @@
 
     // Build date → close maps for fast joining
     const map = (rows) => { const m = new Map(); for (const r of rows) m.set(r.d, r.px); return m; };
-    const goldMap = map(gold), silverMap = map(silver), spxMap = map(spx);
 
     // For each date in numerator, compute ratio if denominator has a value on
     // that date. If not, hold last known.
@@ -1149,12 +1148,6 @@
       }
       return out;
     }
-
-    const gsRatio = joinedRatio(gold, silver, goldMap, silverMap);
-    const sgRatio = joinedRatio(
-      spx.filter(r => r.d >= '2000-08-30'),
-      gold, spxMap, goldMap
-    );
 
     const median = (arr) => {
       const s = [...arr].sort((a, b) => a - b);
@@ -1218,7 +1211,38 @@
       svgEl.innerHTML = s;
     }
 
-
+    // Shared helper — compute + render one ratio card given num/den arrays
+    // and the card's DOM element IDs.
+    function renderLeadershipRatio(cfg) {
+      const numMap = map(cfg.num);
+      const denMap = map(cfg.den);
+      const series = joinedRatio(cfg.num, cfg.den, numMap, denMap);
+      if (!series.length) return;
+      const med = median(series.map(r => r.v));
+      const last = series[series.length - 1];
+      const curEl = document.getElementById(cfg.currentId);
+      const medEl = document.getElementById(cfg.medianId);
+      if (curEl) curEl.textContent = fmt(last && last.v, cfg.digits);
+      if (medEl) medEl.textContent = fmt(med, cfg.digits);
+      drawChart(document.getElementById(cfg.chartId), series, {
+        median: med, color: cfg.color,
+        currentDigits: cfg.digits, medianDigits: cfg.digits,
+      });
+      if (last) {
+        const dev = med ? ((last.v / med) - 1) * 100 : 0;
+        const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
+        let posture;
+        if      (dev >= 30)  posture = cfg.postureHigh;
+        else if (dev <= -30) posture = cfg.postureLow;
+        else if (dev >= 10)  posture = cfg.postureMidHigh;
+        else if (dev <= -10) posture = cfg.postureMidLow;
+        else                 posture = 'near the historical median';
+        const noteEl = document.getElementById(cfg.noteId);
+        if (noteEl) noteEl.innerHTML =
+          `As of <strong>${last.d}</strong>: ratio <strong>${fmt(last.v, cfg.digits)}</strong> ` +
+          `(${devTxt} vs median <strong>${fmt(med, cfg.digits)}</strong>) — ${posture}.`;
+      }
+    }
 
     renderLeadershipRatio({
       num: etha, den: ibit,
