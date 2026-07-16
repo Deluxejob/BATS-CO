@@ -300,6 +300,146 @@
       color: #0a1218;
       border-color: #ffb658;
     }
+
+    /* --- Ratio Builder — launcher button + modal --- */
+    .rbm-launcher {
+      display: flex; justify-content: center;
+      margin: 0.75rem 0 1.25rem;
+    }
+    .rbm-launcher button {
+      font: inherit;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffb658 0%, #f19b32 100%);
+      color: #0a1218;
+      border: 1px solid #ffb658;
+      border-radius: 6px;
+      padding: 0.65rem 1.25rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(255,182,88,0.25);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .rbm-launcher button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(255,182,88,0.35);
+    }
+    .rbm-launcher button:active { transform: translateY(0); }
+
+    .rbm-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 5vh 1rem 2rem;
+      overflow-y: auto;
+    }
+    .rbm-modal[data-open="true"] { display: flex; }
+    .rbm-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(3px);
+    }
+    .rbm-panel {
+      position: relative;
+      z-index: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      width: min(920px, 100%);
+      color: var(--text);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .rbm-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; margin-bottom: 1rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .rbm-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+    .rbm-close {
+      font: inherit;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      width: 32px; height: 32px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .rbm-close:hover { color: var(--text); border-color: #ffb658; }
+    .rbm-form {
+      display: flex; align-items: center; gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .rbm-form input {
+      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.55rem 0.85rem;
+      width: 130px;
+      text-align: center;
+    }
+    .rbm-form input:focus {
+      outline: none;
+      border-color: #ffb658;
+      box-shadow: 0 0 0 3px rgba(255,182,88,0.15);
+    }
+    .rbm-form .rbm-sep {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+    .rbm-form button {
+      font: inherit;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: #ffb658;
+      color: #0a1218;
+      border: 1px solid #ffb658;
+      border-radius: 4px;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+      margin-left: 0.4rem;
+    }
+    .rbm-form button:hover { filter: brightness(1.08); }
+    .rbm-form button:disabled { opacity: 0.5; cursor: default; }
+    .rbm-status {
+      margin: 0.75rem 0 0;
+      font-family: ui-monospace, monospace;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+    .rbm-status.error { color: var(--s0, #ff5374); }
+    .rbm-result {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .rbm-result[hidden] { display: none; }
+    #rbmChart { width: 100%; max-width: 100%; height: auto; display: block; }
   </style>
 </head>
 <body>
@@ -343,6 +483,13 @@
         long-running ratios tell you which regime the market is in.
       </p>
     </section>
+
+    <!-- Ratio Builder launcher — opens the pop-up modal below. -->
+    <div class="rbm-launcher">
+      <button type="button" id="rbmOpenBtn" aria-haspopup="dialog">
+        &#43; Build your own ratio
+      </button>
+    </div>
 
     <!-- JOSEPH INDICATOR — proprietary McClellan-style breadth oscillator.
          Full-width headline chart. Recomputed client-side from spy.csv + rsp.csv. -->
@@ -750,6 +897,51 @@
 
       </div>
     </section>
+
+
+    <!-- RATIO BUILDER modal — populated + wired up by JS at the bottom of
+         the renderRatios IIFE. Hidden by default; opens when the launcher
+         button above is clicked. -->
+    <div class="rbm-modal" id="rbmModal" role="dialog" aria-modal="true" aria-labelledby="rbmModalTitle">
+      <div class="rbm-backdrop" id="rbmBackdrop"></div>
+      <div class="rbm-panel">
+        <div class="rbm-header">
+          <h3 id="rbmModalTitle">Build your own ratio</h3>
+          <button type="button" class="rbm-close" id="rbmCloseBtn" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="rbm-form">
+          <input type="text" id="rbmInputA" placeholder="AAPL" maxlength="10" autocomplete="off" spellcheck="false" />
+          <span class="rbm-sep">/</span>
+          <input type="text" id="rbmInputB" placeholder="MSFT" maxlength="10" autocomplete="off" spellcheck="false" />
+          <button type="button" id="rbmBuildBtn">Build</button>
+        </div>
+        <p class="rbm-status" id="rbmStatus">Enter two US tickers and click Build to render the ratio.</p>
+
+        <div class="rbm-result" id="rbmResult" hidden>
+          <div class="rd-card-head">
+            <h3 id="rbmResultTitle">&ndash;</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="rbmCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Long-term median</span> <span class="rd-num" id="rbmMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <div class="card-range-picker" id="rbmRangePicker" role="tablist" aria-label="Time range">
+            <button type="button" data-range="1w">1W</button>
+            <button type="button" data-range="1m">1M</button>
+            <button type="button" data-range="3m">3M</button>
+            <button type="button" data-range="6m" class="active">6M</button>
+            <button type="button" data-range="1y">1Y</button>
+            <button type="button" data-range="3y">3Y</button>
+            <button type="button" data-range="5y">5Y</button>
+            <button type="button" data-range="10y">10Y</button>
+            <button type="button" data-range="all">All</button>
+          </div>
+          <svg id="rbmChart" viewBox="0 0 800 320" preserveAspectRatio="none" aria-label="Custom ratio chart"></svg>
+          <p class="rd-note" id="rbmNote"></p>
+        </div>
+      </div>
+    </div>
 
   </main>
 
@@ -1420,6 +1612,150 @@
       postureMidLow:  'below median — BMNR lagging ETH, premium compressing',
       postureLow:     'compressed — BMNR lagging ETH significantly, premium unwinding',
     });
+
+    // ---- Ratio Builder — pop-up modal for custom user-entered ratios. ----
+    // Reuses map / joinedRatio / median / fmt / drawChart from this IIFE's
+    // closure. Fetches history via /api/history and slices client-side per
+    // the range picker.
+    (function setupRatioBuilder() {
+      const modal      = document.getElementById('rbmModal');
+      const openBtn    = document.getElementById('rbmOpenBtn');
+      const closeBtn   = document.getElementById('rbmCloseBtn');
+      const backdrop   = document.getElementById('rbmBackdrop');
+      const inputA     = document.getElementById('rbmInputA');
+      const inputB     = document.getElementById('rbmInputB');
+      const buildBtn   = document.getElementById('rbmBuildBtn');
+      const status     = document.getElementById('rbmStatus');
+      const result     = document.getElementById('rbmResult');
+      const resTitle   = document.getElementById('rbmResultTitle');
+      const curEl      = document.getElementById('rbmCurrent');
+      const medEl      = document.getElementById('rbmMedian');
+      const rangeEl    = document.getElementById('rbmRangePicker');
+      const chartEl    = document.getElementById('rbmChart');
+      const noteEl     = document.getElementById('rbmNote');
+      if (!modal || !openBtn) return;
+
+      // State for the currently-built ratio (keeps the full-history series
+      // so range-picker clicks reslice without refetching).
+      let currentSeries = null;
+      let currentMed = null;
+      let currentPair = null;
+
+      function openModal() {
+        modal.setAttribute('data-open', 'true');
+        setTimeout(() => inputA.focus(), 50);
+      }
+      function closeModal() {
+        modal.removeAttribute('data-open');
+      }
+      openBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.getAttribute('data-open') === 'true') closeModal();
+      });
+      // Enter in either input triggers Build
+      [inputA, inputB].forEach(inp => {
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); buildBtn.click(); }
+        });
+      });
+
+      // Turn Yahoo/api-history series ([[ts_sec, close], ...]) into the
+      // {d, t, px} shape the shared joinedRatio helper expects.
+      function apiToRows(arr) {
+        const out = [];
+        for (const [ts, c] of arr) {
+          if (!isFinite(c)) continue;
+          const d = new Date(ts * 1000).toISOString().slice(0, 10);
+          out.push({ d, px: +c, t: ts * 1000 });
+        }
+        return out;
+      }
+
+      async function build() {
+        const a = (inputA.value || '').toUpperCase().trim();
+        const b = (inputB.value || '').toUpperCase().trim();
+        const symRe = /^[A-Z0-9.\-]{1,10}$/;
+        if (!symRe.test(a) || !symRe.test(b)) {
+          status.textContent = 'Please enter two US ticker symbols (letters, digits, or . -).';
+          status.classList.add('error');
+          return;
+        }
+        status.classList.remove('error');
+        status.textContent = 'Fetching ' + a + ' + ' + b + '\u2026';
+        buildBtn.disabled = true;
+        try {
+          const r = await fetch('/api/history?syms=' + encodeURIComponent(a + ',' + b) + '&range=max',
+                                { cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const payload = await r.json();
+          const seriesMap = (payload && payload.series) || {};
+          const arrA = seriesMap[a], arrB = seriesMap[b];
+          if (!arrA || !arrB) {
+            status.textContent = 'Could not find data for ' + (!arrA ? a : b) + '. Try a different ticker.';
+            status.classList.add('error');
+            return;
+          }
+          const rowsA = apiToRows(arrA), rowsB = apiToRows(arrB);
+          if (rowsA.length < 10 || rowsB.length < 10) {
+            status.textContent = 'Not enough overlapping history to compute a ratio.';
+            status.classList.add('error');
+            return;
+          }
+          const mapA = map(rowsA), mapB = map(rowsB);
+          const series = joinedRatio(rowsA, rowsB, mapA, mapB);
+          if (!series.length) {
+            status.textContent = 'No overlapping dates between ' + a + ' and ' + b + '.';
+            status.classList.add('error');
+            return;
+          }
+          currentSeries = series;
+          currentMed = median(series.map(r => r.v));
+          currentPair = { a, b };
+          status.textContent = 'Rendered ' + series.length.toLocaleString() +
+                               ' daily readings from ' + series[0].d + ' to ' + series[series.length-1].d + '.';
+          resTitle.textContent = a + ' / ' + b;
+          const last = series[series.length - 1];
+          curEl.textContent = fmt(last.v, 3);
+          medEl.textContent = fmt(currentMed, 3);
+          // Ensure default active button is 6M
+          rangeEl.querySelectorAll('button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.range === '6m');
+          });
+          drawFor('6m');
+          // Note text — deviation from median
+          const dev = currentMed ? ((last.v / currentMed) - 1) * 100 : 0;
+          const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(1) + '%';
+          noteEl.innerHTML = 'As of <strong>' + last.d + '</strong>: ratio ' +
+            '<strong>' + fmt(last.v, 3) + '</strong> (' + devTxt +
+            ' vs full-history median <strong>' + fmt(currentMed, 3) + '</strong>).';
+          result.hidden = false;
+        } catch (e) {
+          status.textContent = 'Build failed: ' + (e && e.message || e);
+          status.classList.add('error');
+        } finally {
+          buildBtn.disabled = false;
+        }
+      }
+      buildBtn.addEventListener('click', build);
+
+      function drawFor(rangeKey) {
+        if (!currentSeries) return;
+        const slice = sliceRange(currentSeries, rangeKey);
+        drawChart(chartEl, slice, {
+          median: currentMed, color: '#ffb658',
+          currentDigits: 3, medianDigits: 3,
+        });
+      }
+      rangeEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-range]');
+        if (!btn) return;
+        rangeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        drawFor(btn.dataset.range);
+      });
+    })();
+
   })();
 
 

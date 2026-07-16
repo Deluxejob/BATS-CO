@@ -13,7 +13,7 @@
 
 const YAHOO_UA = 'Mozilla/5.0 (BATS.CO history proxy)';
 
-const RANGES = new Set(['1mo', '3mo', '6mo', '1y', '5y']);
+const RANGES = new Set(['5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'max']);
 
 async function fetchYahooChart(sym, range) {
   const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
