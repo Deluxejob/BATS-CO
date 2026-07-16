@@ -788,6 +788,99 @@
       </div>
     </section>
 
+    <!-- CRYPTO — MSTR/IBIT (Strategy vs BTC) + BMNR/ETHA (Bitmine vs ETH).
+         New treasury-company vs their own asset ratios: when the equity is
+         outrunning the underlying token, the market's paying up for corporate
+         wrapper; when it's lagging, wrapper premium is compressing. -->
+    <section id="crypto">
+      <div class="section-head">
+        <h2>Crypto</h2>
+        <p>
+          Two "digital-asset-treasury company vs the asset they hold" ratios.
+          Rising = the equity wrapper is beating the underlying token &mdash;
+          the market is willing to pay a premium for corporate treasury
+          exposure. Falling = premium compressing, or wrapper lagging the
+          asset.
+        </p>
+      </div>
+      <div class="ratios-grid">
+
+        <!-- MSTR / IBIT — Strategy Inc. vs Bitcoin -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>MSTR / IBIT &mdash; Strategy vs Bitcoin</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="mstrIbitCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median (since IBIT)</span> <span class="rd-num" id="mstrIbitMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="mstrIbitChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="MSTR/IBIT ratio — Strategy vs spot Bitcoin ETF"></svg>
+          <p class="rd-note" id="mstrIbitNote">Loading MSTR/IBIT ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              Strategy (<strong>MSTR</strong>, formerly MicroStrategy) is the
+              largest corporate Bitcoin holder in the world &mdash; MSTR shares
+              are essentially a leveraged Bitcoin proxy. <strong>IBIT</strong> is
+              iShares&rsquo; spot Bitcoin ETF, the cleanest liquid tracker of BTC
+              itself. When the ratio <strong>rises</strong>, MSTR is outrunning
+              the coins it owns &mdash; the market is paying a bigger premium
+              for corporate BTC treasury exposure. When it <strong>falls</strong>,
+              the premium is compressing.
+            </p>
+            <ul>
+              <li><strong>Rising sharply:</strong> speculative premium expanding, retail bidding up the MSTR wrapper.</li>
+              <li><strong>Falling:</strong> premium compressing &mdash; either MSTR sold off, or BTC ran without MSTR keeping pace.</li>
+              <li><strong>Flat over months:</strong> MSTR trading in line with its underlying BTC treasury.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Context:</strong> IBIT only launched 2024-01, so this ratio is short.
+              The most-watched pattern: MSTR premium expanded aggressively in the
+              2024 spot-ETF-launch cycle, then compressed on subsequent BTC drawdowns.
+              Sustained premium contraction is often taken as a &ldquo;peak greed&rdquo;
+              signal by crypto watchers.
+            </p>
+          </details>
+        </div>
+
+        <!-- BMNR / ETHA — Bitmine Immersion vs Ethereum -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>BMNR / ETHA &mdash; Bitmine vs Ethereum</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="bmnrEthaCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median (since BMNR)</span> <span class="rd-num" id="bmnrEthaMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="bmnrEthaChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="BMNR/ETHA ratio — Bitmine Immersion vs spot Ethereum ETF"></svg>
+          <p class="rd-note" id="bmnrEthaNote">Loading BMNR/ETHA ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              Same shape as MSTR/IBIT but on the Ethereum side.
+              <strong>BMNR</strong> (Bitmine Immersion Technologies) is a public
+              company built around an Ethereum treasury strategy;
+              <strong>ETHA</strong> is iShares&rsquo; spot Ether ETF.
+              When the ratio <strong>rises</strong>, BMNR is being bid up faster
+              than ETH itself &mdash; premium expanding. When it <strong>falls</strong>,
+              premium is compressing.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> speculative wrapper premium expanding, ETH-treasury company outperforming ETH.</li>
+              <li><strong>Falling:</strong> premium compressing &mdash; either BMNR lagging or ETH catching up.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Context:</strong> BMNR only pivoted to an ETH-treasury
+              strategy in mid-2025, so the history is very short. Treat any
+              extremes with humility &mdash; there simply isn&rsquo;t enough
+              data yet to say what &ldquo;normal&rdquo; looks like.
+            </p>
+          </details>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <footer class="site-footer">
@@ -814,9 +907,9 @@
       return out;
     }
 
-    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp;
+    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr;
     try {
-      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp] = await Promise.all([
+      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr] = await Promise.all([
         loadCsv('data/gold.csv'),
         loadCsv('data/silver.csv'),
         loadCsv('data/spx.csv'),
@@ -831,9 +924,13 @@
         loadCsv('data/dxy.csv'),
         loadCsv('data/sectors/xly.csv'),
         loadCsv('data/sectors/xlp.csv'),
+        loadCsv('data/ratios/mstr.csv'),
+        loadCsv('data/ratios/ibit.csv'),
+        loadCsv('data/ratios/etha.csv'),
+        loadCsv('data/ratios/bmnr.csv'),
       ]);
     } catch (e) {
-      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote','xlyXlpNote','goldDxyNote'].forEach(id => {
+      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote','xlyXlpNote','goldDxyNote','mstrIbitNote','bmnrEthaNote'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = 'Failed to load ratio data.';
       });
@@ -1128,6 +1225,28 @@
       postureMidHigh: 'above the median — gold winning vs the dollar',
       postureMidLow:  'below the median — dollar winning vs gold',
       postureLow:     'sharply compressed — strong-dollar / disinflation regime',
+    });
+
+    renderLeadershipRatio({
+      num: mstr, den: ibit,
+      currentId: 'mstrIbitCurrent', medianId: 'mstrIbitMedian',
+      chartId: 'mstrIbitChart', noteId: 'mstrIbitNote',
+      color: '#f4b942', digits: 2,
+      postureHigh:    'stretched high — MSTR premium over BTC treasury value expanding sharply',
+      postureMidHigh: 'above median — MSTR outrunning BTC, premium expanding',
+      postureMidLow:  'below median — MSTR lagging BTC, premium compressing',
+      postureLow:     'compressed — MSTR lagging BTC significantly, wrapper premium unwinding',
+    });
+
+    renderLeadershipRatio({
+      num: bmnr, den: etha,
+      currentId: 'bmnrEthaCurrent', medianId: 'bmnrEthaMedian',
+      chartId: 'bmnrEthaChart', noteId: 'bmnrEthaNote',
+      color: '#c084fc', digits: 3,
+      postureHigh:    'stretched high — BMNR premium over ETH treasury expanding sharply',
+      postureMidHigh: 'above median — BMNR outrunning ETH, premium expanding',
+      postureMidLow:  'below median — BMNR lagging ETH, premium compressing',
+      postureLow:     'compressed — BMNR lagging ETH significantly, premium unwinding',
     });
   })();
 
