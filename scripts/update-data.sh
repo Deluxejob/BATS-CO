@@ -147,6 +147,7 @@ mkdir -p "$DATA_DIR/ratios"
 fetch_yahoo_daily "MSTR" "$DATA_DIR/ratios/mstr.csv" "946857600"   # 2000-01-03
 fetch_yahoo_daily "IBIT" "$DATA_DIR/ratios/ibit.csv" "1704931200"  # 2024-01-11 (spot BTC ETF)
 fetch_yahoo_daily "ETHA" "$DATA_DIR/ratios/etha.csv" "1721692800"  # 2024-07-23 (spot ETH ETF)
+fetch_yahoo_daily "GSOL" "$DATA_DIR/ratios/gsol.csv" "1704153600"  # 2024-01-02 (Grayscale Solana Trust)
 fetch_yahoo_daily "BMNR" "$DATA_DIR/ratios/bmnr.csv" "1748995200"  # 2025-06-05
 
 echo "Data refresh complete."

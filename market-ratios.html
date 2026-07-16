@@ -878,6 +878,75 @@
           </details>
         </div>
 
+        <!-- ETHA / IBIT — Ethereum vs Bitcoin (via the spot ETFs) -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>ETHA / IBIT &mdash; ETH vs Bitcoin</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="ethaIbitCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median (since ETHA)</span> <span class="rd-num" id="ethaIbitMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="ethaIbitChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="ETHA/IBIT ratio — spot Ether ETF vs spot Bitcoin ETF"></svg>
+          <p class="rd-note" id="ethaIbitNote">Loading ETHA/IBIT ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              The classic <strong>ETH/BTC</strong> relative-strength ratio, expressed
+              through the spot ETFs (<strong>ETHA</strong> for Ethereum,
+              <strong>IBIT</strong> for Bitcoin) instead of the raw tokens.
+              Rising = Ethereum outperforming Bitcoin &mdash; the traditional
+              &ldquo;alt season&rdquo; setup. Falling = Bitcoin leading &mdash;
+              flight to the crypto safe-haven, altcoins bleeding.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> ETH beating BTC. Historically alt-coin outperformance follows.</li>
+              <li><strong>Falling:</strong> BTC leading, ETH lagging. Bitcoin dominance rising.</li>
+              <li><strong>Sharp reversals:</strong> often precede broader crypto regime shifts.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Context:</strong> ETHA launched 2024-07, so the joint
+              history with IBIT is short (~1 year). The 2024&ndash;2025 cycle
+              saw Bitcoin dominate through the ETF-launch phase, with ETH
+              relative strength lagging and premium compressing.
+            </p>
+          </details>
+        </div>
+
+        <!-- ETHA / GSOL — Ethereum vs Solana -->
+        <div class="card">
+          <div class="rd-card-head">
+            <h3>ETHA / GSOL &mdash; ETH vs Solana</h3>
+            <div class="rd-key-yields">
+              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="ethaGsolCurrent">&ndash;</span></div>
+              <div><span class="rd-lbl">Median (since GSOL)</span> <span class="rd-num" id="ethaGsolMedian">&ndash;</span></div>
+            </div>
+          </div>
+          <svg id="ethaGsolChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="ETHA/GSOL ratio — spot Ether ETF vs Grayscale Solana Trust"></svg>
+          <p class="rd-note" id="ethaGsolNote">Loading ETHA/GSOL ratio&hellip;</p>
+          <details class="ratio-explainer">
+            <summary>How to read this</summary>
+            <p>
+              Ethereum vs Solana relative strength, using
+              <strong>ETHA</strong> (iShares spot Ether ETF) and
+              <strong>GSOL</strong> (Grayscale Solana Trust). Solana has been
+              the leading &ldquo;ETH killer&rdquo; L1 in the 2024&ndash;2025 cycle,
+              so this ratio tracks whether the market is favoring the incumbent
+              smart-contract platform or its highest-momentum challenger.
+            </p>
+            <ul>
+              <li><strong>Rising:</strong> ETH beating SOL &mdash; large-cap smart contract layer winning.</li>
+              <li><strong>Falling:</strong> SOL beating ETH &mdash; Solana ecosystem momentum accelerating.</li>
+            </ul>
+            <p class="ratio-history">
+              <strong>Context:</strong> GSOL trades at a large discount / premium
+              to its underlying NAV (Grayscale trust structure), so this ratio
+              is noisier than a pure token-price comparison would be. Read the
+              trend more than absolute levels.
+            </p>
+          </details>
+        </div>
+
       </div>
     </section>
 
@@ -907,9 +976,9 @@
       return out;
     }
 
-    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr;
+    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr, gsol;
     try {
-      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr] = await Promise.all([
+      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr, gsol] = await Promise.all([
         loadCsv('data/gold.csv'),
         loadCsv('data/silver.csv'),
         loadCsv('data/spx.csv'),
@@ -928,9 +997,10 @@
         loadCsv('data/ratios/ibit.csv'),
         loadCsv('data/ratios/etha.csv'),
         loadCsv('data/ratios/bmnr.csv'),
+        loadCsv('data/ratios/gsol.csv'),
       ]);
     } catch (e) {
-      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote','xlyXlpNote','goldDxyNote','mstrIbitNote','bmnrEthaNote'].forEach(id => {
+      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote','xlyXlpNote','goldDxyNote','mstrIbitNote','bmnrEthaNote','ethaIbitNote','ethaGsolNote'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = 'Failed to load ratio data.';
       });
@@ -1227,6 +1297,28 @@
       postureLow:     'sharply compressed — strong-dollar / disinflation regime',
     });
 
+
+    renderLeadershipRatio({
+      num: etha, den: ibit,
+      currentId: 'ethaIbitCurrent', medianId: 'ethaIbitMedian',
+      chartId: 'ethaIbitChart', noteId: 'ethaIbitNote',
+      color: '#64d3ff', digits: 4,
+      postureHigh:    'stretched high — ETH sharply outperforming BTC, alt-season setup',
+      postureMidHigh: 'above median — ETH beating BTC',
+      postureMidLow:  'below median — BTC leading, ETH lagging',
+      postureLow:     'compressed — BTC strongly dominant, altcoins bleeding',
+    });
+
+    renderLeadershipRatio({
+      num: etha, den: gsol,
+      currentId: 'ethaGsolCurrent', medianId: 'ethaGsolMedian',
+      chartId: 'ethaGsolChart', noteId: 'ethaGsolNote',
+      color: '#c084fc', digits: 3,
+      postureHigh:    'stretched high — ETH sharply outrunning SOL',
+      postureMidHigh: 'above median — ETH beating SOL',
+      postureMidLow:  'below median — SOL beating ETH, Solana momentum accelerating',
+      postureLow:     'compressed — SOL dominant, ETH losing ground to Solana',
+    });
     renderLeadershipRatio({
       num: mstr, den: ibit,
       currentId: 'mstrIbitCurrent', medianId: 'mstrIbitMedian',
