@@ -1,6 +1,15 @@
 {
-  "generatedAt": 1784238204,
+  "generatedAt": 1784241526,
   "gainers": [
+    {
+      "symbol": "CDNA",
+      "shortName": "CareDx, Inc.",
+      "price": 40.34,
+      "changePct": 35.596638,
+      "change": 10.59,
+      "volume": 4449078,
+      "marketCap": 2083943424
+    },
     {
       "symbol": "ATAI",
       "shortName": "AtaiBeckley Inc.",
@@ -18,6 +27,15 @@
       "change": 12.63,
       "volume": 4907870,
       "marketCap": 2402104320
+    },
+    {
+      "symbol": "MAAS",
+      "shortName": "Maase Inc.",
+      "price": 20.95,
+      "changePct": 26.43332,
+      "change": 4.380001,
+      "volume": 591327,
+      "marketCap": 9263579136
     },
     {
       "symbol": "RHI",
@@ -207,24 +225,6 @@
       "change": 10.139999,
       "volume": 355833,
       "marketCap": 3508994304
-    },
-    {
-      "symbol": "IT",
-      "shortName": "Gartner, Inc.",
-      "price": 142.89,
-      "changePct": 6.82566,
-      "change": 9.13,
-      "volume": 1030765,
-      "marketCap": 9566754816
-    },
-    {
-      "symbol": "BKD",
-      "shortName": "Brookdale Senior Living Inc.",
-      "price": 15.28,
-      "changePct": 6.70391,
-      "change": 0.96,
-      "volume": 8058228,
-      "marketCap": 3649149952
     }
   ],
   "losers": [
@@ -236,6 +236,15 @@
       "change": -11.299999,
       "volume": 52709876,
       "marketCap": 21350731776
+    },
+    {
+      "symbol": "MXL",
+      "shortName": "MaxLinear, Inc",
+      "price": 74.4,
+      "changePct": -16.253935,
+      "change": -14.439995,
+      "volume": 3816956,
+      "marketCap": 6662219776
     },
     {
       "symbol": "EROC",
@@ -272,15 +281,6 @@
       "change": -1.48,
       "volume": 28255244,
       "marketCap": 5368679936
-    },
-    {
-      "symbol": "NBIS",
-      "shortName": "Nebius Group N.V.",
-      "price": 171.77,
-      "changePct": -13.90406,
-      "change": -27.73999,
-      "volume": 24829063,
-      "marketCap": 43612094464
     },
     {
       "symbol": "SKHY",
@@ -328,15 +328,6 @@
       "marketCap": 208966483968
     },
     {
-      "symbol": "RKLB",
-      "shortName": "Rocket Lab Corporation",
-      "price": 67.35,
-      "changePct": -11.614171,
-      "change": -8.849998,
-      "volume": 30587851,
-      "marketCap": 42081542144
-    },
-    {
       "symbol": "VICR",
       "shortName": "Vicor Corporation",
       "price": 230.41,
@@ -344,15 +335,6 @@
       "change": -29.790009,
       "volume": 879085,
       "marketCap": 10502412288
-    },
-    {
-      "symbol": "NVTS",
-      "shortName": "Navitas Semiconductor Corporati",
-      "price": 11.755,
-      "changePct": -11.416732,
-      "change": -1.5150003,
-      "volume": 14864772,
-      "marketCap": 2862990336
     },
     {
       "symbol": "PL",
@@ -452,6 +434,24 @@
       "change": -0.91,
       "volume": 17127275,
       "marketCap": 2018074112
+    },
+    {
+      "symbol": "LUNR",
+      "shortName": "Intuitive Machines, Inc.",
+      "price": 13.44,
+      "changePct": -9.494954,
+      "change": -1.4100008,
+      "volume": 13327235,
+      "marketCap": 2156478976
+    },
+    {
+      "symbol": "HIMS",
+      "shortName": "Hims & Hers Health, Inc.",
+      "price": 33.68,
+      "changePct": -9.38929,
+      "change": -3.49,
+      "volume": 12954989,
+      "marketCap": 7795495424
     }
   ],
   "actives": [
@@ -573,15 +573,6 @@
       "marketCap": 2999398656
     },
     {
-      "symbol": "NFLX",
-      "shortName": "Netflix, Inc.",
-      "price": 74.35,
-      "changePct": 0.90933514,
-      "change": 0.66999817,
-      "volume": 64570712,
-      "marketCap": 313072877568
-    },
-    {
       "symbol": "AAPL",
       "shortName": "Apple Inc.",
       "price": 333.26,
@@ -636,6 +627,15 @@
       "marketCap": 7219938816
     },
     {
+      "symbol": "MU",
+      "shortName": "Micron Technology, Inc.",
+      "price": 853.2,
+      "changePct": -5.6486945,
+      "change": -51.080017,
+      "volume": 45784925,
+      "marketCap": 963598221312
+    },
+    {
       "symbol": "LCID",
       "shortName": "Lucid Group, Inc.",
       "price": 6.46,
@@ -643,15 +643,6 @@
       "change": 0.5100002,
       "volume": 45435548,
       "marketCap": 2521058816
-    },
-    {
-      "symbol": "AMZN",
-      "shortName": "Amazon.com, Inc.",
-      "price": 249.89,
-      "changePct": -1.9885501,
-      "change": -5.0700073,
-      "volume": 44640934,
-      "marketCap": 2688094044160
     },
     {
       "symbol": "PFE",
@@ -663,22 +654,31 @@
       "marketCap": 143284027392
     },
     {
-      "symbol": "GOOGL",
-      "shortName": "Alphabet Inc.",
-      "price": 354.46,
-      "changePct": -4.43762,
-      "change": -16.460022,
-      "volume": 40951931,
-      "marketCap": 4325323833344
+      "symbol": "MARA",
+      "shortName": "MARA Holdings, Inc.",
+      "price": 11.42,
+      "changePct": -7.0789247,
+      "change": -0.8699999,
+      "volume": 43961566,
+      "marketCap": 4354108928
     },
     {
-      "symbol": "RIVN",
-      "shortName": "Rivian Automotive, Inc.",
-      "price": 17.09,
-      "changePct": -3.9887593,
-      "change": -0.7099991,
-      "volume": 40648684,
-      "marketCap": 24735528960
+      "symbol": "IREN",
+      "shortName": "IREN LIMITED",
+      "price": 34.83,
+      "changePct": -9.012531,
+      "change": -3.449997,
+      "volume": 40499325,
+      "marketCap": 12447500288
+    },
+    {
+      "symbol": "HL",
+      "shortName": "Hecla Mining Company",
+      "price": 14.52,
+      "changePct": -6.0802,
+      "change": -0.94,
+      "volume": 39941660,
+      "marketCap": 9738743808
     }
   ]
 }
