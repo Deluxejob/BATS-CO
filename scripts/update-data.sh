@@ -141,9 +141,35 @@ for sym in AAPL MSFT NVDA AMZN GOOGL META BRK-B TSLA LLY JPM AVGO COST NFLX; do
   fetch_yahoo_daily "$sym" "$DATA_DIR/top10/$fname" "946684800"  # 2000-01-01
 done
 
-# --- Market Ratios page: crypto-adjacent tickers ---
-# Used by the Crypto section of market-ratios.html.
+# --- Market Ratios page — every symbol used by a card on market-ratios.html ---
 mkdir -p "$DATA_DIR/ratios"
+# Breadth & Strength
+fetch_yahoo_daily "MAGS" "$DATA_DIR/ratios/mags.csv" "1681171200"  # 2023-04-11 (MAGS inception)
+fetch_yahoo_daily "RSPD" "$DATA_DIR/ratios/rspd.csv" "1162857600"  # 2006-11-07
+fetch_yahoo_daily "RSPT" "$DATA_DIR/ratios/rspt.csv" "1162857600"  # 2006-11-07
+fetch_yahoo_daily "RSPS" "$DATA_DIR/ratios/rsps.csv" "1162857600"  # 2006-11-07
+fetch_yahoo_daily "VUG"  "$DATA_DIR/ratios/vug.csv"  "1075420800"  # 2004-01-30
+fetch_yahoo_daily "VTV"  "$DATA_DIR/ratios/vtv.csv"  "1075420800"  # 2004-01-30
+fetch_yahoo_daily "IWB"  "$DATA_DIR/ratios/iwb.csv"  "958953600"   # 2000-05-19
+fetch_yahoo_daily "DIA"  "$DATA_DIR/ratios/dia.csv"  "946857600"   # 2000-01-03
+# Risk-on / Risk-off
+fetch_yahoo_daily "SHY"  "$DATA_DIR/ratios/shy.csv"  "1027987200"  # 2002-07-30
+fetch_yahoo_daily "IEF"  "$DATA_DIR/ratios/ief.csv"  "1027987200"  # 2002-07-30
+# Sector relative strength
+fetch_yahoo_daily "SPHB" "$DATA_DIR/ratios/sphb.csv" "1304553600"  # 2011-05-05
+fetch_yahoo_daily "SPLV" "$DATA_DIR/ratios/splv.csv" "1304553600"  # 2011-05-05
+fetch_yahoo_daily "MTUM" "$DATA_DIR/ratios/mtum.csv" "1366243200"  # 2013-04-18
+fetch_yahoo_daily "SPHD" "$DATA_DIR/ratios/sphd.csv" "1351209600"  # 2012-10-26
+# Commodities & inflation
+fetch_yahoo_daily "DBC"  "$DATA_DIR/ratios/dbc.csv"  "1139184000"  # 2006-02-06
+fetch_yahoo_daily "GDX"  "$DATA_DIR/ratios/gdx.csv"  "1148256000"  # 2006-05-22
+fetch_yahoo_daily "TIP"  "$DATA_DIR/ratios/tip.csv"  "1070582400"  # 2003-12-05
+fetch_yahoo_daily "HG=F" "$DATA_DIR/ratios/copper.csv" "967593600" # 2000-08-30 (Copper futures)
+fetch_yahoo_daily "XME"  "$DATA_DIR/ratios/xme.csv"  "1150934400"  # 2006-06-22
+# Global vs US
+fetch_yahoo_daily "VEA"  "$DATA_DIR/ratios/vea.csv"  "1185408000"  # 2007-07-26
+fetch_yahoo_daily "FXI"  "$DATA_DIR/ratios/fxi.csv"  "1097193600"  # 2004-10-08
+# Crypto (Crypto section of market-ratios.html)
 fetch_yahoo_daily "MSTR" "$DATA_DIR/ratios/mstr.csv" "946857600"   # 2000-01-03
 fetch_yahoo_daily "IBIT" "$DATA_DIR/ratios/ibit.csv" "1704931200"  # 2024-01-11 (spot BTC ETF)
 fetch_yahoo_daily "ETHA" "$DATA_DIR/ratios/etha.csv" "1721692800"  # 2024-07-23 (spot ETH ETF)

@@ -447,345 +447,68 @@
       </div>
     </section>
 
-    <!-- RATIOS: GOLD/SILVER + SPX/GOLD + GOLD/OIL + VTI/VEU (US vs intl) -->
-    <section id="ratios">
+    <!-- Section shells populated at runtime by renderRatios (data-driven from RATIOS_BY_SECTION).
+         Static markup here only defines the section header + grid container; cards are appended by JS. -->
+    <section id="ratiosBreadth">
       <div class="section-head">
-        <h2>Ratios &amp; spreads</h2>
+        <h2>Stock Market Breadth &amp; Strength</h2>
         <p>
-          Four long-running cross-market signals: precious-metals contrarian pair,
-          stocks-vs-gold risk appetite, commodities stress, and US vs. international
-          equity leadership.
+          How broad the rally is, and where the leadership is concentrated.
+          Rising ratios here typically mean megacaps, growth, or big-index
+          leadership; falling ratios mean small caps, value, or broad
+          participation catching up.
         </p>
       </div>
-      <div class="ratios-grid">
+      <div class="ratios-grid" data-ratio-grid="breadth"></div>
+    </section>
 
-        <!-- GOLD / SILVER RATIO -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>Gold / Silver ratio</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="gsrCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Long-term median</span> <span class="rd-num" id="gsrMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="gsrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Silver ratio chart"></svg>
-          <p class="rd-note" id="gsrNote">Loading gold/silver ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              The Gold/Silver ratio measures how many ounces of silver it takes to buy one
-              ounce of gold. It's a classic contrarian tool in the precious-metals world:
-              when the ratio is unusually <strong>high</strong>, silver is cheap relative to gold and has
-              historically outperformed on the reversal; when it's unusually <strong>low</strong>,
-              silver is expensive and gold tends to catch up.
-            </p>
-            <ul>
-              <li><strong>Above 90:</strong> Silver deeply undervalued vs gold. Rare &mdash; happened in the 2008 crisis, 2020 COVID, 2016 mining crash.</li>
-              <li><strong>60&ndash;80:</strong> Normal historical range. No strong signal.</li>
-              <li><strong>Below 50:</strong> Silver expensive vs gold. Historically the setup where silver's rally has run out of room.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Extremes:</strong> 2020 COVID crash pushed the ratio to ~125 (all-time high).
-              1980 Hunt-brothers silver squeeze pushed it to ~15 (all-time low).
-            </p>
-          </details>
-        </div>
-
-        <!-- S&P 500 / GOLD RATIO -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>S&P 500 / Gold ratio</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="sgrCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="sgrMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="sgrChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="S&P 500/Gold ratio chart"></svg>
-          <p class="rd-note" id="sgrNote">Loading S&P 500/gold ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              This ratio compares the S&P 500 index level to the gold price per ounce.
-              It's a barometer of investor risk appetite: how much you'd have to pay in
-              ounces of gold to buy one "share" of the S&P 500.
-            </p>
-            <ul>
-              <li><strong>Rising:</strong> stocks growing faster than gold &mdash; risk-on, corporate confidence, positive real growth expectations.</li>
-              <li><strong>Falling:</strong> gold outpacing stocks &mdash; defensive positioning, inflation hedging, or geopolitical stress.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Historical extremes:</strong>
-              1999 dot-com peak: <strong>5.5</strong> (stocks wildly overvalued vs gold).
-              1980 stagflation trough: <strong>~0.2</strong> (gold expensive, stocks depressed).
-              The ratio has trended lower recently &mdash; even though the S&P is at record highs,
-              gold's bull run has outpaced equity gains, compressing the ratio.
-            </p>
-          </details>
-        </div>
-
-        <!-- GOLD / OIL RATIO -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>Gold / Oil ratio</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="goRCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="goRMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="goRChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/Oil ratio chart"></svg>
-          <p class="rd-note" id="goRNote">Loading gold/oil ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              How many barrels of oil one ounce of gold buys. Because oil is the world's
-              growth commodity and gold is its defensive one, this ratio flags when the
-              two decouple &mdash; usually because something in the global economy is
-              breaking.
-            </p>
-            <ul>
-              <li><strong>Rising sharply:</strong> oil crashing faster than gold. Deflationary shock, demand destruction, or recession fear. Historically peaks near recession lows.</li>
-              <li><strong>Falling sharply:</strong> oil rallying faster than gold. Inflation, supply shock, or reflation trade. Common in commodity booms.</li>
-              <li><strong>Near median:</strong> normal risk regime, no strong signal.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Historical extremes:</strong>
-              April 2020 (COVID + negative oil day): <strong>~90+</strong> all-time high.
-              2008 GFC oil crash: <strong>~25</strong>.
-              1986 oil-price collapse: <strong>~30+</strong>.
-              2008 pre-GFC oil peak ($147/bbl): <strong>~6</strong>.
-            </p>
-          </details>
-        </div>
-
-        <!-- VTI / VEU RATIO — US total market vs All-World ex-US.
-             Rising = US winning; falling = international winning. -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>US vs. International (VTI / VEU)</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="vveuCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2007</span> <span class="rd-num" id="vveuMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="vveuChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="VTI/VEU ratio — US vs international stocks"></svg>
-          <p class="rd-note" id="vveuNote">Loading US/international ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              This ratio compares the price of the Vanguard Total US Stock Market ETF
-              (<strong>VTI</strong>) to the Vanguard FTSE All-World ex-US ETF
-              (<strong>VEU</strong>). It's the cleanest one-line snapshot of who's
-              winning between US stocks and everyone else &mdash; a barometer of global
-              equity leadership.
-            </p>
-            <ul>
-              <li><strong>Rising:</strong> US stocks outperforming international &mdash; earnings, tech dominance, dollar strength, or all three usually driving it.</li>
-              <li><strong>Falling:</strong> International outperforming US &mdash; often coincides with a weaker dollar, commodity booms, or US mega-cap valuations coming down.</li>
-              <li><strong>Flat/rangebound:</strong> No clear regime, roughly equal returns.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Regime history:</strong> the 2000s were a "lost decade" for US
-              stocks &mdash; international outperformed and the ratio fell. From
-              roughly 2010 onward, US mega-cap tech drove the ratio steadily higher,
-              hitting new records year after year through the mid-2020s. Sustained
-              turns in this line have historically marked multi-year leadership shifts.
-            </p>
-          </details>
-        </div>
-
-        <!-- SPY / XLF — broad market vs large financials -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>SPY / XLF — S&amp;P 500 vs large financials</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyXlfCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2003</span> <span class="rd-num" id="spyXlfMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="spyXlfChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/XLF ratio — S&P 500 vs financials sector"></svg>
-          <p class="rd-note" id="spyXlfNote">Loading SPY/XLF ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              This ratio compares the S&amp;P 500 ETF (<strong>SPY</strong>) to the Financial Select Sector SPDR
-              (<strong>XLF</strong>) &mdash; large US banks and financials. When the ratio <strong>rises</strong>,
-              the broad market is beating financials; when it <strong>falls</strong>, financials are outperforming
-              (usually because rate hikes or a strong yield curve are helping bank earnings).
-            </p>
-            <ul>
-              <li><strong>Rising sharply:</strong> financials underperforming the market &mdash; often a credit stress or recession-fear signal.</li>
-              <li><strong>Falling:</strong> financials leading &mdash; classic mid-cycle setup, healthy net-interest margins.</li>
-              <li><strong>Near median:</strong> no strong sector rotation, financials tracking the broader market.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Regime examples:</strong> 2008&ndash;2009 GFC: XLF crashed harder than SPY, ratio spiked to record highs.
-              2013&ndash;2018 rate-hike cycle: XLF outperformed, ratio drifted lower. March 2023 (SVB collapse): brief spike as regional
-              bank fear bled into large financials.
-            </p>
-          </details>
-        </div>
-
-        <!-- SPY / KRE — broad market vs regional banks -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>SPY / KRE — S&amp;P 500 vs regional banks</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyKreCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2006</span> <span class="rd-num" id="spyKreMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="spyKreChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/KRE ratio — S&P 500 vs regional banking ETF"></svg>
-          <p class="rd-note" id="spyKreNote">Loading SPY/KRE ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              Same shape as SPY/XLF but scoped to <strong>regional banks</strong> (SPDR S&amp;P Regional Banking ETF,
-              <strong>KRE</strong>). Regional banks live and die by the yield curve, commercial real-estate exposure,
-              and deposit stability &mdash; so this ratio is often the earliest tell that something is breaking in the
-              banking system.
-            </p>
-            <ul>
-              <li><strong>Rising sharply:</strong> regional banks underperforming &mdash; the classic setup before / during a banking crisis.</li>
-              <li><strong>Falling:</strong> regional banks leading &mdash; healthy credit environment, steep yield curve.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Extremes:</strong> March 2020 COVID crash: KRE fell twice as hard as SPY, ratio spiked.
-              March 2023 SVB / Signature / First Republic collapses: sharpest single-month move ever in this series.
-              A watch-list ratio when the yield curve is flat or inverted.
-            </p>
-          </details>
-        </div>
-
-        <!-- SPY / EEM — US vs emerging markets -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>SPY / EEM — US vs emerging markets</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyEemCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2003</span> <span class="rd-num" id="spyEemMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="spyEemChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/EEM ratio — US vs emerging markets"></svg>
-          <p class="rd-note" id="spyEemNote">Loading SPY/EEM ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              How US equities are doing against <strong>emerging markets</strong> (iShares MSCI Emerging Markets ETF,
-              <strong>EEM</strong>). This is the classic dollar-cycle chart: EM tends to win when the dollar is
-              weakening and commodities are rising, and US tends to win when the dollar is strong and tech leads.
-            </p>
-            <ul>
-              <li><strong>Rising:</strong> US outperforming EM &mdash; strong dollar, US mega-cap tech leadership, or EM-specific stress (China, Russia, Turkey).</li>
-              <li><strong>Falling:</strong> EM outperforming &mdash; weaker dollar, commodity booms, cheaper EM valuations catching up.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Regime history:</strong> 2003&ndash;2010 was an EM decade &mdash; the ratio fell as commodity-driven EM economies
-              (China, Brazil, Russia) surged. 2011&ndash;present has been a US decade &mdash; mega-cap tech drove the ratio higher
-              year after year, punctuated by brief EM rallies during dollar-weak periods.
-            </p>
-          </details>
-        </div>
-
-        <!-- SPY / MCHI — US vs China -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>SPY / MCHI — US vs China</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="spyMchiCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2011</span> <span class="rd-num" id="spyMchiMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="spyMchiChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="SPY/MCHI ratio — US vs China"></svg>
-          <p class="rd-note" id="spyMchiNote">Loading SPY/MCHI ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              How the S&amp;P 500 is doing against <strong>China</strong> (iShares MSCI China ETF, <strong>MCHI</strong>,
-              which tracks the mainland &amp; Hong Kong-listed large caps). Historically the single largest
-              driver of the EM ratio, isolated here on its own.
-            </p>
-            <ul>
-              <li><strong>Rising sharply:</strong> China underperforming &mdash; often regulatory crackdowns, real-estate stress, or geopolitical friction.</li>
-              <li><strong>Falling:</strong> China outperforming &mdash; policy stimulus, easing tensions, or a value-rotation trade.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Regime shift:</strong> the ratio was roughly range-bound 2011&ndash;2020. From late 2020 onward it broke sharply higher
-              on the tech regulatory crackdown, Evergrande / real-estate crisis, and delisting-fear headlines. Watch for sustained downturns as a
-              contrarian sign that China is bottoming.
-            </p>
-          </details>
-        </div>
-
-        <!-- XLY / XLP — Consumer Discretionary vs Consumer Staples -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>XLY / XLP — Discretionary vs Staples</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="xlyXlpCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 1998</span> <span class="rd-num" id="xlyXlpMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="xlyXlpChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="XLY/XLP ratio — Consumer Discretionary vs Consumer Staples"></svg>
-          <p class="rd-note" id="xlyXlpNote">Loading XLY/XLP ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              The classic <strong>risk-on / risk-off</strong> ratio for the US consumer.
-              XLY holds discretionary spenders (Amazon, Tesla, Home Depot, McDonald&rsquo;s);
-              XLP holds the staples (Procter &amp; Gamble, Coca-Cola, Walmart).
-              When the ratio <strong>rises</strong>, people are spending on wants over needs
-              &mdash; typically strong-economy behavior. When it <strong>falls</strong>,
-              money rotates to defensive staples &mdash; recession-fear behavior.
-            </p>
-            <ul>
-              <li><strong>Rising:</strong> risk-on rotation, healthy consumer, expansion phase.</li>
-              <li><strong>Falling:</strong> defensive rotation, recession fear, contraction phase.</li>
-              <li><strong>Sharp downturn:</strong> often precedes broader market weakness by weeks to months.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Long-term drift:</strong> The ratio has trended steadily higher since the 2009 GFC
-              lows, mostly because Amazon and Tesla dominate XLY. Focus on medium-term trend changes rather than the absolute level.
-              This same ratio also appears on the Consumer page in a different framing.
-            </p>
-          </details>
-        </div>
-
-        <!-- GOLD / DXY — precious metal vs the dollar it's priced in -->
-        <div class="card">
-          <div class="rd-card-head">
-            <h3>Gold / DXY — Gold vs US Dollar Index</h3>
-            <div class="rd-key-yields">
-              <div><span class="rd-lbl">Current</span> <span class="rd-num" id="goldDxyCurrent">&ndash;</span></div>
-              <div><span class="rd-lbl">Median since 2000</span> <span class="rd-num" id="goldDxyMedian">&ndash;</span></div>
-            </div>
-          </div>
-          <svg id="goldDxyChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="Gold/DXY ratio — gold vs US Dollar Index"></svg>
-          <p class="rd-note" id="goldDxyNote">Loading gold/dollar ratio&hellip;</p>
-          <details class="ratio-explainer">
-            <summary>How to read this</summary>
-            <p>
-              Gold is priced in dollars, so the two move against each other by definition
-              &mdash; but the relationship isn&rsquo;t always tight. When both are rising
-              (a &ldquo;dollar-and-gold&rdquo; regime), it usually signals stress in the
-              global financial system: everyone flees to hard assets AND US-dollar cash
-              at the same time. This ratio isolates gold&rsquo;s <em>real</em> strength
-              after removing dollar moves.
-            </p>
-            <ul>
-              <li><strong>Rising:</strong> gold outpacing the dollar &mdash; classic inflation-hedge / safe-haven demand, weakening-dollar regime.</li>
-              <li><strong>Falling:</strong> dollar strengthening faster than gold rises (or gold falling as dollar rallies) &mdash; deflationary / strong-dollar regime.</li>
-              <li><strong>Both rising together:</strong> read the note &mdash; the ratio can be flat while both assets rally, which is the &ldquo;financial stress&rdquo; setup.</li>
-            </ul>
-            <p class="ratio-history">
-              <strong>Regime examples:</strong> 2003&ndash;2011 was a huge run for the ratio &mdash; gold went from
-              ~$300 to $1900 while the dollar mostly weakened. 2011&ndash;2015 saw a sharp reversal (dollar rally,
-              gold correction). 2020&ndash;present: the ratio broke to new all-time highs as gold set records
-              even against a relatively firm dollar.
-            </p>
-          </details>
-        </div>
-
+    <section id="ratiosRiskOnOff">
+      <div class="section-head">
+        <h2>Risk-On vs Risk-Off Sentiment</h2>
+        <p>
+          Which side of the risk trade the market is favoring right now.
+          Rising = risk assets leading their safer counterparts; falling =
+          money rotating defensive.
+        </p>
       </div>
+      <div class="ratios-grid" data-ratio-grid="riskonoff"></div>
+    </section>
+
+    <section id="ratiosSectorStrength">
+      <div class="section-head">
+        <h2>Sector Relative Strength</h2>
+        <p>
+          Sector-by-sector performance measured against the broad market or a
+          direct peer. Rising ratios = sector outperforming; falling ratios =
+          sector lagging.
+        </p>
+      </div>
+      <div class="ratios-grid" data-ratio-grid="sectorstrength"></div>
+    </section>
+
+    <section id="ratiosCommodities">
+      <div class="section-head">
+        <h2>Commodity &amp; Inflation Indicators</h2>
+        <p>
+          Cross-asset ratios that track inflation, real-economy stress, and
+          the balance between commodities and paper assets. Uses futures for
+          gold, silver, oil, and copper &mdash; not ETF proxies &mdash; for
+          the cleanest long-horizon histories.
+        </p>
+      </div>
+      <div class="ratios-grid" data-ratio-grid="commodities"></div>
+    </section>
+
+    <section id="ratiosGlobal">
+      <div class="section-head">
+        <h2>Global vs U.S. Market Strength</h2>
+        <p>
+          How U.S. equities are doing against the rest of the world.
+          Rising = U.S. dominant, falling = international / emerging markets
+          taking the lead.
+        </p>
+      </div>
+      <div class="ratios-grid" data-ratio-grid="global"></div>
     </section>
 
     <!-- CRYPTO — MSTR/IBIT (Strategy vs BTC) + BMNR/ETHA (Bitmine vs ETH).
@@ -976,36 +699,436 @@
       return out;
     }
 
-    let gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr, gsol;
-    try {
-      [gold, silver, spx, oil, vti, veu, spy, xlf, kre, eem, mchi, dxy, xly, xlp, mstr, ibit, etha, bmnr, gsol] = await Promise.all([
-        loadCsv('data/gold.csv'),
-        loadCsv('data/silver.csv'),
-        loadCsv('data/spx.csv'),
-        loadCsv('data/oil.csv'),
-        loadCsv('data/vti.csv'),
-        loadCsv('data/veu.csv'),
-        loadCsv('data/spy.csv'),
-        loadCsv('data/sectors/xlf.csv'),
-        loadCsv('data/kre.csv'),
-        loadCsv('data/eem.csv'),
-        loadCsv('data/mchi.csv'),
-        loadCsv('data/dxy.csv'),
-        loadCsv('data/sectors/xly.csv'),
-        loadCsv('data/sectors/xlp.csv'),
-        loadCsv('data/ratios/mstr.csv'),
-        loadCsv('data/ratios/ibit.csv'),
-        loadCsv('data/ratios/etha.csv'),
-        loadCsv('data/ratios/bmnr.csv'),
-        loadCsv('data/ratios/gsol.csv'),
-      ]);
-    } catch (e) {
-      ['gsrNote','sgrNote','goRNote','vveuNote','spyXlfNote','spyKreNote','spyEemNote','spyMchiNote','xlyXlpNote','goldDxyNote','mstrIbitNote','bmnrEthaNote','ethaIbitNote','ethaGsolNote'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = 'Failed to load ratio data.';
-      });
-      return;
+    // File-path map: every CSV any ratio card reads. Keys are the short slugs
+    // used in RATIOS_BY_SECTION below; add a new (key, path) pair before
+    // referencing it from a ratio config entry.
+    const FILE_MAP = {
+      spy:'data/spy.csv', rsp:'data/rsp.csv', qqq:'data/qqq.csv', iwm:'data/iwm.csv',
+      dia:'data/ratios/dia.csv', mags:'data/ratios/mags.csv',
+      rspd:'data/ratios/rspd.csv', rspt:'data/ratios/rspt.csv', rsps:'data/ratios/rsps.csv',
+      vug:'data/ratios/vug.csv', vtv:'data/ratios/vtv.csv',
+      iwb:'data/ratios/iwb.csv',
+      // Bonds / risk-on-off
+      tlt:'data/tlt.csv', hyg:'data/hyg.csv',
+      ief:'data/ratios/ief.csv', shy:'data/ratios/shy.csv', tip:'data/ratios/tip.csv',
+      // Sectors
+      xlf:'data/sectors/xlf.csv', xlk:'data/sectors/xlk.csv', xle:'data/sectors/xle.csv',
+      xlv:'data/sectors/xlv.csv', xli:'data/sectors/xli.csv',
+      xly:'data/sectors/xly.csv', xlp:'data/sectors/xlp.csv',
+      kre:'data/kre.csv',
+      sphb:'data/ratios/sphb.csv', splv:'data/ratios/splv.csv',
+      mtum:'data/ratios/mtum.csv', sphd:'data/ratios/sphd.csv',
+      // Commodities / futures
+      gold:'data/gold.csv', silver:'data/silver.csv', oil:'data/oil.csv',
+      copper:'data/ratios/copper.csv',
+      dbc:'data/ratios/dbc.csv', gdx:'data/ratios/gdx.csv',
+      xme:'data/ratios/xme.csv',
+      spx:'data/spx.csv', dxy:'data/dxy.csv',
+      // Global
+      vti:'data/vti.csv', veu:'data/veu.csv',
+      eem:'data/eem.csv', vea:'data/ratios/vea.csv',
+      fxi:'data/ratios/fxi.csv', mchi:'data/mchi.csv',
+      // Crypto (Crypto section cards)
+      mstr:'data/ratios/mstr.csv', ibit:'data/ratios/ibit.csv',
+      etha:'data/ratios/etha.csv', gsol:'data/ratios/gsol.csv',
+      bmnr:'data/ratios/bmnr.csv',
+    };
+
+    // Ratio config, grouped by section (matches data-ratio-grid attrs in HTML).
+    // Each entry: {slug, num, den, title, subtitle, digits, color, medianLabel,
+    //   p:{h,mh,ml,l}, explainer:html-string}
+    // slug is used as an ID prefix for the card's DOM elements (currentId,
+    // medianId, chartId, noteId). Keep it unique across the whole page.
+    const RATIOS_BY_SECTION = {
+      breadth: [
+        { slug:'spyRsp', num:'spy', den:'rsp', title:'SPY / RSP',
+          subtitle:'S&P 500 cap-weight vs equal-weight',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2003',
+          p:{h:'stretched — megacaps dominating, narrow tape',
+             mh:'above median — megacaps leading',
+             ml:'below median — broader market participating',
+             l:'compressed — broad market outrunning megacaps'},
+          explainer:'<p>SPY is the cap-weighted S&P 500 (top ~20 stocks dominate). RSP weights every S&P 500 stock equally (~0.2% each). When the ratio rises, megacaps are pulling the index up while the average stock lags — narrow leadership. When it falls, breadth is broadening.</p>' },
+        { slug:'qqqIwm', num:'qqq', den:'iwm', title:'QQQ / IWM',
+          subtitle:'Nasdaq 100 vs Russell 2000 (growth vs small-cap)',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2000',
+          p:{h:'stretched — large-cap growth crushing small caps',
+             mh:'above median — Nasdaq leadership',
+             ml:'below median — small caps leading',
+             l:'compressed — small caps in strong leadership'},
+          explainer:'<p>Large-cap growth (QQQ, Nasdaq 100) versus small-cap broad market (IWM, Russell 2000). Rising = growth/tech dominance; falling = risk-on small-cap rotation.</p><ul><li><strong>Rising sharply:</strong> classic late-cycle mega-cap concentration</li><li><strong>Falling:</strong> broadening participation, small-caps catching up</li></ul>' },
+        { slug:'diaIwm', num:'dia', den:'iwm', title:'DIA / IWM',
+          subtitle:'Dow Jones (blue chips) vs Russell 2000 (small caps)',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2000',
+          p:{h:'stretched — blue chips crushing small caps, defensive tone',
+             mh:'above median — large-cap value leading',
+             ml:'below median — small caps leading',
+             l:'compressed — small caps sharply outrunning blue chips'},
+          explainer:'<p>Blue-chip industrials (DIA, Dow Jones 30) versus small caps (IWM). Rising = flight to quality / defensive; falling = risk-on small-cap surge. Different flavor from QQQ/IWM — DIA is less growth-heavy.</p>' },
+        { slug:'magsSpy', num:'mags', den:'spy', title:'MAGS / SPY',
+          subtitle:'Magnificent 7 vs S&P 500',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2023',
+          p:{h:'stretched — Mag 7 sharply outrunning the index',
+             mh:'above median — Mag 7 dominance',
+             ml:'below median — Mag 7 lagging',
+             l:'compressed — Mag 7 sharply underperforming, rotation away from mega-tech'},
+          explainer:'<p>Purest measure of megacap tech dominance. MAGS holds the &ldquo;Magnificent 7&rdquo; (AAPL, MSFT, NVDA, GOOG, AMZN, META, TSLA) equal-weighted. Rising ratio = the tech giants are pulling the whole index; falling = the rally is broadening beyond them.</p>' },
+        { slug:'rspdRsp', num:'rspd', den:'rsp', title:'RSPD / RSP',
+          subtitle:'Equal-weight Consumer Discretionary vs Equal-weight S&P',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2006',
+          p:{h:'stretched — discretionary strongly outperforming the average stock',
+             mh:'above median — discretionary leading',
+             ml:'below median — discretionary lagging',
+             l:'compressed — discretionary sharply underperforming, defensive rotation'},
+          explainer:'<p>Equal-weighted consumer discretionary (RSPD) vs the equal-weighted S&P (RSP). Isolates the discretionary trade from mega-cap bias &mdash; strong signal for the risk-on consumer.</p>' },
+        { slug:'rsptRsp', num:'rspt', den:'rsp', title:'RSPT / RSP',
+          subtitle:'Equal-weight Tech vs Equal-weight S&P',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2006',
+          p:{h:'stretched — tech broadly outperforming, growth-favoring regime',
+             mh:'above median — tech leadership',
+             ml:'below median — tech lagging',
+             l:'compressed — tech sharply underperforming'},
+          explainer:'<p>Equal-weighted tech (RSPT) vs the equal-weighted S&P (RSP). Same idea as RSPD/RSP but for tech &mdash; and importantly not distorted by the Mag 7 weightings.</p>' },
+        { slug:'vugVtv', num:'vug', den:'vtv', title:'VUG / VTV',
+          subtitle:'Growth vs Value',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2004',
+          p:{h:'stretched — growth sharply beating value, aggressive growth regime',
+             mh:'above median — growth leadership',
+             ml:'below median — value leadership',
+             l:'compressed — value sharply outperforming growth, style rotation'},
+          explainer:'<p>The purest growth-vs-value read. VUG holds Vanguard\'s growth-tilted large caps; VTV holds the value-tilted large caps. Rising = growth winning (usually mega-cap tech); falling = value catching up (financials, energy, industrials leading).</p>' },
+        { slug:'iwmIwb', num:'iwm', den:'iwb', title:'IWM / IWB',
+          subtitle:'Russell 2000 (small caps) vs Russell 1000 (large caps)',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2000',
+          p:{h:'stretched — small caps sharply outrunning large caps, aggressive risk-on',
+             mh:'above median — small caps leading',
+             ml:'below median — large caps leading',
+             l:'compressed — small caps sharply underperforming, quality rotation'},
+          explainer:'<p>Small caps (Russell 2000) vs large caps (Russell 1000). Rising = risk-on small-cap surge; falling = flight to quality / large-cap defensive rotation.</p>' },
+      ],
+      riskonoff: [
+        { slug:'spyTlt', num:'spy', den:'tlt', title:'SPY / TLT',
+          subtitle:'Stocks vs long-term Treasury bonds',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2003',
+          p:{h:'stretched — stocks sharply outrunning bonds, aggressive risk-on',
+             mh:'above median — stocks winning vs bonds',
+             ml:'below median — bonds winning vs stocks',
+             l:'compressed — bonds sharply outperforming stocks, deep risk-off'},
+          explainer:'<p>The classic risk-on/off pair. Stocks (SPY) vs long-duration Treasuries (TLT). Rising = money flowing out of bonds into stocks; falling = the reverse. Deep drops in this ratio have historically clustered around recessions.</p>' },
+        { slug:'hygIef', num:'hyg', den:'ief', title:'HYG / IEF',
+          subtitle:'High-yield bonds vs intermediate Treasuries',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2007',
+          p:{h:'stretched — high-yield sharply outperforming, credit-appetite peak',
+             mh:'above median — credit appetite healthy',
+             ml:'below median — credit softening, defensive tone',
+             l:'compressed — high-yield sharply underperforming, credit stress'},
+          explainer:'<p>Junk bonds (HYG) vs risk-free intermediate Treasuries (IEF). This is a pure credit-spread signal &mdash; when it falls sharply, credit markets are widening spreads on junk, which historically precedes broader equity weakness by weeks to months.</p>' },
+        { slug:'xlyXlp', num:'xly', den:'xlp', title:'XLY / XLP',
+          subtitle:'Consumer Discretionary vs Consumer Staples',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 1998',
+          p:{h:'stretched — risk-on rotation, aggressive consumer',
+             mh:'above median — expansion behavior, discretionary leading',
+             ml:'below median — defensive rotation, staples leading',
+             l:'compressed — deep risk-off, classic recession-fear behavior'},
+          explainer:'<p>The classic risk-on/off ratio for the US consumer. XLY holds discretionary spenders (Amazon, Tesla, Home Depot); XLP holds staples (P&G, Coca-Cola, Walmart). Rising = wants over needs (expansion); falling = defensive rotation.</p>' },
+        { slug:'iwmShy', num:'iwm', den:'shy', title:'IWM / SHY',
+          subtitle:'Small caps vs short-term Treasuries',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2002',
+          p:{h:'stretched — small caps sharply beating cash-like Treasuries',
+             mh:'above median — small caps winning vs cash equivalents',
+             ml:'below median — investors preferring T-bills over small-cap risk',
+             l:'compressed — small caps sharply underperforming cash, aggressive risk-off'},
+          explainer:'<p>Small-cap equity risk (IWM) vs essentially cash (SHY = 1-3 year Treasuries). Rising = investors leaving the safety of short-duration bonds for the highest-beta equity slice; falling = the reverse.</p>' },
+      ],
+      sectorstrength: [
+        { slug:'xlfSpy', num:'xlf', den:'spy', title:'XLF / SPY',
+          subtitle:'Financials vs S&P 500',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 1998',
+          p:{h:'stretched — financials sharply outperforming', mh:'above median — financials leading',
+             ml:'below median — financials lagging', l:'compressed — financials sharply underperforming'},
+          explainer:'<p>Financials sector vs broad market. Rising = financials leadership (usually rising rates, healthy credit); falling = financials lagging (credit stress or defensive rotation).</p>' },
+        { slug:'kreSpy', num:'kre', den:'spy', title:'KRE / SPY',
+          subtitle:'Regional banks vs S&P 500',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2006',
+          p:{h:'stretched — regional banks sharply outperforming', mh:'above median — regional banks leading',
+             ml:'below median — regional banks lagging, watch for stress',
+             l:'compressed — regional banks sharply underperforming, banking stress signal'},
+          explainer:'<p>Regional banks (KRE) vs broad market. Regional banks live and die by the yield curve and commercial real estate &mdash; sharp drops here are often the earliest tell of banking-system stress (2020 COVID, 2023 SVB era).</p>' },
+        { slug:'xlvSpy', num:'xlv', den:'spy', title:'XLV / SPY',
+          subtitle:'Healthcare vs S&P 500',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 1998',
+          p:{h:'stretched — healthcare sharply outperforming, defensive/late-cycle',
+             mh:'above median — healthcare leading',
+             ml:'below median — healthcare lagging',
+             l:'compressed — healthcare sharply underperforming, aggressive risk-on'},
+          explainer:'<p>Healthcare vs broad market. Healthcare is one of the classic defensive sectors &mdash; rising ratio often signals defensive rotation and late-cycle behavior; falling = risk-on rotation.</p>' },
+        { slug:'xleSpy', num:'xle', den:'spy', title:'XLE / SPY',
+          subtitle:'Energy vs S&P 500',
+          digits:3, color:'#f4b942', medianLabel:'Median since 1998',
+          p:{h:'stretched — energy sharply outperforming, inflation/oil-boom regime',
+             mh:'above median — energy leading',
+             ml:'below median — energy lagging',
+             l:'compressed — energy sharply underperforming, oil-bust regime'},
+          explainer:'<p>Energy sector vs broad market. Directly tied to crude oil prices and inflation. Rising = commodities-favoring regime; falling = deflationary / oil-glut regime.</p>' },
+        { slug:'xlkSpy', num:'xlk', den:'spy', title:'XLK / SPY',
+          subtitle:'Technology vs S&P 500',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 1998',
+          p:{h:'stretched — tech sharply outperforming, growth-dominant regime',
+             mh:'above median — tech leadership',
+             ml:'below median — tech lagging',
+             l:'compressed — tech sharply underperforming, style rotation to value'},
+          explainer:'<p>Technology sector vs broad market. Rising = growth/tech leadership (2020-2024 pattern); falling = rotation to value / cyclical sectors.</p>' },
+        { slug:'xliSpy', num:'xli', den:'spy', title:'XLI / SPY',
+          subtitle:'Industrials vs S&P 500',
+          digits:3, color:'#f4b942', medianLabel:'Median since 1998',
+          p:{h:'stretched — industrials sharply outperforming, cyclical expansion',
+             mh:'above median — industrials leading, healthy economy',
+             ml:'below median — industrials lagging, growth concerns',
+             l:'compressed — industrials sharply underperforming, recession fear'},
+          explainer:'<p>Industrials vs broad market. Industrials are highly economically-sensitive &mdash; strong industrials leadership signals healthy real-economy demand.</p>' },
+        { slug:'rspdRsps', num:'rspd', den:'rsps', title:'RSPD / RSPS',
+          subtitle:'Equal-weight Discretionary vs Equal-weight Staples',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2006',
+          p:{h:'stretched — aggressive risk-on rotation across average consumer names',
+             mh:'above median — discretionary winning across the average name',
+             ml:'below median — staples winning, defensive rotation',
+             l:'compressed — deep risk-off across average consumer names'},
+          explainer:'<p>Same risk-on/off idea as XLY/XLP but equal-weighted &mdash; strips out the Amazon-and-Tesla distortion. When this and XLY/XLP both signal defensive, the risk-off is broad-based across the sector.</p>' },
+        { slug:'sphbSplv', num:'sphb', den:'splv', title:'SPHB / SPLV',
+          subtitle:'High-beta vs Low-volatility S&P 500',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2011',
+          p:{h:'stretched — high-beta stocks sharply outperforming, aggressive risk-on',
+             mh:'above median — high-beta leading',
+             ml:'below median — low-vol leading, defensive tone',
+             l:'compressed — deep risk-off, capitulation regime'},
+          explainer:'<p>High-beta names (SPHB) vs low-volatility names (SPLV) within the S&P 500. Cleanest measure of risk-appetite within a single index. Rising = investors chasing beta; falling = investors chasing safety.</p>' },
+        { slug:'xleTlt', num:'xle', den:'tlt', title:'XLE / TLT',
+          subtitle:'Energy vs 20+ Year Treasuries',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2002',
+          p:{h:'stretched — energy sharply beating bonds, reflation/inflation regime',
+             mh:'above median — energy winning vs long duration',
+             ml:'below median — long-duration bonds winning, disinflation regime',
+             l:'compressed — deep disinflation / recession-fear regime'},
+          explainer:'<p>Energy stocks vs long-duration Treasuries. Rising = reflation/inflation-favoring environment (commodities up, bonds down); falling = disinflation / recession fear (bonds bid, oil weak).</p>' },
+        { slug:'sphdMtum', num:'sphd', den:'mtum', title:'SPHD / MTUM',
+          subtitle:'High-dividend low-vol vs Momentum',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2013',
+          p:{h:'stretched — high-div/low-vol sharply beating momentum, style shift to income',
+             mh:'above median — income/quality winning',
+             ml:'below median — momentum winning',
+             l:'compressed — momentum sharply dominant, trend regime'},
+          explainer:'<p>High-dividend low-volatility income stocks (SPHD) vs momentum leaders (MTUM). Rising = investors rotating to income and quality; falling = momentum trade dominant.</p>' },
+      ],
+      commodities: [
+        { slug:'goldSilver', num:'gold', den:'silver', title:'Gold / Silver',
+          subtitle:'Gold futures vs silver futures',
+          digits:1, color:'#f4b942', medianLabel:'Long-term median',
+          p:{h:'stretched — silver deeply undervalued vs gold, contrarian silver setup',
+             mh:'above median — silver on the cheap side',
+             ml:'below median — silver expensive vs gold',
+             l:'compressed — silver historically frothy vs gold'},
+          explainer:'<p>How many ounces of silver buy one ounce of gold. Classic precious-metals contrarian tool. Above 90 = silver unusually cheap (bullish silver reversal setup); below 50 = silver frothy (bearish silver setup).</p>' },
+        { slug:'dbcSpx', num:'dbc', den:'spx', title:'DBC / SPX',
+          subtitle:'Diversified commodities vs S&P 500 index',
+          digits:5, color:'#64d3ff', medianLabel:'Median since 2006',
+          p:{h:'stretched — commodities strongly outperforming stocks, inflation regime',
+             mh:'above median — commodities winning',
+             ml:'below median — stocks winning',
+             l:'compressed — deep disinflation / stock-favored regime'},
+          explainer:'<p>Broad basket of commodities (DBC) vs the S&P 500 index. Rising = commodities winning (typical inflation regime); falling = stocks winning (typical disinflation regime).</p>' },
+        { slug:'gdxSpx', num:'gdx', den:'spx', title:'GDX / SPX',
+          subtitle:'Gold miners vs S&P 500 index',
+          digits:5, color:'#f4b942', medianLabel:'Median since 2006',
+          p:{h:'stretched — miners sharply beating stocks, aggressive gold-bull regime',
+             mh:'above median — miners winning',
+             ml:'below median — miners lagging',
+             l:'compressed — miners deeply underperforming, capitulation regime'},
+          explainer:'<p>Gold miners (GDX) vs S&P 500. Miners are levered plays on gold price &mdash; ratio spikes hard during gold bull markets and craters during bears.</p>' },
+        { slug:'goldTlt', num:'gold', den:'tlt', title:'Gold / TLT',
+          subtitle:'Gold futures vs 20+ Year Treasuries',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2002',
+          p:{h:'stretched — gold sharply beating bonds, inflation/safe-haven regime',
+             mh:'above median — gold winning vs long-duration',
+             ml:'below median — long-duration winning',
+             l:'compressed — deep disinflation / real-rate regime'},
+          explainer:'<p>Gold vs long-duration Treasuries. Both are &ldquo;safe-haven&rdquo; assets that respond differently to inflation. Rising = inflation regime; falling = disinflation.</p>' },
+        { slug:'oilSpx', num:'oil', den:'spx', title:'Oil / SPX',
+          subtitle:'Crude oil futures vs S&P 500 index',
+          digits:5, color:'#f4b942', medianLabel:'Median since 2000',
+          p:{h:'stretched — oil sharply outperforming stocks, oil-boom regime',
+             mh:'above median — oil winning vs stocks',
+             ml:'below median — stocks winning vs oil',
+             l:'compressed — deep oil-bust / demand-destruction regime'},
+          explainer:'<p>Crude oil futures vs the S&P 500. Rising = oil rally / inflation; falling = oil bust or stock boom.</p>' },
+        { slug:'tipTlt', num:'tip', den:'tlt', title:'TIP / TLT',
+          subtitle:'Inflation-Protected vs Long-Term Treasuries',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2003',
+          p:{h:'stretched — inflation protection sharply favored, rising inflation expectations',
+             mh:'above median — inflation expectations rising',
+             ml:'below median — inflation expectations falling',
+             l:'compressed — deep disinflation / deflation-fear regime'},
+          explainer:'<p>Inflation-Protected Securities (TIP) vs plain long Treasuries (TLT). Rising = market pricing in higher future inflation; falling = disinflation.</p>' },
+        { slug:'copperGold', num:'copper', den:'gold', title:'Copper / Gold',
+          subtitle:'Copper futures vs gold futures',
+          digits:5, color:'#f4b942', medianLabel:'Median since 2000',
+          p:{h:'stretched — copper sharply beating gold, aggressive growth/inflation setup',
+             mh:'above median — growth-favored regime',
+             ml:'below median — safety-favored regime',
+             l:'compressed — deep growth fear, gold flight'},
+          explainer:'<p>Growth commodity (copper) vs safety commodity (gold). Rising = global growth accelerating (Dr. Copper); falling = growth fear, flight to gold. Historically leads Treasury yields.</p>' },
+        { slug:'goldOil', num:'gold', den:'oil', title:'Gold / Oil',
+          subtitle:'Gold futures vs crude oil futures',
+          digits:1, color:'#64d3ff', medianLabel:'Median since 2000',
+          p:{h:'stretched — gold sharply outrunning oil, deflationary/recession stress',
+             mh:'above median — gold winning vs oil, defensive tone',
+             ml:'below median — oil winning vs gold, inflation/growth regime',
+             l:'compressed — deep inflation / commodity-boom regime'},
+          explainer:'<p>How many barrels of oil one ounce of gold buys. Spikes when oil crashes faster than gold (recession) or gold rallies without oil (deflation fear). Historically peaks near recession lows.</p>' },
+        { slug:'goldXme', num:'gold', den:'xme', title:'Gold / XME',
+          subtitle:'Gold futures vs Metals &amp; Mining ETF',
+          digits:2, color:'#f4b942', medianLabel:'Median since 2006',
+          p:{h:'stretched — gold sharply beating miners, safe-haven flight',
+             mh:'above median — gold winning vs base metals',
+             ml:'below median — base metals winning',
+             l:'compressed — deep base-metals boom / growth acceleration'},
+          explainer:'<p>Gold vs the broader metals-and-mining sector. When gold outruns miners, it usually signals safe-haven flight (people want the yellow metal, not levered exposure to it). Reversal signals often mark risk-appetite recovery.</p>' },
+        { slug:'dxyGold', num:'dxy', den:'gold', title:'DXY / Gold',
+          subtitle:'US Dollar Index vs gold futures',
+          digits:5, color:'#64d3ff', medianLabel:'Median since 2000',
+          p:{h:'stretched — dollar sharply outrunning gold, deflationary/strong-dollar regime',
+             mh:'above median — dollar winning',
+             ml:'below median — gold winning',
+             l:'compressed — deep weak-dollar / gold-bull regime'},
+          explainer:'<p>Dollar vs gold. The two are usually inversely correlated by definition (gold priced in dollars). Extreme readings signal regime shifts &mdash; both up together = financial system stress.</p>' },
+        { slug:'spxGold', num:'spx', den:'gold', title:'SPX / Gold',
+          subtitle:'S&P 500 index vs gold futures',
+          digits:2, color:'#f4b942', medianLabel:'Median since 2000',
+          p:{h:'stretched — stocks sharply beating gold, risk-on regime',
+             mh:'above median — stocks winning',
+             ml:'below median — gold winning',
+             l:'compressed — deep gold-favored regime, risk-off'},
+          explainer:'<p>S&P 500 vs gold. How many ounces of gold buy one &ldquo;share&rdquo; of the S&P. Barometer of investor risk appetite: rising = risk-on; falling = defensive/inflation-hedge behavior.</p>' },
+      ],
+      global: [
+        { slug:'veuVti', num:'veu', den:'vti', title:'VEU / VTI',
+          subtitle:'All-World ex-US vs Total US market',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2007',
+          p:{h:'stretched — international sharply beating US, weak-dollar regime',
+             mh:'above median — international winning',
+             ml:'below median — US winning',
+             l:'compressed — deep US dominance regime'},
+          explainer:'<p>International (ex-US) vs US total market. Rising = international outperforming (usually a weak-dollar setup); falling = US dominance (dollar-strong, US-tech-heavy regime).</p>' },
+        { slug:'eemSpy', num:'eem', den:'spy', title:'EEM / SPY',
+          subtitle:'Emerging Markets vs S&P 500',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2003',
+          p:{h:'stretched — EM sharply outrunning US, weak-dollar/commodity-boom regime',
+             mh:'above median — EM winning',
+             ml:'below median — US winning',
+             l:'compressed — deep EM stress / strong-dollar regime'},
+          explainer:'<p>Emerging Markets vs S&P 500. Classic dollar-cycle chart: EM wins in weak-dollar/commodity-boom cycles, US wins in strong-dollar/tech-boom cycles.</p>' },
+        { slug:'veaSpy', num:'vea', den:'spy', title:'VEA / SPY',
+          subtitle:'Developed International vs S&P 500',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2007',
+          p:{h:'stretched — developed international sharply outrunning US',
+             mh:'above median — developed international winning',
+             ml:'below median — US winning',
+             l:'compressed — deep US dominance vs developed markets'},
+          explainer:'<p>Developed international markets (Europe, Japan, Australia, etc.) vs US. Less volatile than the EM ratio &mdash; captures the &ldquo;boring&rdquo; version of international outperformance.</p>' },
+        { slug:'fxiSpy', num:'fxi', den:'spy', title:'FXI / SPY',
+          subtitle:'China Large-Cap vs S&P 500',
+          digits:3, color:'#f4b942', medianLabel:'Median since 2004',
+          p:{h:'stretched — China sharply outperforming US, EM rally',
+             mh:'above median — China winning',
+             ml:'below median — US winning',
+             l:'compressed — deep China stress / US dominance'},
+          explainer:'<p>China large-cap (FXI, Hong Kong-listed) vs S&P 500. Similar to MCHI but restricted to Hong Kong H-shares &mdash; more heavily tech/internet-weighted.</p>' },
+        { slug:'mchiSpy', num:'mchi', den:'spy', title:'MCHI / SPY',
+          subtitle:'MSCI China vs S&P 500',
+          digits:3, color:'#64d3ff', medianLabel:'Median since 2011',
+          p:{h:'stretched — China sharply outperforming US, EM rally',
+             mh:'above median — China winning',
+             ml:'below median — US winning',
+             l:'compressed — deep China stress, delisting fear, real-estate crisis'},
+          explainer:'<p>MSCI China (mainland + Hong Kong large caps) vs S&P 500. Broadest China exposure available. Long-run downtrend since ~2020 on regulatory crackdown + property crisis.</p>' },
+      ],
+    };
+
+    // Utility to build one card DOM node. slug becomes the ID prefix.
+    function buildCard(r) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const sub = r.subtitle
+        ? ' <span style="font-weight:400;color:var(--text-dim);font-size:0.85em">' + r.subtitle + '</span>'
+        : '';
+      card.innerHTML = `
+        <div class="rd-card-head">
+          <h3>${r.title}${sub}</h3>
+          <div class="rd-key-yields">
+            <div><span class="rd-lbl">Current</span> <span class="rd-num" id="${r.slug}Current">&ndash;</span></div>
+            <div><span class="rd-lbl">${r.medianLabel || 'Long-term median'}</span> <span class="rd-num" id="${r.slug}Median">&ndash;</span></div>
+          </div>
+        </div>
+        <svg id="${r.slug}Chart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="${r.title} ratio"></svg>
+        <p class="rd-note" id="${r.slug}Note">Loading&hellip;</p>
+        <details class="ratio-explainer">
+          <summary>How to read this</summary>
+          ${r.explainer}
+        </details>
+      `;
+      return card;
     }
+
+    // ---- Populate the 5 section grids with card DOM up-front ----
+    for (const sectionKey of Object.keys(RATIOS_BY_SECTION)) {
+      const grid = document.querySelector('[data-ratio-grid="' + sectionKey + '"]');
+      if (!grid) continue;
+      for (const r of RATIOS_BY_SECTION[sectionKey]) {
+        grid.appendChild(buildCard(r));
+      }
+    }
+
+    // ---- Gather every unique file key we need to fetch ----
+    const uniqueFiles = new Set();
+    for (const sectionKey of Object.keys(RATIOS_BY_SECTION)) {
+      for (const r of RATIOS_BY_SECTION[sectionKey]) {
+        uniqueFiles.add(r.num); uniqueFiles.add(r.den);
+      }
+    }
+    // Crypto section files (rendered by hardcoded blocks further below)
+    ['mstr','ibit','etha','gsol','bmnr'].forEach(k => uniqueFiles.add(k));
+
+    // ---- Fetch all in parallel ----
+    const dataMap = {};
+    await Promise.all([...uniqueFiles].map(async key => {
+      const path = FILE_MAP[key];
+      if (!path) { dataMap[key] = null; return; }
+      try { dataMap[key] = await loadCsv(path); }
+      catch (e) { dataMap[key] = null; }
+    }));
+
+    // ---- Render each configured ratio via the shared helper ----
+    for (const sectionKey of Object.keys(RATIOS_BY_SECTION)) {
+      for (const r of RATIOS_BY_SECTION[sectionKey]) {
+        const numData = dataMap[r.num], denData = dataMap[r.den];
+        if (!numData || !denData) {
+          const noteEl = document.getElementById(r.slug + 'Note');
+          if (noteEl) noteEl.textContent = 'Data unavailable.';
+          continue;
+        }
+        renderLeadershipRatio({
+          num: numData, den: denData,
+          currentId: r.slug + 'Current', medianId: r.slug + 'Median',
+          chartId:   r.slug + 'Chart',   noteId:   r.slug + 'Note',
+          color: r.color, digits: r.digits,
+          postureHigh: r.p.h, postureMidHigh: r.p.mh,
+          postureMidLow: r.p.ml, postureLow: r.p.l,
+        });
+      }
+    }
+
+    // ---- Expose dataMap so the hardcoded Crypto renders below can use it ----
+    var etha = dataMap.etha, ibit = dataMap.ibit, gsol = dataMap.gsol,
+        mstr = dataMap.mstr, bmnr = dataMap.bmnr;
 
     // Build date → close maps for fast joining
     const map = (rows) => { const m = new Map(); for (const r of rows) m.set(r.d, r.px); return m; };
@@ -1095,207 +1218,6 @@
       svgEl.innerHTML = s;
     }
 
-    // === Gold / Silver ratio ===
-    const gsMedian = median(gsRatio.map(r => r.v));
-    const gsLast = gsRatio[gsRatio.length - 1];
-    document.getElementById('gsrCurrent').textContent = fmt(gsLast?.v, 1);
-    document.getElementById('gsrMedian').textContent = fmt(gsMedian, 1);
-    drawChart(document.getElementById('gsrChart'), gsRatio, {
-      median: gsMedian, color: '#f4b942', currentDigits: 1, medianDigits: 1,
-    });
-    if (gsLast) {
-      const dev = gsMedian ? ((gsLast.v / gsMedian) - 1) * 100 : 0;
-      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
-      let posture = 'within normal range';
-      if (gsLast.v >= 90) posture = 'unusually high — silver deeply undervalued relative to gold';
-      else if (gsLast.v <= 50) posture = 'unusually low — silver expensive relative to gold';
-      else if (gsLast.v >= 80) posture = 'elevated — silver on the cheap side';
-      else if (gsLast.v <= 60) posture = 'compressed — silver on the expensive side';
-      document.getElementById('gsrNote').innerHTML =
-        `As of <strong>${gsLast.d}</strong>: ratio <strong>${fmt(gsLast.v, 1)}</strong> ` +
-        `(${devTxt} vs median <strong>${fmt(gsMedian, 1)}</strong>) — ${posture}.`;
-    }
-
-    // === S&P 500 / Gold ratio ===
-    const sgMedian = median(sgRatio.map(r => r.v));
-    const sgLast = sgRatio[sgRatio.length - 1];
-    document.getElementById('sgrCurrent').textContent = fmt(sgLast?.v, 2);
-    document.getElementById('sgrMedian').textContent = fmt(sgMedian, 2);
-    drawChart(document.getElementById('sgrChart'), sgRatio, {
-      median: sgMedian, color: '#64d3ff', currentDigits: 2, medianDigits: 2,
-    });
-    if (sgLast) {
-      const dev = sgMedian ? ((sgLast.v / sgMedian) - 1) * 100 : 0;
-      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
-      let posture = 'near the historical median';
-      if (sgLast.v >= 4) posture = 'stretched to the upside — stocks richly valued vs gold';
-      else if (sgLast.v <= 1) posture = 'stretched to the downside — gold richly valued vs stocks';
-      else if (dev > 20) posture = 'above the median — stocks winning the last cycle';
-      else if (dev < -20) posture = 'below the median — gold winning the last cycle';
-      document.getElementById('sgrNote').innerHTML =
-        `As of <strong>${sgLast.d}</strong>: ratio <strong>${fmt(sgLast.v, 2)}</strong> ` +
-        `(${devTxt} vs median <strong>${fmt(sgMedian, 2)}</strong>) — ${posture}.`;
-    }
-
-    // === Gold / Oil ratio ===
-    const oilMap = map(oil);
-    const goRatio = joinedRatio(gold, oil, goldMap, oilMap);
-    const goMedian = median(goRatio.map(r => r.v));
-    const goLast = goRatio[goRatio.length - 1];
-    document.getElementById('goRCurrent').textContent = fmt(goLast?.v, 1);
-    document.getElementById('goRMedian').textContent = fmt(goMedian, 1);
-    drawChart(document.getElementById('goRChart'), goRatio, {
-      median: goMedian, color: '#f4b942', currentDigits: 1, medianDigits: 1,
-    });
-    if (goLast) {
-      const dev = goMedian ? ((goLast.v / goMedian) - 1) * 100 : 0;
-      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
-      let posture = 'within normal range';
-      if (goLast.v >= 40) posture = 'sharply elevated — gold vastly outpacing oil, historically a deflationary / recession stress signal';
-      else if (goLast.v >= 25) posture = 'elevated — gold outpacing oil, cautious tone in the commodities complex';
-      else if (goLast.v <= 8) posture = 'compressed — oil boom outpacing gold, historically an inflation / commodity-cycle signal';
-      else if (dev > 30) posture = 'above the median — gold winning vs oil';
-      else if (dev < -30) posture = 'below the median — oil winning vs gold';
-      document.getElementById('goRNote').innerHTML =
-        `As of <strong>${goLast.d}</strong>: ratio <strong>${fmt(goLast.v, 1)}</strong> ` +
-        `(${devTxt} vs median <strong>${fmt(goMedian, 1)}</strong>) — ${posture}.`;
-    }
-
-    // === VTI / VEU ratio — US total market vs All-World ex-US ===
-    // Rising line = US outperforming; falling = international outperforming.
-    // VEU inception 2007-03-02, so the ratio series starts there.
-    const vtiMap = map(vti), veuMap = map(veu);
-    const vveuRatio = joinedRatio(
-      vti.filter(r => r.d >= '2007-03-08'),
-      veu, vtiMap, veuMap
-    );
-    const vveuMedian = median(vveuRatio.map(r => r.v));
-    const vveuLast = vveuRatio[vveuRatio.length - 1];
-    document.getElementById('vveuCurrent').textContent = fmt(vveuLast?.v, 2);
-    document.getElementById('vveuMedian').textContent = fmt(vveuMedian, 2);
-    drawChart(document.getElementById('vveuChart'), vveuRatio, {
-      median: vveuMedian, color: '#64d3ff', currentDigits: 2, medianDigits: 2,
-    });
-    if (vveuLast) {
-      const dev = vveuMedian ? ((vveuLast.v / vveuMedian) - 1) * 100 : 0;
-      const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
-      const lookback = 63;
-      const prior = vveuRatio.length > lookback ? vveuRatio[vveuRatio.length - 1 - lookback] : null;
-      const trendPct = prior ? ((vveuLast.v / prior.v) - 1) * 100 : null;
-      let posture;
-      if (trendPct == null) {
-        posture = 'not enough history for a trend read';
-      } else if (trendPct >= 3) {
-        posture = 'US stocks pulling ahead — ratio rising, US leadership';
-      } else if (trendPct <= -3) {
-        posture = 'international pulling ahead — ratio falling, US losing edge';
-      } else {
-        posture = 'roughly flat — no clear leadership over the last quarter';
-      }
-      document.getElementById('vveuNote').innerHTML =
-        `As of <strong>${vveuLast.d}</strong>: ratio <strong>${fmt(vveuLast.v, 2)}</strong> ` +
-        `(${devTxt} vs median <strong>${fmt(vveuMedian, 2)}</strong>) — ${posture}.`;
-    }
-
-    // === Equity leadership ratios ===
-    // All four use SPY as the numerator so higher ratio = SPY winning, lower
-    // = the paired sector/region winning. A small helper below wraps the
-    // deviation-vs-median posture text since the four blocks are structurally
-    // identical.
-    const spyMap = map(spy);
-    function renderLeadershipRatio(cfg) {
-      const numMap = map(cfg.num);
-      const denMap = map(cfg.den);
-      const series = joinedRatio(cfg.num, cfg.den, numMap, denMap);
-      if (!series.length) return;
-      const med = median(series.map(r => r.v));
-      const last = series[series.length - 1];
-      document.getElementById(cfg.currentId).textContent = fmt(last?.v, cfg.digits);
-      document.getElementById(cfg.medianId).textContent  = fmt(med, cfg.digits);
-      drawChart(document.getElementById(cfg.chartId), series, {
-        median: med, color: cfg.color,
-        currentDigits: cfg.digits, medianDigits: cfg.digits,
-      });
-      if (last) {
-        const dev = med ? ((last.v / med) - 1) * 100 : 0;
-        const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(0) + '%';
-        let posture;
-        if      (dev >= 30)  posture = cfg.postureHigh;
-        else if (dev <= -30) posture = cfg.postureLow;
-        else if (dev >= 10)  posture = cfg.postureMidHigh;
-        else if (dev <= -10) posture = cfg.postureMidLow;
-        else                 posture = 'near the historical median';
-        document.getElementById(cfg.noteId).innerHTML =
-          `As of <strong>${last.d}</strong>: ratio <strong>${fmt(last.v, cfg.digits)}</strong> ` +
-          `(${devTxt} vs median <strong>${fmt(med, cfg.digits)}</strong>) — ${posture}.`;
-      }
-    }
-
-    renderLeadershipRatio({
-      num: spy, den: xlf,
-      currentId: 'spyXlfCurrent', medianId: 'spyXlfMedian',
-      chartId: 'spyXlfChart', noteId: 'spyXlfNote',
-      color: '#64d3ff', digits: 2,
-      postureHigh:    'stretched — financials deeply lagging the broad market, watch for credit / recession-fear signals',
-      postureMidHigh: 'elevated — financials trailing the market, mild stress tone',
-      postureMidLow:  'compressed — financials outperforming, healthy cyclical tone',
-      postureLow:     'sharply compressed — financials in strong leadership, classic mid-cycle setup',
-    });
-
-    renderLeadershipRatio({
-      num: spy, den: kre,
-      currentId: 'spyKreCurrent', medianId: 'spyKreMedian',
-      chartId: 'spyKreChart', noteId: 'spyKreNote',
-      color: '#f4b942', digits: 2,
-      postureHigh:    'stretched — regional banks deeply underperforming, historical crisis territory',
-      postureMidHigh: 'elevated — regional banks lagging, watch the yield curve and credit spreads',
-      postureMidLow:  'compressed — regional banks outperforming, healthy credit tone',
-      postureLow:     'sharply compressed — regional banks leading, steep-curve setup',
-    });
-
-    renderLeadershipRatio({
-      num: spy, den: eem,
-      currentId: 'spyEemCurrent', medianId: 'spyEemMedian',
-      chartId: 'spyEemChart', noteId: 'spyEemNote',
-      color: '#64d3ff', digits: 2,
-      postureHigh:    'stretched — US dominating emerging markets, strong-dollar / mega-cap regime',
-      postureMidHigh: 'above the median — US winning vs EM',
-      postureMidLow:  'below the median — EM winning vs US',
-      postureLow:     'sharply compressed — EM leading US, historically a dollar-weakening / commodity-boom setup',
-    });
-
-    renderLeadershipRatio({
-      num: spy, den: mchi,
-      currentId: 'spyMchiCurrent', medianId: 'spyMchiMedian',
-      chartId: 'spyMchiChart', noteId: 'spyMchiNote',
-      color: '#f4b942', digits: 2,
-      postureHigh:    'stretched — China deeply underperforming the S&P; watch for policy-stimulus contrarian setup',
-      postureMidHigh: 'above the median — US winning vs China',
-      postureMidLow:  'below the median — China winning vs US',
-      postureLow:     'sharply compressed — China outperforming, potential regime shift',
-    });
-
-    renderLeadershipRatio({
-      num: xly, den: xlp,
-      currentId: 'xlyXlpCurrent', medianId: 'xlyXlpMedian',
-      chartId: 'xlyXlpChart', noteId: 'xlyXlpNote',
-      color: '#64d3ff', digits: 2,
-      postureHigh:    'stretched — Discretionary strongly leading Staples, risk-on tone but watch for exhaustion',
-      postureMidHigh: 'above the median — Discretionary winning, expansion behavior',
-      postureMidLow:  'below the median — Staples winning, defensive rotation',
-      postureLow:     'sharply compressed — Staples strongly leading, classic risk-off / recession-fear regime',
-    });
-
-    renderLeadershipRatio({
-      num: gold, den: dxy,
-      currentId: 'goldDxyCurrent', medianId: 'goldDxyMedian',
-      chartId: 'goldDxyChart', noteId: 'goldDxyNote',
-      color: '#f4b942', digits: 2,
-      postureHigh:    'stretched — gold outpacing the dollar strongly, inflation / safe-haven regime',
-      postureMidHigh: 'above the median — gold winning vs the dollar',
-      postureMidLow:  'below the median — dollar winning vs gold',
-      postureLow:     'sharply compressed — strong-dollar / disinflation regime',
-    });
 
 
     renderLeadershipRatio({
