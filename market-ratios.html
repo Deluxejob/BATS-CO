@@ -1451,17 +1451,29 @@
         s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
         s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v < 10 ? v.toFixed(1) : Math.round(v)}</text>`;
       }
-      const yearMs = 365.25 * 24 * 3600 * 1000;
-      const spanYrs = (last.t - first.t) / yearMs;
-      const tickYears = spanYrs > 15 ? 5 : spanYrs > 8 ? 2 : 1;
-      const startYr = new Date(first.t).getUTCFullYear();
-      const endYr = new Date(last.t).getUTCFullYear();
-      for (let y = Math.ceil(startYr / tickYears) * tickYears; y <= endYr; y += tickYears) {
-        const t = new Date(Date.UTC(y, 0, 1)).getTime();
-        if (t < first.t || t > last.t) continue;
+      // X-axis ticks: pick evenly-spaced positions and format based on span.
+      // Old year-boundary code produced no ticks at all for spans < 1 year,
+      // which left 1W..6M charts with a blank X axis.
+      const spanDays = (last.t - first.t) / 86400000;
+      let tickCount, labelFmt;
+      if      (spanDays > 1500) { tickCount = 5; labelFmt = 'year'; }        // > ~4y
+      else if (spanDays > 500)  { tickCount = 5; labelFmt = 'monthYear'; }   // ~1.5-4y
+      else if (spanDays > 200)  { tickCount = 6; labelFmt = 'monthYear'; }   // ~6-18mo
+      else if (spanDays > 45)   { tickCount = 6; labelFmt = 'monthDay'; }    // ~1.5-6mo
+      else if (spanDays > 15)   { tickCount = 5; labelFmt = 'monthDay'; }    // ~2-6wk
+      else                       { tickCount = Math.min(4, Math.max(2, Math.floor(spanDays))); labelFmt = 'monthDay'; }
+      const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      function fmtTick(ts) {
+        const d = new Date(ts);
+        if (labelFmt === 'year')      return String(d.getUTCFullYear());
+        if (labelFmt === 'monthYear') return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+        return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCDate();
+      }
+      for (let i = 0; i <= tickCount; i++) {
+        const t = first.t + ((last.t - first.t) * i) / tickCount;
         const x = xFor(t);
         s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${y}</text>`;
+        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${fmtTick(t)}</text>`;
       }
       s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
       s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
