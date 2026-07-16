@@ -1424,7 +1424,10 @@
 
     // Render one ratio chart (SVG line + horizontal median line + latest dot)
     function drawChart(svgEl, rows, opts) {
-      if (!svgEl || rows.length < 10) return;
+      if (!svgEl) return;
+      // Clear any prior render so a range switch that lands us with too few
+      // rows to plot doesn't leave the previous view hanging on the card.
+      if (rows.length < 2) { svgEl.innerHTML = ''; return; }
       const W = 560, H = 260;
       const M = { top: 15, right: 50, bottom: 30, left: 45 };
       const plotW = W - M.left - M.right;
@@ -1614,9 +1617,11 @@
     });
 
     // ---- Ratio Builder — pop-up modal for custom user-entered ratios. ----
-    // Reuses map / joinedRatio / median / fmt / drawChart from this IIFE's
-    // closure. Fetches history via /api/history and slices client-side per
-    // the range picker.
+    // Uses map / joinedRatio / median / fmt / drawChart from this IIFE's
+    // closure. Fetches per-range from /api/history so each range picker
+    // click gets Yahoo-appropriate granularity (daily bars for 5d..5y,
+    // weekly for 10y, monthly for max). Cached by API range so a
+    // repeated click doesn't refetch.
     (function setupRatioBuilder() {
       const modal      = document.getElementById('rbmModal');
       const openBtn    = document.getElementById('rbmOpenBtn');
@@ -1635,34 +1640,38 @@
       const noteEl     = document.getElementById('rbmNote');
       if (!modal || !openBtn) return;
 
-      // State for the currently-built ratio (keeps the full-history series
-      // so range-picker clicks reslice without refetching).
-      let currentSeries = null;
-      let currentMed = null;
-      let currentPair = null;
+      // Map picker key -> Yahoo /api/history range param. For picker keys
+      // Yahoo doesn't directly support (1W, 1M, 3Y), pick the next-widest
+      // supported range and slice down client-side after.
+      const RANGE_TO_API = {
+        '1w':'5d', '1m':'1mo', '3m':'3mo', '6m':'6mo',
+        '1y':'1y', '3y':'5y', '5y':'5y', '10y':'10y', 'all':'max',
+      };
+      // Trading-day slice counts for picker keys that use a wider API range.
+      const RANGE_SLICE = { '1w':6, '1m':23, '3y':756 };
+
+      // Per-pair state, reset each Build.
+      let currentPair = null;              // {a,b}
+      let apiCache = {};                   // { apiRange: joinedRatioSeries }
+      let longTermMed = null;
 
       function openModal() {
         modal.setAttribute('data-open', 'true');
         setTimeout(() => inputA.focus(), 50);
       }
-      function closeModal() {
-        modal.removeAttribute('data-open');
-      }
+      function closeModal() { modal.removeAttribute('data-open'); }
       openBtn.addEventListener('click', openModal);
       closeBtn.addEventListener('click', closeModal);
       backdrop.addEventListener('click', closeModal);
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.getAttribute('data-open') === 'true') closeModal();
       });
-      // Enter in either input triggers Build
       [inputA, inputB].forEach(inp => {
         inp.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') { e.preventDefault(); buildBtn.click(); }
         });
       });
 
-      // Turn Yahoo/api-history series ([[ts_sec, close], ...]) into the
-      // {d, t, px} shape the shared joinedRatio helper expects.
       function apiToRows(arr) {
         const out = [];
         for (const [ts, c] of arr) {
@@ -1671,6 +1680,46 @@
           out.push({ d, px: +c, t: ts * 1000 });
         }
         return out;
+      }
+
+      // Fetch + compute the ratio series for one Yahoo range param.
+      // Caches so a repeated range click doesn't rehit the network.
+      async function fetchRangeSeries(apiRange) {
+        if (apiCache[apiRange]) return apiCache[apiRange];
+        const { a, b } = currentPair;
+        const url = '/api/history?syms=' + encodeURIComponent(a + ',' + b) +
+                    '&range=' + encodeURIComponent(apiRange);
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const payload = await r.json();
+        const seriesMap = (payload && payload.series) || {};
+        const arrA = seriesMap[a], arrB = seriesMap[b];
+        if (!arrA || !arrB) throw new Error('missing data');
+        const rowsA = apiToRows(arrA), rowsB = apiToRows(arrB);
+        const mapA = map(rowsA), mapB = map(rowsB);
+        const series = joinedRatio(rowsA, rowsB, mapA, mapB);
+        apiCache[apiRange] = series;
+        return series;
+      }
+
+      async function seriesForRange(rangeKey) {
+        const apiRange = RANGE_TO_API[rangeKey] || 'max';
+        const full = await fetchRangeSeries(apiRange);
+        const n = RANGE_SLICE[rangeKey];
+        return (n && full.length > n) ? full.slice(-n) : full;
+      }
+
+      async function drawFor(rangeKey) {
+        try {
+          const series = await seriesForRange(rangeKey);
+          drawChart(chartEl, series, {
+            median: longTermMed, color: '#ffb658',
+            currentDigits: 3, medianDigits: 3,
+          });
+        } catch (e) {
+          status.textContent = 'Failed to load ' + rangeKey.toUpperCase() + ' data: ' + (e && e.message || e);
+          status.classList.add('error');
+        }
       }
 
       async function build() {
@@ -1685,51 +1734,41 @@
         status.classList.remove('error');
         status.textContent = 'Fetching ' + a + ' + ' + b + '\u2026';
         buildBtn.disabled = true;
+        // Reset cache when switching pairs
+        currentPair = { a, b };
+        apiCache = {};
         try {
-          const r = await fetch('/api/history?syms=' + encodeURIComponent(a + ',' + b) + '&range=max',
-                                { cache: 'no-store' });
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          const payload = await r.json();
-          const seriesMap = (payload && payload.series) || {};
-          const arrA = seriesMap[a], arrB = seriesMap[b];
-          if (!arrA || !arrB) {
-            status.textContent = 'Could not find data for ' + (!arrA ? a : b) + '. Try a different ticker.';
+          // Fetch max (for long-term median) + the default 6M view in parallel.
+          const [maxSeries, sixMonthSeries] = await Promise.all([
+            fetchRangeSeries('max'),
+            fetchRangeSeries('6mo'),
+          ]);
+          if (!maxSeries.length) {
+            status.textContent = 'No overlapping history between ' + a + ' and ' + b + '.';
             status.classList.add('error');
             return;
           }
-          const rowsA = apiToRows(arrA), rowsB = apiToRows(arrB);
-          if (rowsA.length < 10 || rowsB.length < 10) {
-            status.textContent = 'Not enough overlapping history to compute a ratio.';
-            status.classList.add('error');
-            return;
-          }
-          const mapA = map(rowsA), mapB = map(rowsB);
-          const series = joinedRatio(rowsA, rowsB, mapA, mapB);
-          if (!series.length) {
-            status.textContent = 'No overlapping dates between ' + a + ' and ' + b + '.';
-            status.classList.add('error');
-            return;
-          }
-          currentSeries = series;
-          currentMed = median(series.map(r => r.v));
-          currentPair = { a, b };
-          status.textContent = 'Rendered ' + series.length.toLocaleString() +
-                               ' daily readings from ' + series[0].d + ' to ' + series[series.length-1].d + '.';
+          longTermMed = median(maxSeries.map(r => r.v));
+          const last = maxSeries[maxSeries.length - 1];
           resTitle.textContent = a + ' / ' + b;
-          const last = series[series.length - 1];
           curEl.textContent = fmt(last.v, 3);
-          medEl.textContent = fmt(currentMed, 3);
-          // Ensure default active button is 6M
+          medEl.textContent = fmt(longTermMed, 3);
+          // Default active button = 6M
           rangeEl.querySelectorAll('button').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.range === '6m');
           });
-          drawFor('6m');
-          // Note text — deviation from median
-          const dev = currentMed ? ((last.v / currentMed) - 1) * 100 : 0;
+          drawChart(chartEl, sixMonthSeries, {
+            median: longTermMed, color: '#ffb658',
+            currentDigits: 3, medianDigits: 3,
+          });
+          status.textContent = 'Ready. ' + maxSeries.length.toLocaleString() +
+                               ' readings from ' + maxSeries[0].d + ' to ' + last.d +
+                               ' (max view, monthly-ish granularity). Shorter ranges show daily bars.';
+          const dev = longTermMed ? ((last.v / longTermMed) - 1) * 100 : 0;
           const devTxt = (dev > 0 ? '+' : '') + dev.toFixed(1) + '%';
           noteEl.innerHTML = 'As of <strong>' + last.d + '</strong>: ratio ' +
             '<strong>' + fmt(last.v, 3) + '</strong> (' + devTxt +
-            ' vs full-history median <strong>' + fmt(currentMed, 3) + '</strong>).';
+            ' vs full-history median <strong>' + fmt(longTermMed, 3) + '</strong>).';
           result.hidden = false;
         } catch (e) {
           status.textContent = 'Build failed: ' + (e && e.message || e);
@@ -1740,17 +1779,9 @@
       }
       buildBtn.addEventListener('click', build);
 
-      function drawFor(rangeKey) {
-        if (!currentSeries) return;
-        const slice = sliceRange(currentSeries, rangeKey);
-        drawChart(chartEl, slice, {
-          median: currentMed, color: '#ffb658',
-          currentDigits: 3, medianDigits: 3,
-        });
-      }
       rangeEl.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-range]');
-        if (!btn) return;
+        if (!btn || !currentPair) return;
         rangeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
         drawFor(btn.dataset.range);
       });
