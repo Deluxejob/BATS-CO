@@ -1078,6 +1078,7 @@
       return card;
     }
 
+    console.log('[RR] config defined, building cards');
     // ---- Populate the 5 section grids with card DOM up-front ----
     for (const sectionKey of Object.keys(RATIOS_BY_SECTION)) {
       const grid = document.querySelector('[data-ratio-grid="' + sectionKey + '"]');
@@ -1097,6 +1098,7 @@
     // Crypto section files (rendered by hardcoded blocks further below)
     ['mstr','ibit','etha','gsol','bmnr'].forEach(k => uniqueFiles.add(k));
 
+    console.log('[RR] cards built, files to fetch:', uniqueFiles.size);
     // ---- Fetch all in parallel ----
     const dataMap = {};
     await Promise.all([...uniqueFiles].map(async key => {
@@ -1126,9 +1128,11 @@
       }
     }
 
+    console.log('[RR] fetch complete, dataMap keys:', Object.keys(dataMap).length);
     // ---- Expose dataMap so the hardcoded Crypto renders below can use it ----
     var etha = dataMap.etha, ibit = dataMap.ibit, gsol = dataMap.gsol,
         mstr = dataMap.mstr, bmnr = dataMap.bmnr;
+    console.log('[RR] about to run render loop');
 
     // Build date → close maps for fast joining
     const map = (rows) => { const m = new Map(); for (const r of rows) m.set(r.d, r.px); return m; };
@@ -1211,6 +1215,7 @@
       svgEl.innerHTML = s;
     }
 
+    console.log('[RR] reached renderLeadershipRatio definition');
     // Shared helper — compute + render one ratio card given num/den arrays
     // and the card's DOM element IDs.
     function renderLeadershipRatio(cfg) {
