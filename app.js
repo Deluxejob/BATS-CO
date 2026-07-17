@@ -1289,7 +1289,7 @@ function setConcentrationGauge(gap, periodLabel) {
 }
 
 const CONC_WINDOWS = [
-  { key: 'd1',  days: 1,   label: '1 Day' },
+  { key: 'd1',  days: 1,   label: 'Today' },
   { key: 'w1',  days: 5,   label: '1 Week' },
   { key: 'm1',  days: 21,  label: '1 Month' },
   { key: 'q1',  days: 63,  label: '1 Quarter' },
