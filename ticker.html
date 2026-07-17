@@ -1973,30 +1973,32 @@
 
         // --- Indicator helpers ---
         function sma(pts, n) {
+          // pts row is [ts, o, h, l, c] — index 4 is close.
           const out = new Array(pts.length).fill(null);
           if (pts.length < n) return out;
           let sum = 0;
-          for (let i = 0; i < n; i++) sum += pts[i][1];
+          for (let i = 0; i < n; i++) sum += pts[i][4];
           out[n - 1] = sum / n;
           for (let i = n; i < pts.length; i++) {
-            sum += pts[i][1] - pts[i - n][1];
+            sum += pts[i][4] - pts[i - n][4];
             out[i] = sum / n;
           }
           return out;
         }
         function rsi(pts, period) {
+          // Wilder's RSI on close-to-close deltas — pts row is [ts, o, h, l, c].
           period = period || 14;
           const out = new Array(pts.length).fill(null);
           if (pts.length <= period) return out;
           let gain = 0, loss = 0;
           for (let i = 1; i <= period; i++) {
-            const d = pts[i][1] - pts[i-1][1];
+            const d = pts[i][4] - pts[i-1][4];
             if (d >= 0) gain += d; else loss -= d;
           }
           gain /= period; loss /= period;
           out[period] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
           for (let i = period + 1; i < pts.length; i++) {
-            const d = pts[i][1] - pts[i-1][1];
+            const d = pts[i][4] - pts[i-1][4];
             const g = d > 0 ?  d : 0;
             const l = d < 0 ? -d : 0;
             gain = (gain * (period - 1) + g) / period;
@@ -2006,10 +2008,11 @@
           return out;
         }
         function fiftyTwoWeek(dailyPts) {
+          // Actual intraday high/low across the last ~252 trading days.
           const window = dailyPts.slice(-252);
           if (!window.length) return null;
           let hi = -Infinity, lo = Infinity;
-          for (const [t, v] of window) { if (v > hi) hi = v; if (v < lo) lo = v; }
+          for (const p of window) { if (p[2] > hi) hi = p[2]; if (p[3] < lo) lo = p[3]; }
           return { high: hi, low: lo };
         }
         function median(vals) {
@@ -2070,19 +2073,25 @@
           const sma200  = opts.show200 ? sma(pts, 200) : null;
           const rsi14   = showRsi      ? rsi(pts, 14)  : null;
           const wk52    = opts.wk52    || null;
-          const med     = opts.median  != null ? opts.median : median(pts.map(p => p[1]));
+          const closes  = pts.map(p => p[4]);
+          const med     = opts.median  != null ? opts.median : median(closes);
 
+          // Drawdown ribbon uses close-based rolling max (standard).
           const rollingMax = [];
-          { let m = -Infinity; for (const p of pts) { if (p[1] > m) m = p[1]; rollingMax.push(m); } }
+          { let m = -Infinity; for (const c of closes) { if (c > m) m = c; rollingMax.push(m); } }
 
-          const vals = pts.map(p => p[1]);
+          // Y-axis scale — pull in candle highs + lows so full wicks fit.
+          const highs = pts.map(p => p[2]);
+          const lows  = pts.map(p => p[3]);
+          const vals  = [...highs, ...lows];
           if (sma50)  for (const v of sma50)  if (v != null) vals.push(v);
           if (sma200) for (const v of sma200) if (v != null) vals.push(v);
-          const priceRange = Math.max(...pts.map(p=>p[1])) - Math.min(...pts.map(p=>p[1]));
+          const priceRange = Math.max(...highs) - Math.min(...lows);
+          const lastClose = closes[closes.length - 1];
           let show52Hi = false, show52Lo = false;
           if (wk52) {
-            const nearHi = Math.abs(wk52.high - pts[pts.length-1][1]) < Math.max(priceRange * 2, pts[pts.length-1][1] * 0.08);
-            const nearLo = Math.abs(wk52.low  - pts[pts.length-1][1]) < Math.max(priceRange * 2, pts[pts.length-1][1] * 0.08);
+            const nearHi = Math.abs(wk52.high - lastClose) < Math.max(priceRange * 2, lastClose * 0.08);
+            const nearLo = Math.abs(wk52.low  - lastClose) < Math.max(priceRange * 2, lastClose * 0.08);
             if (nearHi) { vals.push(wk52.high); show52Hi = true; }
             if (nearLo) { vals.push(wk52.low);  show52Lo = true; }
           }
@@ -2131,11 +2140,7 @@
           s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${priceBottom}" y2="${priceBottom}"/>`;
           s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${priceTop}" y2="${priceBottom}"/>`;
 
-          const startPx = pts[0][1], endPx = pts[pts.length-1][1];
-          const lineColor = endPx >= startPx ? '#22d39a' : '#ff5374';
-          const fillColor = endPx >= startPx ? 'rgba(34, 211, 154, 0.15)' : 'rgba(255, 83, 116, 0.15)';
-
-          // Drawdown ribbon (always on)
+          // Drawdown ribbon (always on) — closes are at pts[i][4].
           {
             let d = 'M';
             for (let i = 0; i < pts.length; i++) {
@@ -2145,7 +2150,7 @@
             }
             for (let i = pts.length - 1; i >= 0; i--) {
               const x = xFor(pts[i][0]).toFixed(1);
-              const y = yFor(pts[i][1]).toFixed(1);
+              const y = yFor(pts[i][4]).toFixed(1);
               d += 'L' + x + ',' + y + ' ';
             }
             d += 'Z';
@@ -2171,10 +2176,24 @@
             s += `<text class="axis-label" x="${W - M.right - 4}" y="${y + 10}" text-anchor="end" fill="#ff5374" opacity="0.85">52W low ${fmtN(wk52.low)}</text>`;
           }
 
-          // Price fill + line
-          const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + xFor(p[0]).toFixed(1) + ',' + yFor(p[1]).toFixed(1)).join(' ');
-          s += `<path d="${path} L${xFor(last).toFixed(1)},${priceBottom} L${xFor(first).toFixed(1)},${priceBottom} Z" fill="${fillColor}" stroke="none"/>`;
-          s += `<path fill="none" stroke="${lineColor}" stroke-width="1.6" d="${path}"/>`;
+          // Candlesticks — one per bar. Green if close>=open, red otherwise.
+          {
+            const slot = plotW / pts.length;
+            const bodyW = Math.max(1, slot * 0.7);
+            for (let i = 0; i < pts.length; i++) {
+              const p = pts[i];
+              const t = p[0], o = p[1], h = p[2], l = p[3], c = p[4];
+              const up = c >= o;
+              const col = up ? '#22d39a' : '#ff5374';
+              const x  = xFor(t);
+              const yH = yFor(h), yL = yFor(l);
+              const yO = yFor(o), yC = yFor(c);
+              s += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${yH.toFixed(1)}" y2="${yL.toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
+              const bodyTop = Math.min(yO, yC);
+              const bodyH   = Math.max(1, Math.abs(yC - yO));
+              s += `<rect x="${(x - bodyW/2).toFixed(1)}" y="${bodyTop.toFixed(1)}" width="${bodyW.toFixed(1)}" height="${bodyH.toFixed(1)}" fill="${col}"/>`;
+            }
+          }
 
           function smaPath(arr) {
             let out = '', started = false;
@@ -2194,9 +2213,6 @@
             const d = smaPath(sma200);
             if (d) s += `<path fill="none" stroke="#c084fc" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
           }
-
-          const lp = pts[pts.length - 1];
-          s += `<circle cx="${xFor(lp[0])}" cy="${yFor(lp[1])}" r="4" fill="${lineColor}" stroke="#fff" stroke-width="1"/>`;
 
           if (showRsi && rsi14 && rsi14.some(v => v != null)) {
             const yR = v => rsiTop + rsiH - (v / 100) * rsiH;
@@ -2231,7 +2247,8 @@
         async function fetchSlice(apiRange, apiInterval) {
           const url = '/api/history?syms=' + encodeURIComponent(sym) +
                       '&range=' + encodeURIComponent(apiRange) +
-                      '&interval=' + encodeURIComponent(apiInterval);
+                      '&interval=' + encodeURIComponent(apiInterval) +
+                      '&fields=ohlc';
           const r = await fetch(url, { cache: 'no-store' });
           if (!r.ok) throw new Error('HTTP ' + r.status);
           const payload = await r.json();
@@ -2272,9 +2289,9 @@
           if (!daily || daily.length < 2) return;
           const last = daily[daily.length - 1];
           const prev = daily[daily.length - 2];
-          priceEl.innerHTML = fmtN(last[1]) + '<span class="unit">USD</span>';
-          const chg = last[1] - prev[1];
-          const chgPct = prev[1] ? (chg / prev[1]) * 100 : 0;
+          priceEl.innerHTML = fmtN(last[4]) + '<span class="unit">USD</span>';
+          const chg = last[4] - prev[4];
+          const chgPct = prev[4] ? (chg / prev[4]) * 100 : 0;
           changeEl.className = 'tk-chart-change ' + (chg >= 0 ? 'pos' : 'neg');
           const sign = chg > 0 ? '+' : '';
           changeEl.textContent = sign + fmtN(chg) + ' (' + sign + fmt(chgPct, 2) + '%)';

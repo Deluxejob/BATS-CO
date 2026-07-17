@@ -16,7 +16,7 @@ const YAHOO_UA = 'Mozilla/5.0 (BATS.CO history proxy)';
 const RANGES = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'max']);
 const INTERVALS = new Set(['1m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo']);
 
-async function fetchYahooChart(sym, range, interval) {
+async function fetchYahooChart(sym, range, interval, wantOhlc) {
   const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
     encodeURIComponent(sym) +
     '?range=' + encodeURIComponent(range) +
@@ -28,13 +28,23 @@ async function fetchYahooChart(sym, range, interval) {
     const result = data && data.chart && data.chart.result && data.chart.result[0];
     if (!result) return null;
     const tss = result.timestamp;
-    const closes = result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close;
+    const q = result.indicators && result.indicators.quote && result.indicators.quote[0];
+    const closes = q && q.close;
     if (!Array.isArray(tss) || !Array.isArray(closes)) return null;
+    const opens = q && q.open;
+    const highs = q && q.high;
+    const lows  = q && q.low;
     const out = [];
     for (let i = 0; i < tss.length; i++) {
       const c = closes[i];
       if (typeof c !== 'number' || !Number.isFinite(c)) continue;
-      out.push([tss[i], +c.toFixed(4)]);
+      if (wantOhlc) {
+        const o = opens && opens[i], h = highs && highs[i], l = lows && lows[i];
+        if (![o, h, l].every(v => typeof v === 'number' && Number.isFinite(v))) continue;
+        out.push([tss[i], +o.toFixed(4), +h.toFixed(4), +l.toFixed(4), +c.toFixed(4)]);
+      } else {
+        out.push([tss[i], +c.toFixed(4)]);
+      }
     }
     return out.length ? out : null;
   } catch (e) {
@@ -43,9 +53,10 @@ async function fetchYahooChart(sym, range, interval) {
 }
 
 export default async function handler(req, res) {
-  const raw      = String(req.query.syms     || '').toUpperCase().trim();
-  const range    = String(req.query.range    || '6mo').toLowerCase().trim();
-  const interval = String(req.query.interval || '1d').toLowerCase().trim();
+  const raw       = String(req.query.syms     || '').toUpperCase().trim();
+  const range     = String(req.query.range    || '6mo').toLowerCase().trim();
+  const interval  = String(req.query.interval || '1d').toLowerCase().trim();
+  const wantOhlc  = String(req.query.fields   || '').toLowerCase() === 'ohlc';
 
   if (!RANGES.has(range)) {
     return res.status(400).json({ error: 'invalid range' });
@@ -67,7 +78,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const results = await Promise.all(syms.map(s => fetchYahooChart(s, range, interval)));
+    const results = await Promise.all(syms.map(s => fetchYahooChart(s, range, interval, wantOhlc)));
     const series = {};
     syms.forEach((s, i) => {
       if (results[i]) series[s] = results[i];
