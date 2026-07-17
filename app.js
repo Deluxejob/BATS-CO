@@ -1571,14 +1571,15 @@ async function renderCapVsEqual() {
     return Math.max(5, Math.min(95, score));
   }
 
-  function setGauge(prefix, gap) {
+  function setGauge(prefix, gap, periodLabel) {
     const marker = document.getElementById(prefix + 'Marker');
     const reading = document.getElementById(prefix + 'Reading');
     const valueEl = document.getElementById(prefix + 'Value');
     if (!marker) return;
     if (gap == null) {
-      if (reading) reading.textContent = 'No data';
-      if (valueEl) valueEl.textContent = '';
+      if (reading) reading.textContent = 'Not enough data';
+      if (valueEl) valueEl.textContent = periodLabel ? `${periodLabel} gap (Equal − Cap): —` : '';
+      marker.style.left = '50%';
       return;
     }
     const score = scoreEqualMinusCap(gap);
@@ -1587,11 +1588,12 @@ async function renderCapVsEqual() {
     if (reading) reading.textContent = CONC_BUCKETS[bucketIdx].label;
     if (valueEl) {
       const sign = gap >= 0 ? '+' : '';
-      valueEl.textContent = `1-month gap (Equal − Cap): ${sign}${gap.toFixed(2)}%`;
+      const label = periodLabel || '1 Week';
+      valueEl.textContent = `${label} gap (Equal − Cap): ${sign}${gap.toFixed(2)}%`;
     }
   }
 
-  function renderPair(table, gaugePrefix, capSeries, eqSeries, capLabel, eqLabel) {
+  function renderPair(table, gaugePrefix, pickerId, capSeries, eqSeries, capLabel, eqLabel) {
     if (!table) return;
     const rows = CONC_WINDOWS.map(window => {
       const capRet = returnOver(capSeries, window);
@@ -1599,9 +1601,23 @@ async function renderCapVsEqual() {
       const gap = (capRet != null && eqRet != null) ? eqRet - capRet : null;
       return { label: window.label, key: window.key, capRet, eqRet, gap };
     });
-    // Point the gauge at the 1-month gap
-    const oneMonth = rows.find(r => r.key === 'm1');
-    if (oneMonth) setGauge(gaugePrefix, oneMonth.gap);
+
+    // Point the gauge at the currently-active period (default 1 Week).
+    const picker = document.getElementById(pickerId);
+    const activeBtn = picker && picker.querySelector('button.active');
+    const initialKey = (activeBtn && activeBtn.dataset.period) || 'w1';
+    const initialRow = rows.find(r => r.key === initialKey) || rows.find(r => r.key === 'w1');
+    if (initialRow) setGauge(gaugePrefix, initialRow.gap, initialRow.label);
+    if (picker && picker.dataset.wired !== '1') {
+      picker.dataset.wired = '1';
+      picker.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-period]');
+        if (!btn) return;
+        const row = rows.find(r => r.key === btn.dataset.period);
+        picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        if (row) setGauge(gaugePrefix, row.gap, row.label);
+      });
+    }
 
     table.innerHTML = `
       <thead>
@@ -1625,8 +1641,8 @@ async function renderCapVsEqual() {
     `;
   }
 
-  renderPair(spTable,  'capEqualSp',  spy, rsp,  'SPY', 'RSP');
-  renderPair(ndxTable, 'capEqualNdx', qqq, qqew, 'QQQ', 'QQEW');
+  renderPair(spTable,  'capEqualSp',  'capEqualSpPicker',  spy, rsp,  'SPY', 'RSP');
+  renderPair(ndxTable, 'capEqualNdx', 'capEqualNdxPicker', qqq, qqew, 'QQQ', 'QQEW');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
