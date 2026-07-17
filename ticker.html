@@ -1369,6 +1369,17 @@
     .tk-ma-toggles button[data-ma="rsi"].active {
       background: rgba(255, 182, 88, 0.15); color: var(--term-amber); border-color: var(--term-amber);
     }
+    .tk-ma-toggles button[data-draw="toggle"].active {
+      background: rgba(255, 182, 88, 0.22); color: #0a1218; border-color: var(--term-amber);
+      background: var(--term-amber);
+    }
+    .tk-ma-toggles button[data-draw="clear"] {
+      color: #ff8fa6;
+    }
+    .tk-ma-toggles button[data-draw="clear"]:hover {
+      color: var(--term-red); border-color: var(--term-red);
+    }
+    .tk-chart-svg.drawing { cursor: crosshair; }
 
     .tk-chart-svg { width: 100%; height: auto; display: block; }
     .tk-chart-svg .grid-line { stroke: var(--term-border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
@@ -1941,6 +1952,8 @@
                 <button type="button" data-ma="50">50 SMA</button>
                 <button type="button" data-ma="200">200 SMA</button>
                 <button type="button" data-ma="rsi">RSI</button>
+                <button type="button" data-draw="toggle" data-role="drawBtn" title="Click DRAW then click two points on the chart to add a trend line.">DRAW</button>
+                <button type="button" data-draw="clear" data-role="clearBtn" hidden>CLEAR</button>
               </div>
             </div>
             <svg class="tk-chart-svg" data-role="chart" viewBox="0 0 900 320" preserveAspectRatio="none" aria-label="${sym} chart"></svg>
@@ -2241,6 +2254,44 @@
             s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
           }
 
+          // User-drawn trend lines. Anchored to (timestamp, price) pairs
+          // so they move with the data through range/indicator changes.
+          // Wrapped in a <clipPath>-scoped group so a line whose endpoint
+          // is outside the visible time window still projects across the
+          // portion of the chart it does intersect.
+          if ((opts.lines && opts.lines.length) || opts.pending) {
+            s += `<defs><clipPath id="tkPlotClip"><rect x="${M.left}" y="${priceTop}" width="${plotW}" height="${priceH}"/></clipPath></defs>`;
+            s += `<g clip-path="url(#tkPlotClip)">`;
+            if (opts.lines) {
+              for (const ln of opts.lines) {
+                const x1 = xFor(ln.t1), y1 = yFor(ln.p1);
+                const x2 = xFor(ln.t2), y2 = yFor(ln.p2);
+                // Skip lines whose entire projection is outside the plot horizontally.
+                const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+                if (maxX < M.left || minX > W - M.right) continue;
+                s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#ffb658" stroke-width="1.8" opacity="0.95"/>`;
+                s += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
+                s += `<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="3.5" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
+              }
+            }
+            if (opts.pending) {
+              const x = xFor(opts.pending.t), y = yFor(opts.pending.p);
+              s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="none" stroke="#ffb658" stroke-width="2" opacity="0.9"/>`;
+              s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#ffb658"/>`;
+            }
+            s += `</g>`;
+          }
+
+          // Save the current plot projection to state so the SVG click
+          // handler can invert screen coords back to (timestamp, price).
+          state.projection = {
+            first: first, last: last,
+            yLo: yLo, yHi: yHi,
+            mLeft: M.left, mRight: W - M.right,
+            plotW: plotW,
+            priceTop: priceTop, priceH: priceH,
+          };
+
           svg.innerHTML = s;
         }
 
@@ -2266,9 +2317,74 @@
         const footerL   = mount.querySelector('[data-role="footerLeft"]');
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
-        const state = { range: '6M', show50: false, show200: false, showRsi: false };
+        const state = { range: '6M', show50: false, show200: false, showRsi: false, drawMode: false, pendingPoint: null, lines: [], projection: null };
         const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
+
+        // Persisted trend lines — one bucket per symbol.
+        const STORAGE_KEY = 'bats.trendlines.' + sym;
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          if (Array.isArray(saved)) {
+            state.lines = saved.filter(function (l) {
+              return l && typeof l.t1 === 'number' && typeof l.p1 === 'number'
+                       && typeof l.t2 === 'number' && typeof l.p2 === 'number';
+            });
+          }
+        } catch (e) { /* corrupted storage — start fresh */ }
+
+        function saveLines() {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.lines)); } catch (e) {}
+        }
+        function updateClearBtn() {
+          clearBtn.hidden = state.lines.length === 0;
+          clearBtn.textContent = 'CLEAR (' + state.lines.length + ')';
+        }
+        function setDrawMode(on) {
+          state.drawMode = on;
+          drawBtn.classList.toggle('active', on);
+          svgEl.classList.toggle('drawing', on);
+          if (!on) state.pendingPoint = null;
+          redraw();
+        }
+
+        const drawBtn  = mount.querySelector('[data-role="drawBtn"]');
+        const clearBtn = mount.querySelector('[data-role="clearBtn"]');
+        updateClearBtn();
+
+        drawBtn.addEventListener('click', function () { setDrawMode(!state.drawMode); });
+        clearBtn.addEventListener('click', function () {
+          state.lines = [];
+          state.pendingPoint = null;
+          saveLines();
+          updateClearBtn();
+          redraw();
+        });
+
+        svgEl.addEventListener('click', function (e) {
+          if (!state.drawMode || !state.projection) return;
+          const rect = svgEl.getBoundingClientRect();
+          const vb = svgEl.viewBox.baseVal;
+          if (!rect.width || !rect.height || !vb.width || !vb.height) return;
+          const svgX = (e.clientX - rect.left) * (vb.width  / rect.width);
+          const svgY = (e.clientY - rect.top)  * (vb.height / rect.height);
+          const p = state.projection;
+          // Only accept clicks inside the price plot rect (not on axes / RSI subplot).
+          if (svgX < p.mLeft || svgX > p.mRight)                 return;
+          if (svgY < p.priceTop || svgY > p.priceTop + p.priceH) return;
+          const t = p.first + ((svgX - p.mLeft) / p.plotW) * (p.last - p.first);
+          const price = p.yLo + ((p.priceTop + p.priceH - svgY) / p.priceH) * (p.yHi - p.yLo);
+          if (!state.pendingPoint) {
+            state.pendingPoint = { t: t, p: price };
+            redraw();
+          } else {
+            state.lines.push({ t1: state.pendingPoint.t, p1: state.pendingPoint.p, t2: t, p2: price });
+            state.pendingPoint = null;
+            saveLines();
+            updateClearBtn();
+            redraw();
+          }
+        });
 
         async function ensureData(rangeKey) {
           const slot = SLOT_BY_RANGE[rangeKey];
@@ -2281,6 +2397,7 @@
         function redraw() {
           drawChart(svgEl, sliceForRange(state.range, cache), {
             show50: state.show50, show200: state.show200, showRsi: state.showRsi, wk52,
+            lines: state.lines, pending: state.pendingPoint,
           });
         }
 
