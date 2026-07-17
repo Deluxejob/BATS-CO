@@ -440,6 +440,39 @@
     }
     .rbm-result[hidden] { display: none; }
     #rbmChart { width: 100%; max-width: 100%; height: auto; display: block; }
+
+    /* Ratio-tile MA/RSI toggle chips — sits next to the range picker */
+    .card-ma-toggles {
+      display: flex;
+      gap: 0.2rem;
+      flex-wrap: wrap;
+      margin: -0.15rem 0 0.55rem;
+    }
+    .card-ma-toggles button {
+      font: inherit;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.2rem 0.42rem;
+      cursor: pointer;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .card-ma-toggles button:hover { color: var(--text); border-color: #ffb658; }
+    .card-ma-toggles button[data-ma="50"].active  {
+      background: rgba(110, 231, 255, 0.15); color: #6ee7ff; border-color: #6ee7ff;
+    }
+    .card-ma-toggles button[data-ma="200"].active {
+      background: rgba(192, 132, 252, 0.15); color: #c084fc; border-color: #c084fc;
+    }
+    .card-ma-toggles button[data-ma="rsi"].active {
+      background: rgba(255, 182, 88, 0.15);  color: #ffb658; border-color: #ffb658;
+    }
   </style>
 </head>
 <body>
@@ -729,6 +762,11 @@
             <button type="button" data-range="10y">10Y</button>
             <button type="button" data-range="all">All</button>
           </div>
+          <div class="card-ma-toggles" id="mstrIbitMaToggles" role="tablist" aria-label="Overlays">
+            <button type="button" data-ma="50">50 SMA</button>
+            <button type="button" data-ma="200">200 SMA</button>
+            <button type="button" data-ma="rsi">RSI</button>
+          </div>
           <svg id="mstrIbitChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="MSTR/IBIT ratio — Strategy vs spot Bitcoin ETF"></svg>
           <p class="rd-note" id="mstrIbitNote">Loading MSTR/IBIT ratio&hellip;</p>
           <details class="ratio-explainer">
@@ -778,6 +816,11 @@
             <button type="button" data-range="10y">10Y</button>
             <button type="button" data-range="all">All</button>
           </div>
+          <div class="card-ma-toggles" id="bmnrEthaMaToggles" role="tablist" aria-label="Overlays">
+            <button type="button" data-ma="50">50 SMA</button>
+            <button type="button" data-ma="200">200 SMA</button>
+            <button type="button" data-ma="rsi">RSI</button>
+          </div>
           <svg id="bmnrEthaChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="BMNR/ETHA ratio — Bitmine Immersion vs spot Ethereum ETF"></svg>
           <p class="rd-note" id="bmnrEthaNote">Loading BMNR/ETHA ratio&hellip;</p>
           <details class="ratio-explainer">
@@ -824,6 +867,11 @@
             <button type="button" data-range="10y">10Y</button>
             <button type="button" data-range="all">All</button>
           </div>
+          <div class="card-ma-toggles" id="ethaIbitMaToggles" role="tablist" aria-label="Overlays">
+            <button type="button" data-ma="50">50 SMA</button>
+            <button type="button" data-ma="200">200 SMA</button>
+            <button type="button" data-ma="rsi">RSI</button>
+          </div>
           <svg id="ethaIbitChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="ETHA/IBIT ratio — spot Ether ETF vs spot Bitcoin ETF"></svg>
           <p class="rd-note" id="ethaIbitNote">Loading ETHA/IBIT ratio&hellip;</p>
           <details class="ratio-explainer">
@@ -869,6 +917,11 @@
             <button type="button" data-range="5y">5Y</button>
             <button type="button" data-range="10y">10Y</button>
             <button type="button" data-range="all">All</button>
+          </div>
+          <div class="card-ma-toggles" id="ethaGsolMaToggles" role="tablist" aria-label="Overlays">
+            <button type="button" data-ma="50">50 SMA</button>
+            <button type="button" data-ma="200">200 SMA</button>
+            <button type="button" data-ma="rsi">RSI</button>
           </div>
           <svg id="ethaGsolChart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="ETHA/GSOL ratio — spot Ether ETF vs Grayscale Solana Trust"></svg>
           <p class="rd-note" id="ethaGsolNote">Loading ETHA/GSOL ratio&hellip;</p>
@@ -1349,6 +1402,11 @@
           <button type="button" data-range="10y">10Y</button>
           <button type="button" data-range="all">All</button>
         </div>
+        <div class="card-ma-toggles" id="${r.slug}MaToggles" role="tablist" aria-label="Overlays">
+          <button type="button" data-ma="50">50 SMA</button>
+          <button type="button" data-ma="200">200 SMA</button>
+          <button type="button" data-ma="rsi">RSI</button>
+        </div>
         <svg id="${r.slug}Chart" class="rd-svg" viewBox="0 0 560 260" preserveAspectRatio="none" aria-label="${r.title} ratio"></svg>
         <p class="rd-note" id="${r.slug}Note">Loading&hellip;</p>
         <details class="ratio-explainer">
@@ -1422,45 +1480,123 @@
     };
     const fmt = (v, d = 2) => v == null ? '—' : v.toFixed(d);
 
-    // Render one ratio chart (SVG line + horizontal median line + latest dot)
+    // ---- Overlay helpers: SMA / RSI / 52-week high-low ----
+    // These run on the ratio series (already joined + date-aligned by
+    // joinedRatio). Same convention as the markets-page index charts:
+    // SMA period is in "bars", so "50 SMA" on daily data = 50 days;
+    // on weekly data (5Y view) = 50 weeks. RSI uses Wilder's smoothing.
+    function smaOverlay(rows, n) {
+      const out = new Array(rows.length).fill(null);
+      if (rows.length < n) return out;
+      let sum = 0;
+      for (let i = 0; i < n; i++) sum += rows[i].v;
+      out[n - 1] = sum / n;
+      for (let i = n; i < rows.length; i++) {
+        sum += rows[i].v - rows[i - n].v;
+        out[i] = sum / n;
+      }
+      return out;
+    }
+    function rsiOverlay(rows, period) {
+      period = period || 14;
+      const out = new Array(rows.length).fill(null);
+      if (rows.length <= period) return out;
+      let gain = 0, loss = 0;
+      for (let i = 1; i <= period; i++) {
+        const d = rows[i].v - rows[i-1].v;
+        if (d >= 0) gain += d; else loss -= d;
+      }
+      gain /= period; loss /= period;
+      out[period] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+      for (let i = period + 1; i < rows.length; i++) {
+        const d = rows[i].v - rows[i-1].v;
+        const g = d > 0 ?  d : 0;
+        const l = d < 0 ? -d : 0;
+        gain = (gain * (period - 1) + g) / period;
+        loss = (loss * (period - 1) + l) / period;
+        out[i] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+      }
+      return out;
+    }
+    function fiftyTwoWeek(rows) {
+      // Take the last 252 rows (~1 year of daily bars) from the FULL series.
+      const window = rows.slice(-252);
+      if (window.length < 20) return null;
+      let hi = -Infinity, lo = Infinity;
+      for (const r of window) {
+        if (r.v > hi) hi = r.v;
+        if (r.v < lo) lo = r.v;
+      }
+      return { high: hi, low: lo };
+    }
+
+
+    // Render one ratio chart (SVG line + median line + optional SMAs + optional
+    // RSI subplot + optional 52-week high/low reference lines).
     function drawChart(svgEl, rows, opts) {
+      opts = opts || {};
       if (!svgEl) return;
       // Clear any prior render so a range switch that lands us with too few
       // rows to plot doesn't leave the previous view hanging on the card.
       if (rows.length < 2) { svgEl.innerHTML = ''; return; }
-      const W = 560, H = 260;
-      const M = { top: 15, right: 50, bottom: 30, left: 45 };
-      const plotW = W - M.left - M.right;
-      const plotH = H - M.top - M.bottom;
 
+      const showRsi = !!opts.showRsi;
+      const W = 560;
+      const H = showRsi ? 340 : 260;
+      svgEl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      const M = { top: 15, right: 50, bottom: 30, left: 45 };
+      // When RSI is on, subdivide the vertical space.
+      const priceTop = M.top;
+      const priceH   = showRsi ? 200 : (H - M.top - M.bottom);
+      const rsiGap   = 14;
+      const rsiTop   = priceTop + priceH + rsiGap;
+      const rsiH     = showRsi ? (H - rsiTop - M.bottom) : 0;
+      const plotW    = W - M.left - M.right;
+      const priceBottom = priceTop + priceH;
+
+      const sma50  = opts.show50  ? smaOverlay(rows, 50)  : null;
+      const sma200 = opts.show200 ? smaOverlay(rows, 200) : null;
+      const rsi14  = showRsi      ? rsiOverlay(rows, 14)  : null;
+      const wk52   = opts.wk52    || null;
+
+      // y-scale considers price + all overlays that need to fit on screen.
       const vals = rows.map(r => r.v);
-      const rawMin = Math.min(...vals);
-      const rawMax = Math.max(...vals);
+      if (sma50)  for (const v of sma50)  if (v != null) vals.push(v);
+      if (sma200) for (const v of sma200) if (v != null) vals.push(v);
+      const priceRange = Math.max(...rows.map(r=>r.v)) - Math.min(...rows.map(r=>r.v));
+      let show52Hi = false, show52Lo = false;
+      if (wk52) {
+        const last = rows[rows.length-1].v;
+        const nearHi = Math.abs(wk52.high - last) < Math.max(priceRange * 2, Math.abs(last) * 0.15);
+        const nearLo = Math.abs(wk52.low  - last) < Math.max(priceRange * 2, Math.abs(last) * 0.15);
+        if (nearHi) { vals.push(wk52.high); show52Hi = true; }
+        if (nearLo) { vals.push(wk52.low);  show52Lo = true; }
+      }
+      const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
       const pad = Math.max((rawMax - rawMin) * 0.10, Math.abs(rawMax) * 0.003);
-      const yMin = rawMin - pad;
-      const yMax = rawMax + pad;
+      const yMin = rawMin - pad, yMax = rawMax + pad;
+
       const first = rows[0], last = rows[rows.length - 1];
       const xFor = (t) => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
-      const yFor = (v) => M.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+      const yFor = (v) => priceTop + priceH - ((v - yMin) / (yMax - yMin)) * priceH;
 
       let s = '';
-      const range = yMax - yMin;
-      const step = range < 1 ? 0.25 : range < 5 ? 1 : range < 20 ? 5 : range < 80 ? 10 : 20;
+      // Y grid — dynamic step based on range magnitude
+      const rng = yMax - yMin;
+      const step = rng < 1 ? 0.25 : rng < 5 ? 1 : rng < 20 ? 5 : rng < 80 ? 10 : 20;
       for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
         const y = yFor(v);
         s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
         s += `<text class="axis-label" x="${M.left - 6}" y="${y + 3}" text-anchor="end">${v < 10 ? v.toFixed(1) : Math.round(v)}</text>`;
       }
-      // X-axis ticks: pick evenly-spaced positions and format based on span.
-      // Old year-boundary code produced no ticks at all for spans < 1 year,
-      // which left 1W..6M charts with a blank X axis.
+      // X-axis ticks — span-appropriate labeling
       const spanDays = (last.t - first.t) / 86400000;
       let tickCount, labelFmt;
-      if      (spanDays > 1500) { tickCount = 5; labelFmt = 'year'; }        // > ~4y
-      else if (spanDays > 500)  { tickCount = 5; labelFmt = 'monthYear'; }   // ~1.5-4y
-      else if (spanDays > 200)  { tickCount = 6; labelFmt = 'monthYear'; }   // ~6-18mo
-      else if (spanDays > 45)   { tickCount = 6; labelFmt = 'monthDay'; }    // ~1.5-6mo
-      else if (spanDays > 15)   { tickCount = 5; labelFmt = 'monthDay'; }    // ~2-6wk
+      if      (spanDays > 1500) { tickCount = 5; labelFmt = 'year'; }
+      else if (spanDays > 500)  { tickCount = 5; labelFmt = 'monthYear'; }
+      else if (spanDays > 200)  { tickCount = 6; labelFmt = 'monthYear'; }
+      else if (spanDays > 45)   { tickCount = 6; labelFmt = 'monthDay'; }
+      else if (spanDays > 15)   { tickCount = 5; labelFmt = 'monthDay'; }
       else                       { tickCount = Math.min(4, Math.max(2, Math.floor(spanDays))); labelFmt = 'monthDay'; }
       const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       function fmtTick(ts) {
@@ -1469,29 +1605,95 @@
         if (labelFmt === 'monthYear') return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
         return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCDate();
       }
+      const xAxisY = showRsi ? (rsiTop + rsiH) : priceBottom;
+      const xLabelY = xAxisY + 15;
       for (let i = 0; i <= tickCount; i++) {
         const t = first.t + ((last.t - first.t) * i) / tickCount;
         const x = xFor(t);
-        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-        s += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${fmtTick(t)}</text>`;
+        s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${priceTop}" y2="${priceBottom}"/>`;
+        if (showRsi) s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
+        s += `<text class="axis-label" x="${x}" y="${xLabelY}" text-anchor="middle">${fmtTick(t)}</text>`;
       }
-      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
-      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${priceBottom}" y2="${priceBottom}"/>`;
+      s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${priceTop}" y2="${priceBottom}"/>`;
 
+      // Median reference line
       if (opts.median != null && opts.median >= yMin && opts.median <= yMax) {
         const y = yFor(opts.median);
         s += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
         s += `<text class="axis-label" x="${W - M.right + 3}" y="${y + 3}" style="fill:#64d3ff">med ${fmt(opts.median, opts.medianDigits || 1)}</text>`;
       }
 
+      // 52-week high / low reference lines
+      if (wk52 && show52Hi) {
+        const y = yFor(wk52.high);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#22d39a" stroke-width="1" stroke-dasharray="3 4" opacity="0.55"/>`;
+        s += `<text class="axis-label" x="${W - M.right - 4}" y="${y - 3}" text-anchor="end" fill="#22d39a" opacity="0.85">52W high ${fmt(wk52.high, opts.currentDigits || 2)}</text>`;
+      }
+      if (wk52 && show52Lo) {
+        const y = yFor(wk52.low);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#ff5374" stroke-width="1" stroke-dasharray="3 4" opacity="0.55"/>`;
+        s += `<text class="axis-label" x="${W - M.right - 4}" y="${y + 10}" text-anchor="end" fill="#ff5374" opacity="0.85">52W low ${fmt(wk52.low, opts.currentDigits || 2)}</text>`;
+      }
+
+      // Ratio line
       const path = rows.map((r, i) =>
         (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yFor(r.v).toFixed(1)
       ).join(' ');
       s += `<path fill="none" stroke="${opts.color || 'var(--s5)'}" stroke-width="1.4" d="${path}"/>`;
 
+      // SMA overlays
+      function smaPath(arr) {
+        let out = '', started = false;
+        for (let i = 0; i < arr.length; i++) {
+          const v = arr[i]; if (v == null) continue;
+          const cmd = started ? 'L' : 'M';
+          out += cmd + xFor(rows[i].t).toFixed(1) + ',' + yFor(v).toFixed(1) + ' ';
+          started = true;
+        }
+        return out;
+      }
+      if (sma50) {
+        const d = smaPath(sma50);
+        if (d) s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.2" opacity="0.85" d="${d}"/>`;
+      }
+      if (sma200) {
+        const d = smaPath(sma200);
+        if (d) s += `<path fill="none" stroke="#c084fc" stroke-width="1.2" opacity="0.85" d="${d}"/>`;
+      }
+
+      // Latest dot + value
       const xC = xFor(last.t), yC = yFor(last.v);
       s += `<circle cx="${xC}" cy="${yC}" r="4" fill="${opts.color || 'var(--s5)'}" stroke="#fff" stroke-width="1"/>`;
       s += `<text x="${xC - 6}" y="${yC - 8}" text-anchor="end" fill="${opts.color || 'var(--s5)'}" font-size="12" font-weight="600">${fmt(last.v, opts.currentDigits || 1)}</text>`;
+
+      // RSI subplot
+      if (showRsi && rsi14 && rsi14.some(v => v != null)) {
+        const yR = v => rsiTop + rsiH - (v / 100) * rsiH;
+        s += `<rect x="${M.left}" y="${yR(100)}" width="${plotW}" height="${yR(70) - yR(100)}" fill="rgba(255, 83, 116, 0.10)"/>`;
+        s += `<rect x="${M.left}" y="${yR(30)}"  width="${plotW}" height="${yR(0)  - yR(30)}"  fill="rgba(34, 211, 154, 0.10)"/>`;
+        for (const v of [70, 50, 30]) {
+          const y = yR(v);
+          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+          s += `<text class="axis-label" x="${W - M.right + 6}" y="${y + 3}">${v}</text>`;
+        }
+        let d = '', started = false;
+        for (let i = 0; i < rsi14.length; i++) {
+          const v = rsi14[i]; if (v == null) continue;
+          const cmd = started ? 'L' : 'M';
+          d += cmd + xFor(rows[i].t).toFixed(1) + ',' + yR(v).toFixed(1) + ' ';
+          started = true;
+        }
+        s += `<path fill="none" stroke="#ffb658" stroke-width="1.3" d="${d}"/>`;
+        const lastRsi = rsi14[rsi14.length - 1];
+        if (lastRsi != null) {
+          const x = xFor(rows[rows.length-1].t), y = yR(lastRsi);
+          s += `<circle cx="${x}" cy="${y}" r="3" fill="#ffb658" stroke="#fff" stroke-width="1"/>`;
+          s += `<text class="axis-label" x="${x - 6}" y="${y - 6}" text-anchor="end" fill="#ffb658">RSI ${lastRsi.toFixed(0)}</text>`;
+        }
+        s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${rsiTop + rsiH}" y2="${rsiTop + rsiH}"/>`;
+        s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
+      }
 
       svgEl.innerHTML = s;
     }
@@ -1521,14 +1723,25 @@
       if (medEl) medEl.textContent = fmt(med, cfg.digits);
 
       const svgEl = document.getElementById(cfg.chartId);
-      // The prefix before "Chart" gives us the range picker id.
-      const rangeEl = document.getElementById(cfg.chartId.replace(/Chart$/, 'Range'));
+      // The prefix before "Chart" gives us the range picker + ma-toggles ids.
+      const slug = cfg.chartId.replace(/Chart$/, '');
+      const rangeEl = document.getElementById(slug + 'Range');
+      const maEl    = document.getElementById(slug + 'MaToggles');
+
+      // 52-week high/low from the tail of the full series (independent of view).
+      const wk52 = fiftyTwoWeek(series);
+
+      // Per-card state — overlays default off; range defaults to 6M.
+      const state = { range: '6m', show50: false, show200: false, showRsi: false };
 
       function drawFor(rangeKey) {
+        state.range = rangeKey;
         const slice = sliceRange(series, rangeKey);
         drawChart(svgEl, slice, {
           median: med, color: cfg.color,
           currentDigits: cfg.digits, medianDigits: cfg.digits,
+          show50: state.show50, show200: state.show200, showRsi: state.showRsi,
+          wk52: wk52,
         });
       }
 
@@ -1539,11 +1752,20 @@
           rangeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
           drawFor(btn.dataset.range);
         });
-        // Match the default 6M active button set in HTML
-        drawFor('6m');
-      } else {
-        drawFor('all');
       }
+      if (maEl) {
+        maEl.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-ma]');
+          if (!btn) return;
+          btn.classList.toggle('active');
+          if (btn.dataset.ma === '50')  state.show50  = btn.classList.contains('active');
+          if (btn.dataset.ma === '200') state.show200 = btn.classList.contains('active');
+          if (btn.dataset.ma === 'rsi') state.showRsi = btn.classList.contains('active');
+          drawFor(state.range);
+        });
+      }
+
+      drawFor(rangeEl ? '6m' : 'all');
 
       if (last) {
         const dev = med ? ((last.v / med) - 1) * 100 : 0;
