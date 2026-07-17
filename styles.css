@@ -914,6 +914,14 @@ main.explainer .disclaimer {
   font-size: .9rem;
   color: var(--accent);
   letter-spacing: .04em;
+  text-decoration: none;
+  transition: color 0.12s, border-color 0.12s, background 0.12s, transform 0.12s;
+}
+a.ticker-chip:hover {
+  border-color: var(--accent);
+  background: rgba(110, 231, 255, 0.08);
+  transform: translateY(-1px);
+  text-decoration: none;
 }
 
 /* pos/neg colouring shared by concentration + backtest tables */

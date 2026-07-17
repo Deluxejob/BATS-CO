@@ -1404,11 +1404,13 @@ async function renderConcentration() {
     </tbody>
   `;
 
-  // Populate the ticker chip list
+  // Populate the ticker chip list. Each chip is a link to that ticker's
+  // page — the reader can click straight through to inspect one of the
+  // top constituents.
   const chips = document.getElementById('concentrationTickers');
   if (chips) {
     chips.innerHTML = tickers.map(t =>
-      `<span class="ticker-chip">${t}</span>`
+      `<a class="ticker-chip" href="ticker.html?sym=${encodeURIComponent(t)}">${t}</a>`
     ).join('');
   }
 }
