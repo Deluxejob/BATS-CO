@@ -13,13 +13,14 @@
 
 const YAHOO_UA = 'Mozilla/5.0 (BATS.CO history proxy)';
 
-const RANGES = new Set(['5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'max']);
+const RANGES = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'max']);
+const INTERVALS = new Set(['1m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo']);
 
-async function fetchYahooChart(sym, range) {
+async function fetchYahooChart(sym, range, interval) {
   const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
     encodeURIComponent(sym) +
     '?range=' + encodeURIComponent(range) +
-    '&interval=1d';
+    '&interval=' + encodeURIComponent(interval);
   try {
     const r = await fetch(url, { headers: { 'User-Agent': YAHOO_UA } });
     if (!r.ok) return null;
@@ -42,33 +43,43 @@ async function fetchYahooChart(sym, range) {
 }
 
 export default async function handler(req, res) {
-  const raw   = String(req.query.syms  || '').toUpperCase().trim();
-  const range = String(req.query.range || '6mo').toLowerCase().trim();
+  const raw      = String(req.query.syms     || '').toUpperCase().trim();
+  const range    = String(req.query.range    || '6mo').toLowerCase().trim();
+  const interval = String(req.query.interval || '1d').toLowerCase().trim();
 
   if (!RANGES.has(range)) {
     return res.status(400).json({ error: 'invalid range' });
   }
+  if (!INTERVALS.has(interval)) {
+    return res.status(400).json({ error: 'invalid interval' });
+  }
 
+  // Yahoo caret prefix (^GSPC etc) — allowed here since indices are a
+  // legitimate use of this endpoint.
+  const symRe = /^\^?[A-Z0-9.\-=]{1,15}$/;
   // Split, dedupe, sanitize. Cap at 6 symbols to bound the fanout.
   const syms = Array.from(new Set(
     raw.split(',').map(s => s.trim()).filter(Boolean)
-  )).slice(0, 6).filter(s => /^[A-Z0-9.\-]{1,10}$/.test(s));
+  )).slice(0, 6).filter(s => symRe.test(s));
 
   if (!syms.length) {
     return res.status(400).json({ error: 'no valid symbols' });
   }
 
   try {
-    const results = await Promise.all(syms.map(s => fetchYahooChart(s, range)));
+    const results = await Promise.all(syms.map(s => fetchYahooChart(s, range, interval)));
     const series = {};
     syms.forEach((s, i) => {
       if (results[i]) series[s] = results[i];
     });
 
-    // Cache 15 min at the edge; individual daily closes don't move.
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=900, stale-while-revalidate=60');
+    // Intraday responses need shorter cache since they move; daily+ are stable.
+    // 60s for sub-day intervals, 15min otherwise.
+    const isIntraday = /^(1m|5m|15m|30m|60m|90m|1h)$/.test(interval);
+    const sMaxAge = isIntraday ? 60 : 900;
+    res.setHeader('Cache-Control', `public, max-age=0, s-maxage=${sMaxAge}, stale-while-revalidate=60`);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json({ range, count: Object.keys(series).length, series });
+    return res.status(200).json({ range, interval, count: Object.keys(series).length, series });
   } catch (err) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(502).json({ error: String((err && err.message) || err) });
