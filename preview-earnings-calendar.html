@@ -113,7 +113,22 @@
     .ec-tab.active .ec-tab-count { color: rgba(10, 18, 24, 0.7); }
     .ec-tab.today { box-shadow: inset 0 -2px 0 var(--term-cyan); }
 
-    .ec-table-wrap { overflow-x: auto; }
+    /* Fixed-height scroll container so a 188-company day doesn't blow up
+       the section. Header stays put via position: sticky. */
+    .ec-table-wrap {
+      overflow: auto;
+      max-height: 340px;
+      border: 1px solid var(--term-border-soft);
+      border-radius: 3px;
+      /* Custom thin scrollbar to match the terminal look. */
+      scrollbar-width: thin;
+      scrollbar-color: var(--term-border) transparent;
+    }
+    .ec-table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+    .ec-table-wrap::-webkit-scrollbar-thumb {
+      background: var(--term-border); border-radius: 4px;
+    }
+    .ec-table-wrap::-webkit-scrollbar-thumb:hover { background: var(--term-dim); }
     .ec-table {
       width: 100%;
       border-collapse: collapse;
@@ -130,6 +145,8 @@
       font-size: 0.62rem;
       padding: 0.35rem 0.75rem;
       border-bottom: 1px solid var(--term-border);
+      background: var(--term-panel);
+      position: sticky; top: 0; z-index: 1;
     }
     .ec-table thead th.num { text-align: right; }
     .ec-table tbody td {
@@ -226,7 +243,6 @@
           </table>
         </div>
         <div class="ec-footer">
-          <button type="button" class="ec-more" id="ecMore" hidden>Show all</button>
           <span class="ec-meta" id="ecMeta"></span>
         </div>
       </div>
@@ -237,14 +253,12 @@
     (function () {
       const TBODY = document.getElementById('ecTbody');
       const TABS  = document.getElementById('ecTabs');
-      const MORE  = document.getElementById('ecMore');
       const META  = document.getElementById('ecMeta');
 
-      const TOP_N = 20;              // rows shown by default per day
       const DAYS_AHEAD = 7;          // calendar window from today
       const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-      const state = { earnings: [], byDate: new Map(), dates: [], activeDate: null, expanded: false };
+      const state = { earnings: [], byDate: new Map(), dates: [], activeDate: null };
 
       function ymd(d) { return d.toISOString().slice(0, 10); }
       function parseYmd(s) {
@@ -288,21 +302,23 @@
           btn.className = 'ec-tab' + (dateStr === state.activeDate ? ' active' : '') + (dateStr === todayStr ? ' today' : '');
           btn.dataset.date = dateStr;
           btn.innerHTML = '<span>' + fmtTabLabel(dateStr) + '</span><span class="ec-tab-count">' + count + '</span>';
-          btn.addEventListener('click', () => { state.activeDate = dateStr; state.expanded = false; renderTabs(); renderBody(); });
+          btn.addEventListener('click', () => { state.activeDate = dateStr; renderTabs(); renderBody(); });
           TABS.appendChild(btn);
         }
       }
 
       function renderBody() {
         const rows = state.byDate.get(state.activeDate) || [];
+        // Reset the scroll to the top whenever the active day changes so
+        // the first row (biggest company that day) is always in view.
+        const wrap = document.querySelector('.ec-table-wrap');
+        if (wrap) wrap.scrollTop = 0;
         if (!rows.length) {
           TBODY.innerHTML = '<tr><td colspan="5" class="ec-empty">No earnings scheduled for this day.</td></tr>';
-          MORE.hidden = true;
           META.textContent = '';
           return;
         }
-        const shown = state.expanded ? rows : rows.slice(0, TOP_N);
-        TBODY.innerHTML = shown.map(r => `
+        TBODY.innerHTML = rows.map(r => `
           <tr>
             <td><a class="ec-ticker" href="ticker.html?sym=${encodeURIComponent(r.symbol)}">${r.symbol}</a></td>
             <td>${fmtHour(r.hour)}</td>
@@ -311,14 +327,7 @@
             <td class="ec-dim">${fmtQtr(r.quarter, r.year)}</td>
           </tr>
         `).join('');
-        if (rows.length > TOP_N) {
-          MORE.hidden = false;
-          MORE.textContent = state.expanded ? 'Show top ' + TOP_N : 'Show all ' + rows.length;
-          MORE.onclick = () => { state.expanded = !state.expanded; renderBody(); };
-        } else {
-          MORE.hidden = true;
-        }
-        META.textContent = shown.length + ' of ' + rows.length + ' shown · sorted by revenue estimate · source: finnhub.io';
+        META.textContent = rows.length + ' compan' + (rows.length === 1 ? 'y' : 'ies') + ' · sorted by revenue estimate · scroll for more · source: finnhub.io';
       }
 
       async function load() {
