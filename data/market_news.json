@@ -1,106 +1,148 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1784290157,
-  "latestPublishedAt": 1784290019,
+  "fetchedAt": 1784299451,
+  "latestPublishedAt": 1784299353,
   "items": [
     {
-      "title": "Stock Market Today: Dow Slides As Netflix Plunges On Earnings; SpaceX Slides After Canceled Flight (Live Coverage)",
-      "link": "https://finance.yahoo.com/m/321db8d1-ca56-378a-a99c-0f73b9c90d9b/stock-market-today%3A-dow.html",
+      "title": "First Canadian concludes initial exploration at Zone 13 in Quebec",
+      "link": "https://finance.yahoo.com/m/8ec98f49-d165-347b-94d7-8a78ff31589e/first-canadian-concludes.html",
+      "publisher": "Mining Technology",
+      "publishedAt": 1784299353,
+      "id": "8ec98f49-d165-347b-94d7-8a78ff31589e"
+    },
+    {
+      "title": "Uber Technologies' Delivery Hero Deal Could Deliver More Value Than Initial Synergy Estimates, RBC Says",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/uber-technologies-apos-delivery-hero-144148030.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1784299308,
+      "id": "dcf73af3-491b-32ae-9f06-ea39041aeb16"
+    },
+    {
+      "title": "Intuitive Surgical Faces Rising Competitive Pressure, Long-Term Pricing Risks, Oppenheimer Says",
+      "link": "https://finance.yahoo.com/healthcare/articles/intuitive-surgical-faces-rising-competitive-144101597.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1784299261,
+      "id": "129cead0-45d2-3e78-9566-047268a4b04d"
+    },
+    {
+      "title": "China says US will restore Hong Kong's special trade status",
+      "link": "https://finance.yahoo.com/m/284e3dba-7139-369a-8189-5dc17a7ca328/china-says-us-will-restore.html",
+      "publisher": "Reuters",
+      "publishedAt": 1784299183,
+      "id": "284e3dba-7139-369a-8189-5dc17a7ca328"
+    },
+    {
+      "title": "Microsoft CEO Nadella criticizes Anthropic's Fable AI over refusals in internal Copilot meeting",
+      "link": "https://finance.yahoo.com/m/537cf1b7-4edb-3494-a3c0-c45c16175354/microsoft-ceo-nadella.html",
+      "publisher": "Proactive",
+      "publishedAt": 1784299080,
+      "id": "537cf1b7-4edb-3494-a3c0-c45c16175354"
+    },
+    {
+      "title": "Buffett’s Biggest Bet Just Dethroned Nvidia As the Largest Company In the World",
+      "link": "https://finance.yahoo.com/m/d6d51914-512c-3e75-ba39-d8cf8e13cbe5/buffett%E2%80%99s-biggest-bet-just.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1784299076,
+      "id": "d6d51914-512c-3e75-ba39-d8cf8e13cbe5"
+    },
+    {
+      "title": "Market Chatter: ASML to Give Staff One-Time $22,862 Bonus",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/market-chatter-asml-staff-one-143753232.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1784299073,
+      "id": "5fafaaf9-d124-3834-8eab-775e651ba6f0"
+    },
+    {
+      "title": "Procter & Gamble Has Raised Its Dividend for 70 Straight Years. Only 5 Other Companies Can Say the Same.",
+      "link": "https://finance.yahoo.com/m/d45ec0c7-76fa-3a66-bbb6-ee16284851d5/procter-%26-gamble-has-raised.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1784299020,
+      "id": "d45ec0c7-76fa-3a66-bbb6-ee16284851d5"
+    },
+    {
+      "title": "Asian Equities Traded in the US as American Depositary Receipts Fall in Friday Trading",
+      "link": "https://finance.yahoo.com/markets/world-indices/articles/asian-equities-traded-us-american-143601000.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1784298961,
+      "id": "593aa6ec-3d18-3874-aeee-bbd0730ebc00"
+    },
+    {
+      "title": "Chemtrade Logistics Income Fund (CHE.UN) Opens the Market",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/chemtrade-logistics-income-fund-che-143600125.html",
+      "publisher": "TMX Newsfile",
+      "publishedAt": 1784298960,
+      "id": "3c451425-ed87-356b-9379-a1aad9acac25"
+    },
+    {
+      "title": "The Megacap Growth ETF That’s Been Beating the S&P 500 for a Decade Straight",
+      "link": "https://finance.yahoo.com/m/ac7d1dbc-ac25-3f69-952f-b2f6ad7030ba/the-megacap-growth-etf-that%E2%80%99s.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1784298905,
+      "id": "ac7d1dbc-ac25-3f69-952f-b2f6ad7030ba"
+    },
+    {
+      "title": "Taiwan Semiconductor Manufacturing (TSM): A Beneficiary of AI Boom",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/taiwan-semiconductor-manufacturing-tsm-beneficiary-141959698.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1784297999,
+      "id": "a6bd3b18-29e0-33b9-ba02-52cd311dcac2"
+    },
+    {
+      "title": "United Rentals (URI) Rose on Robust Nonresidential Construction End Markets",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/united-rentals-uri-rose-robust-141810501.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1784297890,
+      "id": "254ffc7d-f654-310f-a014-08bc6faa68d5"
+    },
+    {
+      "title": "22% Growth in iPhone Powers Apple’s (AAPL) Rally",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/22-growth-iphone-powers-apple-141636256.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1784297796,
+      "id": "cbc0bc5f-fc35-3d82-b525-0c34d1fb8098"
+    },
+    {
+      "title": "Stock Market Today: Nasdaq Sinks Amid Tech Rout; Robotic Surgery Name Tumbles (Live Coverage)",
+      "link": "https://finance.yahoo.com/m/321db8d1-ca56-378a-a99c-0f73b9c90d9b/stock-market-today%3A-nasdaq.html",
       "publisher": "Investor's Business Daily",
-      "publishedAt": 1784290019,
+      "publishedAt": 1784297790,
       "id": "321db8d1-ca56-378a-a99c-0f73b9c90d9b"
     },
     {
-      "title": "Dow Jones Futures Fall As Netflix Dives, SpaceX Scrubs Launch; AI Stocks Try To Halt Sell-Off",
-      "link": "https://finance.yahoo.com/m/b5c1ad7a-e72b-3a9b-bb20-11f0979acb67/dow-jones-futures-fall-as.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1784289916,
-      "id": "b5c1ad7a-e72b-3a9b-bb20-11f0979acb67"
+      "title": "Should You Be Bullish on Visa (V)?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/bullish-visa-v-141418966.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1784297658,
+      "id": "27750816-e395-3b30-9a8f-13e07db903fe"
     },
     {
-      "title": "Exclusive-Saudi PIF set to win EU nod for Electronic Arts deal under subsidy rules, sources say",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/exclusive-saudi-pif-set-win-120418285.html",
-      "publisher": "Reuters",
-      "publishedAt": 1784289858,
-      "id": "589cff90-95f2-32eb-92bf-d9121925937d"
+      "title": "Meta Platforms’ (META) Capital Allocation Strategy",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/meta-platforms-meta-capital-allocation-141030435.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1784297430,
+      "id": "affceaf9-5659-33ba-8004-3c240852eee3"
     },
     {
-      "title": "Monte dei Paschi deem Intesa offer below average level",
-      "link": "https://finance.yahoo.com/m/f11f75e8-5732-3a81-af79-5ddb24c39967/monte-dei-paschi-deem-intesa.html",
-      "publisher": "Retail Banker International",
-      "publishedAt": 1784289836,
-      "id": "f11f75e8-5732-3a81-af79-5ddb24c39967"
+      "title": "Here are Updates on Amazon’s (AMZN) Rational FCF Reinvestment",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/updates-amazon-amzn-rational-fcf-140823083.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1784297303,
+      "id": "78660e58-a227-3a23-b103-149f42629283"
     },
     {
-      "title": "The latest on poor air quality in NYC caused by Canadian wildfires",
-      "link": "https://finance.yahoo.com/m/feff8150-19ea-324d-9956-e8ba18fa9881/the-latest-on-poor-air.html",
-      "publisher": "USA TODAY",
-      "publishedAt": 1784289825,
-      "id": "feff8150-19ea-324d-9956-e8ba18fa9881"
+      "title": "Alcoa Earnings Are Improving. The Stock Is Down Anyway.",
+      "link": "https://finance.yahoo.com/m/a1bfcabc-16e1-3ce6-8a04-28577a936957/alcoa-earnings-are-improving..html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1784296620,
+      "id": "a1bfcabc-16e1-3ce6-8a04-28577a936957"
     },
     {
-      "title": "3 Market-Beating Stocks to Target This Week",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/3-market-beating-stocks-target-120146323.html",
-      "publisher": "StockStory",
-      "publishedAt": 1784289706,
-      "id": "2bdd8100-ad5c-36c3-966f-f015168559c3"
-    },
-    {
-      "title": "SpaceX Aborts Starship Test Flight 13 After Engine Failure, Completes SDA Mission",
-      "link": "https://finance.yahoo.com/m/e27a192d-ed29-354c-925c-bb87f3f9916e/spacex-aborts-starship-test.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1784289692,
-      "id": "e27a192d-ed29-354c-925c-bb87f3f9916e"
-    },
-    {
-      "title": "Wesdome Gold Mines Upgraded to Outperformer at CIBC",
-      "link": "https://finance.yahoo.com/markets/commodities/articles/wesdome-gold-mines-upgraded-outperformer-120007305.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1784289607,
-      "id": "8001da3b-af57-3b38-a9c8-0dac97397111"
-    },
-    {
-      "title": "Nasdaq to lead US stocks lower as chip sell-off deepens; Netflix disappoints",
-      "link": "https://finance.yahoo.com/m/77f89c0b-c0ca-3710-a93d-3cc6088914e0/nasdaq-to-lead-us-stocks.html",
-      "publisher": "Proactive",
-      "publishedAt": 1784289600,
-      "id": "77f89c0b-c0ca-3710-a93d-3cc6088914e0"
-    },
-    {
-      "title": "AFC Schedules Earnings Release and Conference Call for the Second Quarter Ended June 30, 2026",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/afc-schedules-earnings-release-conference-120000004.html",
-      "publisher": "GlobeNewswire",
-      "publishedAt": 1784289600,
-      "id": "034a2f22-9edb-394a-bd78-cf4da97de994"
-    },
-    {
-      "title": "St. Jude Keeps Trustmaxxing Among Nonprofit Brands, Others Scramble For 2nd Place",
-      "link": "https://finance.yahoo.com/m/131736bc-6301-3ac5-8be3-c634c52d093d/st.-jude-keeps-trustmaxxing.html",
-      "publisher": "MediaPost",
-      "publishedAt": 1784289600,
-      "id": "131736bc-6301-3ac5-8be3-c634c52d093d"
-    },
-    {
-      "title": "Abacus Global Management to Announce Second Quarter 2026 Financial Results on Thursday, August 6, 2026",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/abacus-global-management-announce-second-120000260.html",
-      "publisher": "GlobeNewswire",
-      "publishedAt": 1784289600,
-      "id": "14894fb6-522c-3e70-b00a-9436cb900214"
-    },
-    {
-      "title": "US Equity Futures Drop as AI Concerns Weigh on Tech Stocks, Middle East Conflict Continues",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/us-equity-futures-drop-ai-115429423.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1784289269,
-      "id": "1299a134-9fd3-3ff6-b1fc-d45b70fc2bbf"
-    },
-    {
-      "title": "Stocks Fall Pre-Bell as Chip Sell-Off Continues",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stocks-fall-pre-bell-chip-115314659.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1784289194,
-      "id": "c3db3db3-e4e6-35c6-80fa-a699d7fda87b"
+      "title": "Auto Supplier Earnings Show State of the Car Market",
+      "link": "https://finance.yahoo.com/m/19fd3ea6-e81d-327f-9bb9-d9b93aaf97c4/auto-supplier-earnings-show.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1784296500,
+      "id": "19fd3ea6-e81d-327f-9bb9-d9b93aaf97c4"
     },
     {
       "title": "VOO vs. VTI: If a Bear Market Is Coming, Here's Which One I'm Stocking Up On",
@@ -108,34 +150,6 @@
       "publisher": "Motley Fool",
       "publishedAt": 1784289000,
       "id": "7444c9ee-29e2-3fff-83a3-ef4dc6baa4bb"
-    },
-    {
-      "title": "1 Industrials Stock with Exciting Potential and 2 We Brush Off",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/1-industrials-stock-exciting-potential-114546183.html",
-      "publisher": "StockStory",
-      "publishedAt": 1784288746,
-      "id": "93aeba1d-f5f3-3c31-8740-2b3593e393c7"
-    },
-    {
-      "title": "Chip stocks fall globally, pulling U.S. stock futures lower",
-      "link": "https://finance.yahoo.com/m/87ce3cc6-8a3b-3567-b51e-2adaaf5778fd/chip-stocks-fall-globally%2C.html",
-      "publisher": "Quartz",
-      "publishedAt": 1784288193,
-      "id": "87ce3cc6-8a3b-3567-b51e-2adaaf5778fd"
-    },
-    {
-      "title": "If You Invest $2,000 in Ares Capital Today, Here's the Dividend Income You Could See by 2030",
-      "link": "https://finance.yahoo.com/m/38d1440d-7deb-3706-8a66-e80d357904ff/if-you-invest-%242%2C000-in-ares.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1784288100,
-      "id": "38d1440d-7deb-3706-8a66-e80d357904ff"
-    },
-    {
-      "title": "SpaceX Investors Rip $565 Billion Out Of Elon Musk's Hands",
-      "link": "https://finance.yahoo.com/m/90b48fae-e2d7-3d17-8f93-2b982e2b9d9f/spacex-investors-rip-%24565.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1784287335,
-      "id": "90b48fae-e2d7-3d17-8f93-2b982e2b9d9f"
     },
     {
       "title": "If You're 25 and Just Starting Out, This Is the Only Vanguard ETF You Need for the Next Decade",
@@ -199,13 +213,6 @@
       "publisher": "etf.com",
       "publishedAt": 1783645579,
       "id": "049bd161-9bec-3802-b497-7d4d2e319d21"
-    },
-    {
-      "title": "4 Brilliant Vanguard ETFs to Buy in July",
-      "link": "https://finance.yahoo.com/m/fe9a51d9-af56-3904-9c6a-64bc595992c8/4-brilliant-vanguard-etfs-to.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1783512000,
-      "id": "fe9a51d9-af56-3904-9c6a-64bc595992c8"
     },
     {
       "title": "Stock market today: Dow closes above 52,000 for first time, S&P 500 and Nasdaq rally as tech gains",
