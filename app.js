@@ -1266,18 +1266,25 @@ function scoreConcentration(gap) {
   return Math.max(5, Math.min(95, score));
 }
 
-function setConcentrationGauge(gap) {
+function setConcentrationGauge(gap, periodLabel) {
   const marker = document.getElementById('concGaugeMarker');
   const reading = document.getElementById('concGaugeReading');
   const valueEl = document.getElementById('concGaugeValue');
-  if (gap == null || !marker) return;
+  if (!marker) return;
+  if (gap == null) {
+    if (reading) reading.textContent = 'Not enough data';
+    if (valueEl) valueEl.textContent = periodLabel ? `${periodLabel} Top 10 gap: —` : '';
+    marker.style.left = '50%';
+    return;
+  }
   const score = scoreConcentration(gap);
   marker.style.left = score + '%';
   const bucketIdx = Math.min(CONC_BUCKETS.length - 1, Math.floor((score / 100) * CONC_BUCKETS.length));
   if (reading) reading.textContent = CONC_BUCKETS[bucketIdx].label;
   if (valueEl) {
     const sign = gap >= 0 ? '+' : '';
-    valueEl.textContent = `1-month Top 10 gap: ${sign}${gap.toFixed(2)}%`;
+    const label = periodLabel || '1 Week';
+    valueEl.textContent = `${label} Top 10 gap: ${sign}${gap.toFixed(2)}%`;
   }
 }
 
@@ -1342,9 +1349,25 @@ async function renderConcentration() {
     return { label: window.label, key: window.key, topAvg, broadRet, gap };
   });
 
-  // Point the concentration gauge at the 1-month gap
-  const oneMonth = rows.find(r => r.key === 'm1');
-  if (oneMonth) setConcentrationGauge(oneMonth.gap);
+  // Point the concentration gauge at the currently-picked period (default 1W).
+  // Wire the picker on first render so clicks re-point at a different window
+  // without a page reload. Guarded by dataset.wired so re-renders (e.g. the
+  // S&P/Nasdaq market toggle) don't stack duplicate listeners.
+  const picker = document.getElementById('concGaugePicker');
+  const activeBtn = picker && picker.querySelector('button.active');
+  const initialKey = (activeBtn && activeBtn.dataset.period) || 'w1';
+  const initialRow = rows.find(r => r.key === initialKey) || rows.find(r => r.key === 'w1');
+  if (initialRow) setConcentrationGauge(initialRow.gap, initialRow.label);
+  if (picker && picker.dataset.wired !== '1') {
+    picker.dataset.wired = '1';
+    picker.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-period]');
+      if (!btn) return;
+      const row = rows.find(r => r.key === btn.dataset.period);
+      picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+      if (row) setConcentrationGauge(row.gap, row.label);
+    });
+  }
 
   function fmt(x, digits = 2) {
     if (x == null) return '<span class="text-dim">—</span>';

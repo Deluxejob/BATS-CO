@@ -793,6 +793,37 @@ main.explainer .disclaimer {
 }
 
 /* Concentration gauge — horizontal thermometer, "concentrated ← → broad" */
+.conc-gauge-picker {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0 auto 0.75rem;
+  max-width: 620px;
+}
+.conc-gauge-picker button {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.32rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.conc-gauge-picker button:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.conc-gauge-picker button.active {
+  background: var(--accent);
+  color: #0a1218;
+  border-color: var(--accent);
+}
 .conc-gauge-wrap {
   max-width: 620px;
   margin: 1rem auto 2.5rem;
