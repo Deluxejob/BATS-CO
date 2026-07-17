@@ -33,7 +33,9 @@ async function getCrumb() {
   return { crumb, cookieHeader };
 }
 
-// Trim Yahoo's fat quote object down to what the watchlist actually needs.
+// Trim Yahoo's fat quote object down to what the watchlist actually needs,
+// plus the pre/post-market fields the quotes-page cards use to show
+// extended-hours prices.
 function compactQuote(q) {
   if (!q || typeof q !== 'object') return null;
   const pick = (k) => (typeof q[k] === 'number' && Number.isFinite(q[k])) ? q[k] : null;
@@ -57,6 +59,18 @@ function compactQuote(q) {
     // For SPY/^GSPC these give us the forward-P/E for the whole US market.
     trailingPE:             pick('trailingPE'),
     forwardPE:              pick('forwardPE'),
+    // Extended-hours fields. marketState is one of PRE, PREPRE, REGULAR,
+    // POST, POSTPOST, CLOSED. Pre/post prices are only populated during
+    // (or shortly after) their respective sessions.
+    marketState:            q.marketState || null,
+    preMarketPrice:         pick('preMarketPrice'),
+    preMarketChange:        pick('preMarketChange'),
+    preMarketChangePercent: pick('preMarketChangePercent'),
+    preMarketTime:          pick('preMarketTime'),
+    postMarketPrice:        pick('postMarketPrice'),
+    postMarketChange:       pick('postMarketChange'),
+    postMarketChangePercent: pick('postMarketChangePercent'),
+    postMarketTime:         pick('postMarketTime'),
   };
 }
 
@@ -99,10 +113,12 @@ export default async function handler(req, res) {
       if (c && c.symbol) quotes[c.symbol] = c;
     }
 
-    // Cache 5 min at the edge — during market hours prices tick, but a 5-min
-    // lag on watchlist rows is fine and keeps Yahoo happy.
+    // Cache 60 s at the edge — tight enough that pre-market / post-market
+    // prices on the quotes page tick reasonably fresh, still cheap for
+    // repeat page loads. Watchlist consumers get slightly fresher data
+    // than before too.
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=60');
     return res.status(200).json({ symbols: syms, count: Object.keys(quotes).length, quotes });
   } catch (err) {
     res.setHeader('Access-Control-Allow-Origin', '*');

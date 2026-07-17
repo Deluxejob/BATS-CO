@@ -166,6 +166,14 @@
       border-radius: 4px;
       padding: 0.45rem 0.55rem 0.35rem;
     }
+    .idx-card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin: 0 0 0.2rem 0.15rem;
+      min-height: 1.05rem;
+    }
     .idx-card-label {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.68rem;
@@ -173,8 +181,36 @@
       text-transform: uppercase;
       letter-spacing: 0.1em;
       font-weight: 600;
-      margin: 0 0 0.2rem 0.15rem;
     }
+    /* Extended-hours strip — shows pre-market OR after-hours price on the
+       index cards when the market is outside regular trading hours. Hidden
+       during regular hours (the TV widget already shows the live price). */
+    .idx-card-ext {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      color: var(--term-dim);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .idx-card-ext.visible { opacity: 1; }
+    .idx-card-ext .ext-tag {
+      display: inline-block;
+      font-size: 0.56rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 0.06rem 0.32rem;
+      border-radius: 2px;
+      margin-right: 0.3rem;
+      vertical-align: middle;
+    }
+    .idx-card-ext.pre  .ext-tag { background: rgba(110, 231, 255, 0.15); color: var(--term-cyan); }
+    .idx-card-ext.post .ext-tag { background: rgba(255, 182, 88, 0.15); color: var(--term-amber); }
+    .idx-card-ext .ext-pct.pos { color: var(--term-green); }
+    .idx-card-ext .ext-pct.neg { color: var(--term-red); }
     .idx-card .tradingview-widget-container { min-height: 170px; }
 
     /* Breadth gauge cards */
@@ -1109,14 +1145,79 @@
       for (const it of items) {
         const card = document.createElement('div');
         card.className = 'idx-card';
+        const header = document.createElement('div');
+        header.className = 'idx-card-header';
         const t = document.createElement('div');
         t.className = 'idx-card-label';
         t.textContent = it.title;
-        card.appendChild(t);
+        const ext = document.createElement('div');
+        ext.className = 'idx-card-ext';
+        ext.dataset.sym = it.label;
+        header.appendChild(t);
+        header.appendChild(ext);
+        card.appendChild(header);
         mountMiniOverview(card, it.sym, it.label);
         grid.appendChild(card);
       }
+      // Once the cards are in the DOM, wire up the pre/post-market refresh.
+      startExtendedHoursRefresh();
     })();
+
+    // Poll /api/quote every 60 s and paint the pre-market / after-hours
+    // strip on each idx-card. During REGULAR hours the strip stays hidden
+    // (the TradingView widget itself shows the live regular-session price).
+    function startExtendedHoursRefresh() {
+      const strips = Array.from(document.querySelectorAll('.idx-card-ext[data-sym]'));
+      if (!strips.length) return;
+      const syms = strips.map(s => s.dataset.sym).join(',');
+      const fmtPrice = (v) => v == null || !isFinite(v)
+        ? '—'
+        : '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtPct = (v) => {
+        if (v == null || !isFinite(v)) return '';
+        const sign = v > 0 ? '+' : (v < 0 ? '−' : '');
+        return sign + Math.abs(v).toFixed(2) + '%';
+      };
+      function paint(quote, stripEl) {
+        if (!quote) return;
+        const state = String(quote.marketState || '').toUpperCase();
+        let tier = null;
+        if (state === 'PRE' || state === 'PREPRE') {
+          if (quote.preMarketPrice != null) tier = { tag: 'PRE',  price: quote.preMarketPrice, pct: quote.preMarketChangePercent, cls: 'pre'  };
+        } else if (state === 'POST' || state === 'POSTPOST') {
+          if (quote.postMarketPrice != null) tier = { tag: 'AFT', price: quote.postMarketPrice, pct: quote.postMarketChangePercent, cls: 'post' };
+        } else if (state === 'CLOSED') {
+          // Markets are closed for the day (weekend / overnight). Show
+          // whichever extended snapshot is present, preferring the more
+          // recent one by Yahoo's post/pre timestamps.
+          const preTs  = Number(quote.preMarketTime  || 0);
+          const postTs = Number(quote.postMarketTime || 0);
+          if (quote.postMarketPrice != null && postTs >= preTs) {
+            tier = { tag: 'AFT', price: quote.postMarketPrice, pct: quote.postMarketChangePercent, cls: 'post' };
+          } else if (quote.preMarketPrice != null) {
+            tier = { tag: 'PRE', price: quote.preMarketPrice, pct: quote.preMarketChangePercent, cls: 'pre' };
+          }
+        }
+        stripEl.className = 'idx-card-ext' + (tier ? ' visible ' + tier.cls : '');
+        if (!tier) { stripEl.innerHTML = ''; return; }
+        const pctCls = tier.pct == null ? '' : (tier.pct >= 0 ? 'pos' : 'neg');
+        stripEl.innerHTML =
+          '<span class="ext-tag">' + tier.tag + '</span>' +
+          '<span class="ext-price">' + fmtPrice(tier.price) + '</span> ' +
+          '<span class="ext-pct ' + pctCls + '">' + fmtPct(tier.pct) + '</span>';
+      }
+      async function refresh() {
+        try {
+          const r = await fetch('/api/quote?syms=' + encodeURIComponent(syms), { cache: 'no-store' });
+          if (!r.ok) return;
+          const data = await r.json();
+          const quotes = (data && data.quotes) || {};
+          for (const s of strips) paint(quotes[s.dataset.sym], s);
+        } catch (e) { /* transient network error — try again next tick */ }
+      }
+      refresh();
+      setInterval(refresh, 60000);
+    }
 
     // Row 2: breadth tilt gauges — computed live from our sector-ETF CSVs.
     // CSVs are fetched once at page load (they only change nightly). The live
