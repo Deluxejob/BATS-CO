@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview — Earnings Calendar — BATS.CO</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root {
+      --term-bg:      #08111a;
+      --term-panel:   #101821;
+      --term-panel-2: #0d1520;
+      --term-border:  #1c2734;
+      --term-border-soft: #172131;
+      --term-text:    #d5dee9;
+      --term-dim:     #7b8697;
+      --term-amber:   #ffb658;
+      --term-cyan:    #6ee7ff;
+      --term-green:   #22d39a;
+      --term-red:     #ff5374;
+    }
+    body { background: var(--term-bg); }
+    main.terminal {
+      max-width: 1720px;
+      margin: 0 auto;
+      padding: 0.75rem 1.25rem 3rem;
+      color: var(--term-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .preview-banner {
+      background: rgba(255, 182, 88, 0.08);
+      border: 1px dashed var(--term-amber);
+      color: var(--term-amber);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 4px;
+      margin: 1rem 0 1.25rem;
+    }
+    .preview-banner b { font-weight: 700; }
+
+    /* Section shell — copied from quotes.html so the preview reads exactly
+       as it will on the real page. */
+    .term-section { margin-bottom: 1.25rem; }
+    .term-section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .term-section-label::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: var(--term-amber);
+      border-radius: 1px;
+    }
+    .term-section-label .sub {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-size: 0.72rem;
+    }
+    .term-panel {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 0.6rem 0.75rem 0.65rem;
+    }
+
+    /* ---------- Earnings Calendar ---------- */
+    .ec-tabs {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.55rem;
+    }
+    .ec-tab {
+      font: inherit;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--term-dim);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.35rem 0.7rem;
+      cursor: pointer;
+      display: flex; align-items: baseline; gap: 0.5rem;
+      transition: color 0.1s, border-color 0.1s, background 0.1s;
+    }
+    .ec-tab:hover { color: var(--term-text); border-color: var(--term-amber); }
+    .ec-tab.active {
+      background: var(--term-amber);
+      color: #0a1218;
+      border-color: var(--term-amber);
+    }
+    .ec-tab .ec-tab-count {
+      font-size: 0.65rem;
+      color: var(--term-dim);
+      font-weight: 500;
+    }
+    .ec-tab.active .ec-tab-count { color: rgba(10, 18, 24, 0.7); }
+    .ec-tab.today { box-shadow: inset 0 -2px 0 var(--term-cyan); }
+
+    .ec-table-wrap { overflow-x: auto; }
+    .ec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .ec-table thead th {
+      text-align: left;
+      color: var(--term-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.62rem;
+      padding: 0.35rem 0.75rem;
+      border-bottom: 1px solid var(--term-border);
+    }
+    .ec-table thead th.num { text-align: right; }
+    .ec-table tbody td {
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid var(--term-border-soft);
+      color: var(--term-text);
+    }
+    .ec-table tbody td.num { text-align: right; }
+    .ec-table tbody tr:hover td { background: rgba(255, 182, 88, 0.04); }
+    .ec-ticker {
+      color: var(--term-cyan);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .ec-ticker:hover { color: var(--term-amber); text-decoration: underline; }
+    .ec-hour {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.12rem 0.4rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .ec-hour.bmo { background: rgba(110, 231, 255, 0.12); color: var(--term-cyan); }
+    .ec-hour.amc { background: rgba(255, 182, 88, 0.12); color: var(--term-amber); }
+    .ec-hour.dmh { background: rgba(123, 134, 151, 0.15); color: var(--term-dim); }
+    .ec-dim { color: var(--term-dim); }
+    .ec-empty {
+      padding: 1.2rem 0.5rem;
+      text-align: center;
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+    }
+    .ec-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.6rem; gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .ec-more {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      background: transparent; color: var(--term-cyan);
+      border: 1px solid var(--term-border);
+      border-radius: 3px; padding: 0.3rem 0.65rem;
+      cursor: pointer;
+    }
+    .ec-more:hover { border-color: var(--term-cyan); }
+    .ec-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+    }
+    .ec-loading {
+      padding: 1.2rem 0.5rem;
+      text-align: center;
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="terminal">
+    <div class="preview-banner">
+      <b>PREVIEW ONLY.</b> This page is a design mockup for the new earnings-calendar section
+      that will slot between "Futures/Rates/Crypto" and "Today's Movers" on the Quotes page.
+      Data is live from Finnhub. Approve or request changes before I integrate.
+    </div>
+
+    <section class="term-section">
+      <div class="term-section-label">
+        EARNINGS CALENDAR
+        <span class="sub" id="ecSub">— top companies reporting this week &middot; Finnhub</span>
+      </div>
+      <div class="term-panel">
+        <div class="ec-tabs" id="ecTabs"></div>
+        <div class="ec-table-wrap">
+          <table class="ec-table">
+            <thead>
+              <tr>
+                <th style="width: 90px;">Ticker</th>
+                <th style="width: 70px;">Time</th>
+                <th class="num" style="width: 110px;">EPS est.</th>
+                <th class="num" style="width: 140px;">Revenue est.</th>
+                <th style="width: 80px;">Qtr</th>
+              </tr>
+            </thead>
+            <tbody id="ecTbody">
+              <tr><td colspan="5" class="ec-loading">Loading&hellip;</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="ec-footer">
+          <button type="button" class="ec-more" id="ecMore" hidden>Show all</button>
+          <span class="ec-meta" id="ecMeta"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const TBODY = document.getElementById('ecTbody');
+      const TABS  = document.getElementById('ecTabs');
+      const MORE  = document.getElementById('ecMore');
+      const META  = document.getElementById('ecMeta');
+
+      const TOP_N = 20;              // rows shown by default per day
+      const DAYS_AHEAD = 7;          // calendar window from today
+      const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      const state = { earnings: [], byDate: new Map(), dates: [], activeDate: null, expanded: false };
+
+      function ymd(d) { return d.toISOString().slice(0, 10); }
+      function parseYmd(s) {
+        const [y, m, d] = s.split('-').map(Number);
+        return new Date(Date.UTC(y, m - 1, d));
+      }
+      function fmtEps(v) {
+        if (v == null || !isFinite(v)) return '<span class="ec-dim">&mdash;</span>';
+        const sign = v < 0 ? '−' : '';
+        return sign + '$' + Math.abs(v).toFixed(2);
+      }
+      function fmtRev(v) {
+        if (v == null || !isFinite(v)) return '<span class="ec-dim">&mdash;</span>';
+        if (v >= 1e12) return '$' + (v / 1e12).toFixed(2) + 'T';
+        if (v >= 1e9)  return '$' + (v / 1e9 ).toFixed(2) + 'B';
+        if (v >= 1e6)  return '$' + (v / 1e6 ).toFixed(1) + 'M';
+        return '$' + v.toLocaleString('en-US');
+      }
+      function fmtQtr(q, y) {
+        if (!q || !y) return '<span class="ec-dim">&mdash;</span>';
+        return 'Q' + q + ' ' + String(y).slice(-2);
+      }
+      function fmtHour(h) {
+        h = String(h || '').toLowerCase();
+        if (h === 'bmo') return '<span class="ec-hour bmo" title="Before market open">BMO</span>';
+        if (h === 'amc') return '<span class="ec-hour amc" title="After market close">AMC</span>';
+        return '<span class="ec-hour dmh" title="During market hours or unspecified">--</span>';
+      }
+      function fmtTabLabel(dateStr) {
+        const d = parseYmd(dateStr);
+        return DAY_NAMES[d.getUTCDay()] + ' ' + (d.getUTCMonth() + 1) + '/' + d.getUTCDate();
+      }
+
+      function renderTabs() {
+        TABS.innerHTML = '';
+        const todayStr = ymd(new Date());
+        for (const dateStr of state.dates) {
+          const count = (state.byDate.get(dateStr) || []).length;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'ec-tab' + (dateStr === state.activeDate ? ' active' : '') + (dateStr === todayStr ? ' today' : '');
+          btn.dataset.date = dateStr;
+          btn.innerHTML = '<span>' + fmtTabLabel(dateStr) + '</span><span class="ec-tab-count">' + count + '</span>';
+          btn.addEventListener('click', () => { state.activeDate = dateStr; state.expanded = false; renderTabs(); renderBody(); });
+          TABS.appendChild(btn);
+        }
+      }
+
+      function renderBody() {
+        const rows = state.byDate.get(state.activeDate) || [];
+        if (!rows.length) {
+          TBODY.innerHTML = '<tr><td colspan="5" class="ec-empty">No earnings scheduled for this day.</td></tr>';
+          MORE.hidden = true;
+          META.textContent = '';
+          return;
+        }
+        const shown = state.expanded ? rows : rows.slice(0, TOP_N);
+        TBODY.innerHTML = shown.map(r => `
+          <tr>
+            <td><a class="ec-ticker" href="ticker.html?sym=${encodeURIComponent(r.symbol)}">${r.symbol}</a></td>
+            <td>${fmtHour(r.hour)}</td>
+            <td class="num">${fmtEps(r.epsEstimate)}</td>
+            <td class="num">${fmtRev(r.revenueEstimate)}</td>
+            <td class="ec-dim">${fmtQtr(r.quarter, r.year)}</td>
+          </tr>
+        `).join('');
+        if (rows.length > TOP_N) {
+          MORE.hidden = false;
+          MORE.textContent = state.expanded ? 'Show top ' + TOP_N : 'Show all ' + rows.length;
+          MORE.onclick = () => { state.expanded = !state.expanded; renderBody(); };
+        } else {
+          MORE.hidden = true;
+        }
+        META.textContent = shown.length + ' of ' + rows.length + ' shown · sorted by revenue estimate · source: finnhub.io';
+      }
+
+      async function load() {
+        const now = new Date();
+        const from = ymd(now);
+        const toDate = new Date(now.getTime() + DAYS_AHEAD * 86400 * 1000);
+        const to = ymd(toDate);
+        try {
+          const r = await fetch('/api/earnings-calendar?from=' + from + '&to=' + to, { cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const payload = await r.json();
+          state.earnings = payload.earnings || [];
+
+          // Group by date, restrict to Mon-Fri weekdays inside the window.
+          state.byDate = new Map();
+          for (const row of state.earnings) {
+            const d = parseYmd(row.date).getUTCDay();
+            if (d === 0 || d === 6) continue;   // skip weekends
+            if (!state.byDate.has(row.date)) state.byDate.set(row.date, []);
+            state.byDate.get(row.date).push(row);
+          }
+          state.dates = Array.from(state.byDate.keys()).sort();
+          // Default active tab: today if it has data, otherwise the next
+          // weekday that does.
+          const todayStr = ymd(now);
+          state.activeDate = state.dates.find(d => d >= todayStr) || state.dates[0] || null;
+
+          renderTabs();
+          renderBody();
+        } catch (e) {
+          TBODY.innerHTML = '<tr><td colspan="5" class="ec-empty">Failed to load: ' + ((e && e.message) || e) + '</td></tr>';
+        }
+      }
+
+      load();
+    })();
+  </script>
+</body>
+</html>
