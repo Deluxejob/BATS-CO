@@ -75,10 +75,25 @@
 
     .ticker-search {
       display: flex;
-      gap: 0.4rem;
-      max-width: 680px;
+      gap: 0.4rem 0.6rem;
+      max-width: 900px;
       align-items: center;
       flex-wrap: wrap;
+    }
+    /* Input + GO button live in their own flex row so they always stay
+       side-by-side. When the recent-pills row is long enough to push
+       past the line, this whole unit wraps to a new line together
+       instead of GO getting orphaned below the input. */
+    .ticker-search-input-row {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      flex: 1 1 320px;
+      min-width: 240px;
+    }
+    .ticker-search-input-row input {
+      flex: 1 1 auto;
+      min-width: 0;
     }
     /* Recently-viewed tickers — small pills to the LEFT of the search
        input. Populated from localStorage; clicking a pill navigates to
@@ -1566,8 +1581,10 @@
       </div>
       <form class="ticker-search" id="tickerSearchForm">
         <div class="recent-pills" id="recentPills" hidden></div>
-        <input type="text" id="tickerSearchInput" placeholder="Search another ticker" autocomplete="off" spellcheck="false" required />
-        <button type="submit">GO &rarr;</button>
+        <div class="ticker-search-input-row">
+          <input type="text" id="tickerSearchInput" placeholder="Search another ticker" autocomplete="off" spellcheck="false" required />
+          <button type="submit">GO &rarr;</button>
+        </div>
       </form>
     </div>
 
