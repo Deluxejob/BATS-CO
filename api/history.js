@@ -34,6 +34,7 @@ async function fetchYahooChart(sym, range, interval, wantOhlc) {
     const opens = q && q.open;
     const highs = q && q.high;
     const lows  = q && q.low;
+    const vols  = q && q.volume;
     const out = [];
     for (let i = 0; i < tss.length; i++) {
       const c = closes[i];
@@ -41,7 +42,11 @@ async function fetchYahooChart(sym, range, interval, wantOhlc) {
       if (wantOhlc) {
         const o = opens && opens[i], h = highs && highs[i], l = lows && lows[i];
         if (![o, h, l].every(v => typeof v === 'number' && Number.isFinite(v))) continue;
-        out.push([tss[i], +o.toFixed(4), +h.toFixed(4), +l.toFixed(4), +c.toFixed(4)]);
+        // Volume is optional — some indices report null. Zero-fill so the
+        // client-side chart engine can always index p[5] safely.
+        const rawV = vols && vols[i];
+        const v = (typeof rawV === 'number' && Number.isFinite(rawV)) ? Math.round(rawV) : 0;
+        out.push([tss[i], +o.toFixed(4), +h.toFixed(4), +l.toFixed(4), +c.toFixed(4), v]);
       } else {
         out.push([tss[i], +c.toFixed(4)]);
       }

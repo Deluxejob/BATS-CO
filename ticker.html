@@ -2184,17 +2184,25 @@
         function drawChart(svg, pts, opts) {
           opts = opts || {};
           const showRsi = !!opts.showRsi;
+          // Layout — vertical stack: price / volume / [RSI]. Volume strip
+          // is always drawn (a stock chart without volume feels incomplete);
+          // RSI stays togglable.
           const W = 900;
-          const H = showRsi ? 400 : 320;
-          svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+          const VOL_H   = 42;
+          const VOL_GAP = 6;
+          const RSI_H   = 100;
+          const RSI_GAP = 10;
           const M = { top: 12, right: 70, bottom: 26, left: 14 };
           const priceTop = M.top;
-          const priceH   = showRsi ? 250 : (H - M.top - M.bottom);
-          const rsiGap   = 16;
-          const rsiTop   = priceTop + priceH + rsiGap;
-          const rsiH     = showRsi ? (H - rsiTop - M.bottom) : 0;
-          const plotW    = W - M.left - M.right;
+          const priceH   = showRsi ? 220 : 250;
           const priceBottom = priceTop + priceH;
+          const volTop    = priceBottom + VOL_GAP;
+          const volBottom = volTop + VOL_H;
+          const rsiTop    = showRsi ? (volBottom + RSI_GAP) : volBottom;
+          const rsiH      = showRsi ? RSI_H : 0;
+          const H         = (showRsi ? (rsiTop + rsiH) : volBottom) + M.bottom;
+          const plotW     = W - M.left - M.right;
+          svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
           if (!pts.length) { svg.innerHTML = ''; return; }
           if (pts.length < 2) {
@@ -2261,12 +2269,13 @@
             if (labelFmt === 'monthDay')  return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCDate();
             return String(d.getUTCHours()).padStart(2,'0') + ':' + String(d.getUTCMinutes()).padStart(2,'0');
           }
-          const xAxisY = showRsi ? (rsiTop + rsiH) : priceBottom;
+          const xAxisY = showRsi ? (rsiTop + rsiH) : volBottom;
           const xLabelY = xAxisY + 15;
           for (let i = 0; i <= tickCount; i++) {
             const t = first + ((last - first) * i) / tickCount;
             const x = xFor(t);
             s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${priceTop}" y2="${priceBottom}"/>`;
+            s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${volTop}" y2="${volBottom}"/>`;
             if (showRsi) s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
             s += `<text class="axis-label" x="${x}" y="${xLabelY}" text-anchor="middle">${fmtTick(t)}</text>`;
           }
@@ -2326,6 +2335,42 @@
               const bodyH   = Math.max(1, Math.abs(yC - yO));
               s += `<rect x="${(x - bodyW/2).toFixed(1)}" y="${bodyTop.toFixed(1)}" width="${bodyW.toFixed(1)}" height="${bodyH.toFixed(1)}" fill="${col}"/>`;
             }
+          }
+
+          // Volume subplot — one bar per candle, colored to match its
+          // candle's direction, at 55% opacity so it supports the price
+          // read rather than competing with it. Bars scale to the max
+          // volume in the visible range.
+          {
+            let maxVol = 0;
+            for (const p of pts) { const v = p[5] || 0; if (v > maxVol) maxVol = v; }
+            const slot  = plotW / pts.length;
+            const barW  = Math.max(1, slot * 0.7);
+            if (maxVol > 0) {
+              const yV = (v) => volBottom - (v / maxVol) * VOL_H;
+              for (let i = 0; i < pts.length; i++) {
+                const p = pts[i];
+                const v = p[5] || 0;
+                if (v <= 0) continue;
+                const up  = p[4] >= p[1];
+                const col = up ? '#22d39a' : '#ff5374';
+                const x   = xFor(p[0]);
+                const y   = yV(v);
+                const h   = volBottom - y;
+                s += `<rect x="${(x - barW/2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" opacity="0.55"/>`;
+              }
+              const fmtVol = (n) => n >= 1e9 ? (n/1e9).toFixed(1) + 'B'
+                                  : n >= 1e6 ? (n/1e6).toFixed(1) + 'M'
+                                  : n >= 1e3 ? (n/1e3).toFixed(1) + 'K'
+                                  : String(Math.round(n));
+              s += `<text class="axis-label" x="${W - M.right + 6}" y="${(volTop + 9).toFixed(1)}">${fmtVol(maxVol)}</text>`;
+              s += `<text class="axis-label" x="${W - M.right + 6}" y="${(volBottom - 2).toFixed(1)}" opacity="0.5">Vol</text>`;
+            }
+            // Frame the volume strip: a soft separator line at the top and
+            // the closing axis line at the bottom of the strip.
+            s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${volTop.toFixed(1)}" y2="${volTop.toFixed(1)}" opacity="0.5"/>`;
+            s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${volBottom.toFixed(1)}" y2="${volBottom.toFixed(1)}"/>`;
+            s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${volTop.toFixed(1)}" y2="${volBottom.toFixed(1)}"/>`;
           }
 
           function smaPath(arr) {
