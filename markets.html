@@ -367,6 +367,35 @@
       font-variant-numeric: tabular-nums;
       flex-wrap: wrap;
     }
+
+    /* Pre-market / after-hours strip — appears between the big price row
+       and the range picker on the 4 index cards. Hidden during regular
+       hours since the main price row already carries the live regular
+       session price. Mirrors the pattern used on quotes.html. */
+    .idx-card-ext {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-dim);
+      white-space: nowrap;
+      margin: 0 0 0.35rem;
+      display: none;
+    }
+    .idx-card-ext.visible { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .idx-card-ext .ext-tag {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 0.1rem 0.4rem;
+      border-radius: 2px;
+    }
+    .idx-card-ext.pre  .ext-tag { background: rgba(110, 231, 255, 0.15); color: #6ee7ff; }
+    .idx-card-ext.post .ext-tag { background: rgba(255, 182, 88, 0.15); color: #ffb658; }
+    .idx-card-ext .ext-pct.pos { color: #22d39a; }
+    .idx-card-ext .ext-pct.neg { color: #ff5374; }
     .idx-chart-price {
       font-size: 1.55rem; font-weight: 700; color: var(--text);
     }
@@ -525,6 +554,7 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
+          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -563,6 +593,7 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
+          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -601,6 +632,7 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
+          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -639,6 +671,7 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
+          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -1984,6 +2017,67 @@
       // Kick off with the default 6M view.
       switchTo('6M');
     }
+  })();
+  
+
+  // -------------------------------------------------------------------
+  // Pre-market / after-hours strip for the 4 index cards. Fetches
+  // /api/quote every 60s and paints "PRE" / "AFT" chips into the
+  // .idx-card-ext element inside each card. Hidden during regular
+  // hours since the main price row already shows the live price.
+  // -------------------------------------------------------------------
+  (function startExtendedHoursRefresh() {
+    const cards = Array.from(document.querySelectorAll('.idx-chart-card[data-index-symbol]'));
+    if (!cards.length) return;
+    const syms = cards.map(c => c.getAttribute('data-index-symbol')).join(',');
+    const fmtPrice = (v) => v == null || !isFinite(v)
+      ? '—'
+      : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtPct = (v) => {
+      if (v == null || !isFinite(v)) return '';
+      const sign = v > 0 ? '+' : (v < 0 ? '\u2212' : '');
+      return sign + Math.abs(v).toFixed(2) + '%';
+    };
+    function paint(q, stripEl) {
+      if (!q) return;
+      const state = String(q.marketState || '').toUpperCase();
+      let tier = null;
+      if (state === 'PRE' || state === 'PREPRE') {
+        if (q.preMarketPrice != null) tier = { tag: 'PRE', price: q.preMarketPrice, pct: q.preMarketChangePercent, cls: 'pre' };
+      } else if (state === 'POST' || state === 'POSTPOST') {
+        if (q.postMarketPrice != null) tier = { tag: 'AFT', price: q.postMarketPrice, pct: q.postMarketChangePercent, cls: 'post' };
+      } else if (state === 'CLOSED') {
+        const preTs  = Number(q.preMarketTime  || 0);
+        const postTs = Number(q.postMarketTime || 0);
+        if (q.postMarketPrice != null && postTs >= preTs) {
+          tier = { tag: 'AFT', price: q.postMarketPrice, pct: q.postMarketChangePercent, cls: 'post' };
+        } else if (q.preMarketPrice != null) {
+          tier = { tag: 'PRE', price: q.preMarketPrice, pct: q.preMarketChangePercent, cls: 'pre' };
+        }
+      }
+      stripEl.className = 'idx-card-ext' + (tier ? ' visible ' + tier.cls : '');
+      if (!tier) { stripEl.innerHTML = ''; return; }
+      const pctCls = tier.pct == null ? '' : (tier.pct >= 0 ? 'pos' : 'neg');
+      stripEl.innerHTML =
+        '<span class="ext-tag">' + tier.tag + '</span>' +
+        '<span class="ext-price">' + fmtPrice(tier.price) + '</span> ' +
+        '<span class="ext-pct ' + pctCls + '">' + fmtPct(tier.pct) + '</span>';
+    }
+    async function refresh() {
+      try {
+        const r = await fetch('/api/quote?syms=' + encodeURIComponent(syms), { cache: 'no-store' });
+        if (!r.ok) return;
+        const data = await r.json();
+        const quotes = (data && data.quotes) || {};
+        for (const card of cards) {
+          const strip = card.querySelector('[data-role="ext"]');
+          if (!strip) continue;
+          paint(quotes[card.getAttribute('data-index-symbol')], strip);
+        }
+      } catch (e) { /* transient — try again next tick */ }
+    }
+    refresh();
+    setInterval(refresh, 60000);
   })();
   </script>
 </body>
