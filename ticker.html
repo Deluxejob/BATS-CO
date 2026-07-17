@@ -1310,6 +1310,82 @@
       padding: 1.25rem 0;
       text-align: center;
     }
+
+    /* ---- Custom main chart card (replaces TradingView Symbol Overview) ---- */
+    .tk-chart-card {
+      display: flex; flex-direction: column;
+      background: var(--term-panel);
+    }
+    .tk-chart-price-row {
+      display: flex; align-items: baseline; gap: 0.7rem;
+      margin: 0.15rem 0 0.55rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+      flex-wrap: wrap;
+    }
+    .tk-chart-price {
+      font-size: 1.8rem; font-weight: 700; color: var(--term-text);
+    }
+    .tk-chart-price .unit {
+      font-size: 0.8rem; color: var(--term-dim);
+      margin-left: 0.15rem; font-weight: 500;
+    }
+    .tk-chart-change { font-size: 1.05rem; font-weight: 700; }
+    .tk-chart-change.pos { color: var(--term-green); }
+    .tk-chart-change.neg { color: var(--term-red); }
+    .tk-chart-change-label {
+      font-size: 0.75rem; color: var(--term-dim); font-weight: 500;
+    }
+
+    .tk-picker-row {
+      display: flex; align-items: center; gap: 0.6rem;
+      flex-wrap: wrap; margin-bottom: 0.55rem;
+    }
+    .tk-range-picker, .tk-ma-toggles {
+      display: flex; gap: 0.22rem; flex-wrap: wrap;
+    }
+    .tk-ma-toggles { margin-left: auto; }
+    .tk-range-picker button, .tk-ma-toggles button {
+      font: inherit;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: transparent; color: var(--term-dim);
+      border: 1px solid var(--term-border); border-radius: 3px;
+      padding: 0.25rem 0.55rem; cursor: pointer;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .tk-range-picker button:hover,
+    .tk-ma-toggles button:hover { color: var(--term-text); border-color: var(--term-amber); }
+    .tk-range-picker button.active {
+      background: var(--term-amber); color: #0a1218; border-color: var(--term-amber);
+    }
+    .tk-ma-toggles button[data-ma="50"].active {
+      background: rgba(110, 231, 255, 0.15); color: var(--term-cyan); border-color: var(--term-cyan);
+    }
+    .tk-ma-toggles button[data-ma="200"].active {
+      background: rgba(192, 132, 252, 0.15); color: #c084fc; border-color: #c084fc;
+    }
+    .tk-ma-toggles button[data-ma="rsi"].active {
+      background: rgba(255, 182, 88, 0.15); color: var(--term-amber); border-color: var(--term-amber);
+    }
+
+    .tk-chart-svg { width: 100%; height: auto; display: block; }
+    .tk-chart-svg .grid-line { stroke: var(--term-border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
+    .tk-chart-svg .axis-line { stroke: var(--term-border); stroke-width: 1; }
+    .tk-chart-svg .axis-label { fill: #c9d3e0; font-size: 11px; font-family: ui-monospace, monospace; }
+
+    .tk-chart-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.5rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem; color: var(--term-dim);
+    }
+    .tk-chart-loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 300px; color: var(--term-dim);
+      font-family: ui-monospace, monospace; font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -1391,7 +1467,7 @@
 
       <!-- Chart -->
       <section class="term-section">
-        <div class="term-section-label">CHART <span class="sub">— 1D / 5D / 1M / 3M / 6M / YTD / 1Y / 5Y / All</span></div>
+        <div class="term-section-label">CHART <span class="sub">— range picker below the price</span></div>
         <div class="term-panel"><div id="chartWidgetMount"></div></div>
       </section>
 
@@ -1828,6 +1904,418 @@
       tickerCont.style.display = '';
       emptyState.style.display = 'none';
 
+
+      // -----------------------------------------------------------------
+      // Custom main-chart engine — replaces the TradingView Symbol Overview
+      // widget. Renders a per-ticker price chart with:
+      //   - Range picker (1D..All, default 6M)
+      //   - Toggleable 50 SMA / 200 SMA / RSI
+      //   - Always-on drawdown ribbon, 52-week high/low lines, median line
+      // Fetches from /api/history with per-range Yahoo intervals so each
+      // view gets right-sized bars (15m for 1D/5D, daily for 1M..1Y,
+      // weekly for 5Y, monthly for All). Caches by slot in memory.
+      // -----------------------------------------------------------------
+      function initTickerMainChart(sym) {
+        const mount = document.getElementById('chartWidgetMount');
+        if (!mount) return;
+        mount.innerHTML = `
+          <div class="tk-chart-card">
+            <div class="tk-chart-price-row">
+              <span class="tk-chart-price" data-role="price">&ndash;</span>
+              <span class="tk-chart-change" data-role="change"></span>
+              <span class="tk-chart-change-label" data-role="changeLabel"></span>
+            </div>
+            <div class="tk-picker-row">
+              <div class="tk-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
+                <button type="button" data-range="1D">1D</button>
+                <button type="button" data-range="5D">5D</button>
+                <button type="button" data-range="1M">1M</button>
+                <button type="button" data-range="3M">3M</button>
+                <button type="button" data-range="6M" class="active">6M</button>
+                <button type="button" data-range="YTD">YTD</button>
+                <button type="button" data-range="1Y">1Y</button>
+                <button type="button" data-range="5Y">5Y</button>
+                <button type="button" data-range="All">All</button>
+              </div>
+              <div class="tk-ma-toggles" data-role="maToggles">
+                <button type="button" data-ma="50">50 SMA</button>
+                <button type="button" data-ma="200">200 SMA</button>
+                <button type="button" data-ma="rsi">RSI</button>
+              </div>
+            </div>
+            <svg class="tk-chart-svg" data-role="chart" viewBox="0 0 900 320" preserveAspectRatio="none" aria-label="${sym} chart"></svg>
+            <div class="tk-chart-footer">
+              <span data-role="footerLeft">Loading&hellip;</span>
+              <span data-role="footerRight"></span>
+            </div>
+          </div>
+        `;
+
+        const RANGE_TO_FETCH = {
+          '1D':  { range: '5d',  interval: '15m' },
+          '5D':  { range: '5d',  interval: '15m' },
+          '1M':  { range: '1y',  interval: '1d' },
+          '3M':  { range: '1y',  interval: '1d' },
+          '6M':  { range: '1y',  interval: '1d' },
+          'YTD': { range: '1y',  interval: '1d' },
+          '1Y':  { range: '1y',  interval: '1d' },
+          '5Y':  { range: '5y',  interval: '1wk' },
+          'All': { range: 'max', interval: '1mo' },
+        };
+        const SLOT_BY_RANGE = {
+          '1D':'intra5d', '5D':'intra5d',
+          '1M':'daily1y','3M':'daily1y','6M':'daily1y','YTD':'daily1y','1Y':'daily1y',
+          '5Y':'weekly5y','All':'monthly',
+        };
+        const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const fmtN = v => v == null || !isFinite(v) ? '—' : v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+        const fmt  = (v, d=2) => v == null || !isFinite(v) ? '—' : v.toFixed(d);
+
+        // --- Indicator helpers ---
+        function sma(pts, n) {
+          const out = new Array(pts.length).fill(null);
+          if (pts.length < n) return out;
+          let sum = 0;
+          for (let i = 0; i < n; i++) sum += pts[i][1];
+          out[n - 1] = sum / n;
+          for (let i = n; i < pts.length; i++) {
+            sum += pts[i][1] - pts[i - n][1];
+            out[i] = sum / n;
+          }
+          return out;
+        }
+        function rsi(pts, period) {
+          period = period || 14;
+          const out = new Array(pts.length).fill(null);
+          if (pts.length <= period) return out;
+          let gain = 0, loss = 0;
+          for (let i = 1; i <= period; i++) {
+            const d = pts[i][1] - pts[i-1][1];
+            if (d >= 0) gain += d; else loss -= d;
+          }
+          gain /= period; loss /= period;
+          out[period] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+          for (let i = period + 1; i < pts.length; i++) {
+            const d = pts[i][1] - pts[i-1][1];
+            const g = d > 0 ?  d : 0;
+            const l = d < 0 ? -d : 0;
+            gain = (gain * (period - 1) + g) / period;
+            loss = (loss * (period - 1) + l) / period;
+            out[i] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+          }
+          return out;
+        }
+        function fiftyTwoWeek(dailyPts) {
+          const window = dailyPts.slice(-252);
+          if (!window.length) return null;
+          let hi = -Infinity, lo = Infinity;
+          for (const [t, v] of window) { if (v > hi) hi = v; if (v < lo) lo = v; }
+          return { high: hi, low: lo };
+        }
+        function median(vals) {
+          const s = [...vals].sort((a, b) => a - b);
+          return s.length ? s[Math.floor(s.length / 2)] : null;
+        }
+
+        function sliceForRange(rangeKey, cache) {
+          const intra   = cache.intra5d   || null;
+          const daily1y = cache.daily1y   || null;
+          const weekly5y = cache.weekly5y || null;
+          const monthly  = cache.monthly  || null;
+          if (rangeKey === '1D' && intra) {
+            if (!intra.length) return [];
+            const lastTs = intra[intra.length - 1][0];
+            const lastDate = new Date(lastTs * 1000).toISOString().slice(0, 10);
+            return intra.filter(([t]) => new Date(t * 1000).toISOString().slice(0, 10) === lastDate);
+          }
+          if (rangeKey === '5D' && intra) return intra;
+          if ((rangeKey === '1M' || rangeKey === '3M' || rangeKey === '6M' ||
+               rangeKey === 'YTD' || rangeKey === '1Y') && daily1y) {
+            if (rangeKey === '1M')  return daily1y.slice(-22);
+            if (rangeKey === '3M')  return daily1y.slice(-66);
+            if (rangeKey === '6M')  return daily1y.slice(-132);
+            if (rangeKey === 'YTD') {
+              const yr = String(new Date(daily1y[daily1y.length - 1][0] * 1000).getUTCFullYear());
+              return daily1y.filter(([t]) => new Date(t * 1000).toISOString().slice(0, 10) >= yr + '-01-01');
+            }
+            return daily1y;
+          }
+          if (rangeKey === '5Y'  && weekly5y) return weekly5y;
+          if (rangeKey === 'All' && monthly)  return monthly;
+          return [];
+        }
+
+        function drawChart(svg, pts, opts) {
+          opts = opts || {};
+          const showRsi = !!opts.showRsi;
+          const W = 900;
+          const H = showRsi ? 400 : 320;
+          svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+          const M = { top: 12, right: 70, bottom: 26, left: 14 };
+          const priceTop = M.top;
+          const priceH   = showRsi ? 250 : (H - M.top - M.bottom);
+          const rsiGap   = 16;
+          const rsiTop   = priceTop + priceH + rsiGap;
+          const rsiH     = showRsi ? (H - rsiTop - M.bottom) : 0;
+          const plotW    = W - M.left - M.right;
+          const priceBottom = priceTop + priceH;
+
+          if (!pts.length) { svg.innerHTML = ''; return; }
+          if (pts.length < 2) {
+            svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-label">Not enough data for this range</text>`;
+            return;
+          }
+
+          const sma50   = opts.show50  ? sma(pts, 50)  : null;
+          const sma200  = opts.show200 ? sma(pts, 200) : null;
+          const rsi14   = showRsi      ? rsi(pts, 14)  : null;
+          const wk52    = opts.wk52    || null;
+          const med     = opts.median  != null ? opts.median : median(pts.map(p => p[1]));
+
+          const rollingMax = [];
+          { let m = -Infinity; for (const p of pts) { if (p[1] > m) m = p[1]; rollingMax.push(m); } }
+
+          const vals = pts.map(p => p[1]);
+          if (sma50)  for (const v of sma50)  if (v != null) vals.push(v);
+          if (sma200) for (const v of sma200) if (v != null) vals.push(v);
+          const priceRange = Math.max(...pts.map(p=>p[1])) - Math.min(...pts.map(p=>p[1]));
+          let show52Hi = false, show52Lo = false;
+          if (wk52) {
+            const nearHi = Math.abs(wk52.high - pts[pts.length-1][1]) < Math.max(priceRange * 2, pts[pts.length-1][1] * 0.08);
+            const nearLo = Math.abs(wk52.low  - pts[pts.length-1][1]) < Math.max(priceRange * 2, pts[pts.length-1][1] * 0.08);
+            if (nearHi) { vals.push(wk52.high); show52Hi = true; }
+            if (nearLo) { vals.push(wk52.low);  show52Lo = true; }
+          }
+          const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+          const pad = (rawMax - rawMin) * 0.08 || (rawMax * 0.005);
+          const yLo = rawMin - pad, yHi = rawMax + pad;
+
+          const first = pts[0][0], last = pts[pts.length - 1][0];
+          const xFor = t => M.left + ((t - first) / (last - first || 1)) * plotW;
+          const yFor = v => priceTop + priceH - ((v - yLo) / (yHi - yLo)) * priceH;
+
+          let s = '';
+          const range = yHi - yLo;
+          const step = range > 5000 ? 1000 : range > 1000 ? 500 : range > 500 ? 250
+                     : range > 200  ? 100  : range > 50   ? 25  : range > 20   ? 10
+                     : range > 5    ? 2    : range > 2    ? 1   : range > 1    ? 0.5 : 0.1;
+          for (let v = Math.ceil(yLo / step) * step; v <= yHi; v += step) {
+            const y = yFor(v);
+            s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+            s += `<text class="axis-label" x="${W - M.right + 6}" y="${y + 3}">${fmtN(v)}</text>`;
+          }
+          const spanDays = (last - first) / 86400;
+          let tickCount, labelFmt;
+          if      (spanDays > 1500) { tickCount = 6; labelFmt = 'year'; }
+          else if (spanDays > 500)  { tickCount = 6; labelFmt = 'monthYear'; }
+          else if (spanDays > 200)  { tickCount = 7; labelFmt = 'monthYear'; }
+          else if (spanDays > 45)   { tickCount = 7; labelFmt = 'monthDay'; }
+          else if (spanDays > 3)    { tickCount = 6; labelFmt = 'monthDay'; }
+          else                      { tickCount = 6; labelFmt = 'hour'; }
+          function fmtTick(t) {
+            const d = new Date(t * 1000);
+            if (labelFmt === 'year')      return String(d.getUTCFullYear());
+            if (labelFmt === 'monthYear') return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+            if (labelFmt === 'monthDay')  return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCDate();
+            return String(d.getUTCHours()).padStart(2,'0') + ':' + String(d.getUTCMinutes()).padStart(2,'0');
+          }
+          const xAxisY = showRsi ? (rsiTop + rsiH) : priceBottom;
+          const xLabelY = xAxisY + 15;
+          for (let i = 0; i <= tickCount; i++) {
+            const t = first + ((last - first) * i) / tickCount;
+            const x = xFor(t);
+            s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${priceTop}" y2="${priceBottom}"/>`;
+            if (showRsi) s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
+            s += `<text class="axis-label" x="${x}" y="${xLabelY}" text-anchor="middle">${fmtTick(t)}</text>`;
+          }
+          s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${priceBottom}" y2="${priceBottom}"/>`;
+          s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${priceTop}" y2="${priceBottom}"/>`;
+
+          const startPx = pts[0][1], endPx = pts[pts.length-1][1];
+          const lineColor = endPx >= startPx ? '#22d39a' : '#ff5374';
+          const fillColor = endPx >= startPx ? 'rgba(34, 211, 154, 0.15)' : 'rgba(255, 83, 116, 0.15)';
+
+          // Drawdown ribbon (always on)
+          {
+            let d = 'M';
+            for (let i = 0; i < pts.length; i++) {
+              const x = xFor(pts[i][0]).toFixed(1);
+              const y = yFor(rollingMax[i]).toFixed(1);
+              d += (i === 0 ? '' : 'L') + x + ',' + y + ' ';
+            }
+            for (let i = pts.length - 1; i >= 0; i--) {
+              const x = xFor(pts[i][0]).toFixed(1);
+              const y = yFor(pts[i][1]).toFixed(1);
+              d += 'L' + x + ',' + y + ' ';
+            }
+            d += 'Z';
+            s += `<path d="${d}" fill="rgba(255, 83, 116, 0.14)" stroke="none"/>`;
+          }
+
+          // Median reference line
+          if (med != null && med >= yLo && med <= yHi) {
+            const y = yFor(med);
+            s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#64d3ff" stroke-width="1" stroke-dasharray="4 3" opacity="0.65"/>`;
+            s += `<text class="axis-label" x="${M.left + 6}" y="${y - 3}" fill="#64d3ff" opacity="0.9">median ${fmtN(med)}</text>`;
+          }
+
+          // 52-week high/low reference lines
+          if (wk52 && show52Hi) {
+            const y = yFor(wk52.high);
+            s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#22d39a" stroke-width="1" stroke-dasharray="3 4" opacity="0.55"/>`;
+            s += `<text class="axis-label" x="${W - M.right - 4}" y="${y - 3}" text-anchor="end" fill="#22d39a" opacity="0.85">52W high ${fmtN(wk52.high)}</text>`;
+          }
+          if (wk52 && show52Lo) {
+            const y = yFor(wk52.low);
+            s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#ff5374" stroke-width="1" stroke-dasharray="3 4" opacity="0.55"/>`;
+            s += `<text class="axis-label" x="${W - M.right - 4}" y="${y + 10}" text-anchor="end" fill="#ff5374" opacity="0.85">52W low ${fmtN(wk52.low)}</text>`;
+          }
+
+          // Price fill + line
+          const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + xFor(p[0]).toFixed(1) + ',' + yFor(p[1]).toFixed(1)).join(' ');
+          s += `<path d="${path} L${xFor(last).toFixed(1)},${priceBottom} L${xFor(first).toFixed(1)},${priceBottom} Z" fill="${fillColor}" stroke="none"/>`;
+          s += `<path fill="none" stroke="${lineColor}" stroke-width="1.6" d="${path}"/>`;
+
+          function smaPath(arr) {
+            let out = '', started = false;
+            for (let i = 0; i < arr.length; i++) {
+              const v = arr[i]; if (v == null) continue;
+              const cmd = started ? 'L' : 'M';
+              out += cmd + xFor(pts[i][0]).toFixed(1) + ',' + yFor(v).toFixed(1) + ' ';
+              started = true;
+            }
+            return out;
+          }
+          if (sma50) {
+            const d = smaPath(sma50);
+            if (d) s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
+          }
+          if (sma200) {
+            const d = smaPath(sma200);
+            if (d) s += `<path fill="none" stroke="#c084fc" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
+          }
+
+          const lp = pts[pts.length - 1];
+          s += `<circle cx="${xFor(lp[0])}" cy="${yFor(lp[1])}" r="4" fill="${lineColor}" stroke="#fff" stroke-width="1"/>`;
+
+          if (showRsi && rsi14 && rsi14.some(v => v != null)) {
+            const yR = v => rsiTop + rsiH - (v / 100) * rsiH;
+            s += `<rect x="${M.left}" y="${yR(100)}" width="${plotW}" height="${yR(70) - yR(100)}" fill="rgba(255, 83, 116, 0.10)"/>`;
+            s += `<rect x="${M.left}" y="${yR(30)}"  width="${plotW}" height="${yR(0)  - yR(30)}"  fill="rgba(34, 211, 154, 0.10)"/>`;
+            for (const v of [70, 50, 30]) {
+              const y = yR(v);
+              s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+              s += `<text class="axis-label" x="${W - M.right + 6}" y="${y + 3}">${v}</text>`;
+            }
+            let d = '', started = false;
+            for (let i = 0; i < rsi14.length; i++) {
+              const v = rsi14[i]; if (v == null) continue;
+              const cmd = started ? 'L' : 'M';
+              d += cmd + xFor(pts[i][0]).toFixed(1) + ',' + yR(v).toFixed(1) + ' ';
+              started = true;
+            }
+            s += `<path fill="none" stroke="#ffb658" stroke-width="1.4" d="${d}"/>`;
+            const lastRsi = rsi14[rsi14.length - 1];
+            if (lastRsi != null) {
+              const x = xFor(pts[pts.length-1][0]), y = yR(lastRsi);
+              s += `<circle cx="${x}" cy="${y}" r="3" fill="#ffb658" stroke="#fff" stroke-width="1"/>`;
+              s += `<text class="axis-label" x="${x - 6}" y="${y - 6}" text-anchor="end" fill="#ffb658">RSI ${lastRsi.toFixed(0)}</text>`;
+            }
+            s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${rsiTop + rsiH}" y2="${rsiTop + rsiH}"/>`;
+            s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
+          }
+
+          svg.innerHTML = s;
+        }
+
+        async function fetchSlice(apiRange, apiInterval) {
+          const url = '/api/history?syms=' + encodeURIComponent(sym) +
+                      '&range=' + encodeURIComponent(apiRange) +
+                      '&interval=' + encodeURIComponent(apiInterval);
+          const r = await fetch(url, { cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const payload = await r.json();
+          const series = payload && payload.series && payload.series[sym];
+          if (!Array.isArray(series)) throw new Error('no data for ' + sym);
+          return series;
+        }
+
+        const priceEl   = mount.querySelector('[data-role="price"]');
+        const changeEl  = mount.querySelector('[data-role="change"]');
+        const changeLbl = mount.querySelector('[data-role="changeLabel"]');
+        const svgEl     = mount.querySelector('[data-role="chart"]');
+        const rangeEl   = mount.querySelector('[data-role="rangePicker"]');
+        const maEl      = mount.querySelector('[data-role="maToggles"]');
+        const footerL   = mount.querySelector('[data-role="footerLeft"]');
+        const footerR   = mount.querySelector('[data-role="footerRight"]');
+
+        const state = { range: '6M', show50: false, show200: false, showRsi: false };
+        const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
+        let wk52 = null;
+
+        async function ensureData(rangeKey) {
+          const slot = SLOT_BY_RANGE[rangeKey];
+          if (cache[slot]) return cache[slot];
+          const cfg = RANGE_TO_FETCH[rangeKey];
+          cache[slot] = await fetchSlice(cfg.range, cfg.interval);
+          return cache[slot];
+        }
+
+        function redraw() {
+          drawChart(svgEl, sliceForRange(state.range, cache), {
+            show50: state.show50, show200: state.show200, showRsi: state.showRsi, wk52,
+          });
+        }
+
+        function updateHeader() {
+          const daily = cache.daily1y || cache.intra5d || cache.weekly5y || cache.monthly;
+          if (!daily || daily.length < 2) return;
+          const last = daily[daily.length - 1];
+          const prev = daily[daily.length - 2];
+          priceEl.innerHTML = fmtN(last[1]) + '<span class="unit">USD</span>';
+          const chg = last[1] - prev[1];
+          const chgPct = prev[1] ? (chg / prev[1]) * 100 : 0;
+          changeEl.className = 'tk-chart-change ' + (chg >= 0 ? 'pos' : 'neg');
+          const sign = chg > 0 ? '+' : '';
+          changeEl.textContent = sign + fmtN(chg) + ' (' + sign + fmt(chgPct, 2) + '%)';
+          changeLbl.textContent = cache.daily1y ? 'last close' : 'latest';
+          footerL.textContent = sym;
+          footerR.textContent = 'as of ' + new Date(last[0] * 1000).toLocaleDateString('en-US');
+        }
+
+        async function switchTo(rangeKey) {
+          state.range = rangeKey;
+          rangeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.range === rangeKey));
+          try {
+            await ensureData(rangeKey);
+            if (!cache.daily1y) {
+              try { await ensureData('1Y'); } catch (e) { /* non-fatal */ }
+            }
+            if (cache.daily1y && !wk52) wk52 = fiftyTwoWeek(cache.daily1y);
+            updateHeader();
+            redraw();
+          } catch (e) {
+            svgEl.innerHTML = `<text x="450" y="160" text-anchor="middle" class="axis-label" fill="#ff5374">Failed to load ${rangeKey}: ${(e && e.message) || e}</text>`;
+          }
+        }
+
+        rangeEl.addEventListener('click', e => {
+          const btn = e.target.closest('button[data-range]');
+          if (!btn) return;
+          switchTo(btn.dataset.range);
+        });
+        maEl.addEventListener('click', e => {
+          const btn = e.target.closest('button[data-ma]');
+          if (!btn) return;
+          btn.classList.toggle('active');
+          if (btn.dataset.ma === '50')  state.show50  = btn.classList.contains('active');
+          if (btn.dataset.ma === '200') state.show200 = btn.classList.contains('active');
+          if (btn.dataset.ma === 'rsi') state.showRsi = btn.classList.contains('active');
+          redraw();
+        });
+        switchTo('6M');
+      }
+
       // -----------------------------------------------------------------
       // TradingView widget factory
       // Builds the widget via DOM API so the injected script's closing
@@ -1853,32 +2341,11 @@
 
       const tvSymbol = sym; // let TradingView resolve exchange
 
-      // 1) Large Symbol Overview chart
-      mountTvWidget('chartWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js', {
-        symbols: [[sym, `${tvSymbol}|1D`]],
-        chartOnly: false,
-        width: '100%',
-        height: 460,
-        locale: 'en',
-        colorTheme: 'dark',
-        autosize: false,
-        showVolume: true,
-        showMA: false,
-        hideDateRanges: false,
-        hideMarketStatus: false,
-        hideSymbolLogo: false,
-        scalePosition: 'right',
-        scaleMode: 'Normal',
-        fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-        fontSize: '11',
-        noTimeScale: false,
-        valuesTracking: '1',
-        changeMode: 'price-and-percent',
-        chartType: 'area',
-        lineWidth: 2,
-        dateRanges: ['1d|1','5d|5','1m|30','3m|60','6m|1D','ytd|1D','12m|1D','60m|1W','all|1M'],
-        isTransparent: true,
-      });
+      // 1) Main chart — custom Yahoo-driven SVG chart. Replaces the
+      //    old TradingView Symbol Overview widget so we can layer on
+      //    SMAs / RSI / drawdown ribbon / 52W lines / median line
+      //    (none of which TradingView's free embed supports).
+      initTickerMainChart(sym);
 
       // 2) Key statistics (Symbol Info widget — market cap, PE, EPS, sector, description)
       mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
