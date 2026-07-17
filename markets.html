@@ -697,77 +697,81 @@
           </div>
         </div>
 
-        <div class="card idx-card">
+        <div class="card idx-card idx-chart-card"
+              data-index-symbol="EFA"
+              data-index-title="Intl Developed (EFA)"
+              data-index-desc="iShares MSCI EAFE — developed markets outside US & Canada (Europe, Japan, Australia).">
           <div class="idx-header">
             <h3>Intl Developed</h3>
             <div class="idx-desc">iShares MSCI EAFE &mdash; developed markets outside US &amp; Canada (Europe, Japan, Australia).</div>
           </div>
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-            {
-              "symbols": [["Intl Developed (EFA)", "AMEX:EFA|1D"]],
-              "chartOnly": false,
-              "width": "100%",
-              "height": 280,
-              "locale": "en",
-              "colorTheme": "dark",
-              "autosize": false,
-              "showVolume": false,
-              "showMA": false,
-              "hideDateRanges": false,
-              "hideMarketStatus": false,
-              "hideSymbolLogo": true,
-              "scalePosition": "right",
-              "scaleMode": "Normal",
-              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-              "fontSize": "10",
-              "noTimeScale": false,
-              "valuesTracking": "1",
-              "changeMode": "price-and-percent",
-              "chartType": "area",
-              "lineWidth": 2,
-              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
-              "isTransparent": true
-            }
-            </script>
+          <div class="idx-chart-price-row">
+            <span class="idx-chart-price" data-role="price">&ndash;</span>
+            <span class="idx-chart-change" data-role="change"></span>
+            <span class="idx-chart-change-label" data-role="changeLabel"></span>
+          </div>
+          <div class="idx-card-ext" data-role="ext"></div>
+          <div class="idx-picker-row">
+            <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
+              <button type="button" data-range="1D">1D</button>
+              <button type="button" data-range="5D">5D</button>
+              <button type="button" data-range="1M">1M</button>
+              <button type="button" data-range="3M">3M</button>
+              <button type="button" data-range="6M" class="active">6M</button>
+              <button type="button" data-range="YTD">YTD</button>
+              <button type="button" data-range="1Y">1Y</button>
+              <button type="button" data-range="5Y">5Y</button>
+              <button type="button" data-range="All">All</button>
+            </div>
+            <div class="idx-ma-toggles" data-role="maToggles">
+              <button type="button" data-ma="50">50 SMA</button>
+              <button type="button" data-ma="200">200 SMA</button>
+              <button type="button" data-ma="rsi">RSI</button>
+            </div>
+          </div>
+          <svg class="idx-chart-svg" data-role="chart" viewBox="0 0 560 200" preserveAspectRatio="none" aria-label="Intl Developed chart"></svg>
+          <div class="idx-chart-footer">
+            <span data-role="footerLeft">Loading&hellip;</span>
+            <span data-role="footerRight"></span>
           </div>
         </div>
 
-        <div class="card idx-card">
+        <div class="card idx-card idx-chart-card"
+              data-index-symbol="EEM"
+              data-index-title="Emerging Markets (EEM)"
+              data-index-desc="iShares MSCI EM — China, India, Taiwan, Brazil, and other developing economies.">
           <div class="idx-header">
             <h3>Emerging Markets</h3>
             <div class="idx-desc">iShares MSCI EM &mdash; China, India, Taiwan, Brazil, and other developing economies.</div>
           </div>
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-            {
-              "symbols": [["Emerging Markets (EEM)", "AMEX:EEM|1D"]],
-              "chartOnly": false,
-              "width": "100%",
-              "height": 280,
-              "locale": "en",
-              "colorTheme": "dark",
-              "autosize": false,
-              "showVolume": false,
-              "showMA": false,
-              "hideDateRanges": false,
-              "hideMarketStatus": false,
-              "hideSymbolLogo": true,
-              "scalePosition": "right",
-              "scaleMode": "Normal",
-              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-              "fontSize": "10",
-              "noTimeScale": false,
-              "valuesTracking": "1",
-              "changeMode": "price-and-percent",
-              "chartType": "area",
-              "lineWidth": 2,
-              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
-              "isTransparent": true
-            }
-            </script>
+          <div class="idx-chart-price-row">
+            <span class="idx-chart-price" data-role="price">&ndash;</span>
+            <span class="idx-chart-change" data-role="change"></span>
+            <span class="idx-chart-change-label" data-role="changeLabel"></span>
+          </div>
+          <div class="idx-card-ext" data-role="ext"></div>
+          <div class="idx-picker-row">
+            <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
+              <button type="button" data-range="1D">1D</button>
+              <button type="button" data-range="5D">5D</button>
+              <button type="button" data-range="1M">1M</button>
+              <button type="button" data-range="3M">3M</button>
+              <button type="button" data-range="6M" class="active">6M</button>
+              <button type="button" data-range="YTD">YTD</button>
+              <button type="button" data-range="1Y">1Y</button>
+              <button type="button" data-range="5Y">5Y</button>
+              <button type="button" data-range="All">All</button>
+            </div>
+            <div class="idx-ma-toggles" data-role="maToggles">
+              <button type="button" data-ma="50">50 SMA</button>
+              <button type="button" data-ma="200">200 SMA</button>
+              <button type="button" data-ma="rsi">RSI</button>
+            </div>
+          </div>
+          <svg class="idx-chart-svg" data-role="chart" viewBox="0 0 560 200" preserveAspectRatio="none" aria-label="Emerging Markets chart"></svg>
+          <div class="idx-chart-footer">
+            <span data-role="footerLeft">Loading&hellip;</span>
+            <span data-role="footerRight"></span>
           </div>
         </div>
 
