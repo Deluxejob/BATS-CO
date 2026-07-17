@@ -1380,6 +1380,7 @@
       color: var(--term-red); border-color: var(--term-red);
     }
     .tk-chart-svg.drawing { cursor: crosshair; }
+    .tk-chart-svg.dragging { cursor: grabbing !important; }
 
     /* Floating draw toolbar — pinned to the top-center of the SVG so
        the tool is discoverable without hunting through the chip row. */
@@ -2320,15 +2321,21 @@
             s += `<defs><clipPath id="tkPlotClip"><rect x="${M.left}" y="${priceTop}" width="${plotW}" height="${priceH}"/></clipPath></defs>`;
             s += `<g clip-path="url(#tkPlotClip)">`;
             if (opts.lines) {
-              for (const ln of opts.lines) {
+              for (let i = 0; i < opts.lines.length; i++) {
+                const ln = opts.lines[i];
                 const x1 = xFor(ln.t1), y1 = yFor(ln.p1);
                 const x2 = xFor(ln.t2), y2 = yFor(ln.p2);
-                // Skip lines whose entire projection is outside the plot horizontally.
                 const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
                 if (maxX < M.left || minX > W - M.right) continue;
                 s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#ffb658" stroke-width="1.8" opacity="0.95"/>`;
-                s += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.5" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
-                s += `<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="3.5" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
+                // Endpoint circles — enlarge the one being hovered so the user
+                // sees a visual affordance that it's grabbable.
+                const hoverA = opts.hover && opts.hover.lineIdx === i && opts.hover.end === 'a';
+                const hoverB = opts.hover && opts.hover.lineIdx === i && opts.hover.end === 'b';
+                const rA = hoverA ? 5.5 : 3.5;
+                const rB = hoverB ? 5.5 : 3.5;
+                s += `<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${rA}" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
+                s += `<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${rB}" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
               }
             }
             if (opts.pending) {
@@ -2374,7 +2381,7 @@
         const footerL   = mount.querySelector('[data-role="footerLeft"]');
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
-        const state = { range: '6M', show50: false, show200: false, showRsi: false, drawMode: false, pendingPoint: null, lines: [], projection: null };
+        const state = { range: '6M', show50: false, show200: false, showRsi: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
         const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
 
@@ -2418,7 +2425,104 @@
           redraw();
         });
 
+
+        // ------ Endpoint drag support ------
+        // Hover detection in viewBox coords. HITBOX_R is generous so the
+        // ~3.5px endpoint circle still feels grabbable.
+        const HITBOX_R = 15;
+        function toSvgCoords(e) {
+          const rect = svgEl.getBoundingClientRect();
+          const vb = svgEl.viewBox.baseVal;
+          if (!rect.width || !rect.height || !vb.width || !vb.height) return null;
+          return {
+            x: (e.clientX - rect.left) * (vb.width  / rect.width),
+            y: (e.clientY - rect.top)  * (vb.height / rect.height),
+          };
+        }
+        function tpToSvg(t, p) {
+          const proj = state.projection; if (!proj) return null;
+          const x = proj.mLeft + ((t - proj.first) / (proj.last - proj.first)) * proj.plotW;
+          const y = proj.priceTop + proj.priceH - ((p - proj.yLo) / (proj.yHi - proj.yLo)) * proj.priceH;
+          return { x: x, y: y };
+        }
+        function svgToTP(svgX, svgY) {
+          const proj = state.projection; if (!proj) return null;
+          const t = proj.first + ((svgX - proj.mLeft) / proj.plotW) * (proj.last - proj.first);
+          const p = proj.yLo + ((proj.priceTop + proj.priceH - svgY) / proj.priceH) * (proj.yHi - proj.yLo);
+          return { t: t, p: p };
+        }
+        function findEndpointHit(svgX, svgY) {
+          const proj = state.projection; if (!proj) return null;
+          for (let i = 0; i < state.lines.length; i++) {
+            const ln = state.lines[i];
+            const a = tpToSvg(ln.t1, ln.p1);
+            const b = tpToSvg(ln.t2, ln.p2);
+            if (a && Math.abs(a.x - svgX) < HITBOX_R && Math.abs(a.y - svgY) < HITBOX_R) {
+              // Only report a hit if the endpoint is actually inside the plot area.
+              if (a.x >= proj.mLeft && a.x <= proj.mRight && a.y >= proj.priceTop && a.y <= proj.priceTop + proj.priceH) {
+                return { lineIdx: i, end: 'a' };
+              }
+            }
+            if (b && Math.abs(b.x - svgX) < HITBOX_R && Math.abs(b.y - svgY) < HITBOX_R) {
+              if (b.x >= proj.mLeft && b.x <= proj.mRight && b.y >= proj.priceTop && b.y <= proj.priceTop + proj.priceH) {
+                return { lineIdx: i, end: 'b' };
+              }
+            }
+          }
+          return null;
+        }
+
+        svgEl.addEventListener('mousemove', function (e) {
+          if (state.dragging) return;   // window listener handles drag moves
+          const c = toSvgCoords(e); if (!c) return;
+          const hit = findEndpointHit(c.x, c.y);
+          const changed = JSON.stringify(hit) !== JSON.stringify(state.hover);
+          state.hover = hit;
+          svgEl.style.cursor = hit ? 'grab' : '';
+          if (changed) redraw();
+        });
+        svgEl.addEventListener('mouseleave', function () {
+          if (state.dragging) return;
+          if (state.hover) { state.hover = null; svgEl.style.cursor = ''; redraw(); }
+        });
+
+        svgEl.addEventListener('mousedown', function (e) {
+          const c = toSvgCoords(e); if (!c) return;
+          const hit = findEndpointHit(c.x, c.y);
+          if (!hit) return;
+          e.preventDefault();
+          state.dragging = hit;
+          svgEl.classList.add('dragging');
+        });
+
+        window.addEventListener('mousemove', function (e) {
+          if (!state.dragging) return;
+          const c = toSvgCoords(e); if (!c) return;
+          const tp = svgToTP(c.x, c.y); if (!tp) return;
+          const ln = state.lines[state.dragging.lineIdx];
+          if (!ln) return;
+          if (state.dragging.end === 'a') { ln.t1 = tp.t; ln.p1 = tp.p; }
+          else                            { ln.t2 = tp.t; ln.p2 = tp.p; }
+          redraw();
+        });
+
+        window.addEventListener('mouseup', function () {
+          if (!state.dragging) return;
+          saveLines();
+          state.dragging = null;
+          state.hover = null;
+          svgEl.classList.remove('dragging');
+          svgEl.style.cursor = '';
+          // Swallow the click event that fires immediately after this
+          // mouseup so the click-to-place-point handler doesn't
+          // accidentally start a new line.
+          state.justDragged = true;
+          setTimeout(function () { state.justDragged = false; }, 60);
+          redraw();
+        });
+
         svgEl.addEventListener('click', function (e) {
+          if (state.justDragged) return;   // don't turn drag-release into a new point
           if (!state.drawMode || !state.projection) return;
           const rect = svgEl.getBoundingClientRect();
           const vb = svgEl.viewBox.baseVal;
@@ -2454,7 +2558,7 @@
         function redraw() {
           drawChart(svgEl, sliceForRange(state.range, cache), {
             show50: state.show50, show200: state.show200, showRsi: state.showRsi, wk52,
-            lines: state.lines, pending: state.pendingPoint,
+            lines: state.lines, pending: state.pendingPoint, hover: state.hover,
           });
         }
 
