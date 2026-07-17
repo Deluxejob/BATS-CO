@@ -1000,6 +1000,64 @@
       opacity: 0.4;
       cursor: not-allowed;
     }
+
+    /* Custom-peer input: type a symbol and submit to add it to the compare
+       chart. Kept compact so it slots inline on the COMPARE WITH row. */
+    .compare-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      margin-left: 0.35rem;
+    }
+    .compare-add input {
+      font: inherit;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(16, 24, 33, 0.6);
+      color: var(--term-text);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.22rem 0.4rem;
+      width: 5.5rem;
+      outline: none;
+    }
+    .compare-add input::placeholder { color: var(--term-dim); font-weight: 500; }
+    .compare-add input:focus { border-color: var(--term-cyan); }
+    .compare-add input.err { border-color: var(--term-red); }
+    .compare-add button {
+      font: inherit;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--term-cyan);
+      border: 1px solid var(--term-cyan);
+      border-radius: 3px;
+      padding: 0.22rem 0.5rem;
+      cursor: pointer;
+    }
+    .compare-add button:hover { background: rgba(110, 231, 255, 0.15); }
+
+    /* Custom chip removal — the "×" sits inside the chip and only pops
+       out on hover so the row stays visually calm at rest. */
+    .compare-chip.custom {
+      padding-right: 0.4rem;
+      position: relative;
+    }
+    .compare-chip.custom .compare-chip-x {
+      margin-left: 0.35rem;
+      color: var(--term-dim);
+      font-weight: 700;
+      cursor: pointer;
+      opacity: 0.65;
+      transition: color 0.1s, opacity 0.1s;
+    }
+    .compare-chip.custom:hover .compare-chip-x { opacity: 1; color: var(--term-red); }
     .compare-note {
       color: var(--term-dim);
       font-size: 0.75rem;
@@ -1742,6 +1800,10 @@
           <div class="compare-controls">
             <span class="compare-controls-label">COMPARE WITH:</span>
             <span id="compareChips"></span>
+            <form class="compare-add" id="compareAddForm" autocomplete="off">
+              <input type="text" id="compareAddInput" placeholder="Ticker" maxlength="10" aria-label="Add a ticker to compare" />
+              <button type="submit">+ Add</button>
+            </form>
             <div class="compare-ranges" id="compareRanges" role="tablist" aria-label="Chart range">
               <button type="button" data-range="1mo">1M</button>
               <button type="button" data-range="3mo">3M</button>
@@ -2843,19 +2905,48 @@
         range: '6mo',
         seriesCache: {},     // "sym|range" -> [[ts, close], ...]
         pending: 0,          // request generation, so stale fetches don't paint
+        customPeers: new Set(),  // reader-added tickers (persisted per-symbol)
       };
 
       function renderCompare(peers) {
         const section = document.getElementById('compareSection');
         if (!section) return;
-        if (!Array.isArray(peers) || !peers.length) {
+
+        // Load any custom peers the reader saved for this ticker.
+        const CUSTOM_KEY = 'bats.custom-peers.' + sym;
+        try {
+          const saved = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]');
+          if (Array.isArray(saved)) {
+            compareState.customPeers = new Set(saved.filter(s => VALID_TICKER.test(s)));
+          }
+        } catch (e) { /* corrupted — start empty */ }
+
+        const finnhubPeers = Array.isArray(peers) ? peers : [];
+        // Merge: Finnhub peers first, then customs that aren't duplicates.
+        const merged = finnhubPeers.slice();
+        for (const c of compareState.customPeers) {
+          if (!merged.includes(c)) merged.push(c);
+        }
+        if (!merged.length) {
+          // Nothing to compare and no customs — hide, but still wire the form
+          // so the reader can add one manually.
           section.style.display = 'none';
+          wireCompareAddForm();
           return;
         }
         section.style.display = '';
-        compareState.peers = peers.slice();
-        compareState.selected = new Set(peers.slice(0, 2));
-        // Assign colors to the initial peer set (stable for the session)
+        compareState.peers = merged;
+        // Default selection: first 2 Finnhub peers, plus any custom peers
+        // (they're likely the ones the reader cares most about).
+        compareState.selected = new Set([
+          ...finnhubPeers.slice(0, 2),
+          ...compareState.customPeers,
+        ]);
+        // Enforce the max-peer cap on initial selection.
+        while (compareState.selected.size > MAX_COMPARE_PEERS) {
+          const last = Array.from(compareState.selected).pop();
+          compareState.selected.delete(last);
+        }
         compareState.peers.forEach((p, i) => {
           if (!compareState.peerColor[p]) {
             compareState.peerColor[p] = COMPARE_PEER_COLORS[i % COMPARE_PEER_COLORS.length];
@@ -2863,7 +2954,69 @@
         });
         drawCompareChips();
         wireCompareRanges();
+        wireCompareAddForm();
         refreshCompareChart();
+      }
+
+      const VALID_TICKER = /^[A-Z0-9.\-]{1,10}$/;
+      function saveCustomPeers() {
+        try { localStorage.setItem('bats.custom-peers.' + sym, JSON.stringify(Array.from(compareState.customPeers))); } catch (e) {}
+      }
+      function addCustomPeer(raw) {
+        const t = String(raw || '').toUpperCase().trim();
+        if (!VALID_TICKER.test(t)) return { ok: false, reason: 'invalid' };
+        if (t === sym)                return { ok: false, reason: 'self' };
+        if (compareState.peers.includes(t)) {
+          // Already listed — just make sure it's selected (if capacity allows).
+          if (!compareState.selected.has(t) && compareState.selected.size < MAX_COMPARE_PEERS) {
+            compareState.selected.add(t);
+            drawCompareChips();
+            refreshCompareChart();
+          }
+          return { ok: true, alreadyThere: true };
+        }
+        compareState.peers.push(t);
+        compareState.customPeers.add(t);
+        if (compareState.selected.size < MAX_COMPARE_PEERS) compareState.selected.add(t);
+        if (!compareState.peerColor[t]) {
+          const idx = (compareState.peers.length - 1) % COMPARE_PEER_COLORS.length;
+          compareState.peerColor[t] = COMPARE_PEER_COLORS[idx];
+        }
+        saveCustomPeers();
+        // Show the section in case Finnhub returned no peers but the
+        // reader is now adding one manually.
+        const section = document.getElementById('compareSection');
+        if (section) section.style.display = '';
+        drawCompareChips();
+        refreshCompareChart();
+        return { ok: true };
+      }
+      function removeCustomPeer(t) {
+        if (!compareState.customPeers.has(t)) return;
+        compareState.customPeers.delete(t);
+        compareState.peers = compareState.peers.filter(p => p !== t);
+        compareState.selected.delete(t);
+        saveCustomPeers();
+        drawCompareChips();
+        refreshCompareChart();
+      }
+      function wireCompareAddForm() {
+        const form = document.getElementById('compareAddForm');
+        if (!form || form.dataset.wired === '1') return;
+        form.dataset.wired = '1';
+        const input = document.getElementById('compareAddInput');
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const result = addCustomPeer(input.value);
+          if (result.ok) {
+            input.value = '';
+            input.classList.remove('err');
+          } else {
+            input.classList.add('err');
+            input.select();
+          }
+        });
+        input.addEventListener('input', () => input.classList.remove('err'));
       }
 
       function drawCompareChips() {
@@ -2876,9 +3029,20 @@
         chipsEl.innerHTML = compareState.peers.map(t => {
           const checked = compareState.selected.has(t);
           const disabled = !checked && atMax ? 'disabled' : '';
-          return `<button type="button" class="compare-chip${checked ? ' checked' : ''}" data-sym="${esc(t)}" ${disabled}>${esc(t)}</button>`;
+          const custom = compareState.customPeers.has(t);
+          const cls = 'compare-chip' + (checked ? ' checked' : '') + (custom ? ' custom' : '');
+          const x = custom ? `<span class="compare-chip-x" data-remove="${esc(t)}" title="Remove">&times;</span>` : '';
+          return `<button type="button" class="${cls}" data-sym="${esc(t)}" ${disabled}>${esc(t)}${x}</button>`;
         }).join(' ');
         chipsEl.onclick = (e) => {
+          // Handle the × remove first — don't let the outer chip toggle fire.
+          const rm = e.target.closest('.compare-chip-x');
+          if (rm) {
+            e.stopPropagation();
+            e.preventDefault();
+            removeCustomPeer(rm.getAttribute('data-remove'));
+            return;
+          }
           const btn = e.target.closest('.compare-chip');
           if (!btn || btn.hasAttribute('disabled')) return;
           const s = btn.getAttribute('data-sym');
