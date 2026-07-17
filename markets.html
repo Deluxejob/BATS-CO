@@ -2102,7 +2102,32 @@
       const sign = v > 0 ? '+' : (v < 0 ? '\u2212' : '');
       return sign + Math.abs(v).toFixed(2) + '%';
     };
-    function paint(q, stripEl) {
+    function paintHeader(q, card) {
+      // Keep the big price + change row live from the /api/quote poll.
+      // Without this the header freezes to whatever value was on the
+      // server when the page first loaded — so a card like CL=F (oil
+      // futures) can sit at yesterday's close for hours while the
+      // underlying moves several percent.
+      if (!q) return;
+      const priceEl   = card.querySelector('[data-role="price"]');
+      const changeEl  = card.querySelector('[data-role="change"]');
+      const changeLbl = card.querySelector('[data-role="changeLabel"]');
+      if (priceEl && q.price != null && isFinite(q.price)) {
+        priceEl.innerHTML = fmtPrice(q.price) + '<span class="unit">USD</span>';
+      }
+      if (changeEl && q.dayChange != null && isFinite(q.dayChange)) {
+        const chg = q.dayChange;
+        const pct = q.dayChangePct;
+        const sign = chg > 0 ? '+' : '';
+        changeEl.className = 'idx-chart-change ' + (chg >= 0 ? 'pos' : 'neg');
+        changeEl.textContent = sign + fmtPrice(chg) + ' (' + (pct != null && isFinite(pct) ? fmtPct(pct) : '') + ')';
+      }
+      if (changeLbl && q.marketState) {
+        const state = String(q.marketState).toUpperCase();
+        changeLbl.textContent = state === 'REGULAR' ? 'live' : 'last close';
+      }
+    }
+    function paintStrip(q, stripEl) {
       if (!q) return;
       const state = String(q.marketState || '').toUpperCase();
       let tier = null;
@@ -2134,9 +2159,11 @@
         const data = await r.json();
         const quotes = (data && data.quotes) || {};
         for (const card of cards) {
+          const sym = card.getAttribute('data-index-symbol');
+          const q = quotes[sym];
+          paintHeader(q, card);
           const strip = card.querySelector('[data-role="ext"]');
-          if (!strip) continue;
-          paint(quotes[card.getAttribute('data-index-symbol')], strip);
+          if (strip) paintStrip(q, strip);
         }
       } catch (e) { /* transient — try again next tick */ }
     }
