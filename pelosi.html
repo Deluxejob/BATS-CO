@@ -624,27 +624,47 @@
       }
 
       // ---------- Metrics ----------
-      const totalPct = perf.totalReturnPercent;
+      // Compute "Total Return" and "vs S&P 500" directly from the chart's
+      // net-worth series so the tile numbers ALWAYS agree with the visual
+      // chart. Insiderfinance's own `totalReturnPercent` and `outperformance`
+      // fields use some per-trade methodology that doesn't equal (last / first
+      // - 1) on the net-worth line, which was confusing readers.
+      const nwSeries = (chart.netWorth || []).filter(r => r && r.netWorth != null && r.sp500 != null);
+      let pelosiTotalPct = null, spTotalPct = null, pelosiTotalDollar = null, chartStartDate = null;
+      if (nwSeries.length >= 2) {
+        const nwFirst = nwSeries[0], nwLast = nwSeries[nwSeries.length - 1];
+        pelosiTotalPct    = (nwLast.netWorth / nwFirst.netWorth - 1) * 100;
+        spTotalPct        = (nwLast.sp500    / nwFirst.sp500    - 1) * 100;
+        pelosiTotalDollar = nwLast.netWorth - nwFirst.netWorth;
+        chartStartDate    = nwFirst.date;
+      }
+
       const totEl = document.querySelector('[data-role="totalReturnPct"]');
-      if (totEl) {
-        totEl.textContent = fmtPct(totalPct);
-        totEl.classList.add(totalPct >= 0 ? 'pos' : 'neg');
+      if (totEl && pelosiTotalPct != null) {
+        totEl.textContent = fmtPct(pelosiTotalPct);
+        totEl.classList.add(pelosiTotalPct >= 0 ? 'pos' : 'neg');
       }
-      set('totalReturnDollar', fmtMoneyShort(perf.totalReturn));
-      const outperf = perf.outperformance;
+      set('totalReturnDollar', fmtMoneyShort(pelosiTotalDollar));
+
+      // "vs S&P 500" = the actual chart-visible difference in percentage points.
       const outEl = document.querySelector('[data-role="outperformance"]');
-      if (outEl) {
-        outEl.textContent = fmtPct(outperf);
-        outEl.classList.add(outperf >= 0 ? 'pos' : 'neg');
+      const spread = (pelosiTotalPct != null && spTotalPct != null) ? pelosiTotalPct - spTotalPct : null;
+      if (outEl && spread != null) {
+        // Show as "+X.XX pp" so it reads as "percentage-points ahead of S&P"
+        // and can't be confused with a compounded return.
+        const sign = spread > 0 ? '+' : (spread < 0 ? '−' : '');
+        outEl.textContent = sign + Math.abs(spread).toFixed(2) + ' pp';
+        outEl.classList.add(spread >= 0 ? 'pos' : 'neg');
       }
-      set('spReturnPct', fmtPct(perf.sp500ReturnPercent));
+      set('spReturnPct', fmtPct(spTotalPct));
+
       set('winRate', (perf.winRate != null ? perf.winRate.toFixed(1) : '—') + '%');
       set('winners', perf.winningTrades ?? '—');
       set('losers',  perf.losingTrades  ?? '—');
       set('avgTradeSize', fmtMoneyShort(perf.avgTradeSize));
       const holdDays = perf.avgHoldingPeriod;
       set('avgHold', holdDays != null ? Math.round(holdDays) + ' days' : '—');
-      set('startDate', fmtDate(perf.startDate));
+      set('startDate', fmtDate(chartStartDate || perf.startDate));
 
       // ---------- Trade filter state ----------
       // Declared BEFORE the renderTrades() call below so it's not in the
