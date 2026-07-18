@@ -1,6 +1,6 @@
 {
   "source": "Computed from data/*.csv using the same scoring functions as app.js",
-  "generatedAt": 1784388359,
+  "generatedAt": 1784388360,
   "latestSpxDate": "2026-07-17",
   "moments": [
     {
@@ -8,30 +8,30 @@
       "asOf": "2007-10-09",
       "event": "Pre-GFC all-time high",
       "context": "S&P 500 hit its cyclical peak. Housing bubble already leaking.",
-      "spxClose": 1565.15,
-      "batsScore": 63.0,
+      "spxClose": 2171.21,
+      "batsScore": 58.5,
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
       "components": {
         "vix": {
-          "raw": 16.12,
-          "score": 61.6,
+          "raw": 19.42,
+          "score": 45.8,
           "weight": 25
         },
         "breadth": {
-          "raw": 0.02,
-          "score": 50.2,
+          "raw": -2.17,
+          "score": 28.3,
           "weight": 25
         },
         "rsi": {
-          "raw": 66.61,
-          "score": 70.8,
+          "raw": 75.06,
+          "score": 81.7,
           "weight": 10
         },
         "ma200": {
-          "raw": 6.32,
-          "score": 55.3,
+          "raw": 14.88,
+          "score": 89.5,
           "weight": 10
         },
         "aaii": {
@@ -61,10 +61,10 @@
         }
       },
       "forward": {
-        "spx_1m": -5.72,
-        "spx_3m": -9.97,
-        "spx_6m": -13.07,
-        "spx_12m": -37.07
+        "spx_1m": -0.08,
+        "spx_3m": -10.23,
+        "spx_6m": -14.66,
+        "spx_12m": -38.72
       }
     },
     {
@@ -72,29 +72,29 @@
       "asOf": "2008-11-21",
       "event": "GFC panic acceleration",
       "context": "SPX closed at 800 after a week of collapse; \"worst since 1987.\"",
-      "spxClose": 800.03,
-      "batsScore": 19.5,
+      "spxClose": 1085.57,
+      "batsScore": 23.8,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
       "components": {
         "vix": {
-          "raw": 72.67,
-          "score": 2.2,
+          "raw": 71.2,
+          "score": 2.4,
           "weight": 25
         },
         "breadth": {
-          "raw": -3.41,
-          "score": 15.9,
+          "raw": -1.39,
+          "score": 36.1,
           "weight": 25
         },
         "rsi": {
-          "raw": 37.75,
-          "score": 34.7,
+          "raw": 35.5,
+          "score": 31.9,
           "weight": 10
         },
         "ma200": {
-          "raw": -35.69,
+          "raw": -37.73,
           "score": 5,
           "weight": 10
         },
@@ -125,10 +125,10 @@
         }
       },
       "forward": {
-        "spx_1m": 7.89,
-        "spx_3m": -4.39,
-        "spx_6m": 11.63,
-        "spx_12m": 38.27
+        "spx_1m": 8.99,
+        "spx_3m": 6.93,
+        "spx_6m": 29.14,
+        "spx_12m": 65.16
       }
     },
     {
@@ -136,29 +136,29 @@
       "asOf": "2009-03-09",
       "event": "GFC bottom",
       "context": "S&P closed at 676. Financial crisis panic in full effect.",
-      "spxClose": 676.53,
-      "batsScore": 19.9,
+      "spxClose": 1043.87,
+      "batsScore": 26.2,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
       "components": {
         "vix": {
-          "raw": 49.68,
-          "score": 4.5,
+          "raw": 48.76,
+          "score": 4.6,
           "weight": 25
         },
         "breadth": {
-          "raw": -2.07,
-          "score": 29.3,
+          "raw": 0.45,
+          "score": 54.5,
           "weight": 25
         },
         "rsi": {
-          "raw": 26.79,
-          "score": 20.7,
+          "raw": 31.12,
+          "score": 26.4,
           "weight": 10
         },
         "ma200": {
-          "raw": -36.11,
+          "raw": -30.87,
           "score": 5,
           "weight": 10
         },
@@ -189,10 +189,10 @@
         }
       },
       "forward": {
-        "spx_1m": 20.55,
-        "spx_3m": 38.82,
-        "spx_6m": 50.24,
-        "spx_12m": 68.57
+        "spx_1m": 22.18,
+        "spx_3m": 42.59,
+        "spx_6m": 56.92,
+        "spx_12m": 82.15
       }
     },
     {
@@ -200,30 +200,30 @@
       "asOf": "2011-08-08",
       "event": "S&P US downgrade / debt ceiling",
       "context": "S&P downgraded US credit; -6.7% single-day crash.",
-      "spxClose": 1119.46,
-      "batsScore": 17.1,
+      "spxClose": 2060.29,
+      "batsScore": 15.5,
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
       "components": {
         "vix": {
-          "raw": 48.0,
-          "score": 4.7,
+          "raw": 44.74,
+          "score": 5.2,
           "weight": 25
         },
         "breadth": {
-          "raw": -3.07,
-          "score": 19.3,
+          "raw": -4.81,
+          "score": 5,
           "weight": 25
         },
         "rsi": {
-          "raw": 16.61,
-          "score": 7.1,
+          "raw": 22.91,
+          "score": 15.5,
           "weight": 10
         },
         "ma200": {
-          "raw": -12.96,
-          "score": 10.1,
+          "raw": -9.84,
+          "score": 17.9,
           "weight": 10
         },
         "aaii": {
@@ -253,10 +253,10 @@
         }
       },
       "forward": {
-        "spx_1m": 7.07,
-        "spx_3m": 11.95,
-        "spx_6m": 20.33,
-        "spx_12m": 25.18
+        "spx_1m": 7.93,
+        "spx_3m": 14.37,
+        "spx_6m": 22.9,
+        "spx_12m": 31.88
       }
     },
     {
@@ -264,30 +264,30 @@
       "asOf": "2016-02-11",
       "event": "Oil crash / deflation bottom",
       "context": "SPX 1829 low; energy sector wipeout, deflation fears peaked.",
-      "spxClose": 1829.08,
-      "batsScore": 28.3,
+      "spxClose": 3962.22,
+      "batsScore": 23.7,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
       "components": {
         "vix": {
-          "raw": 28.14,
-          "score": 23.6,
+          "raw": 31.87,
+          "score": 18.4,
           "weight": 25
         },
         "breadth": {
-          "raw": 0.02,
-          "score": 50.2,
+          "raw": -1.3,
+          "score": 37.0,
           "weight": 25
         },
         "rsi": {
-          "raw": 33.72,
-          "score": 29.7,
+          "raw": 31.94,
+          "score": 27.4,
           "weight": 10
         },
         "ma200": {
-          "raw": -10.14,
-          "score": 17.2,
+          "raw": -10.89,
+          "score": 15.3,
           "weight": 10
         },
         "aaii": {
@@ -317,10 +317,10 @@
         }
       },
       "forward": {
-        "spx_1m": 10.42,
-        "spx_3m": 12.85,
-        "spx_6m": 19.5,
-        "spx_12m": 26.63
+        "spx_1m": 10.22,
+        "spx_3m": 9.61,
+        "spx_6m": 21.23,
+        "spx_12m": 31.91
       }
     },
     {
@@ -328,30 +328,30 @@
       "asOf": "2018-12-24",
       "event": "Powell put / trade-war bottom",
       "context": "Christmas Eve low; Fed pivoted, market rallied.",
-      "spxClose": 2351.1,
-      "batsScore": 18.2,
+      "spxClose": 5899.35,
+      "batsScore": 19.7,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
       "components": {
         "vix": {
-          "raw": 36.07,
-          "score": 13.0,
+          "raw": 38.68,
+          "score": 10.7,
           "weight": 25
         },
         "breadth": {
-          "raw": -1.38,
-          "score": 36.2,
+          "raw": -0.83,
+          "score": 41.7,
           "weight": 25
         },
         "rsi": {
-          "raw": 18.95,
-          "score": 10.3,
+          "raw": 25.62,
+          "score": 19.2,
           "weight": 10
         },
         "ma200": {
-          "raw": -14.55,
-          "score": 6.1,
+          "raw": -16.36,
+          "score": 5,
           "weight": 10
         },
         "aaii": {
@@ -381,10 +381,10 @@
         }
       },
       "forward": {
-        "spx_1m": 13.34,
-        "spx_3m": 19.32,
-        "spx_6m": 23.93,
-        "spx_12m": 37.1
+        "spx_1m": 15.05,
+        "spx_3m": 23.88,
+        "spx_6m": 29.29,
+        "spx_12m": 47.47
       }
     },
     {
@@ -392,30 +392,30 @@
       "asOf": "2019-08-14",
       "event": "2s10s yield curve inversion",
       "context": "First 2s/10s inversion of the cycle; SPX dropped 3% intraday.",
-      "spxClose": 2840.6,
-      "batsScore": 33.4,
+      "spxClose": 7490.13,
+      "batsScore": 32.0,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
       "components": {
         "vix": {
-          "raw": 22.1,
-          "score": 36.7,
+          "raw": 26.38,
+          "score": 26.1,
           "weight": 25
         },
         "breadth": {
-          "raw": -0.99,
-          "score": 40.1,
+          "raw": -0.83,
+          "score": 41.7,
           "weight": 25
         },
         "rsi": {
-          "raw": 38.47,
-          "score": 35.6,
+          "raw": 41.51,
+          "score": 39.4,
           "weight": 10
         },
         "ma200": {
-          "raw": 1.6,
-          "score": 43.2,
+          "raw": 3.67,
+          "score": 47.3,
           "weight": 10
         },
         "aaii": {
@@ -445,10 +445,10 @@
         }
       },
       "forward": {
-        "spx_1m": 5.87,
-        "spx_3m": 8.84,
-        "spx_6m": 18.78,
-        "spx_12m": 18.76
+        "spx_1m": 5.38,
+        "spx_3m": 10.33,
+        "spx_6m": 28.11,
+        "spx_12m": 49.24
       }
     },
     {
@@ -456,30 +456,30 @@
       "asOf": "2020-02-19",
       "event": "Pre-COVID all-time high",
       "context": "Peak before the COVID crash — SPX at 3386.",
-      "spxClose": 3386.15,
-      "batsScore": 56.5,
+      "spxClose": 9718.73,
+      "batsScore": 54.3,
       "bucketLabel": "Neutral",
       "bucketColor": "var(--s3)",
       "action": "No Real Trend",
       "components": {
         "vix": {
-          "raw": 14.38,
-          "score": 70.9,
+          "raw": 18.58,
+          "score": 49.8,
           "weight": 25
         },
         "breadth": {
-          "raw": -1.47,
-          "score": 35.3,
+          "raw": -1.64,
+          "score": 33.6,
           "weight": 25
         },
         "rsi": {
-          "raw": 66.18,
-          "score": 70.2,
+          "raw": 76.44,
+          "score": 83.6,
           "weight": 10
         },
         "ma200": {
-          "raw": 11.49,
-          "score": 76.0,
+          "raw": 20.12,
+          "score": 95,
           "weight": 10
         },
         "aaii": {
@@ -509,10 +509,10 @@
         }
       },
       "forward": {
-        "spx_1m": -28.85,
-        "spx_3m": -13.68,
-        "spx_6m": 0.11,
-        "spx_12m": 15.59
+        "spx_1m": -25.01,
+        "spx_3m": -4.32,
+        "spx_6m": 17.29,
+        "spx_12m": 40.32
       }
     },
     {
@@ -520,30 +520,30 @@
       "asOf": "2020-03-23",
       "event": "COVID crash bottom",
       "context": "Fed unlimited-QE announcement day; SPX bottomed at 2237.",
-      "spxClose": 2237.4,
-      "batsScore": 12.4,
-      "bucketLabel": "Extremely Oversold",
-      "bucketColor": "var(--s-ext)",
-      "action": "Aggressive Buy",
+      "spxClose": 7006.92,
+      "batsScore": 15.4,
+      "bucketLabel": "Very Oversold",
+      "bucketColor": "var(--s0)",
+      "action": "Strong Buy",
       "components": {
         "vix": {
-          "raw": 61.59,
-          "score": 3.3,
+          "raw": 58.36,
+          "score": 3.7,
           "weight": 25
         },
         "breadth": {
-          "raw": -6.29,
-          "score": 5,
+          "raw": -3.56,
+          "score": 14.4,
           "weight": 25
         },
         "rsi": {
-          "raw": 29.37,
-          "score": 24.2,
+          "raw": 35.43,
+          "score": 31.8,
           "weight": 10
         },
         "ma200": {
-          "raw": -26.32,
-          "score": 5,
+          "raw": -14.4,
+          "score": 6.5,
           "weight": 10
         },
         "aaii": {
@@ -573,10 +573,10 @@
         }
       },
       "forward": {
-        "spx_1m": 25.11,
-        "spx_3m": 39.35,
-        "spx_6m": 46.65,
-        "spx_12m": 74.78
+        "spx_1m": 23.66,
+        "spx_3m": 44.58,
+        "spx_6m": 56.71,
+        "spx_12m": 85.78
       }
     },
     {
@@ -584,30 +584,30 @@
       "asOf": "2022-01-03",
       "event": "Post-COVID all-time high",
       "context": "Peak before the 2022 bear market — SPX at 4796.",
-      "spxClose": 4796.56,
-      "batsScore": 59.4,
-      "bucketLabel": "Slightly Bullish",
-      "bucketColor": "var(--s4)",
-      "action": "Hold",
+      "spxClose": 16501.77,
+      "batsScore": 54.1,
+      "bucketLabel": "Neutral",
+      "bucketColor": "var(--s3)",
+      "action": "No Real Trend",
       "components": {
         "vix": {
-          "raw": 16.6,
-          "score": 59.3,
+          "raw": 21.17,
+          "score": 39.5,
           "weight": 25
         },
         "breadth": {
-          "raw": 0.07,
-          "score": 50.7,
+          "raw": -0.35,
+          "score": 46.5,
           "weight": 25
         },
         "rsi": {
-          "raw": 60.44,
-          "score": 63.0,
+          "raw": 56.98,
+          "score": 58.7,
           "weight": 10
         },
         "ma200": {
-          "raw": 9.33,
-          "score": 67.3,
+          "raw": 11.1,
+          "score": 74.4,
           "weight": 10
         },
         "aaii": {
@@ -637,10 +637,10 @@
         }
       },
       "forward": {
-        "spx_1m": -4.32,
-        "spx_3m": -4.46,
-        "spx_6m": -19.84,
-        "spx_12m": -19.67
+        "spx_1m": -8.25,
+        "spx_3m": -8.13,
+        "spx_6m": -28.17,
+        "spx_12m": -33.86
       }
     },
     {
@@ -648,29 +648,29 @@
       "asOf": "2022-06-17",
       "event": "2022 first bear-market low",
       "context": "SPX 3675; first flush of the year. Not the ultimate low.",
-      "spxClose": 3674.84,
-      "batsScore": 27.4,
+      "spxClose": 11265.99,
+      "batsScore": 29.4,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
       "components": {
         "vix": {
-          "raw": 31.13,
-          "score": 19.4,
+          "raw": 36.66,
+          "score": 12.5,
           "weight": 25
         },
         "breadth": {
-          "raw": -1.06,
-          "score": 39.4,
+          "raw": 0.26,
+          "score": 52.6,
           "weight": 25
         },
         "rsi": {
-          "raw": 30.7,
-          "score": 25.9,
+          "raw": 36.05,
+          "score": 32.6,
           "weight": 10
         },
         "ma200": {
-          "raw": -16.87,
+          "raw": -22.82,
           "score": 5,
           "weight": 10
         },
@@ -701,10 +701,10 @@
         }
       },
       "forward": {
-        "spx_1m": 7.76,
-        "spx_3m": 6.12,
-        "spx_6m": 4.83,
-        "spx_12m": 18.8
+        "spx_1m": 10.42,
+        "spx_3m": 6.1,
+        "spx_6m": -0.2,
+        "spx_12m": 31.97
       }
     },
     {
@@ -712,30 +712,30 @@
       "asOf": "2022-10-12",
       "event": "2022 final bear-market bottom",
       "context": "SPX 3577 — the actual low of the 2022 cycle.",
-      "spxClose": 3577.03,
-      "batsScore": 31.6,
+      "spxClose": 10785.62,
+      "batsScore": 31.3,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
       "components": {
         "vix": {
-          "raw": 33.57,
-          "score": 16.0,
+          "raw": 39.51,
+          "score": 9.9,
           "weight": 25
         },
         "breadth": {
-          "raw": 0.26,
-          "score": 52.6,
+          "raw": 0.91,
+          "score": 59.1,
           "weight": 25
         },
         "rsi": {
-          "raw": 34.78,
-          "score": 31.0,
+          "raw": 32.37,
+          "score": 28.0,
           "weight": 10
         },
         "ma200": {
-          "raw": -14.28,
-          "score": 6.8,
+          "raw": -18.32,
+          "score": 5,
           "weight": 10
         },
         "aaii": {
@@ -765,10 +765,10 @@
         }
       },
       "forward": {
-        "spx_1m": 10.6,
-        "spx_3m": 11.35,
-        "spx_6m": 15.67,
-        "spx_12m": 20.99
+        "spx_1m": 7.61,
+        "spx_3m": 6.25,
+        "spx_6m": 21.27,
+        "spx_12m": 39.03
       }
     },
     {
@@ -776,30 +776,30 @@
       "asOf": "2023-03-13",
       "event": "SVB banking crisis",
       "context": "SVB collapsed the prior weekend; regional-bank contagion fear.",
-      "spxClose": 3855.76,
-      "batsScore": 29.7,
-      "bucketLabel": "Oversold",
-      "bucketColor": "var(--s1)",
-      "action": "Consider Buying",
+      "spxClose": 11923.17,
+      "batsScore": 33.7,
+      "bucketLabel": "Slightly Bearish",
+      "bucketColor": "var(--s2)",
+      "action": "Be Careful",
       "components": {
         "vix": {
-          "raw": 26.52,
-          "score": 25.9,
+          "raw": 29.39,
+          "score": 21.9,
           "weight": 25
         },
         "breadth": {
-          "raw": -2.53,
-          "score": 24.7,
+          "raw": -1.07,
+          "score": 39.3,
           "weight": 25
         },
         "rsi": {
-          "raw": 34.67,
-          "score": 30.8,
+          "raw": 45.26,
+          "score": 44.1,
           "weight": 10
         },
         "ma200": {
-          "raw": -2.14,
-          "score": 35.7,
+          "raw": 0.16,
+          "score": 40.3,
           "weight": 10
         },
         "aaii": {
@@ -829,10 +829,10 @@
         }
       },
       "forward": {
-        "spx_1m": 6.13,
-        "spx_3m": 12.53,
-        "spx_6m": 15.72,
-        "spx_12m": 33.96
+        "spx_1m": 7.76,
+        "spx_3m": 24.0,
+        "spx_6m": 28.24,
+        "spx_12m": 51.54
       }
     },
     {
@@ -840,30 +840,30 @@
       "asOf": "2023-10-27",
       "event": "Rate-panic bottom",
       "context": "10Y hit 5%; SPX flushed to 4117 before the year-end rally began.",
-      "spxClose": 4117.37,
-      "batsScore": 33.9,
+      "spxClose": 14180.42,
+      "batsScore": 32.0,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
       "components": {
         "vix": {
-          "raw": 21.27,
-          "score": 39.2,
+          "raw": 24.44,
+          "score": 29.7,
           "weight": 25
         },
         "breadth": {
-          "raw": -1.74,
-          "score": 32.6,
+          "raw": -2.25,
+          "score": 27.5,
           "weight": 25
         },
         "rsi": {
-          "raw": 29.18,
-          "score": 23.9,
+          "raw": 34.56,
+          "score": 30.7,
           "weight": 10
         },
         "ma200": {
-          "raw": -2.9,
-          "score": 34.2,
+          "raw": 1.82,
+          "score": 43.6,
           "weight": 10
         },
         "aaii": {
@@ -893,10 +893,10 @@
         }
       },
       "forward": {
-        "spx_1m": 10.63,
-        "spx_3m": 19.61,
-        "spx_6m": 22.3,
-        "spx_12m": 41.67
+        "spx_1m": 12.91,
+        "spx_3m": 23.25,
+        "spx_6m": 22.99,
+        "spx_12m": 44.92
       }
     },
     {
@@ -904,30 +904,30 @@
       "asOf": "2025-04-08",
       "event": "Liberation Day tariff bottom",
       "context": "SPX 4983; day before Trump announced 90-day tariff pause.",
-      "spxClose": 4982.77,
-      "batsScore": 21.8,
+      "spxClose": 17090.4,
+      "batsScore": 23.2,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
       "components": {
         "vix": {
-          "raw": 52.33,
-          "score": 4.3,
+          "raw": 39.56,
+          "score": 9.9,
           "weight": 25
         },
         "breadth": {
-          "raw": -0.33,
-          "score": 46.7,
+          "raw": -0.2,
+          "score": 48.0,
           "weight": 25
         },
         "rsi": {
-          "raw": 21.31,
-          "score": 13.4,
+          "raw": 23.02,
+          "score": 15.7,
           "weight": 10
         },
         "ma200": {
-          "raw": -13.43,
-          "score": 8.9,
+          "raw": -15.7,
+          "score": 5,
           "weight": 10
         },
         "aaii": {
@@ -957,10 +957,10 @@
         }
       },
       "forward": {
-        "spx_1m": 13.67,
-        "spx_3m": 26.04,
-        "spx_6m": 35.54,
-        "spx_12m": 36.81
+        "spx_1m": 17.4,
+        "spx_3m": 33.58,
+        "spx_6m": 47.08,
+        "spx_12m": 46.96
       }
     }
   ],

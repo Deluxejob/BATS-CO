@@ -23,7 +23,28 @@ from bisect import bisect_right
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DATA_DIR = os.path.join(REPO_ROOT, 'data')
-OUT_PATH = os.path.join(DATA_DIR, 'bats_history.json')
+# ---------------------------------------------------------------------------
+# Market selection — same BATS logic can be applied to either the S&P 500 or
+# the Nasdaq 100 by swapping four data files. Pass --market=nasdaq to build
+# the Nasdaq variant; anything else (or absent) builds the S&P 500 variant.
+# ---------------------------------------------------------------------------
+MARKETS = {
+    'sp500':  dict(vol='vix.csv', index='spx.csv', cap='spy.csv', equal='rsp.csv',
+                   label='S&P 500',   out_suffix=''),
+    'nasdaq': dict(vol='vxn.csv', index='ndx.csv', cap='qqq.csv', equal='qqew.csv',
+                   label='Nasdaq 100', out_suffix='_ndx'),
+}
+MARKET = 'sp500'
+for _arg in sys.argv[1:]:
+    if _arg.startswith('--market='):
+        _v = _arg.split('=', 1)[1].strip().lower()
+        if _v in MARKETS:
+            MARKET = _v
+        else:
+            print(f'::warning::unknown --market={_v}, defaulting to sp500')
+MC = MARKETS[MARKET]
+
+OUT_PATH = os.path.join(DATA_DIR, 'bats_history' + MC['out_suffix'] + '.json')
 
 # Earliest history date to compute. Matches the pre-GFC-high moment on
 # the home page, and it's when we have all-components coverage.
@@ -43,7 +64,7 @@ BUCKETS = [
     dict(label='Extremely Oversold', min=0,  color='var(--s-ext)', action='Aggressive Buy'),
     dict(label='Very Oversold',      min=15, color='var(--s0)',    action='Strong Buy'),
     dict(label='Oversold',           min=18, color='var(--s1)',    action='Consider Buying'),
-    dict(label='Slightly Bearish',   min=30, color='var(--s2)',    action='Be Careful'),
+    dict(label='Slightly Bearish',   min=32, color='var(--s2)',    action='Be Careful'),
     dict(label='Neutral',            min=45, color='var(--s3)',    action='No Real Trend'),
     dict(label='Slightly Bullish',   min=57, color='var(--s4)',    action='Hold'),
     dict(label='Bullish',            min=65, color='var(--s5)',    action='Hold, But Be Careful'),
@@ -155,8 +176,8 @@ def load_close(fname, close_col=1):
         except: pass
     return out
 
-def load_vix():
-    rows = _read_csv('vix.csv')
+def load_vix(fname='vix.csv'):
+    rows = _read_csv(fname)
     if not rows: return None
     out = {}
     for row in rows[1:]:
@@ -263,10 +284,10 @@ def build_20d_return(dates, prices):
 
 
 def main():
-    vix   = load_vix()
-    spx   = load_close('spx.csv')
-    spy   = load_close('spy.csv')
-    rsp   = load_close('rsp.csv')
+    vix   = load_vix(MC['vol'])
+    spx   = load_close(MC['index'])
+    spy   = load_close(MC['cap'])
+    rsp   = load_close(MC['equal'])
     hyg   = load_close('hyg.csv')
     lqd   = load_close('lqd.csv')
     aaii  = load_aaii()
