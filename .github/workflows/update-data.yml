@@ -63,6 +63,9 @@ jobs:
       - name: Refresh intraday sector snapshot (safety net for the 10-min bot)
         run: python scripts/update-sectors-intraday.py
 
+      - name: Refresh Nancy Pelosi trades snapshot (tolerant of upstream errors)
+        run: python scripts/update-pelosi.py
+
       - name: Regenerate BATS moments (fills in forward returns as time passes)
         run: python scripts/build-bats-moments.py
 

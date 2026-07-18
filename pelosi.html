@@ -4,35 +4,391 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pelosi Tracker — BATS.CO</title>
-  <meta name="description" content="Nancy Pelosi's disclosed stock trades — recent purchases/sales and historical performance. Sourced from the US House Clerk's official Periodic Transaction Reports." />
+  <meta name="description" content="Nancy Pelosi's disclosed stock trades — recent purchases, historical performance, top issuers, and net-worth vs S&P 500 since 2014. Sourced daily from PTR filings." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .stub {
-      max-width: 720px;
-      margin: 3rem auto;
-      padding: 2rem 2.25rem;
-      background: var(--bg-elevated, #101821);
-      border: 1px solid var(--border, #1c2734);
-      border-radius: var(--radius, 8px);
+    /* Terminal palette — same tokens as quotes.html / ticker.html so the
+       page reads as a peer to those pages. */
+    :root {
+      --term-bg:      #08111a;
+      --term-panel:   #101821;
+      --term-panel-2: #0d1520;
+      --term-border:  #1c2734;
+      --term-border-soft: #172131;
+      --term-text:    #d5dee9;
+      --term-dim:     #7b8697;
+      --term-amber:   #ffb658;
+      --term-cyan:    #6ee7ff;
+      --term-green:   #22d39a;
+      --term-red:     #ff5374;
     }
-    .stub h2 { margin-top: 0; }
-    .stub .eyebrow {
+    body { background: var(--term-bg); }
+    main.terminal {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.75rem 1.25rem 3rem;
+      color: var(--term-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Section shell — copied from quotes.html so the whole page reads as
+       one system. */
+    .term-section { margin-bottom: 1.25rem; }
+    .term-section-label {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.72rem;
-      letter-spacing: 0.14em;
+      color: var(--term-amber);
       text-transform: uppercase;
-      color: var(--accent, #ffb658);
+      letter-spacing: 0.14em;
+      font-weight: 600;
       margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
     }
-    .stub ul { padding-left: 1.2rem; line-height: 1.65; }
-    .stub .src {
+    .term-section-label::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: var(--term-amber);
+      border-radius: 1px;
+    }
+    .term-section-label .sub {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      font-size: 0.72rem;
+    }
+    .term-panel {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 0.75rem 0.9rem 0.85rem;
+    }
+
+    /* Bio strip — the distinct alternative to a big photo card. A single
+       compact horizontal row of facts, JetBrains Mono, laid out like a
+       Bloomberg header. */
+    .plsi-bio {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem 1.2rem;
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 900px) {
+      .plsi-bio { grid-template-columns: auto 1fr auto; align-items: center; }
+    }
+    .plsi-name {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-weight: 700;
+      font-size: 1.55rem;
+      color: var(--term-cyan);
+      letter-spacing: 0.02em;
+      line-height: 1;
+      display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap;
+    }
+    .plsi-name .plsi-party {
+      font-size: 0.7rem;
+      color: var(--term-amber);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.15rem 0.45rem;
+      border: 1px solid var(--term-amber);
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .plsi-facts {
+      display: flex; flex-wrap: wrap; gap: 0.15rem 1.6rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      color: var(--term-dim);
+    }
+    .plsi-facts .fact b {
+      color: var(--term-text);
+      font-weight: 600;
+      margin-right: 0.35rem;
+    }
+    .plsi-facts .fact .lbl {
+      color: var(--term-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.6rem;
+      display: block;
+    }
+    .plsi-facts .fact .val {
+      color: var(--term-text);
+      font-weight: 700;
+      font-size: 0.86rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .plsi-socials {
+      display: flex; gap: 0.5rem;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      color: var(--text-dim, #7b8697);
+      font-size: 0.72rem;
+    }
+    .plsi-socials a {
+      color: var(--term-dim);
+      text-decoration: none;
+      border: 1px solid var(--term-border);
+      padding: 0.28rem 0.6rem;
+      border-radius: 3px;
+    }
+    .plsi-socials a:hover { color: var(--term-cyan); border-color: var(--term-cyan); }
+
+    /* 4 metric tiles */
+    .plsi-metrics {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+    }
+    @media (min-width: 700px)  { .plsi-metrics { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1100px) { .plsi-metrics { grid-template-columns: repeat(4, 1fr); } }
+    .plsi-metric {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 0.85rem 1rem 0.95rem;
+    }
+    .plsi-metric .m-lbl {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--term-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .plsi-metric .m-val {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--term-text);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.05;
+    }
+    .plsi-metric .m-val.pos { color: var(--term-green); }
+    .plsi-metric .m-val.neg { color: var(--term-red); }
+    .plsi-metric .m-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      margin-top: 0.3rem;
+    }
+    .plsi-metric .m-sub .pos { color: var(--term-green); }
+    .plsi-metric .m-sub .neg { color: var(--term-red); }
+
+    /* Net-worth vs S&P 500 chart */
+    .plsi-chart-wrap {
+      overflow-x: auto;
+    }
+    .plsi-chart {
+      width: 100%;
+      min-width: 700px;
+      height: auto;
+      display: block;
+    }
+    .plsi-chart .grid-line { stroke: var(--term-border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
+    .plsi-chart .axis-line { stroke: var(--term-border); stroke-width: 1; }
+    .plsi-chart .axis-label { fill: #c9d3e0; font-size: 11px; font-family: ui-monospace, monospace; }
+    .plsi-chart-legend {
+      display: flex; gap: 1rem; justify-content: flex-end;
+      margin-top: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-dim);
+    }
+    .plsi-chart-legend .swatch {
+      display: inline-block;
+      width: 12px; height: 3px;
+      border-radius: 1px;
+      margin-right: 0.35rem; vertical-align: middle;
+    }
+
+    /* Trades table — scrollable with sticky header (mirrors the earnings
+       calendar and ext-hours tables on other pages). */
+    .plsi-trade-controls {
+      display: flex; gap: 0.35rem;
+      flex-wrap: wrap; margin-bottom: 0.55rem;
+    }
+    .plsi-trade-controls button {
+      font: inherit;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--term-dim);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.32rem 0.7rem;
+      cursor: pointer;
+    }
+    .plsi-trade-controls button:hover { color: var(--term-text); border-color: var(--term-amber); }
+    .plsi-trade-controls button.active {
+      background: var(--term-amber);
+      color: #0a1218;
+      border-color: var(--term-amber);
+    }
+    .plsi-table-wrap {
+      overflow: auto;
+      max-height: 440px;
+      border: 1px solid var(--term-border-soft);
+      border-radius: 3px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--term-border) transparent;
+    }
+    .plsi-table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+    .plsi-table-wrap::-webkit-scrollbar-thumb { background: var(--term-border); border-radius: 4px; }
+    .plsi-table-wrap::-webkit-scrollbar-thumb:hover { background: var(--term-dim); }
+    .plsi-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .plsi-table thead th {
+      text-align: left;
+      color: var(--term-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.62rem;
+      padding: 0.42rem 0.75rem;
+      border-bottom: 1px solid var(--term-border);
+      background: var(--term-panel);
+      position: sticky; top: 0; z-index: 1;
+    }
+    .plsi-table thead th.num { text-align: right; }
+    .plsi-table tbody td {
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid var(--term-border-soft);
+      color: var(--term-text);
+    }
+    .plsi-table tbody td.num { text-align: right; }
+    .plsi-table tbody tr:hover td { background: rgba(255, 182, 88, 0.04); }
+    .plsi-ticker {
+      color: var(--term-cyan);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .plsi-ticker:hover { color: var(--term-amber); text-decoration: underline; }
+    .plsi-tx-badge {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 0.12rem 0.42rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .plsi-tx-badge.buy      { background: rgba(34, 211, 154, 0.15); color: var(--term-green); }
+    .plsi-tx-badge.sell     { background: rgba(255, 83, 116, 0.15); color: var(--term-red); }
+    .plsi-tx-badge.exchange { background: rgba(255, 182, 88, 0.15); color: var(--term-amber); }
+    .plsi-tx-badge.exercise { background: rgba(110, 231, 255, 0.15); color: var(--term-cyan); }
+    .plsi-owner {
+      color: var(--term-dim);
+      font-size: 0.7rem;
+    }
+    .plsi-pl.pos { color: var(--term-green); font-weight: 600; }
+    .plsi-pl.neg { color: var(--term-red); font-weight: 600; }
+    .plsi-status.open   { color: var(--term-amber); }
+    .plsi-status.closed { color: var(--term-dim); }
+
+    /* Bottom row: top issuers + sector allocation side by side */
+    .plsi-bottom {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+    }
+    @media (min-width: 900px) {
+      .plsi-bottom { grid-template-columns: 1.4fr 1fr; }
+    }
+    .plsi-issuer {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.32rem 0.15rem;
+      border-bottom: 1px solid var(--term-border-soft);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.78rem;
+    }
+    .plsi-issuer:last-child { border-bottom: none; }
+    .plsi-issuer .tk {
+      color: var(--term-cyan);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .plsi-issuer .tk:hover { color: var(--term-amber); }
+    .plsi-issuer .bar {
+      height: 6px;
+      background: var(--term-border-soft);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .plsi-issuer .bar-fill {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--term-cyan), var(--term-amber));
+    }
+    .plsi-issuer .vol {
+      color: var(--term-dim);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .plsi-issuer .vol b { color: var(--term-text); font-weight: 600; }
+
+    .plsi-sector {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.3rem 0.15rem;
+      border-bottom: 1px solid var(--term-border-soft);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.78rem;
+    }
+    .plsi-sector:last-child { border-bottom: none; }
+    .plsi-sector .name { color: var(--term-text); }
+    .plsi-sector .pct  { color: var(--term-amber); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .plsi-sector .sec-bar {
+      grid-column: 1 / -1;
+      height: 4px;
+      background: var(--term-border-soft);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .plsi-sector .sec-bar-fill {
+      display: block;
+      height: 100%;
+      background: var(--term-amber);
+    }
+
+    .plsi-source {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      text-align: right;
+      margin-top: 0.5rem;
+    }
+    .plsi-source a { color: var(--term-cyan); text-decoration: none; }
+    .plsi-source a:hover { text-decoration: underline; }
+    .plsi-loading {
+      padding: 1.6rem 0;
+      text-align: center;
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
     }
   </style>
 </head>
@@ -64,36 +420,137 @@
     </nav>
   </header>
 
-  <main class="explainer">
-    <section class="explainer-hero">
-      <p class="eyebrow">PELOSI TRACKER</p>
-      <h1>Nancy Pelosi&rsquo;s disclosed stock trades</h1>
-      <p class="lede">
-        Under the STOCK Act (2012), members of Congress must disclose stock
-        transactions within 45 days via a Periodic Transaction Report. This page
-        will track Rep. Pelosi&rsquo;s filings, group them by ticker, and compute
-        the return on each position from the transaction date to today.
-      </p>
+  <main class="terminal">
+
+    <!-- Bio strip -->
+    <div class="plsi-bio" id="plsiBio">
+      <div class="plsi-name">
+        <span>Nancy Pelosi</span>
+        <span class="plsi-party" data-role="party">&mdash;</span>
+      </div>
+      <div class="plsi-facts">
+        <div class="fact"><span class="lbl">Chamber</span><span class="val" data-role="chamber">&mdash;</span></div>
+        <div class="fact"><span class="lbl">In Congress</span><span class="val" data-role="tenure">&mdash;</span></div>
+        <div class="fact"><span class="lbl">Age</span><span class="val" data-role="age">&mdash;</span></div>
+        <div class="fact"><span class="lbl">Trades</span><span class="val" data-role="totalTrades">&mdash;</span></div>
+        <div class="fact"><span class="lbl">Last Trade</span><span class="val" data-role="lastTrade">&mdash;</span></div>
+        <div class="fact"><span class="lbl">Net Worth</span><span class="val" data-role="netWorth">&mdash;</span></div>
+      </div>
+      <div class="plsi-socials" data-role="socials"></div>
+    </div>
+
+    <!-- Metric tiles -->
+    <section class="term-section">
+      <div class="term-section-label">
+        PERFORMANCE SUMMARY
+        <span class="sub">&mdash; realized + unrealized since <span data-role="startDate">&mdash;</span></span>
+      </div>
+      <div class="plsi-metrics">
+        <div class="plsi-metric">
+          <div class="m-lbl">Total Return</div>
+          <div class="m-val" data-role="totalReturnPct">&mdash;</div>
+          <div class="m-sub" data-role="totalReturnDollar">&mdash;</div>
+        </div>
+        <div class="plsi-metric">
+          <div class="m-lbl">vs S&P 500</div>
+          <div class="m-val" data-role="outperformance">&mdash;</div>
+          <div class="m-sub">S&P over same span: <span data-role="spReturnPct">&mdash;</span></div>
+        </div>
+        <div class="plsi-metric">
+          <div class="m-lbl">Win Rate (closed trades)</div>
+          <div class="m-val" data-role="winRate">&mdash;</div>
+          <div class="m-sub"><span data-role="winners">&mdash;</span> winners &middot; <span data-role="losers">&mdash;</span> losers</div>
+        </div>
+        <div class="plsi-metric">
+          <div class="m-lbl">Avg Trade Size</div>
+          <div class="m-val" data-role="avgTradeSize">&mdash;</div>
+          <div class="m-sub">Avg hold: <span data-role="avgHold">&mdash;</span></div>
+        </div>
+      </div>
     </section>
 
-    <section class="stub">
-      <p class="eyebrow">Under construction</p>
-      <h2>Coming soon</h2>
-      <p>
-        Data source is being wired up: an automated daily job will pull the
-        <a href="https://disclosures-clerk.house.gov/FinancialDisclosure" target="_blank" rel="noopener">US House Clerk&rsquo;s</a>
-        annual disclosure ZIP, filter for Pelosi&rsquo;s Periodic Transaction Reports,
-        parse the PDFs, and update this page. Once live it will include:
-      </p>
-      <ul>
-        <li>Most recent trades &mdash; date, ticker, buy/sell, disclosed amount range, owner (self/spouse)</li>
-        <li>Position-level return since transaction date, using our own price history</li>
-        <li>Aggregate portfolio performance vs S&amp;P 500</li>
-      </ul>
-      <p class="src">
-        Source: US House Clerk &middot; disclosures-clerk.house.gov &middot; official STOCK Act filings.
-      </p>
+    <!-- Net Worth vs S&P 500 -->
+    <section class="term-section">
+      <div class="term-section-label">
+        NET WORTH vs S&amp;P 500
+        <span class="sub">&mdash; both indexed to 100 at start &middot; daily estimates</span>
+      </div>
+      <div class="term-panel">
+        <div class="plsi-chart-wrap">
+          <svg class="plsi-chart" id="plsiChart" viewBox="0 0 900 280" preserveAspectRatio="none" aria-label="Net worth vs S&P 500"></svg>
+        </div>
+        <div class="plsi-chart-legend">
+          <span><span class="swatch" style="background: var(--term-amber);"></span>Pelosi (indexed)</span>
+          <span><span class="swatch" style="background: var(--term-cyan);"></span>S&amp;P 500 (indexed)</span>
+        </div>
+      </div>
     </section>
+
+    <!-- Recent Trades -->
+    <section class="term-section">
+      <div class="term-section-label">
+        DISCLOSED TRADES
+        <span class="sub">&mdash; from Periodic Transaction Reports &middot; click any ticker to open its page</span>
+      </div>
+      <div class="term-panel">
+        <div class="plsi-trade-controls" id="plsiTradeControls" role="tablist" aria-label="Trade type filter">
+          <button type="button" data-filter="all" class="active">All</button>
+          <button type="button" data-filter="BUY">Buys</button>
+          <button type="button" data-filter="SELL">Sells</button>
+          <button type="button" data-filter="EXCHANGE">Exchange</button>
+          <button type="button" data-filter="EXERCISE">Exercise</button>
+        </div>
+        <div class="plsi-table-wrap">
+          <table class="plsi-table">
+            <thead>
+              <tr>
+                <th style="width: 100px;">Date</th>
+                <th style="width: 90px;">Ticker</th>
+                <th>Company</th>
+                <th style="width: 80px;">Type</th>
+                <th class="num" style="width: 130px;">Amount (mid)</th>
+                <th class="num" style="width: 100px;">P/L $</th>
+                <th class="num" style="width: 80px;">P/L %</th>
+                <th style="width: 80px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="plsiTradesBody">
+              <tr><td colspan="8" class="plsi-loading">Loading trades&hellip;</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom row: top issuers + sector allocation -->
+    <div class="plsi-bottom">
+      <section class="term-section">
+        <div class="term-section-label">
+          TOP ISSUERS BY VOLUME
+          <span class="sub">&mdash; top 10 tickers she has traded most</span>
+        </div>
+        <div class="term-panel" id="plsiIssuers">
+          <div class="plsi-loading">Loading&hellip;</div>
+        </div>
+      </section>
+
+      <section class="term-section">
+        <div class="term-section-label">
+          SECTOR ALLOCATION
+          <span class="sub">&mdash; current portfolio</span>
+        </div>
+        <div class="term-panel" id="plsiSectors">
+          <div class="plsi-loading">Loading&hellip;</div>
+        </div>
+      </section>
+    </div>
+
+    <p class="plsi-source">
+      Data source: <a href="https://www.insiderfinance.io/congress-trades/politician/nancy-pelosi" target="_blank" rel="noopener">insiderfinance.io</a>
+      &middot; refreshed daily &middot; underlying filings from
+      <a href="https://disclosures-clerk.house.gov/FinancialDisclosure" target="_blank" rel="noopener">US House Clerk</a>
+      (STOCK Act, 2012). Snapshot: <span id="plsiFetchedAt">&mdash;</span>
+    </p>
   </main>
 
   <footer class="site-footer">
@@ -102,6 +559,304 @@
 
   <script>
     document.getElementById('footerYear').textContent = new Date().getUTCFullYear();
+
+    (async function initPelosi() {
+      let payload;
+      try {
+        const r = await fetch('data/pelosi.json?_v=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        payload = await r.json();
+      } catch (e) {
+        document.getElementById('plsiTradesBody').innerHTML =
+          `<tr><td colspan="8" class="plsi-loading">Failed to load Pelosi data: ${(e && e.message) || e}</td></tr>`;
+        return;
+      }
+
+      const person   = payload.person       || {};
+      const perf     = payload.performance  || {};
+      const trades   = payload.trades       || [];
+      const chart    = payload.chart        || {};
+
+      // ---------- Bio strip ----------
+      const set = (role, value) => {
+        const el = document.querySelector(`[data-role="${role}"]`);
+        if (el && value != null) el.textContent = value;
+      };
+      const setHTML = (role, html) => {
+        const el = document.querySelector(`[data-role="${role}"]`);
+        if (el) el.innerHTML = html;
+      };
+      const fmtMoney = (v) => v == null || !isFinite(v) ? '—' : '$' + Math.round(v).toLocaleString('en-US');
+      const fmtMoneyShort = (v) => {
+        if (v == null || !isFinite(v)) return '—';
+        const abs = Math.abs(v), sign = v < 0 ? '-' : '';
+        if (abs >= 1e9) return sign + '$' + (abs / 1e9).toFixed(2) + 'B';
+        if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(2) + 'M';
+        if (abs >= 1e3) return sign + '$' + (abs / 1e3).toFixed(1) + 'K';
+        return sign + '$' + abs.toFixed(0);
+      };
+      const fmtPct = (v, digits) => v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : '') + v.toFixed(digits ?? 2) + '%';
+      const fmtDate = (s) => {
+        if (!s) return '—';
+        const parts = String(s).split(/[\/-]/);
+        if (parts.length !== 3) return s;
+        return parts[0] + '-' + parts[1] + '-' + parts[2];
+      };
+
+      const partyAbbr = (person.party || '').slice(0, 1) || '?';
+      const partyBadge = `${partyAbbr}-${person.state || ''}` + (person.district ? `-${person.district}` : '');
+      set('party', partyBadge);
+      set('chamber', person.chamber || '—');
+      set('tenure', person.yearsActive || '—');
+      set('age', person.age || '—');
+      set('totalTrades', (person.totalTrades || 0).toLocaleString('en-US'));
+      set('lastTrade', fmtDate(person.lastTradeDate));
+      set('netWorth', fmtMoneyShort(person.netWorth));
+
+      const socials = document.querySelector('[data-role="socials"]');
+      if (socials) {
+        const links = person.socialLinks || {};
+        const parts = [];
+        if (links.website)  parts.push(`<a href="${links.website}"  target="_blank" rel="noopener">house.gov</a>`);
+        if (links.twitter)  parts.push(`<a href="${links.twitter}"  target="_blank" rel="noopener">Twitter</a>`);
+        if (links.facebook) parts.push(`<a href="${links.facebook}" target="_blank" rel="noopener">Facebook</a>`);
+        socials.innerHTML = parts.join('');
+      }
+
+      // ---------- Metrics ----------
+      const totalPct = perf.totalReturnPercent;
+      const totEl = document.querySelector('[data-role="totalReturnPct"]');
+      if (totEl) {
+        totEl.textContent = fmtPct(totalPct);
+        totEl.classList.add(totalPct >= 0 ? 'pos' : 'neg');
+      }
+      set('totalReturnDollar', fmtMoneyShort(perf.totalReturn));
+      const outperf = perf.outperformance;
+      const outEl = document.querySelector('[data-role="outperformance"]');
+      if (outEl) {
+        outEl.textContent = fmtPct(outperf);
+        outEl.classList.add(outperf >= 0 ? 'pos' : 'neg');
+      }
+      set('spReturnPct', fmtPct(perf.sp500ReturnPercent));
+      set('winRate', (perf.winRate != null ? perf.winRate.toFixed(1) : '—') + '%');
+      set('winners', perf.winningTrades ?? '—');
+      set('losers',  perf.losingTrades  ?? '—');
+      set('avgTradeSize', fmtMoneyShort(perf.avgTradeSize));
+      const holdDays = perf.avgHoldingPeriod;
+      set('avgHold', holdDays != null ? Math.round(holdDays) + ' days' : '—');
+      set('startDate', fmtDate(perf.startDate));
+
+      // ---------- Chart: net worth vs S&P 500, both indexed to 100 ----------
+      drawNetWorthChart(chart.netWorth || []);
+
+      // ---------- Trades table ----------
+      renderTrades(trades);
+
+      // ---------- Top issuers ----------
+      renderIssuers(chart.topIssuers || []);
+
+      // ---------- Sector allocation ----------
+      renderSectors(chart.sectorAllocation || []);
+
+      // ---------- Data-freshness stamp ----------
+      const fEl = document.getElementById('plsiFetchedAt');
+      if (fEl && payload.fetched_at) {
+        const d = new Date(payload.fetched_at);
+        fEl.textContent = d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+      }
+
+      // ============================================================
+
+      function drawNetWorthChart(series) {
+        const svg = document.getElementById('plsiChart');
+        if (!svg || !series.length) return;
+        const W = 900, H = 280;
+        const M = { top: 14, right: 60, bottom: 28, left: 14 };
+        const plotW = W - M.left - M.right;
+        const plotH = H - M.top - M.bottom;
+
+        // Sort by date (already sorted, but be safe) and index both to 100 at start
+        const rows = series
+          .filter(r => r && r.date && r.netWorth != null && r.sp500 != null)
+          .map(r => ({ t: Date.parse(r.date) / 1000, nw: r.netWorth, sp: r.sp500 }));
+        if (rows.length < 2) return;
+        const nw0 = rows[0].nw, sp0 = rows[0].sp;
+        const pts = rows.map(r => ({
+          t:  r.t,
+          nw: (r.nw / nw0) * 100,
+          sp: (r.sp / sp0) * 100,
+        }));
+
+        const first = pts[0].t, last = pts[pts.length - 1].t;
+        const xFor = (t) => M.left + ((t - first) / (last - first || 1)) * plotW;
+
+        let vals = [];
+        for (const p of pts) { vals.push(p.nw, p.sp); }
+        const yLo = Math.min(...vals), yHi = Math.max(...vals);
+        const pad = (yHi - yLo) * 0.06;
+        const y0 = yLo - pad, y1 = yHi + pad;
+        const yFor = (v) => M.top + plotH - ((v - y0) / (y1 - y0)) * plotH;
+
+        let s = '';
+        // Grid + y labels
+        const range = y1 - y0;
+        const step = range > 400 ? 100 : range > 200 ? 50 : range > 80 ? 25 : range > 30 ? 10 : 5;
+        for (let v = Math.ceil(y0 / step) * step; v <= y1; v += step) {
+          const y = yFor(v);
+          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+          s += `<text class="axis-label" x="${W - M.right + 6}" y="${y + 3}">${v.toFixed(0)}</text>`;
+        }
+        // X ticks (years)
+        const startYear = new Date(first * 1000).getUTCFullYear();
+        const endYear   = new Date(last  * 1000).getUTCFullYear();
+        const yearStep  = endYear - startYear > 12 ? 2 : 1;
+        for (let y = startYear; y <= endYear; y += yearStep) {
+          const t = Date.UTC(y, 0, 1) / 1000;
+          if (t < first || t > last) continue;
+          const x = xFor(t);
+          s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${H - M.bottom}"/>`;
+          s += `<text class="axis-label" x="${x}" y="${H - M.bottom + 15}" text-anchor="middle">${y}</text>`;
+        }
+        s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${H - M.bottom}" y2="${H - M.bottom}"/>`;
+        s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${H - M.bottom}"/>`;
+
+        // S&P 500 line (cyan, below Pelosi so hers reads on top)
+        {
+          let d = '';
+          for (let i = 0; i < pts.length; i++) {
+            d += (i === 0 ? 'M' : 'L') + xFor(pts[i].t).toFixed(1) + ',' + yFor(pts[i].sp).toFixed(1) + ' ';
+          }
+          s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.6" opacity="0.85" d="${d}"/>`;
+        }
+        // Pelosi line (amber)
+        {
+          let d = '';
+          for (let i = 0; i < pts.length; i++) {
+            d += (i === 0 ? 'M' : 'L') + xFor(pts[i].t).toFixed(1) + ',' + yFor(pts[i].nw).toFixed(1) + ' ';
+          }
+          s += `<path fill="none" stroke="#ffb658" stroke-width="1.8" d="${d}"/>`;
+        }
+        // Last-value dots
+        const lp = pts[pts.length - 1];
+        s += `<circle cx="${xFor(lp.t)}" cy="${yFor(lp.nw)}" r="3.5" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
+        s += `<circle cx="${xFor(lp.t)}" cy="${yFor(lp.sp)}" r="3.5" fill="#6ee7ff" stroke="#0a1218" stroke-width="1"/>`;
+
+        svg.innerHTML = s;
+      }
+
+      // ---- Trades ----
+      let currentFilter = 'all';
+      function tradeType(t) { return (t && t.transaction && t.transaction.type) || ''; }
+      function tradeTicker(t) { return (t && t.asset && t.asset.symbol) || ''; }
+      function tradeOwner(t) {
+        const d = String((t && t.asset && t.asset.description) || '');
+        if (d.includes('Self'))      return 'self';
+        if (d.includes('Spouse'))    return 'spouse';
+        if (d.includes('Joint'))     return 'joint';
+        if (d.includes('Dependent')) return 'dep';
+        return '';
+      }
+      function companyName(t) {
+        const d = String((t && t.asset && t.asset.description) || '');
+        // format is "OWNER, COMPANY NAME, TICKER" — grab the middle chunk.
+        const parts = d.split(',').map(p => p.trim()).filter(Boolean);
+        if (parts.length >= 2) return parts[parts.length - 2];
+        return '';
+      }
+
+      function renderTrades(list) {
+        const tbody = document.getElementById('plsiTradesBody');
+        if (!tbody) return;
+        const filtered = currentFilter === 'all'
+          ? list
+          : list.filter(t => tradeType(t) === currentFilter);
+        // Sort most recent first
+        const sorted = filtered.slice().sort((a, b) => {
+          const da = String(a.transactionDate || ''), db = String(b.transactionDate || '');
+          return db.localeCompare(da);
+        });
+        if (!sorted.length) {
+          tbody.innerHTML = '<tr><td colspan="8" class="plsi-loading">No trades match this filter.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = sorted.map(t => {
+          const sym    = tradeTicker(t);
+          const type   = tradeType(t);
+          const owner  = tradeOwner(t);
+          const comp   = companyName(t);
+          const amt    = t.amountMidpoint;
+          const pl$    = t.profitLoss;
+          const plPct  = t.profitLossPercent;
+          const status = t.status || '';
+          const typeCls = type.toLowerCase();
+          const plCls   = pl$ == null ? '' : (pl$ >= 0 ? 'pos' : 'neg');
+          const statCls = status === 'open' ? 'open' : 'closed';
+          const plusSign = (v) => v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(2);
+          const dollarPL = pl$ == null ? '—' : (pl$ > 0 ? '+' : '') + fmtMoneyShort(Math.abs(pl$)).replace('$-', '−$').replace('$','$');
+          return `
+            <tr>
+              <td>${fmtDate(t.transactionDate)}</td>
+              <td>${sym ? `<a class="plsi-ticker" href="ticker.html?sym=${encodeURIComponent(sym)}">${sym}</a>` : '—'}</td>
+              <td>${comp || '—'} ${owner ? `<span class="plsi-owner">· ${owner}</span>` : ''}</td>
+              <td><span class="plsi-tx-badge ${typeCls}">${type || '—'}</span></td>
+              <td class="num">${amt != null ? fmtMoneyShort(amt) : '—'}</td>
+              <td class="num"><span class="plsi-pl ${plCls}">${dollarPL}</span></td>
+              <td class="num"><span class="plsi-pl ${plCls}">${plPct != null ? plusSign(plPct) + '%' : '—'}</span></td>
+              <td><span class="plsi-status ${statCls}">${status || '—'}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const ctrl = document.getElementById('plsiTradeControls');
+      if (ctrl) {
+        ctrl.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-filter]');
+          if (!btn) return;
+          currentFilter = btn.dataset.filter;
+          ctrl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+          renderTrades(trades);
+        });
+      }
+
+      // ---- Top issuers ----
+      function renderIssuers(list) {
+        const el = document.getElementById('plsiIssuers');
+        if (!el) return;
+        if (!list || !list.length) { el.innerHTML = '<div class="plsi-loading">No issuer data.</div>'; return; }
+        const top = list.slice(0, 10);
+        const max = Math.max(...top.map(i => i.totalVolume || 0));
+        el.innerHTML = top.map(i => {
+          const pctW = max ? (i.totalVolume / max) * 100 : 0;
+          return `
+            <div class="plsi-issuer">
+              <a class="tk" href="ticker.html?sym=${encodeURIComponent(i.ticker)}">${i.ticker}</a>
+              <div class="bar"><span class="bar-fill" style="width: ${pctW.toFixed(1)}%"></span></div>
+              <div class="vol"><b>${fmtMoneyShort(i.totalVolume)}</b> · ${i.tradeCount || 0} trades</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // ---- Sector allocation ----
+      function renderSectors(list) {
+        const el = document.getElementById('plsiSectors');
+        if (!el) return;
+        if (!list || !list.length) { el.innerHTML = '<div class="plsi-loading">No sector data.</div>'; return; }
+        // percentage in the JSON is a fraction (0..1) — normalize.
+        const sorted = list.slice().sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
+        el.innerHTML = sorted.map(s => {
+          const pct = (s.percentage || 0) * 100;
+          return `
+            <div class="plsi-sector">
+              <div class="name">${s.sector || '—'}</div>
+              <div class="pct">${pct.toFixed(1)}%</div>
+              <div class="sec-bar"><span class="sec-bar-fill" style="width: ${pct.toFixed(1)}%"></span></div>
+            </div>
+          `;
+        }).join('');
+      }
+    })();
   </script>
 </body>
 </html>
