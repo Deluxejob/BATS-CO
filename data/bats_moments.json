@@ -1,6 +1,6 @@
 {
   "source": "Computed from data/*.csv using the same scoring functions as app.js",
-  "generatedAt": 1784388359,
+  "generatedAt": 1784389322,
   "latestSpxDate": "2026-07-17",
   "moments": [
     {
@@ -65,6 +65,70 @@
         "spx_3m": -9.97,
         "spx_6m": -13.07,
         "spx_12m": -37.07
+      }
+    },
+    {
+      "date": "2008-10-27",
+      "asOf": "2008-10-27",
+      "event": "Post-Lehman panic — peak fear",
+      "context": "VIX hit an all-time closing high (~80) during forced selling in the weeks after Lehman's bankruptcy. Deepest BATS reading of the GFC.",
+      "spxClose": 848.92,
+      "batsScore": 14.9,
+      "bucketLabel": "Extremely Oversold",
+      "bucketColor": "var(--s-ext)",
+      "action": "Aggressive Buy",
+      "components": {
+        "vix": {
+          "raw": 80.06,
+          "score": 2,
+          "weight": 25
+        },
+        "breadth": {
+          "raw": -6.27,
+          "score": 5,
+          "weight": 25
+        },
+        "rsi": {
+          "raw": 32.09,
+          "score": 27.6,
+          "weight": 10
+        },
+        "ma200": {
+          "raw": -34.05,
+          "score": 5,
+          "weight": 10
+        },
+        "aaii": {
+          "raw": 0.0,
+          "score": 50.0,
+          "weight": 10
+        },
+        "naaim": {
+          "raw": 8.37,
+          "score": 5,
+          "weight": 5
+        },
+        "junk": {
+          "raw": -23.68,
+          "score": 5,
+          "weight": 10
+        },
+        "spread": {
+          "raw": 2.2,
+          "score": 89.0,
+          "weight": 5
+        },
+        "sector_osc": {
+          "raw": -19.32,
+          "score": 11.4,
+          "weight": 10
+        }
+      },
+      "forward": {
+        "spx_1m": 1.0,
+        "spx_3m": 2.96,
+        "spx_6m": 2.91,
+        "spx_12m": 25.27
       }
     },
     {

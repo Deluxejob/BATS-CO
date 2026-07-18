@@ -287,6 +287,8 @@ def forward_return(dates, prices, date, days):
 MOMENTS = [
     dict(target='2007-10-09', event='Pre-GFC all-time high',
          context='S&P 500 hit its cyclical peak. Housing bubble already leaking.'),
+    dict(target='2008-10-27', event='Post-Lehman panic — peak fear',
+         context='VIX hit an all-time closing high (~80) during forced selling in the weeks after Lehman\'s bankruptcy. Deepest BATS reading of the GFC.'),
     dict(target='2008-11-21', event='GFC panic acceleration',
          context='SPX closed at 800 after a week of collapse; "worst since 1987."'),
     dict(target='2009-03-09', event='GFC bottom',
