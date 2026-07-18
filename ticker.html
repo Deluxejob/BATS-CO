@@ -2258,7 +2258,39 @@
           const yLo = rawMin - pad, yHi = rawMax + pad;
 
           const first = pts[0][0], last = pts[pts.length - 1][0];
-          const xFor = t => M.left + ((t - first) / (last - first || 1)) * plotW;
+          const nBars = pts.length;
+          // Ordinal X positioning — every bar gets an equal slot regardless
+          // of the calendar time between it and the next bar. Removes the
+          // visual gap that appears between Friday's close and Monday's open
+          // (and around holidays).
+          const xForIdx = (i) => M.left + (i / Math.max(1, nBars - 1)) * plotW;
+          function xForTime(t) {
+            if (nBars < 2) return xForIdx(0);
+            // Extrapolate before the first bar using the spacing of bars[0..1].
+            if (t <= pts[0][0]) {
+              const span = pts[1][0] - pts[0][0];
+              const frac = span > 0 ? (t - pts[0][0]) / span : 0;
+              return xForIdx(frac);
+            }
+            // Extrapolate past the last bar using the spacing of bars[n-2..n-1].
+            if (t >= pts[nBars - 1][0]) {
+              const span = pts[nBars - 1][0] - pts[nBars - 2][0];
+              const frac = span > 0 ? (t - pts[nBars - 1][0]) / span : 0;
+              return xForIdx(nBars - 1 + frac);
+            }
+            // Binary-search for the bar pair that brackets t.
+            let lo = 0, hi = nBars - 1;
+            while (hi - lo > 1) {
+              const mid = (lo + hi) >> 1;
+              if (pts[mid][0] <= t) lo = mid;
+              else hi = mid;
+            }
+            const span = pts[hi][0] - pts[lo][0];
+            const frac = span > 0 ? (t - pts[lo][0]) / span : 0;
+            return xForIdx(lo + frac);
+          }
+          // Backwards-compat alias — most existing callers pass a timestamp.
+          const xFor = xForTime;
           const yFor = v => priceTop + priceH - ((v - yLo) / (yHi - yLo)) * priceH;
 
           let s = '';
@@ -2289,8 +2321,9 @@
           const xAxisY = showRsi ? (rsiTop + rsiH) : volBottom;
           const xLabelY = xAxisY + 15;
           for (let i = 0; i <= tickCount; i++) {
-            const t = first + ((last - first) * i) / tickCount;
-            const x = xFor(t);
+            const idx = Math.min(nBars - 1, Math.round((nBars - 1) * i / tickCount));
+            const t = pts[idx][0];
+            const x = xForIdx(idx);
             s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${priceTop}" y2="${priceBottom}"/>`;
             s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${volTop}" y2="${volBottom}"/>`;
             if (showRsi) s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
@@ -2303,12 +2336,12 @@
           {
             let d = 'M';
             for (let i = 0; i < pts.length; i++) {
-              const x = xFor(pts[i][0]).toFixed(1);
+              const x = xForIdx(i).toFixed(1);
               const y = yFor(rollingMax[i]).toFixed(1);
               d += (i === 0 ? '' : 'L') + x + ',' + y + ' ';
             }
             for (let i = pts.length - 1; i >= 0; i--) {
-              const x = xFor(pts[i][0]).toFixed(1);
+              const x = xForIdx(i).toFixed(1);
               const y = yFor(pts[i][4]).toFixed(1);
               d += 'L' + x + ',' + y + ' ';
             }
@@ -2336,15 +2369,17 @@
           }
 
           // Candlesticks — one per bar. Green if close>=open, red otherwise.
+          // X position uses xForIdx (ordinal) so weekends and holidays don't
+          // leave gaps.
           {
             const slot = plotW / pts.length;
             const bodyW = Math.max(1, slot * 0.7);
             for (let i = 0; i < pts.length; i++) {
               const p = pts[i];
-              const t = p[0], o = p[1], h = p[2], l = p[3], c = p[4];
+              const o = p[1], h = p[2], l = p[3], c = p[4];
               const up = c >= o;
               const col = up ? '#22d39a' : '#ff5374';
-              const x  = xFor(t);
+              const x  = xForIdx(i);
               const yH = yFor(h), yL = yFor(l);
               const yO = yFor(o), yC = yFor(c);
               s += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${yH.toFixed(1)}" y2="${yL.toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
@@ -2371,7 +2406,7 @@
                 if (v <= 0) continue;
                 const up  = p[4] >= p[1];
                 const col = up ? '#22d39a' : '#ff5374';
-                const x   = xFor(p[0]);
+                const x   = xForIdx(i);
                 const y   = yV(v);
                 const h   = volBottom - y;
                 s += `<rect x="${(x - barW/2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" opacity="0.55"/>`;
@@ -2395,7 +2430,7 @@
             for (let i = 0; i < arr.length; i++) {
               const v = arr[i]; if (v == null) continue;
               const cmd = started ? 'L' : 'M';
-              out += cmd + xFor(pts[i][0]).toFixed(1) + ',' + yFor(v).toFixed(1) + ' ';
+              out += cmd + xForIdx(i).toFixed(1) + ',' + yFor(v).toFixed(1) + ' ';
               started = true;
             }
             return out;
@@ -2422,13 +2457,13 @@
             for (let i = 0; i < rsi14.length; i++) {
               const v = rsi14[i]; if (v == null) continue;
               const cmd = started ? 'L' : 'M';
-              d += cmd + xFor(pts[i][0]).toFixed(1) + ',' + yR(v).toFixed(1) + ' ';
+              d += cmd + xForIdx(i).toFixed(1) + ',' + yR(v).toFixed(1) + ' ';
               started = true;
             }
             s += `<path fill="none" stroke="#ffb658" stroke-width="1.4" d="${d}"/>`;
             const lastRsi = rsi14[rsi14.length - 1];
             if (lastRsi != null) {
-              const x = xFor(pts[pts.length-1][0]), y = yR(lastRsi);
+              const x = xForIdx(pts.length - 1), y = yR(lastRsi);
               s += `<circle cx="${x}" cy="${y}" r="3" fill="#ffb658" stroke="#fff" stroke-width="1"/>`;
               s += `<text class="axis-label" x="${x - 6}" y="${y - 6}" text-anchor="end" fill="#ffb658">RSI ${lastRsi.toFixed(0)}</text>`;
             }
@@ -2478,6 +2513,11 @@
             mLeft: M.left, mRight: W - M.right,
             plotW: plotW,
             priceTop: priceTop, priceH: priceH,
+            // Ordinal X-axis support — timestamps array lets the click /
+            // drag handlers invert screen X back to a real timestamp by
+            // interpolating between the two adjacent bars.
+            timestamps: pts.map(function (p) { return p[0]; }),
+            nBars: pts.length,
           };
 
           svg.innerHTML = s;
@@ -2565,13 +2605,48 @@
         }
         function tpToSvg(t, p) {
           const proj = state.projection; if (!proj) return null;
-          const x = proj.mLeft + ((t - proj.first) / (proj.last - proj.first)) * proj.plotW;
+          const ts = proj.timestamps, n = proj.nBars;
+          if (!ts || n < 2) return null;
+          let bi;
+          if (t <= ts[0]) {
+            const span = ts[1] - ts[0];
+            bi = span > 0 ? (t - ts[0]) / span : 0;
+          } else if (t >= ts[n - 1]) {
+            const span = ts[n - 1] - ts[n - 2];
+            bi = span > 0 ? (n - 1) + (t - ts[n - 1]) / span : n - 1;
+          } else {
+            let lo = 0, hi = n - 1;
+            while (hi - lo > 1) {
+              const mid = (lo + hi) >> 1;
+              if (ts[mid] <= t) lo = mid;
+              else hi = mid;
+            }
+            const span = ts[hi] - ts[lo];
+            bi = lo + (span > 0 ? (t - ts[lo]) / span : 0);
+          }
+          const x = proj.mLeft + (bi / Math.max(1, n - 1)) * proj.plotW;
           const y = proj.priceTop + proj.priceH - ((p - proj.yLo) / (proj.yHi - proj.yLo)) * proj.priceH;
           return { x: x, y: y };
         }
         function svgToTP(svgX, svgY) {
           const proj = state.projection; if (!proj) return null;
-          const t = proj.first + ((svgX - proj.mLeft) / proj.plotW) * (proj.last - proj.first);
+          const ts = proj.timestamps, n = proj.nBars;
+          if (!ts || n < 2) return null;
+          // Screen X → fractional bar index → interpolated timestamp.
+          const bi = ((svgX - proj.mLeft) / proj.plotW) * (n - 1);
+          let t;
+          if (bi <= 0) {
+            const span = ts[1] - ts[0];
+            t = ts[0] + bi * span;
+          } else if (bi >= n - 1) {
+            const span = ts[n - 1] - ts[n - 2];
+            t = ts[n - 1] + (bi - (n - 1)) * span;
+          } else {
+            const iLo = Math.floor(bi);
+            const iHi = iLo + 1;
+            const frac = bi - iLo;
+            t = ts[iLo] * (1 - frac) + ts[iHi] * frac;
+          }
           const p = proj.yLo + ((proj.priceTop + proj.priceH - svgY) / proj.priceH) * (proj.yHi - proj.yLo);
           return { t: t, p: p };
         }
