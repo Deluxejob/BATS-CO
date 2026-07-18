@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pelosi Tracker — BATS.CO</title>
+  <meta name="description" content="Nancy Pelosi's disclosed stock trades — recent purchases/sales and historical performance. Sourced from the US House Clerk's official Periodic Transaction Reports." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .stub {
+      max-width: 720px;
+      margin: 3rem auto;
+      padding: 2rem 2.25rem;
+      background: var(--bg-elevated, #101821);
+      border: 1px solid var(--border, #1c2734);
+      border-radius: var(--radius, 8px);
+    }
+    .stub h2 { margin-top: 0; }
+    .stub .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent, #ffb658);
+      margin: 0 0 0.5rem;
+    }
+    .stub ul { padding-left: 1.2rem; line-height: 1.65; }
+    .stub .src {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--text-dim, #7b8697);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">&larr; Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="markets.html">Dashboard</a>
+      <a href="quotes.html">Quotes</a>
+      <a href="market-ratios.html">Market Ratios</a>
+      <a href="pe-ratio.html">PE Ratio</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="momentum.html">Momentum</a>
+      <a href="extremes.html">Extremes</a>
+      <a href="consumer.html">Consumer</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="pelosi.html">Pelosi</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+    <section class="explainer-hero">
+      <p class="eyebrow">PELOSI TRACKER</p>
+      <h1>Nancy Pelosi&rsquo;s disclosed stock trades</h1>
+      <p class="lede">
+        Under the STOCK Act (2012), members of Congress must disclose stock
+        transactions within 45 days via a Periodic Transaction Report. This page
+        will track Rep. Pelosi&rsquo;s filings, group them by ticker, and compute
+        the return on each position from the transaction date to today.
+      </p>
+    </section>
+
+    <section class="stub">
+      <p class="eyebrow">Under construction</p>
+      <h2>Coming soon</h2>
+      <p>
+        Data source is being wired up: an automated daily job will pull the
+        <a href="https://disclosures-clerk.house.gov/FinancialDisclosure" target="_blank" rel="noopener">US House Clerk&rsquo;s</a>
+        annual disclosure ZIP, filter for Pelosi&rsquo;s Periodic Transaction Reports,
+        parse the PDFs, and update this page. Once live it will include:
+      </p>
+      <ul>
+        <li>Most recent trades &mdash; date, ticker, buy/sell, disclosed amount range, owner (self/spouse)</li>
+        <li>Position-level return since transaction date, using our own price history</li>
+        <li>Aggregate portfolio performance vs S&amp;P 500</li>
+      </ul>
+      <p class="src">
+        Source: US House Clerk &middot; disclosures-clerk.house.gov &middot; official STOCK Act filings.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    document.getElementById('footerYear').textContent = new Date().getUTCFullYear();
+  </script>
+</body>
+</html>
