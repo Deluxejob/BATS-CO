@@ -301,8 +301,8 @@
         <p>
           For every trading day since 2007, we compute the blended BATS from that day's
           live components (using the same weights shown above), then measure how the
-          S&P 500 actually performed 6 and 12 months later. This is the honest test of
-          whether the combined signal earns its keep.
+          <span data-market-label>S&amp;P 500</span> actually performed 6 and 12 months
+          later. This is the honest test of whether the combined signal earns its keep.
         </p>
       </div>
       <div class="backtest-highlight" id="backtestHighlight">
@@ -320,8 +320,8 @@
             The aggregate backtest above averages every trading day since 2007. Below are
             <strong>specific moments people actually remember</strong> &mdash; famous crashes,
             famous bottoms, famous tops &mdash; with the BATS reading on that day and how
-            the S&P 500 performed afterward. This is the "did it work at the moment that
-            mattered?" test.
+            the <span data-market-label>S&amp;P 500</span> performed afterward. This is the
+            "did it work at the moment that mattered?" test.
           </p>
         </div>
         <div class="moments-grid" id="momentsGrid">
@@ -548,9 +548,15 @@
     const grid = document.getElementById('momentsGrid');
     const meta = document.getElementById('momentsMeta');
     if (!grid) return;
+    // Market-aware labels — the moments JSON stores index-close under
+    // `spxClose` regardless of market, so we pick the display abbreviation
+    // (SPX / NDX) and the long name (S&P 500 / Nasdaq 100) here.
+    const isNasdaq = (typeof MARKET !== 'undefined' && MARKET === 'nasdaq');
+    const indexAbbr   = isNasdaq ? 'NDX' : 'SPX';
+    const marketLabel = isNasdaq ? 'Nasdaq 100' : 'S&amp;P 500';
     let payload;
     try {
-      const _momSuffix = (typeof MARKET !== 'undefined' && MARKET === 'nasdaq') ? '_ndx' : '';
+      const _momSuffix = isNasdaq ? '_ndx' : '';
       const r = await fetch('data/bats_moments' + _momSuffix + '.json', { cache: 'no-store' });
       if (!r.ok) throw new Error('http ' + r.status);
       payload = await r.json();
@@ -583,7 +589,7 @@
             <div class="moment-date">${fmtDate(m.date)}</div>
             <div class="moment-event">${m.event}</div>
           </div>
-          <div class="moment-spx">SPX ${m.spxClose ? m.spxClose.toLocaleString() : '&mdash;'}</div>
+          <div class="moment-spx">${indexAbbr} ${m.spxClose ? m.spxClose.toLocaleString() : '&mdash;'}</div>
         </div>
         <div class="moment-context">${m.context}</div>
         <div class="moment-reading">
@@ -607,7 +613,7 @@
 
     if (meta) {
       meta.innerHTML =
-        `Forward returns are S&amp;P 500 price returns (no dividends). ` +
+        `Forward returns are ${marketLabel} price returns (no dividends). ` +
         `"not yet" = the moment is recent enough that the window hasn't closed. ` +
         `Data through ${payload.latestSpxDate}.`;
     }
