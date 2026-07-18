@@ -646,17 +646,27 @@
       set('avgHold', holdDays != null ? Math.round(holdDays) + ' days' : '—');
       set('startDate', fmtDate(perf.startDate));
 
+      // ---------- Trade filter state ----------
+      // Declared BEFORE the renderTrades() call below so it's not in the
+      // temporal dead zone when the function reads it. (Function
+      // declarations are hoisted but `let` initialization isn't.)
+      let currentFilter = 'all';
+
       // ---------- Chart: net worth vs S&P 500, both indexed to 100 ----------
-      drawNetWorthChart(chart.netWorth || []);
+      try { drawNetWorthChart(chart.netWorth || []); }
+      catch (e) { console.error('drawNetWorthChart failed:', e); }
 
       // ---------- Trades table ----------
-      renderTrades(trades);
+      try { renderTrades(trades); }
+      catch (e) { console.error('renderTrades failed:', e); }
 
       // ---------- Top issuers ----------
-      renderIssuers(chart.topIssuers || []);
+      try { renderIssuers(chart.topIssuers || []); }
+      catch (e) { console.error('renderIssuers failed:', e); }
 
       // ---------- Sector allocation ----------
-      renderSectors(chart.sectorAllocation || []);
+      try { renderSectors(chart.sectorAllocation || []); }
+      catch (e) { console.error('renderSectors failed:', e); }
 
       // ---------- Data-freshness stamp ----------
       const fEl = document.getElementById('plsiFetchedAt');
@@ -745,7 +755,8 @@
       }
 
       // ---- Trades ----
-      let currentFilter = 'all';
+      // currentFilter is declared earlier (before the first renderTrades
+      // call) so it's outside the temporal dead zone when renderTrades runs.
       function tradeType(t) { return (t && t.transaction && t.transaction.type) || ''; }
       function tradeTicker(t) { return (t && t.asset && t.asset.symbol) || ''; }
       function tradeOwner(t) {
