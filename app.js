@@ -1293,6 +1293,14 @@ function updateComponentsWithLatest(current) {
     spreadComp.signal = current.yss;
     spreadComp.advisory = yieldSpreadAdvisory(current.yieldSpread);
   }
+  const sectorComp = COMPONENTS.find(c => c.key === 'sector_osc');
+  if (sectorComp) {
+    sectorComp.raw = current.sectorOsc;
+    const sign = current.sectorOsc >= 0 ? '+' : '';
+    sectorComp.value = `${sign}${current.sectorOsc.toFixed(2)}`;
+    sectorComp.signal = current.sos;
+    sectorComp.advisory = sectorOscAdvisory(current.sectorOsc);
+  }
 }
 
 function bucketLabelFor(score) {
