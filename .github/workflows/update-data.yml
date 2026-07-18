@@ -66,6 +66,9 @@ jobs:
       - name: Refresh Nancy Pelosi trades snapshot (tolerant of upstream errors)
         run: python scripts/update-pelosi.py
 
+      - name: Rebuild BATS sector oscillator (must run before moments/history)
+        run: python scripts/build-sector-osc.py
+
       - name: Regenerate BATS moments (fills in forward returns as time passes)
         run: python scripts/build-bats-moments.py
 

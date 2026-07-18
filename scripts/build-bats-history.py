@@ -36,7 +36,7 @@ def warn(msg: str) -> None:
 
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               aaii=10, naaim=5, junk=10, spread=5)
+               aaii=10, naaim=5, junk=10, spread=5, sector_osc=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -128,6 +128,16 @@ def score_spread(sp):
     return clamp(s, 2, 98)
 
 
+def score_sector_osc(o):
+    """MED10 sector-breadth oscillator (EMA-5 minus EMA-10 of ratio-adjusted
+    A-D across 11 SPDR sector ETFs). Clamped at plus/minus 25."""
+    if o is None: return None
+    CLAMP = 25.0
+    c = max(-CLAMP, min(CLAMP, o))
+    s = 50 + (c / CLAMP) * 50
+    return clamp(s, 2, 98)
+
+
 # --- Loaders ---
 def _read_csv(fname):
     path = os.path.join(DATA_DIR, fname)
@@ -178,6 +188,17 @@ def load_yields():
     out = {}
     for row in rows[1:]:
         try: out[row[0]] = float(row[3])
+        except: pass
+    return out
+
+
+def load_sector_osc():
+    """sector_osc.csv: date,advances,declines,ra_net,ema5,ema10,oscillator."""
+    rows = _read_csv('sector_osc.csv')
+    if not rows: return None
+    out = {}
+    for row in rows[1:]:
+        try: out[row[0]] = float(row[6])
         except: pass
     return out
 
@@ -251,9 +272,11 @@ def main():
     aaii  = load_aaii()
     naaim = load_naaim()
     yields = load_yields()
+    sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
-                    hyg=hyg, lqd=lqd, aaii=aaii, naaim=naaim, yields=yields)
+                    hyg=hyg, lqd=lqd, aaii=aaii, naaim=naaim, yields=yields,
+                    sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
     if missing:
         warn(f'Missing data files: {missing}. Leaving bats_history.json unchanged.')
@@ -267,6 +290,7 @@ def main():
     aaii_dates = sorted(aaii.keys())
     naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
+    sector_dates = sorted(sector_osc.keys())
 
     # Precompute per-date series for speed
     ma200 = build_ma200_dist(spx_dates, spx)
@@ -289,6 +313,8 @@ def main():
         v_naaim = naaim[naaim_dates[i]] if i >= 0 else None
         i = snap_le_idx(yields_dates, d)
         v_spread = yields[yields_dates[i]] if i >= 0 else None
+        i = snap_le_idx(sector_dates, d)
+        v_sector = sector_osc[sector_dates[i]] if i >= 0 else None
 
         v_rsi = rsi.get(d)
         v_ma  = ma200.get(d)
@@ -309,6 +335,7 @@ def main():
             naaim=score_naaim(v_naaim),
             junk=score_junk(junk),
             spread=score_spread(v_spread),
+            sector_osc=score_sector_osc(v_sector),
         )
 
         w_sum = 0

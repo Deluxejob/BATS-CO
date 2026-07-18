@@ -455,6 +455,45 @@ function junkDemandAdvisory(spread) {
   return                      { tone: 'opportunity', text: 'Extreme risk appetite — investors chasing high-yield bonds aggressively. Strong bullish confirmation historically (+15% avg forward 12mo).' };
 }
 
+// ---- BATS Sector Oscillator — McClellan-style breadth on the 11 SPDR ETFs ----
+//
+// Computed nightly by scripts/build-sector-osc.py into data/sector_osc.csv.
+// Formula: EMA-5 minus EMA-10 of the daily ratio-adjusted A-D across all
+// 11 sector ETFs, so it captures how one-sided each day's move is and
+// then smooths it just enough to filter single-day noise.
+//
+// The daily reading swings roughly plus-or-minus 20; clamp at plus-or-minus
+// 25 for a full 0-100 map. Negative reading = broad selling day-after-day
+// (fear / capitulation) -> LOW score. Positive = broad accumulation
+// (participation / momentum) -> HIGH score.
+//
+// Backtest 1998-2025 (6,681 days):
+//   Strong bearish (score < 25): +9.64% avg 12mo, 79.0% hit (n=1,147)
+//   Neutral       (score 40-60): +6.82% avg 12mo, 73.5% hit
+//   Strong bullish (score >= 75): +8.76% avg 12mo, 77.9% hit (n=1,098)
+// Classic U-shape: both tails beat the 7.82%/75.6% baseline, middle is
+// where the market drifts. On the seven biggest historic bottoms the
+// score confirmed bearish or strong-bearish on 6 of 7 (2009-03-09 was
+// already pivoting to neutral, correctly signaling the turn).
+function scoreSectorOsc(o) {
+  if (o == null || isNaN(o)) return null;
+  const CLAMP = 25;
+  const c = Math.max(-CLAMP, Math.min(CLAMP, o));
+  const score = 50 + (c / CLAMP) * 50;
+  return Math.max(2, Math.min(98, score));
+}
+
+function sectorOscAdvisory(o) {
+  if (o == null || isNaN(o)) return null;
+  if (o <= -15) return { tone: 'opportunity', text: 'Broad, sustained sector selling — capitulation-level breadth. Historically an above-baseline forward return zone (contrarian buy tail).' };
+  if (o <=  -8) return { tone: 'watch',       text: 'Sectors declining together — bearish breadth. Watch other indicators for confirmation.' };
+  if (o <=  -3) return { tone: 'info',        text: 'Mildly negative sector breadth — some sectors leading down, but not broad.' };
+  if (o <    3) return { tone: 'info',        text: 'Balanced sector breadth — no strong lean.' };
+  if (o <    8) return { tone: 'info',        text: 'Positive sector breadth — sectors advancing together, healthy participation.' };
+  if (o <   15) return { tone: 'opportunity', text: 'Broad sector rally — participation confirmation, bullish momentum.' };
+  return                { tone: 'opportunity', text: 'Extremely broad sector advance — trend continuation historically (momentum tail).' };
+}
+
 // Wilder's 14-day RSI from a chronological array of closes.
 // Returns the RSI value for the last close, or null if not enough data.
 function computeRSI(closes, period = 14) {
@@ -633,6 +672,18 @@ const COMPONENTS = [
     signal: scoreYieldSpread(0.5),
     advisory: yieldSpreadAdvisory(0.5),
     explainer: 'indicators/yield-spread.html',
+  },
+  {
+    key: 'sector_osc',
+    name: 'Sector Oscillator',
+    desc: 'A McClellan-style breadth measure on the 11 SPDR sector ETFs. Short-term: captures whether sectors are moving together (broad participation) or diverging (narrow tape). Proprietary to BATS.',
+    weight: 10,
+    status: 'live',
+    raw: 0,
+    value: '0.00 (loading)',
+    signal: scoreSectorOsc(0),
+    advisory: sectorOscAdvisory(0),
+    explainer: 'indicators/sector-oscillator.html',
   },
 ];
 
@@ -1030,7 +1081,7 @@ function computeRsiSeriesLive(closes, period = 14) {
 async function loadLiveData() {
   // Market-specific data files (VIX/VXN, RSP/QQEW, SPY/QQQ, SPX/NDX)
   // Universal data files (HYG, LQD, AAII, NAAIM, yields_history — apply to both markets)
-  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, aaiiText, naaimText, yieldsText] = await Promise.all([
+  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, aaiiText, naaimText, yieldsText, sectorOscText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + MC.volCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthEqualCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthCapCsv),
@@ -1040,6 +1091,7 @@ async function loadLiveData() {
     fetchCSVText(APP_DATA_BASE + 'aaii.csv'),
     fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
     fetchCSVText(APP_DATA_BASE + 'yields_history.csv'),
+    fetchCSVText(APP_DATA_BASE + 'sector_osc.csv'),
   ]);
   // VIX ships as OHLC; VXN as Date,Close. Same field name downstream.
   const vix = MC.volIsOHLC ? parseVIXLive(volText) : parseDateCloseLive(volText).map(r => ({ date: r.date, close: r.close }));
@@ -1049,6 +1101,19 @@ async function loadLiveData() {
   const lqd = parseDateCloseLive(lqdText);
   const spx = parseDateCloseLive(indexText);      // "SPX" var name kept; holds NDX when market=nasdaq
   const yields = parseYieldsHistoryLive(yieldsText);
+  // Parse data/sector_osc.csv. Format: date,advances,declines,ra_net,ema5,ema10,oscillator
+  const sectorOsc = (function parseSectorOsc(txt) {
+    const out = [];
+    const lines = String(txt || '').trim().split(/\r?\n/).slice(1);
+    for (const ln of lines) {
+      const parts = ln.split(',');
+      if (parts.length < 7) continue;
+      const o = parseFloat(parts[6]);
+      if (!isFinite(o)) continue;
+      out.push({ date: parts[0], oscillator: o });
+    }
+    return out;
+  })(sectorOscText);
   const aaii = parseAAIILive(aaiiText);
   const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
@@ -1067,6 +1132,14 @@ async function loadLiveData() {
     }
     return null;
   }
+  // Sector oscillator is daily so an exact-date lookup usually works, but
+  // fall back to most-recent on or before in case of holidays.
+  function findSectorOscOnOrBefore(target) {
+    for (let i = sectorOsc.length - 1; i >= 0; i--) {
+      if (sectorOsc[i].date <= target) return sectorOsc[i];
+    }
+    return null;
+  }
 
   const wVix     = (COMPONENTS.find(c => c.key === 'vix')          || {}).weight || 0;
   const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')      || {}).weight || 0;
@@ -1076,7 +1149,8 @@ async function loadLiveData() {
   const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')         || {}).weight || 0;
   const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')        || {}).weight || 0;
   const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread;
+  const wSector  = (COMPONENTS.find(c => c.key === 'sector_osc')   || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread + wSector;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -1095,6 +1169,8 @@ async function loadLiveData() {
     if (!naaimRec) return null;
     const yieldsRec = findYieldsOnOrBefore(d);
     if (!yieldsRec) return null;
+    const sectorRec = findSectorOscOnOrBefore(d);
+    if (!sectorRec) return null;
     const rspRet = (rsp[rspRowIdx].close / rsp[rspRowIdx - 20].close - 1) * 100;
     const spyRet = (spy[si].close        / spy[si - 20].close        - 1) * 100;
     const spread = rspRet - spyRet;
@@ -1102,6 +1178,7 @@ async function loadLiveData() {
     const lqdRet = (lqd[li].close        / lqd[li - 20].close        - 1) * 100;
     const junkSpread = hygRet - lqdRet;
     const yieldSpread = yieldsRec.spread;
+    const sectorOscVal = sectorRec.oscillator;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
@@ -1111,7 +1188,8 @@ async function loadLiveData() {
     const as_ = scoreAAII(aaiiRec.spread);
     const ns = scoreNAAIM(naaimRec.value);
     const yss = scoreYieldSpread(yieldSpread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null || wTotal <= 0) return null;
+    const sos = scoreSectorOsc(sectorOscVal);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null || sos == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -1125,8 +1203,10 @@ async function loadLiveData() {
       naaimDate: naaimRec.date,
       yieldSpread,
       yieldsDate: yieldsRec.date,
-      vs, bs, rs, js, ms, as_, ns, yss,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread) / wTotal,
+      sectorOsc: sectorOscVal,
+      sectorOscDate: sectorRec.date,
+      vs, bs, rs, js, ms, as_, ns, yss, sos,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread + sos * wSector) / wTotal,
     };
   }
 

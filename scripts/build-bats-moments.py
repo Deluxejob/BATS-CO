@@ -31,7 +31,7 @@ def warn(msg: str) -> None:
 
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               aaii=10, naaim=5, junk=10, spread=5)
+               aaii=10, naaim=5, junk=10, spread=5, sector_osc=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -124,6 +124,17 @@ def score_spread(sp):
     return clamp(s, 2, 98)
 
 
+def score_sector_osc(o):
+    """MED10 sector-breadth oscillator (EMA-5 minus EMA-10 of ratio-adjusted
+    A-D across 11 SPDR sector ETFs). Negative reading → broad selling → low
+    BATS; positive → broad buying → high BATS. Clamped at plus/minus 25."""
+    if o is None: return None
+    CLAMP = 25.0
+    c = max(-CLAMP, min(CLAMP, o))
+    s = 50 + (c / CLAMP) * 50
+    return clamp(s, 2, 98)
+
+
 # --- Wilder's 14-day RSI (matches app.js) ---
 def rsi_wilder(closes, period=14):
     if len(closes) < period + 1: return None
@@ -196,6 +207,18 @@ def load_yields():
     out = {}
     for row in rows[1:]:
         try: out[row[0]] = float(row[3])
+        except: pass
+    return out
+
+
+def load_sector_osc():
+    """sector_osc.csv: date,advances,declines,ra_net,ema5,ema10,oscillator.
+    Column 6 is the MED10 oscillator we score."""
+    rows = _read_csv('sector_osc.csv')
+    if not rows: return None
+    out = {}
+    for row in rows[1:]:
+        try: out[row[0]] = float(row[6])
         except: pass
     return out
 
@@ -284,9 +307,11 @@ def main():
     aaii  = load_aaii()
     naaim = load_naaim()
     yields = load_yields()
+    sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
-                    hyg=hyg, lqd=lqd, aaii=aaii, naaim=naaim, yields=yields)
+                    hyg=hyg, lqd=lqd, aaii=aaii, naaim=naaim, yields=yields,
+                    sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
     if missing:
         warn(f'Missing data files: {missing}. Leaving bats_moments.json unchanged.')
@@ -301,6 +326,7 @@ def main():
     aaii_dates = sorted(aaii.keys())
     naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
+    sector_dates = sorted(sector_osc.keys())
 
     out_moments = []
     for m in MOMENTS:
@@ -314,6 +340,7 @@ def main():
         d_aaii = snap_le(aaii_dates, target)
         d_naaim = snap_le(naaim_dates, target)
         d_yields = snap_le(yields_dates, target)
+        d_sector = snap_le(sector_dates, target)
 
         v_vix    = vix.get(d_vix)       if d_vix    else None
         v_aaii   = aaii.get(d_aaii)     if d_aaii   else None
@@ -321,6 +348,7 @@ def main():
         v_rsi    = rsi_at(spy_dates, spy, d_spy) if d_spy else None
         v_ma     = ma200_dist(spx_dates, spx, d_spx) if d_spx else None
         v_spread = yields.get(d_yields) if d_yields else None
+        v_sector = sector_osc.get(d_sector) if d_sector else None
 
         spy20 = return_20d(spy_dates, spy, d_spy) if d_spy else None
         rsp20 = return_20d(rsp_dates, rsp, d_rsp) if d_rsp else None
@@ -331,14 +359,15 @@ def main():
         junk    = (hyg20 - lqd20) if (hyg20 is not None and lqd20 is not None) else None
 
         components = {
-            'vix':     dict(raw=v_vix,    score=score_vix(v_vix),          weight=WEIGHTS['vix']),
-            'breadth': dict(raw=breadth,  score=score_breadth(breadth),    weight=WEIGHTS['breadth']),
-            'rsi':     dict(raw=v_rsi,    score=score_rsi(v_rsi),          weight=WEIGHTS['rsi']),
-            'ma200':   dict(raw=v_ma,     score=score_ma200(v_ma),         weight=WEIGHTS['ma200']),
-            'aaii':    dict(raw=v_aaii,   score=score_aaii(v_aaii),        weight=WEIGHTS['aaii']),
-            'naaim':   dict(raw=v_naaim,  score=score_naaim(v_naaim),      weight=WEIGHTS['naaim']),
-            'junk':    dict(raw=junk,     score=score_junk(junk),          weight=WEIGHTS['junk']),
-            'spread':  dict(raw=v_spread, score=score_spread(v_spread),    weight=WEIGHTS['spread']),
+            'vix':        dict(raw=v_vix,    score=score_vix(v_vix),                 weight=WEIGHTS['vix']),
+            'breadth':    dict(raw=breadth,  score=score_breadth(breadth),           weight=WEIGHTS['breadth']),
+            'rsi':        dict(raw=v_rsi,    score=score_rsi(v_rsi),                 weight=WEIGHTS['rsi']),
+            'ma200':      dict(raw=v_ma,     score=score_ma200(v_ma),                weight=WEIGHTS['ma200']),
+            'aaii':       dict(raw=v_aaii,   score=score_aaii(v_aaii),               weight=WEIGHTS['aaii']),
+            'naaim':      dict(raw=v_naaim,  score=score_naaim(v_naaim),             weight=WEIGHTS['naaim']),
+            'junk':       dict(raw=junk,     score=score_junk(junk),                 weight=WEIGHTS['junk']),
+            'spread':     dict(raw=v_spread, score=score_spread(v_spread),           weight=WEIGHTS['spread']),
+            'sector_osc': dict(raw=v_sector, score=score_sector_osc(v_sector),       weight=WEIGHTS['sector_osc']),
         }
 
         # Weighted blend

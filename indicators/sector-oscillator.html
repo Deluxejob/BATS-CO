@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sector Oscillator — BATS.CO</title>
+  <meta name="description" content="A proprietary McClellan-style breadth oscillator computed from the 11 SPDR sector ETFs. One of the 9 components blended into the BATS score." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">&larr; Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../markets.html">Dashboard</a>
+      <a href="../quotes.html">Quotes</a>
+      <a href="../market-ratios.html">Market Ratios</a>
+      <a href="../pe-ratio.html">PE Ratio</a>
+      <a href="../concentration.html">Concentration</a>
+      <a href="../momentum.html">Momentum</a>
+      <a href="../extremes.html">Extremes</a>
+      <a href="../consumer.html">Consumer</a>
+      <a href="../pe.html">Private Equity</a>
+      <a href="../watchlist.html">Watchlist</a>
+      <a href="../pelosi.html">Pelosi</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">BATS COMPONENT &middot; SECTOR OSCILLATOR</p>
+      <h1>How broad is today&rsquo;s sector move?</h1>
+      <p class="lede">
+        A proprietary McClellan-style breadth measure. Every day we count
+        how many of the 11 SPDR sector ETFs closed up versus down, then
+        smooth that count with a short-term exponential moving average.
+        When sectors move together (all up or all down), the oscillator
+        spikes. When they diverge or the market is quiet, it hovers near
+        zero.
+      </p>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>The recipe</h2>
+      </div>
+      <p>
+        For each trading day:
+      </p>
+      <ol>
+        <li><strong>Advances (A):</strong> how many of XLK / XLF / XLE / XLV / XLI / XLY / XLP / XLU / XLB / XLRE / XLC closed higher than yesterday.</li>
+        <li><strong>Declines (D):</strong> how many closed lower.</li>
+        <li><strong>Ratio-adjusted A/D:</strong> <code>(A &minus; D) / (A + D) &times; 100</code>. Ranges &minus;100 (all sectors down) to +100 (all sectors up).</li>
+        <li><strong>Oscillator:</strong> <code>EMA-5(RA)</code> minus <code>EMA-10(RA)</code>. The two EMAs cross often, and the difference between them captures the daily breadth pressure.</li>
+      </ol>
+      <p>
+        Why 5/10 instead of the classic McClellan 19/39? Because our universe
+        is 11 sectors, not the 3,000&#43; NYSE stocks the original was built
+        for. Faster smoothing keeps the signal reactive to real breadth swings
+        without becoming pure noise.
+      </p>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>How it maps to a BATS score</h2>
+      </div>
+      <p>
+        Oscillator readings roughly range from &minus;25 (broad selling
+        pressure) to +25 (broad accumulation), with the vast majority of days
+        landing between &minus;15 and +15. We linearly map that band to a
+        0&ndash;100 score, clamped at the tails:
+      </p>
+      <ul>
+        <li>Oscillator &minus;25 &rarr; score 0 (extreme bearish)</li>
+        <li>Oscillator 0 &rarr; score 50 (neutral)</li>
+        <li>Oscillator +25 &rarr; score 100 (extreme bullish)</li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>What the backtest showed (1998&ndash;2025, 6,681 days)</h2>
+      </div>
+      <p>
+        Both tails deliver above-baseline 12-month S&amp;P forward returns
+        &mdash; the classic U-shape of a legitimate contrarian-plus-momentum
+        signal:
+      </p>
+      <ul>
+        <li><strong>Strong bearish (score &lt; 25):</strong> +9.64% average 12M return, 79.0% hit rate <em>(vs baseline +7.82% / 75.6%)</em></li>
+        <li><strong>Neutral (40&ndash;60):</strong> +6.82% average, 73.5% hit &mdash; worst bucket</li>
+        <li><strong>Strong bullish (score &ge; 75):</strong> +8.76% average, 77.9% hit</li>
+      </ul>
+      <p>
+        On six of the seven biggest historic bottoms (2002 dot-com, 2008
+        Lehman, 2011 debt ceiling, 2018 Powell put, 2020 COVID, 2022 bear
+        low) the oscillator confirmed bearish or strong-bearish, reinforcing
+        BATS&rsquo;s extreme-oversold call. On the 2009-03-09 GFC bottom it
+        had already pivoted to neutral &mdash; sector breadth turned before
+        the slower components confirmed, which is a feature, not a bug.
+      </p>
+    </section>
+
+    <p><a href="../index.html">&larr; Back to the BATS dashboard</a></p>
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    document.getElementById('footerYear').textContent = new Date().getUTCFullYear();
+  </script>
+</body>
+</html>
