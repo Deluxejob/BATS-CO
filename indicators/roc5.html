@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5-day Rate of Change &mdash; BATS.CO</title>
+  <meta name="description" content="A 5-day rate of change on the benchmark index. One of the 10 components blended into the BATS score." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">&larr; Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../markets.html">Dashboard</a>
+      <a href="../quotes.html">Quotes</a>
+      <a href="../market-ratios.html">Market Ratios</a>
+      <a href="../pe-ratio.html">PE Ratio</a>
+      <a href="../concentration.html">Concentration</a>
+      <a href="../momentum.html">Momentum</a>
+      <a href="../extremes.html">Extremes</a>
+      <a href="../consumer.html">Consumer</a>
+      <a href="../pe.html">Private Equity</a>
+      <a href="../watchlist.html">Watchlist</a>
+      <a href="../pelosi.html">Pelosi</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">BATS COMPONENT &middot; 5-DAY RATE OF CHANGE</p>
+      <h1>How fast did the market just move?</h1>
+      <p class="lede">
+        The simplest possible momentum measure: today&rsquo;s close on the
+        benchmark index divided by the close 5 trading days ago, expressed as
+        a percent. A one-week snapshot of speed and direction. When the market
+        crashes hard for a week, ROC-5 goes deeply negative. When it rips for
+        a week, ROC-5 spikes positive. Most days it hovers within a fraction
+        of a percent of zero.
+      </p>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>The recipe</h2>
+      </div>
+      <p>
+        For each trading day, take the index close and the close from five
+        trading days earlier:
+      </p>
+      <ol>
+        <li><strong>ROC-5:</strong> <code>(close<sub>today</sub> / close<sub>5 days ago</sub> &minus; 1) &times; 100</code></li>
+      </ol>
+      <p>
+        Why 5 days? It&rsquo;s one trading week &mdash; short enough to react
+        to real-time panic and euphoria but long enough that a single
+        outsized day doesn&rsquo;t dominate the reading. It&rsquo;s also
+        genuinely independent from our RSI-14 component roughly 40% of the
+        time at the extremes (see the backtest below), so it adds signal
+        rather than noise.
+      </p>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>How it maps to a BATS score</h2>
+      </div>
+      <p>
+        We clamp ROC-5 at &plusmn;6% (roughly the 1st and 99th percentiles of
+        daily readings since 1990) and linearly map that band to a 0&ndash;100
+        BATS score:
+      </p>
+      <ul>
+        <li>ROC-5 &le; &minus;6% &rarr; score 0 (extreme bearish &mdash; a week&rsquo;s worth of crash)</li>
+        <li>ROC-5 = 0% &rarr; score 50 (neutral)</li>
+        <li>ROC-5 &ge; +6% &rarr; score 100 (extreme bullish &mdash; a week&rsquo;s worth of melt-up)</li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>What the backtest showed (1990&ndash;2026)</h2>
+      </div>
+      <p>
+        Both tails deliver roughly <strong>2&times; the baseline 12-month
+        S&amp;P forward return</strong> &mdash; the classic contrarian U-shape:
+      </p>
+      <ul>
+        <li><strong>ROC-5 &lt; &minus;6% (crash tail):</strong> +21.2% average 12M return</li>
+        <li><strong>Baseline (all days):</strong> ~+10.5% average 12M return</li>
+        <li><strong>ROC-5 &gt; +6% (rally tail):</strong> +20.9% average 12M return</li>
+      </ul>
+      <p>
+        The interesting part is the disagreement with RSI. ROC-5 has a
+        Pearson correlation of r = +0.596 with our SPY 14-day RSI &mdash;
+        related, but far from redundant. On days where ROC-5 flagged an
+        extreme crash (&lt; &minus;6%), <strong>RSI-14 was still above 30 in
+        59% of those cases</strong>. That&rsquo;s the edge: a fast one-week
+        collapse can happen from a starting RSI in the 40s or 50s, and ROC-5
+        catches it before the slower RSI does.
+      </p>
+    </section>
+
+    <p><a href="../index.html">&larr; Back to the BATS dashboard</a></p>
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    document.getElementById('footerYear').textContent = new Date().getUTCFullYear();
+  </script>
+</body>
+</html>

@@ -52,7 +52,7 @@ def warn(msg: str) -> None:
 
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               aaii=10, naaim=5, junk=10, spread=5, sector_osc=10)
+               aaii=10, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -152,6 +152,16 @@ def score_sector_osc(o):
     if o is None: return None
     CLAMP = 25.0
     c = max(-CLAMP, min(CLAMP, o))
+    s = 50 + (c / CLAMP) * 50
+    return clamp(s, 2, 98)
+
+
+def score_roc5(roc):
+    """5-day index ROC. Both tails predict high forward returns. Score maps
+    linearly with clamp at plus/minus 6% -> [0, 100]."""
+    if roc is None: return None
+    CLAMP = 6.0
+    c = max(-CLAMP, min(CLAMP, roc))
     s = 50 + (c / CLAMP) * 50
     return clamp(s, 2, 98)
 
@@ -372,6 +382,12 @@ def main():
         v_ma     = ma200_dist(spx_dates, spx, d_spx) if d_spx else None
         v_spread = yields.get(d_yields) if d_yields else None
         v_sector = sector_osc.get(d_sector) if d_sector else None
+        # 5-day rate of change on the index (SPX or NDX depending on market)
+        v_roc5 = None
+        if d_spx and d_spx in spx:
+            _i = spx_dates.index(d_spx)
+            if _i >= 5:
+                v_roc5 = (spx[d_spx] / spx[spx_dates[_i - 5]] - 1) * 100
 
         spy20 = return_20d(spy_dates, spy, d_spy) if d_spy else None
         rsp20 = return_20d(rsp_dates, rsp, d_rsp) if d_rsp else None
@@ -391,6 +407,7 @@ def main():
             'junk':       dict(raw=junk,     score=score_junk(junk),                 weight=WEIGHTS['junk']),
             'spread':     dict(raw=v_spread, score=score_spread(v_spread),           weight=WEIGHTS['spread']),
             'sector_osc': dict(raw=v_sector, score=score_sector_osc(v_sector),       weight=WEIGHTS['sector_osc']),
+            'roc5':       dict(raw=v_roc5,   score=score_roc5(v_roc5),               weight=WEIGHTS['roc5']),
         }
 
         # Weighted blend

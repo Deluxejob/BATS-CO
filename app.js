@@ -494,6 +494,52 @@ function sectorOscAdvisory(o) {
   return                { tone: 'opportunity', text: 'Extremely broad sector advance — trend continuation historically (momentum tail).' };
 }
 
+// ---- 5-day Rate of Change on the index (SPX or NDX depending on market) ----
+//
+// A pure momentum measure. Positive = the index rallied over the last 5
+// trading days; negative = it sold off. Extreme readings (~+/- 6%) are
+// rare — about 1-2% of days each — and historically both tails predict
+// well-above-baseline forward returns.
+//
+// The formula is dead simple:
+//     ROC-5 = (close_today / close_5_days_ago - 1) * 100
+// Because the index is loaded live in loadLiveData, we don't need a
+// separate CSV — the same array feeds this computation and the
+// 200-day MA one.
+//
+// Backtest 1990-2026 (9,176 days, S&P):
+//   ROC-5 < -6%  (extreme crash tail):  +21.2% avg 12M, 80% hit
+//   ROC-5 > +6%  (extreme rally tail):  +20.9% avg 12M, 89% hit
+//   Baseline (all days):                +10.2% avg 12M, 81% hit
+//   1-month bonus: crash tail = +3.8% (4x baseline)
+//
+// Correlation with SPY 14-day RSI = 0.596 — meaningful overlap, but 59%
+// of ROC-5 crash-tail days have RSI still above 30 (not yet oversold),
+// so this catches short-term panics faster than RSI.
+//
+// Score mapping: clamp at +/- 6%, linear from there.
+//   ROC-5 = -6% -> score 0  (extreme oversold — big recent drop)
+//   ROC-5 =  0% -> score 50 (neutral)
+//   ROC-5 = +6% -> score 100 (extended — big recent rally)
+function scoreROC5(roc) {
+  if (roc == null || isNaN(roc)) return null;
+  const CLAMP = 6.0;
+  const c = Math.max(-CLAMP, Math.min(CLAMP, roc));
+  const score = 50 + (c / CLAMP) * 50;
+  return Math.max(2, Math.min(98, score));
+}
+
+function roc5Advisory(roc) {
+  if (roc == null || isNaN(roc)) return null;
+  if (roc <= -6) return { tone: 'opportunity', text: 'Extreme 5-day drop — historically a strong short-term contrarian signal (+21% avg 12M, +3.8% just 1M forward).' };
+  if (roc <= -3) return { tone: 'watch',       text: 'Meaningful 5-day pullback — market is under pressure. Watch other indicators for confirmation.' };
+  if (roc <= -1) return { tone: 'info',        text: 'Mild 5-day drift lower — nothing dramatic.' };
+  if (roc <   1) return { tone: 'info',        text: 'Flat 5-day return — the market is quiet.' };
+  if (roc <   3) return { tone: 'info',        text: 'Mild 5-day gain — normal upward drift.' };
+  if (roc <   6) return { tone: 'info',        text: 'Meaningful 5-day rally — trend is up.' };
+  return                { tone: 'opportunity', text: 'Extreme 5-day rally — momentum tail. Historically strong forward returns (+21% avg 12M, 89% hit).' };
+}
+
 // Wilder's 14-day RSI from a chronological array of closes.
 // Returns the RSI value for the last close, or null if not enough data.
 function computeRSI(closes, period = 14) {
@@ -684,6 +730,18 @@ const COMPONENTS = [
     signal: scoreSectorOsc(0),
     advisory: sectorOscAdvisory(0),
     explainer: 'indicators/sector-oscillator.html',
+  },
+  {
+    key: 'roc5',
+    name: `${MC.indexTicker} 5-day ROC`,
+    desc: 'Pure short-term momentum: the index\'s percentage change over the last 5 trading days. Extreme moves in either direction (>=6%) historically predict above-baseline forward returns — a genuine U-shape signal.',
+    weight: 10,
+    status: 'live',
+    raw: 0,
+    value: '0.00% (loading)',
+    signal: scoreROC5(0),
+    advisory: roc5Advisory(0),
+    explainer: 'indicators/roc5.html',
   },
 ];
 
@@ -1150,7 +1208,8 @@ async function loadLiveData() {
   const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')        || {}).weight || 0;
   const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread') || {}).weight || 0;
   const wSector  = (COMPONENTS.find(c => c.key === 'sector_osc')   || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread + wSector;
+  const wROC5    = (COMPONENTS.find(c => c.key === 'roc5')         || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread + wSector + wROC5;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -1180,6 +1239,8 @@ async function loadLiveData() {
     const yieldSpread = yieldsRec.spread;
     const sectorOscVal = sectorRec.oscillator;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
+    // ROC-5: needs at least 5 prior daily closes on the same index series.
+    const roc5Val = (xi >= 5) ? ((spx[xi].close / spx[xi - 5].close - 1) * 100) : null;
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
     const rs = scoreRSI(rsi[si]);
@@ -1189,7 +1250,8 @@ async function loadLiveData() {
     const ns = scoreNAAIM(naaimRec.value);
     const yss = scoreYieldSpread(yieldSpread);
     const sos = scoreSectorOsc(sectorOscVal);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null || sos == null || wTotal <= 0) return null;
+    const roc = scoreROC5(roc5Val);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null || sos == null || roc == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -1205,8 +1267,9 @@ async function loadLiveData() {
       yieldsDate: yieldsRec.date,
       sectorOsc: sectorOscVal,
       sectorOscDate: sectorRec.date,
-      vs, bs, rs, js, ms, as_, ns, yss, sos,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread + sos * wSector) / wTotal,
+      roc5: roc5Val,
+      vs, bs, rs, js, ms, as_, ns, yss, sos, roc,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5) / wTotal,
     };
   }
 
@@ -1300,6 +1363,14 @@ function updateComponentsWithLatest(current) {
     sectorComp.value = `${sign}${current.sectorOsc.toFixed(2)}`;
     sectorComp.signal = current.sos;
     sectorComp.advisory = sectorOscAdvisory(current.sectorOsc);
+  }
+  const rocComp = COMPONENTS.find(c => c.key === 'roc5');
+  if (rocComp) {
+    rocComp.raw = current.roc5;
+    const sign = current.roc5 >= 0 ? '+' : '';
+    rocComp.value = `${sign}${current.roc5.toFixed(2)}%`;
+    rocComp.signal = current.roc;
+    rocComp.advisory = roc5Advisory(current.roc5);
   }
 }
 

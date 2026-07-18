@@ -57,7 +57,7 @@ def warn(msg: str) -> None:
 
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               aaii=10, naaim=5, junk=10, spread=5, sector_osc=10)
+               aaii=10, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -155,6 +155,16 @@ def score_sector_osc(o):
     if o is None: return None
     CLAMP = 25.0
     c = max(-CLAMP, min(CLAMP, o))
+    s = 50 + (c / CLAMP) * 50
+    return clamp(s, 2, 98)
+
+
+def score_roc5(roc):
+    """5-day index ROC. Both tails predict high forward returns. Score maps
+    linearly with clamp at plus/minus 6% -> [0, 100]."""
+    if roc is None: return None
+    CLAMP = 6.0
+    c = max(-CLAMP, min(CLAMP, roc))
     s = 50 + (c / CLAMP) * 50
     return clamp(s, 2, 98)
 
@@ -336,6 +346,12 @@ def main():
         v_spread = yields[yields_dates[i]] if i >= 0 else None
         i = snap_le_idx(sector_dates, d)
         v_sector = sector_osc[sector_dates[i]] if i >= 0 else None
+        # 5-day rate of change on the index
+        v_roc5 = None
+        if d in spx:
+            _i = spx_dates.index(d)
+            if _i >= 5:
+                v_roc5 = (spx[d] / spx[spx_dates[_i - 5]] - 1) * 100
 
         v_rsi = rsi.get(d)
         v_ma  = ma200.get(d)
@@ -357,6 +373,7 @@ def main():
             junk=score_junk(junk),
             spread=score_spread(v_spread),
             sector_osc=score_sector_osc(v_sector),
+            roc5=score_roc5(v_roc5),
         )
 
         w_sum = 0

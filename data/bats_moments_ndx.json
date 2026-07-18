@@ -1,6 +1,6 @@
 {
   "source": "Computed from data/*.csv using the same scoring functions as app.js",
-  "generatedAt": 1784389322,
+  "generatedAt": 1784395637,
   "latestSpxDate": "2026-07-17",
   "moments": [
     {
@@ -9,7 +9,7 @@
       "event": "Pre-GFC all-time high",
       "context": "S&P 500 hit its cyclical peak. Housing bubble already leaking.",
       "spxClose": 2171.21,
-      "batsScore": 58.5,
+      "batsScore": 59.6,
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
@@ -58,6 +58,11 @@
           "raw": 8.94,
           "score": 67.9,
           "weight": 10
+        },
+        "roc5": {
+          "raw": 2.61,
+          "score": 71.8,
+          "weight": 10
         }
       },
       "forward": {
@@ -73,7 +78,7 @@
       "event": "Post-Lehman panic — peak fear",
       "context": "VIX hit an all-time closing high (~80) during forced selling in the weeks after Lehman's bankruptcy. Deepest BATS reading of the GFC.",
       "spxClose": 1169.78,
-      "batsScore": 14.5,
+      "batsScore": 13.5,
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
@@ -122,6 +127,11 @@
           "raw": -19.32,
           "score": 11.4,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -13.53,
+          "score": 2,
+          "weight": 10
         }
       },
       "forward": {
@@ -137,7 +147,7 @@
       "event": "GFC panic acceleration",
       "context": "SPX closed at 800 after a week of collapse; \"worst since 1987.\"",
       "spxClose": 1085.57,
-      "batsScore": 23.8,
+      "batsScore": 22.0,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -186,6 +196,11 @@
           "raw": 11.1,
           "score": 72.2,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -7.97,
+          "score": 2,
+          "weight": 10
         }
       },
       "forward": {
@@ -201,7 +216,7 @@
       "event": "GFC bottom",
       "context": "S&P closed at 676. Financial crisis panic in full effect.",
       "spxClose": 1043.87,
-      "batsScore": 26.2,
+      "batsScore": 26.0,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -250,6 +265,11 @@
           "raw": 2.12,
           "score": 54.2,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -3.05,
+          "score": 24.6,
+          "weight": 10
         }
       },
       "forward": {
@@ -265,10 +285,10 @@
       "event": "S&P US downgrade / debt ceiling",
       "context": "S&P downgraded US credit; -6.7% single-day crash.",
       "spxClose": 2060.29,
-      "batsScore": 15.5,
-      "bucketLabel": "Very Oversold",
-      "bucketColor": "var(--s0)",
-      "action": "Strong Buy",
+      "batsScore": 14.4,
+      "bucketLabel": "Extremely Oversold",
+      "bucketColor": "var(--s-ext)",
+      "action": "Aggressive Buy",
       "components": {
         "vix": {
           "raw": 44.74,
@@ -314,6 +334,11 @@
           "raw": -6.97,
           "score": 36.1,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -12.48,
+          "score": 2,
+          "weight": 10
         }
       },
       "forward": {
@@ -329,7 +354,7 @@
       "event": "Oil crash / deflation bottom",
       "context": "SPX 1829 low; energy sector wipeout, deflation fears peaked.",
       "spxClose": 3962.22,
-      "batsScore": 23.7,
+      "batsScore": 22.5,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -378,6 +403,11 @@
           "raw": -18.93,
           "score": 12.1,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -4.93,
+          "score": 8.9,
+          "weight": 10
         }
       },
       "forward": {
@@ -393,7 +423,7 @@
       "event": "Powell put / trade-war bottom",
       "context": "Christmas Eve low; Fed pivoted, market rallied.",
       "spxClose": 5899.35,
-      "batsScore": 19.7,
+      "batsScore": 18.2,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -442,6 +472,11 @@
           "raw": -23.41,
           "score": 3.2,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -8.51,
+          "score": 2,
+          "weight": 10
         }
       },
       "forward": {
@@ -457,7 +492,7 @@
       "event": "2s10s yield curve inversion",
       "context": "First 2s/10s inversion of the cycle; SPX dropped 3% intraday.",
       "spxClose": 7490.13,
-      "batsScore": 32.0,
+      "batsScore": 33.0,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
@@ -506,6 +541,11 @@
           "raw": -8.76,
           "score": 32.5,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -0.82,
+          "score": 43.2,
+          "weight": 10
         }
       },
       "forward": {
@@ -521,7 +561,7 @@
       "event": "Pre-COVID all-time high",
       "context": "Peak before the COVID crash — SPX at 3386.",
       "spxClose": 9718.73,
-      "batsScore": 54.3,
+      "batsScore": 55.4,
       "bucketLabel": "Neutral",
       "bucketColor": "var(--s3)",
       "action": "No Real Trend",
@@ -570,6 +610,11 @@
           "raw": -5.58,
           "score": 38.8,
           "weight": 10
+        },
+        "roc5": {
+          "raw": 2.11,
+          "score": 67.6,
+          "weight": 10
         }
       },
       "forward": {
@@ -585,10 +630,10 @@
       "event": "COVID crash bottom",
       "context": "Fed unlimited-QE announcement day; SPX bottomed at 2237.",
       "spxClose": 7006.92,
-      "batsScore": 15.4,
-      "bucketLabel": "Very Oversold",
-      "bucketColor": "var(--s0)",
-      "action": "Strong Buy",
+      "batsScore": 18.2,
+      "bucketLabel": "Oversold",
+      "bucketColor": "var(--s1)",
+      "action": "Consider Buying",
       "components": {
         "vix": {
           "raw": 58.36,
@@ -634,6 +679,11 @@
           "raw": -10.74,
           "score": 28.5,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -0.19,
+          "score": 48.4,
+          "weight": 10
         }
       },
       "forward": {
@@ -649,7 +699,7 @@
       "event": "Post-COVID all-time high",
       "context": "Peak before the 2022 bear market — SPX at 4796.",
       "spxClose": 16501.77,
-      "batsScore": 54.1,
+      "batsScore": 53.5,
       "bucketLabel": "Neutral",
       "bucketColor": "var(--s3)",
       "action": "No Real Trend",
@@ -698,6 +748,11 @@
           "raw": -7.86,
           "score": 34.3,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -0.4,
+          "score": 46.7,
+          "weight": 10
         }
       },
       "forward": {
@@ -713,7 +768,7 @@
       "event": "2022 first bear-market low",
       "context": "SPX 3675; first flush of the year. Not the ultimate low.",
       "spxClose": 11265.99,
-      "batsScore": 29.4,
+      "batsScore": 27.8,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -762,6 +817,11 @@
           "raw": -1.87,
           "score": 46.3,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -4.79,
+          "score": 10.1,
+          "weight": 10
         }
       },
       "forward": {
@@ -777,7 +837,7 @@
       "event": "2022 final bear-market bottom",
       "context": "SPX 3577 — the actual low of the 2022 cycle.",
       "spxClose": 10785.62,
-      "batsScore": 31.3,
+      "batsScore": 28.9,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -826,6 +886,11 @@
           "raw": -6.23,
           "score": 37.5,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -6.81,
+          "score": 2,
+          "weight": 10
         }
       },
       "forward": {
@@ -841,7 +906,7 @@
       "event": "SVB banking crisis",
       "context": "SVB collapsed the prior weekend; regional-bank contagion fear.",
       "spxClose": 11923.17,
-      "batsScore": 33.7,
+      "batsScore": 33.0,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
@@ -890,6 +955,11 @@
           "raw": -6.3,
           "score": 37.4,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -3.08,
+          "score": 24.3,
+          "weight": 10
         }
       },
       "forward": {
@@ -905,10 +975,10 @@
       "event": "Rate-panic bottom",
       "context": "10Y hit 5%; SPX flushed to 4117 before the year-end rally began.",
       "spxClose": 14180.42,
-      "batsScore": 32.0,
-      "bucketLabel": "Slightly Bearish",
-      "bucketColor": "var(--s2)",
-      "action": "Be Careful",
+      "batsScore": 31.7,
+      "bucketLabel": "Oversold",
+      "bucketColor": "var(--s1)",
+      "action": "Consider Buying",
       "components": {
         "vix": {
           "raw": 24.44,
@@ -954,6 +1024,11 @@
           "raw": -11.94,
           "score": 26.1,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -2.61,
+          "score": 28.2,
+          "weight": 10
         }
       },
       "forward": {
@@ -969,7 +1044,7 @@
       "event": "Liberation Day tariff bottom",
       "context": "SPX 4983; day before Trump announced 90-day tariff pause.",
       "spxClose": 17090.4,
-      "batsScore": 23.2,
+      "batsScore": 21.4,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -1018,6 +1093,11 @@
           "raw": -25.69,
           "score": 2,
           "weight": 10
+        },
+        "roc5": {
+          "raw": -12.07,
+          "score": 2,
+          "weight": 10
         }
       },
       "forward": {
@@ -1038,7 +1118,8 @@
       "naaim": 5,
       "junk": 10,
       "spread": 5,
-      "sector_osc": 10
+      "sector_osc": 10,
+      "roc5": 10
     },
     "buckets": [
       {
