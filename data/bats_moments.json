@@ -1,6 +1,6 @@
 {
   "source": "Computed from data/*.csv using the same scoring functions as app.js",
-  "generatedAt": 1784347639,
+  "generatedAt": 1784348026,
   "latestSpxDate": "2026-07-17",
   "moments": [
     {
@@ -714,9 +714,9 @@
       "context": "SPX 3577 — the actual low of the 2022 cycle.",
       "spxClose": 3577.03,
       "batsScore": 31.6,
-      "bucketLabel": "Slightly Bearish",
-      "bucketColor": "var(--s2)",
-      "action": "Be Careful",
+      "bucketLabel": "Oversold",
+      "bucketColor": "var(--s1)",
+      "action": "Consider Buying",
       "components": {
         "vix": {
           "raw": 33.57,
@@ -994,7 +994,7 @@
       },
       {
         "label": "Slightly Bearish",
-        "min": 30,
+        "min": 32,
         "action": "Be Careful"
       },
       {

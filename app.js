@@ -39,7 +39,7 @@ const BUCKETS = [
     action: 'Be Careful',
     subtitle: 'Forward 12mo returns average +9.4%, hit rate 74%. Not a crash zone, just weaker odds.',
     color: 'var(--s2)',
-    min: 30,
+    min: 32,
   },
   {
     label: 'Neutral',
