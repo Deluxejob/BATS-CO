@@ -526,8 +526,8 @@
     <div class="plsi-bottom">
       <section class="term-section">
         <div class="term-section-label">
-          TOP ISSUERS BY VOLUME
-          <span class="sub">&mdash; top 10 tickers she has traded most</span>
+          TOP HOLDINGS
+          <span class="sub">&mdash; current open positions, estimated from disclosed BUY midpoints</span>
         </div>
         <div class="term-panel" id="plsiIssuers">
           <div class="plsi-loading">Loading&hellip;</div>
@@ -680,9 +680,9 @@
       try { renderTrades(trades); }
       catch (e) { console.error('renderTrades failed:', e); }
 
-      // ---------- Top issuers ----------
-      try { renderIssuers(chart.topIssuers || []); }
-      catch (e) { console.error('renderIssuers failed:', e); }
+      // ---------- Top holdings (from open BUY trades, not chart.topIssuers) ----------
+      try { renderHoldings(trades); }
+      catch (e) { console.error('renderHoldings failed:', e); }
 
       // ---------- Sector allocation ----------
       try { renderSectors(chart.sectorAllocation || []); }
@@ -850,20 +850,39 @@
         });
       }
 
-      // ---- Top issuers ----
-      function renderIssuers(list) {
+      // ---- Top holdings (computed from open BUY positions) ----
+      // We aggregate every open-status BUY trade's disclosed amount-midpoint,
+      // grouped by ticker. This is an ESTIMATE — dollar amounts on PTRs are
+      // reported as buckets ($1K–$15K, $15K–$50K, etc.), and insiderfinance
+      // uses the midpoint of the bucket. Small positions can drift from
+      // reality, but the ordering and relative weights are accurate.
+      function renderHoldings(list) {
         const el = document.getElementById('plsiIssuers');
         if (!el) return;
-        if (!list || !list.length) { el.innerHTML = '<div class="plsi-loading">No issuer data.</div>'; return; }
-        const top = list.slice(0, 10);
-        const max = Math.max(...top.map(i => i.totalVolume || 0));
-        el.innerHTML = top.map(i => {
-          const pctW = max ? (i.totalVolume / max) * 100 : 0;
+        const buys = (list || []).filter(t =>
+          t && (t.transaction || {}).type === 'BUY' && t.status === 'open'
+        );
+        if (!buys.length) { el.innerHTML = '<div class="plsi-loading">No open positions.</div>'; return; }
+        const byTicker = new Map();
+        for (const t of buys) {
+          const sym = (t.asset || {}).symbol;
+          if (!sym) continue;
+          const amt = Number(t.amountMidpoint) || 0;
+          const rec = byTicker.get(sym) || { ticker: sym, value: 0, count: 0 };
+          rec.value += amt;
+          rec.count += 1;
+          byTicker.set(sym, rec);
+        }
+        const rows = Array.from(byTicker.values()).sort((a, b) => b.value - a.value).slice(0, 10);
+        const max = Math.max(...rows.map(r => r.value));
+        el.innerHTML = rows.map(r => {
+          const pctW = max ? (r.value / max) * 100 : 0;
+          const label = r.count === 1 ? 'buy' : 'buys';
           return `
             <div class="plsi-issuer">
-              <a class="tk" href="ticker.html?sym=${encodeURIComponent(i.ticker)}">${i.ticker}</a>
+              <a class="tk" href="ticker.html?sym=${encodeURIComponent(r.ticker)}">${r.ticker}</a>
               <div class="bar"><span class="bar-fill" style="width: ${pctW.toFixed(1)}%"></span></div>
-              <div class="vol"><b>${fmtMoneyShort(i.totalVolume)}</b> · ${i.tradeCount || 0} trades</div>
+              <div class="vol"><b>${fmtMoneyShort(r.value)}</b> · ${r.count} ${label}</div>
             </div>
           `;
         }).join('');
