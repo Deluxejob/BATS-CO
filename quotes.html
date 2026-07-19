@@ -225,6 +225,24 @@
     .idx-card-price .chg.neg { color: var(--term-red); }
     .idx-chart-wrap { position: relative; height: 145px; overflow: hidden; }
     .idx-chart      { width: 100%; height: 100%; display: block; }
+    .idx-range-picker {
+      display: flex; gap: 0.1rem; margin-top: 0.25rem; justify-content: center;
+      flex-wrap: nowrap;
+    }
+    .idx-range-picker button {
+      background: transparent; color: var(--term-dim, #8892a6);
+      border: 1px solid transparent; padding: 0.08rem 0.34rem;
+      font-size: 0.62rem; font-weight: 600; letter-spacing: 0.03em;
+      font-family: 'JetBrains Mono', monospace; cursor: pointer;
+      border-radius: 3px; line-height: 1.1;
+    }
+    .idx-range-picker button:hover {
+      color: var(--term-text, #e6edf3); border-color: var(--term-amber, #ffb658);
+    }
+    .idx-range-picker button.active {
+      background: var(--term-amber, #ffb658); color: #0a1218;
+      border-color: var(--term-amber, #ffb658);
+    }
 
     /* Breadth gauge cards */
     .brd-card {
@@ -1104,11 +1122,24 @@
       input.focus();
     })();
 
-    // Compact intraday area chart — draws today's 5-minute bars against a
-    // dashed prev-close baseline. Replaces the TradingView Symbol Overview
-    // widget so we don't get the TV logo overlapping the first bars of the
-    // session. `bars` is [[ts, close], ...] from /api/history.
-    function drawIntradayChart(svg, bars, prevClose) {
+    // Compact area chart — 1D uses a session-anchored intraday view with a
+    // dashed prev-close baseline; longer ranges use the first bar in the
+    // window as the baseline. `bars` is [[ts, close], ...] from /api/history.
+    // `rangeKey` is one of '1D','5D','1M','3M','6M','1Y','5Y','All'.
+    const RANGE_MAP = {
+      '1D':  { range: '1d',  interval: '5m'  },
+      '5D':  { range: '5d',  interval: '15m' },
+      '1M':  { range: '1mo', interval: '1h'  },
+      '3M':  { range: '3mo', interval: '1d'  },
+      '6M':  { range: '6mo', interval: '1d'  },
+      '1Y':  { range: '1y',  interval: '1d'  },
+      '5Y':  { range: '5y',  interval: '1wk' },
+      'All': { range: 'max', interval: '1mo' },
+    };
+    const RANGE_KEYS = Object.keys(RANGE_MAP);
+    const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function drawRangeChart(svg, bars, prevClose, rangeKey) {
       const pts = [];
       for (let i = 0; i < bars.length; i++) {
         const v = bars[i][1];
@@ -1122,43 +1153,53 @@
       const plotW = W - M.left - M.right;
       const plotH = H - M.top - M.bottom;
 
-      // Fixed session window (9:30–16:00 ET) — anchor to the first bar's
-      // UTC time so a partial session doesn't stretch to fill the width.
-      const firstTs = pts[0][0];
-      const d0 = new Date(firstTs * 1000);
-      const sessionStart = firstTs - (d0.getUTCHours() * 3600 + d0.getUTCMinutes() * 60 - 13.5 * 3600);
-      const sessionEnd   = sessionStart + 6.5 * 3600;
-      const xFor = t => M.left + ((t - sessionStart) / (sessionEnd - sessionStart)) * plotW;
+      const isIntraday = rangeKey === '1D';
+      let xFor, sessionStart, sessionEnd;
+      if (isIntraday) {
+        // Fixed session window (9:30–16:00 ET) — anchor to the first bar so
+        // a partial session doesn't stretch to fill the width.
+        const firstTs = pts[0][0];
+        const d0 = new Date(firstTs * 1000);
+        sessionStart = firstTs - (d0.getUTCHours() * 3600 + d0.getUTCMinutes() * 60 - 13.5 * 3600);
+        sessionEnd   = sessionStart + 6.5 * 3600;
+        xFor = t => M.left + ((t - sessionStart) / (sessionEnd - sessionStart)) * plotW;
+      } else {
+        // Ordinal spacing — one slot per bar, so weekend gaps disappear.
+        const nBars = pts.length;
+        xFor = (_t, i) => M.left + (i / Math.max(1, nBars - 1)) * plotW;
+      }
 
+      // Baseline: prev close for 1D, first bar close for other ranges.
+      const baseline = isIntraday ? prevClose : pts[0][1];
       const vals = pts.map(p => p[1]);
-      if (prevClose != null) vals.push(prevClose);
+      if (baseline != null) vals.push(baseline);
       let lo = Math.min(...vals), hi = Math.max(...vals);
       const pad = (hi - lo) * 0.15 || (hi * 0.002);
       lo -= pad; hi += pad;
       const yFor = v => M.top + plotH - ((v - lo) / (hi - lo)) * plotH;
 
       const lastClose = pts[pts.length - 1][1];
-      const up = prevClose == null ? true : lastClose >= prevClose;
+      const up = baseline == null ? true : lastClose >= baseline;
       const stroke = up ? '#22d39a' : '#ff5374';
       const fill   = up ? 'rgba(34,211,154,0.14)' : 'rgba(255,83,116,0.14)';
 
       let s = '';
-      if (prevClose != null) {
-        const y = yFor(prevClose);
+      if (baseline != null) {
+        const y = yFor(baseline);
         s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#8892a6" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.6"/>`;
-        s += `<text x="${W - M.right + 4}" y="${y + 3}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8">${prevClose.toFixed(2)}</text>`;
+        s += `<text x="${W - M.right + 4}" y="${y + 3}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8">${baseline.toFixed(2)}</text>`;
       }
 
-      const yBase = prevClose != null ? yFor(prevClose) : (M.top + plotH);
+      const yBase = baseline != null ? yFor(baseline) : (M.top + plotH);
       let dLine = '', dArea = '';
       for (let i = 0; i < pts.length; i++) {
-        const x = xFor(pts[i][0]).toFixed(2);
+        const x = xFor(pts[i][0], i).toFixed(2);
         const y = yFor(pts[i][1]).toFixed(2);
         dLine += (i ? 'L' : 'M') + x + ',' + y + ' ';
         if (i === 0) dArea += 'M' + x + ',' + yBase.toFixed(2) + ' L' + x + ',' + y + ' ';
         else         dArea += 'L' + x + ',' + y + ' ';
       }
-      const lastX = xFor(pts[pts.length - 1][0]).toFixed(2);
+      const lastX = xFor(pts[pts.length - 1][0], pts.length - 1).toFixed(2);
       dArea += 'L' + lastX + ',' + yBase.toFixed(2) + ' Z';
 
       s += `<path d="${dArea}" fill="${fill}" stroke="none"/>`;
@@ -1168,11 +1209,30 @@
       s += `<circle cx="${lastX}" cy="${yLast}" r="2.5" fill="${stroke}" stroke="#0a1218" stroke-width="1"/>`;
       s += `<text x="${W - M.right + 4}" y="${(+yLast) + 3}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700">${lastClose.toFixed(2)}</text>`;
 
-      const t930 = sessionStart, t12 = sessionStart + 2.5 * 3600, t4 = sessionEnd;
+      // X-axis labels — session hours for 1D, calendar labels otherwise.
       const tickY = H - 5;
-      s += `<text x="${xFor(t930).toFixed(1)}" y="${tickY}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="start">9:30</text>`;
-      s += `<text x="${xFor(t12).toFixed(1)}"  y="${tickY}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="middle">12:00</text>`;
-      s += `<text x="${xFor(t4).toFixed(1)}"   y="${tickY}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="end">4:00</text>`;
+      function xLabel(x, txt, anchor) {
+        s += `<text x="${x.toFixed(1)}" y="${tickY}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="${anchor}">${txt}</text>`;
+      }
+      if (isIntraday) {
+        xLabel(xFor(sessionStart),                 '9:30',  'start');
+        xLabel(xFor(sessionStart + 2.5 * 3600),    '12:00', 'middle');
+        xLabel(xFor(sessionEnd),                   '4:00',  'end');
+      } else {
+        const first = pts[0][0], last = pts[pts.length - 1][0];
+        const spanDays = (last - first) / 86400;
+        function fmt(ts) {
+          const d = new Date(ts * 1000);
+          if (spanDays > 800)      return String(d.getUTCFullYear());
+          if (spanDays > 200)      return MONTH_ABBR[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2);
+          if (spanDays > 45)       return MONTH_ABBR[d.getUTCMonth()];
+          return MONTH_ABBR[d.getUTCMonth()] + ' ' + d.getUTCDate();
+        }
+        const midIdx = Math.floor(pts.length / 2);
+        xLabel(xFor(pts[0][0], 0),                       fmt(first),          'start');
+        xLabel(xFor(pts[midIdx][0], midIdx),             fmt(pts[midIdx][0]), 'middle');
+        xLabel(xFor(pts[pts.length - 1][0], pts.length - 1), fmt(last),       'end');
+      }
 
       svg.innerHTML = s;
     }
@@ -1191,6 +1251,10 @@
         const card = document.createElement('div');
         card.className = 'idx-card';
         card.dataset.sym = it.label;
+        card.dataset.range = '1D';
+        const rangeButtons = RANGE_KEYS.map(k =>
+          `<button type="button" data-range="${k}"${k === '1D' ? ' class="active"' : ''}>${k}</button>`
+        ).join('');
         card.innerHTML = `
           <div class="idx-card-header">
             <div class="idx-card-label">${it.title}</div>
@@ -1200,58 +1264,112 @@
             <span class="price">$—</span>
             <span class="chg">—</span>
           </div>
-          <div class="idx-chart-wrap"><svg class="idx-chart"></svg></div>`;
+          <div class="idx-chart-wrap"><svg class="idx-chart"></svg></div>
+          <div class="idx-range-picker">${rangeButtons}</div>`;
         grid.appendChild(card);
+
+        // Per-card range picker click handler.
+        card.querySelector('.idx-range-picker').addEventListener('click', e => {
+          const btn = e.target.closest('button[data-range]');
+          if (!btn) return;
+          const newRange = btn.dataset.range;
+          if (newRange === card.dataset.range) return;
+          card.dataset.range = newRange;
+          card.querySelectorAll('.idx-range-picker button').forEach(b =>
+            b.classList.toggle('active', b.dataset.range === newRange)
+          );
+          refreshOneCard(card);
+        });
       }
       startExtendedHoursRefresh();
       startIntradayRefresh();
     })();
 
-    // Fetches /api/history (5-min bars for today) + /api/quote (for prev
-    // close and current price) every 60s during market hours, and repaints
-    // the four index cards. Silently retries on transient network errors.
+    // Per-card cache of bars keyed by range. Repeated switches reuse the
+    // cached bars while the background refresh keeps the *active* range fresh.
+    const barCache = new WeakMap(); // card -> { [rangeKey]: bars }
+    // Shared quote snapshot — /api/quote is symbol-scoped, not range-scoped,
+    // so one fetch feeds all four cards' price row + prev-close baselines.
+    let quoteCache = {};
+
+    async function fetchQuotesAll(cards) {
+      const syms = cards.map(c => c.dataset.sym).join(',');
+      try {
+        const r = await fetch(`/api/quote?syms=${encodeURIComponent(syms)}`, { cache: 'no-store' });
+        if (!r.ok) return;
+        const j = await r.json();
+        quoteCache = (j && j.quotes) || {};
+      } catch (e) { /* transient */ }
+    }
+
+    async function fetchHistoryForCard(card, force) {
+      const sym  = card.dataset.sym;
+      const key  = card.dataset.range;
+      const rc   = RANGE_MAP[key];
+      const store = barCache.get(card) || {};
+      if (!force && store[key]) return store[key];
+      try {
+        const r = await fetch(
+          `/api/history?syms=${encodeURIComponent(sym)}&range=${rc.range}&interval=${rc.interval}`,
+          { cache: 'no-store' }
+        );
+        if (!r.ok) return store[key] || [];
+        const j = await r.json();
+        const bars = (j && j.series && j.series[sym]) || [];
+        store[key] = bars;
+        barCache.set(card, store);
+        return bars;
+      } catch (e) {
+        return store[key] || [];
+      }
+    }
+
+    function paintCard(card, bars) {
+      const sym       = card.dataset.sym;
+      const key       = card.dataset.range;
+      const q         = quoteCache[sym];
+      const priceEl   = card.querySelector('.idx-card-price .price');
+      const chgEl     = card.querySelector('.idx-card-price .chg');
+      const svg       = card.querySelector('.idx-chart');
+      const prevClose = q ? q.prevClose : null;
+
+      // Price row: always shows the latest regular-session move.
+      const price = (q && q.price != null) ? q.price : (bars.length ? bars[bars.length - 1][1] : null);
+      if (price != null && isFinite(price)) {
+        priceEl.textContent = '$' + price.toFixed(2);
+        if (prevClose != null && isFinite(prevClose)) {
+          const diff = price - prevClose;
+          const pct  = (diff / prevClose) * 100;
+          const s = diff >= 0 ? '+' : '';
+          chgEl.textContent = `${s}${diff.toFixed(2)} (${s}${pct.toFixed(2)}%)`;
+          chgEl.className = 'chg ' + (diff >= 0 ? 'pos' : 'neg');
+        }
+      }
+      drawRangeChart(svg, bars, prevClose, key);
+    }
+
+    // Called when the user clicks a different range chip — refetch (or use
+    // cache) and repaint just that card.
+    async function refreshOneCard(card) {
+      const bars = await fetchHistoryForCard(card, /*force*/ false);
+      paintCard(card, bars);
+    }
+
+    // Initial mount + periodic refresh. Each tick refetches quotes + the
+    // *currently-active* range for every card so an intraday view stays live
+    // while a card sitting on 1Y doesn't waste bandwidth being re-polled.
     function startIntradayRefresh() {
       const cards = Array.from(document.querySelectorAll('.idx-card[data-sym]'));
       if (!cards.length) return;
-      const syms = cards.map(c => c.dataset.sym).join(',');
-      async function refresh() {
-        try {
-          const [histR, quoteR] = await Promise.all([
-            fetch(`/api/history?syms=${encodeURIComponent(syms)}&range=1d&interval=5m`, { cache: 'no-store' }),
-            fetch(`/api/quote?syms=${encodeURIComponent(syms)}`,                          { cache: 'no-store' }),
-          ]);
-          const histJ  = histR.ok  ? await histR.json()  : null;
-          const quoteJ = quoteR.ok ? await quoteR.json() : null;
-          const series = (histJ  && histJ.series)   || {};
-          const quotes = (quoteJ && quoteJ.quotes)  || {};
-          for (const card of cards) {
-            const sym = card.dataset.sym;
-            const q   = quotes[sym];
-            const bars = series[sym] || [];
-            const priceEl = card.querySelector('.idx-card-price .price');
-            const chgEl   = card.querySelector('.idx-card-price .chg');
-            const svg     = card.querySelector('.idx-chart');
-            const prevClose = q ? q.prevClose : null;
-            // Latest bar close beats stale quote.price if the intraday data
-            // is fresher than the quote snapshot.
-            const lastBar = bars.length ? bars[bars.length - 1][1] : null;
-            const price   = lastBar != null ? lastBar : (q ? q.price : null);
-            if (price != null && isFinite(price)) {
-              priceEl.textContent = '$' + price.toFixed(2);
-              if (prevClose != null && isFinite(prevClose)) {
-                const diff = price - prevClose;
-                const pct  = (diff / prevClose) * 100;
-                const s = diff >= 0 ? '+' : '';
-                chgEl.textContent = `${s}${diff.toFixed(2)} (${s}${pct.toFixed(2)}%)`;
-                chgEl.className = 'chg ' + (diff >= 0 ? 'pos' : 'neg');
-              }
-            }
-            drawIntradayChart(svg, bars, prevClose);
-          }
-        } catch (e) { /* transient — try again next tick */ }
+      async function tick() {
+        await fetchQuotesAll(cards);
+        await Promise.all(cards.map(async card => {
+          const bars = await fetchHistoryForCard(card, /*force*/ true);
+          paintCard(card, bars);
+        }));
       }
-      refresh();
-      setInterval(refresh, 60000);
+      tick();
+      setInterval(tick, 60000);
     }
 
     // Poll /api/quote every 60 s and paint the pre-market / after-hours
