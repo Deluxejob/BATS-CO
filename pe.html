@@ -11,6 +11,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <style>
+    /* "As of" line in the hero — subtle staleness indicator for PE data,
+       which we can only refresh when new Bain PE reports come out. */
+    .pe-as-of {
+      margin: 0.5rem 0 0;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pe-as-of strong { color: var(--text); font-weight: 600; }
     /* Page-specific tweaks — winner cell coloring for PE vs S&P comparisons */
     .pe-win  { color: var(--s5); font-weight: 700; }
     .spx-win { color: #64d3ff; font-weight: 700; }
@@ -101,6 +110,7 @@
         alpha. The pitch is powerful. The reality, once you line up the numbers,
         is <strong>more complicated than the sales deck</strong>.
       </p>
+      <p class="pe-as-of" id="peAsOf">Loading&hellip;</p>
     </section>
 
     <section id="headline">
@@ -331,6 +341,23 @@
       return;
     }
     const peReturns = peData.returns_pct;  // { "2001": -15.7, ... }
+
+    // Paint the "As of" line — PE numbers are compiled by hand from Bain's
+    // annual reports, so let readers see how fresh (or stale) they are.
+    const asOfEl = $('peAsOf');
+    if (asOfEl) {
+      const raw = String(peData.last_updated || '').slice(0, 10);
+      let pretty = raw;
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+      if (m) {
+        const MONTHS = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+        pretty = `${MONTHS[parseInt(m[2],10) - 1]} ${parseInt(m[3],10)}, ${m[1]}`;
+      }
+      asOfEl.innerHTML = raw
+        ? `PE returns as of <strong>${pretty}</strong> &middot; refreshed manually when new Bain Global PE Reports are released. S&amp;P 500 numbers update daily.`
+        : 'PE returns refreshed manually when new Bain Global PE Reports are released.';
+    }
 
     // --- Load S&P TR daily and compute calendar year returns + YTD ---
     let spTxt;
