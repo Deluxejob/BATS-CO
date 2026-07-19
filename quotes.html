@@ -211,7 +211,20 @@
     .idx-card-ext.post .ext-tag { background: rgba(255, 182, 88, 0.15); color: var(--term-amber); }
     .idx-card-ext .ext-pct.pos { color: var(--term-green); }
     .idx-card-ext .ext-pct.neg { color: var(--term-red); }
-    .idx-card .tradingview-widget-container { min-height: 170px; }
+    /* Our own intraday chart — replaces the TradingView Symbol Overview
+       so the TV logo doesn't overlap the first bars of the session. */
+    .idx-card-price {
+      display: flex; align-items: baseline; gap: 0.5rem;
+      padding: 0.05rem 0 0.25rem 0.15rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .idx-card-price .price { font-size: 1.0rem; font-weight: 700; color: var(--term-text); }
+    .idx-card-price .chg   { font-size: 0.75rem; font-weight: 600; }
+    .idx-card-price .chg.pos { color: var(--term-green); }
+    .idx-card-price .chg.neg { color: var(--term-red); }
+    .idx-chart-wrap { position: relative; height: 145px; overflow: hidden; }
+    .idx-chart      { width: 100%; height: 100%; display: block; }
 
     /* Breadth gauge cards */
     .brd-card {
@@ -1091,77 +1104,155 @@
       input.focus();
     })();
 
-    // TradingView Symbol Overview mini widget — DOM API (avoids closing-tag
-    // trap in template literals) — used for the four index cards.
-    function mountMiniOverview(mountEl, tvSymbol, displayLabel) {
-      const container = document.createElement('div');
-      container.className = 'tradingview-widget-container';
-      const widgetDiv = document.createElement('div');
-      widgetDiv.className = 'tradingview-widget-container__widget';
-      container.appendChild(widgetDiv);
-      const s = document.createElement('script');
-      s.type = 'text/javascript';
-      s.async = true;
-      s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
-      s.text = JSON.stringify({
-        symbols: [[displayLabel, `${tvSymbol}|1D`]],
-        chartOnly: false,
-        width: '100%',
-        height: 200,
-        locale: 'en',
-        colorTheme: 'dark',
-        autosize: false,
-        showVolume: false,
-        showMA: false,
-        hideDateRanges: true,
-        hideMarketStatus: false,
-        hideSymbolLogo: true,
-        scalePosition: 'right',
-        scaleMode: 'Normal',
-        fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-        fontSize: '10',
-        noTimeScale: true,
-        valuesTracking: '1',
-        changeMode: 'price-and-percent',
-        chartType: 'area',
-        lineWidth: 2,
-        dateRanges: ['1d|1'],
-        isTransparent: true,
-      });
-      container.appendChild(s);
-      mountEl.appendChild(container);
+    // Compact intraday area chart — draws today's 5-minute bars against a
+    // dashed prev-close baseline. Replaces the TradingView Symbol Overview
+    // widget so we don't get the TV logo overlapping the first bars of the
+    // session. `bars` is [[ts, close], ...] from /api/history.
+    function drawIntradayChart(svg, bars, prevClose) {
+      const pts = [];
+      for (let i = 0; i < bars.length; i++) {
+        const v = bars[i][1];
+        if (v != null && isFinite(v)) pts.push([bars[i][0], v]);
+      }
+      if (pts.length < 2) { svg.innerHTML = ''; return; }
+
+      const W = 600, H = 175, M = { top: 10, right: 46, bottom: 18, left: 6 };
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('preserveAspectRatio', 'none');
+      const plotW = W - M.left - M.right;
+      const plotH = H - M.top - M.bottom;
+
+      // Fixed session window (9:30–16:00 ET) — anchor to the first bar's
+      // UTC time so a partial session doesn't stretch to fill the width.
+      const firstTs = pts[0][0];
+      const d0 = new Date(firstTs * 1000);
+      const sessionStart = firstTs - (d0.getUTCHours() * 3600 + d0.getUTCMinutes() * 60 - 13.5 * 3600);
+      const sessionEnd   = sessionStart + 6.5 * 3600;
+      const xFor = t => M.left + ((t - sessionStart) / (sessionEnd - sessionStart)) * plotW;
+
+      const vals = pts.map(p => p[1]);
+      if (prevClose != null) vals.push(prevClose);
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      const pad = (hi - lo) * 0.15 || (hi * 0.002);
+      lo -= pad; hi += pad;
+      const yFor = v => M.top + plotH - ((v - lo) / (hi - lo)) * plotH;
+
+      const lastClose = pts[pts.length - 1][1];
+      const up = prevClose == null ? true : lastClose >= prevClose;
+      const stroke = up ? '#22d39a' : '#ff5374';
+      const fill   = up ? 'rgba(34,211,154,0.14)' : 'rgba(255,83,116,0.14)';
+
+      let s = '';
+      if (prevClose != null) {
+        const y = yFor(prevClose);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#8892a6" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.6"/>`;
+        s += `<text x="${W - M.right + 4}" y="${y + 3}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8">${prevClose.toFixed(2)}</text>`;
+      }
+
+      const yBase = prevClose != null ? yFor(prevClose) : (M.top + plotH);
+      let dLine = '', dArea = '';
+      for (let i = 0; i < pts.length; i++) {
+        const x = xFor(pts[i][0]).toFixed(2);
+        const y = yFor(pts[i][1]).toFixed(2);
+        dLine += (i ? 'L' : 'M') + x + ',' + y + ' ';
+        if (i === 0) dArea += 'M' + x + ',' + yBase.toFixed(2) + ' L' + x + ',' + y + ' ';
+        else         dArea += 'L' + x + ',' + y + ' ';
+      }
+      const lastX = xFor(pts[pts.length - 1][0]).toFixed(2);
+      dArea += 'L' + lastX + ',' + yBase.toFixed(2) + ' Z';
+
+      s += `<path d="${dArea}" fill="${fill}" stroke="none"/>`;
+      s += `<path d="${dLine}" fill="none" stroke="${stroke}" stroke-width="1.6"/>`;
+
+      const yLast = yFor(lastClose);
+      s += `<circle cx="${lastX}" cy="${yLast}" r="2.5" fill="${stroke}" stroke="#0a1218" stroke-width="1"/>`;
+      s += `<text x="${W - M.right + 4}" y="${(+yLast) + 3}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700">${lastClose.toFixed(2)}</text>`;
+
+      const t930 = sessionStart, t12 = sessionStart + 2.5 * 3600, t4 = sessionEnd;
+      const tickY = H - 5;
+      s += `<text x="${xFor(t930).toFixed(1)}" y="${tickY}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="start">9:30</text>`;
+      s += `<text x="${xFor(t12).toFixed(1)}"  y="${tickY}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="middle">12:00</text>`;
+      s += `<text x="${xFor(t4).toFixed(1)}"   y="${tickY}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="end">4:00</text>`;
+
+      svg.innerHTML = s;
     }
 
-    // Row 1: mini index charts
+    // Row 1: mini index charts (our own — no TradingView widget).
     (function renderIndexMinis() {
       const grid = document.getElementById('indexMinis');
       if (!grid) return;
       const items = [
-        { title: 'S&P 500',      sym: 'AMEX:SPY',   label: 'SPY' },
-        { title: 'Nasdaq 100',   sym: 'NASDAQ:QQQ', label: 'QQQ' },
-        { title: 'Dow 30',       sym: 'AMEX:DIA',   label: 'DIA' },
-        { title: 'Russell 2000', sym: 'AMEX:IWM',   label: 'IWM' },
+        { title: 'S&P 500',      label: 'SPY' },
+        { title: 'Nasdaq 100',   label: 'QQQ' },
+        { title: 'Dow 30',       label: 'DIA' },
+        { title: 'Russell 2000', label: 'IWM' },
       ];
       for (const it of items) {
         const card = document.createElement('div');
         card.className = 'idx-card';
-        const header = document.createElement('div');
-        header.className = 'idx-card-header';
-        const t = document.createElement('div');
-        t.className = 'idx-card-label';
-        t.textContent = it.title;
-        const ext = document.createElement('div');
-        ext.className = 'idx-card-ext';
-        ext.dataset.sym = it.label;
-        header.appendChild(t);
-        header.appendChild(ext);
-        card.appendChild(header);
-        mountMiniOverview(card, it.sym, it.label);
+        card.dataset.sym = it.label;
+        card.innerHTML = `
+          <div class="idx-card-header">
+            <div class="idx-card-label">${it.title}</div>
+            <div class="idx-card-ext" data-sym="${it.label}"></div>
+          </div>
+          <div class="idx-card-price">
+            <span class="price">$—</span>
+            <span class="chg">—</span>
+          </div>
+          <div class="idx-chart-wrap"><svg class="idx-chart"></svg></div>`;
         grid.appendChild(card);
       }
-      // Once the cards are in the DOM, wire up the pre/post-market refresh.
       startExtendedHoursRefresh();
+      startIntradayRefresh();
     })();
+
+    // Fetches /api/history (5-min bars for today) + /api/quote (for prev
+    // close and current price) every 60s during market hours, and repaints
+    // the four index cards. Silently retries on transient network errors.
+    function startIntradayRefresh() {
+      const cards = Array.from(document.querySelectorAll('.idx-card[data-sym]'));
+      if (!cards.length) return;
+      const syms = cards.map(c => c.dataset.sym).join(',');
+      async function refresh() {
+        try {
+          const [histR, quoteR] = await Promise.all([
+            fetch(`/api/history?syms=${encodeURIComponent(syms)}&range=1d&interval=5m`, { cache: 'no-store' }),
+            fetch(`/api/quote?syms=${encodeURIComponent(syms)}`,                          { cache: 'no-store' }),
+          ]);
+          const histJ  = histR.ok  ? await histR.json()  : null;
+          const quoteJ = quoteR.ok ? await quoteR.json() : null;
+          const series = (histJ  && histJ.series)   || {};
+          const quotes = (quoteJ && quoteJ.quotes)  || {};
+          for (const card of cards) {
+            const sym = card.dataset.sym;
+            const q   = quotes[sym];
+            const bars = series[sym] || [];
+            const priceEl = card.querySelector('.idx-card-price .price');
+            const chgEl   = card.querySelector('.idx-card-price .chg');
+            const svg     = card.querySelector('.idx-chart');
+            const prevClose = q ? q.prevClose : null;
+            // Latest bar close beats stale quote.price if the intraday data
+            // is fresher than the quote snapshot.
+            const lastBar = bars.length ? bars[bars.length - 1][1] : null;
+            const price   = lastBar != null ? lastBar : (q ? q.price : null);
+            if (price != null && isFinite(price)) {
+              priceEl.textContent = '$' + price.toFixed(2);
+              if (prevClose != null && isFinite(prevClose)) {
+                const diff = price - prevClose;
+                const pct  = (diff / prevClose) * 100;
+                const s = diff >= 0 ? '+' : '';
+                chgEl.textContent = `${s}${diff.toFixed(2)} (${s}${pct.toFixed(2)}%)`;
+                chgEl.className = 'chg ' + (diff >= 0 ? 'pos' : 'neg');
+              }
+            }
+            drawIntradayChart(svg, bars, prevClose);
+          }
+        } catch (e) { /* transient — try again next tick */ }
+      }
+      refresh();
+      setInterval(refresh, 60000);
+    }
 
     // Poll /api/quote every 60 s and paint the pre-market / after-hours
     // strip on each idx-card. During REGULAR hours the strip stays hidden
