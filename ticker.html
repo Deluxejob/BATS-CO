@@ -1436,11 +1436,17 @@
     .tk-ma-toggles button[data-ma="50"].active {
       background: rgba(110, 231, 255, 0.15); color: var(--term-cyan); border-color: var(--term-cyan);
     }
+    .tk-ma-toggles button[data-ma="100"].active {
+      background: rgba(74, 222, 128, 0.15); color: #4ade80; border-color: #4ade80;
+    }
     .tk-ma-toggles button[data-ma="200"].active {
       background: rgba(192, 132, 252, 0.15); color: #c084fc; border-color: #c084fc;
     }
     .tk-ma-toggles button[data-ma="rsi"].active {
       background: rgba(255, 182, 88, 0.15); color: var(--term-amber); border-color: var(--term-amber);
+    }
+    .tk-ma-toggles button[data-ma="macd"].active {
+      background: rgba(96, 165, 250, 0.15); color: #60a5fa; border-color: #60a5fa;
     }
     .tk-ma-toggles button[data-draw="toggle"].active {
       background: rgba(255, 182, 88, 0.22); color: #0a1218; border-color: var(--term-amber);
@@ -2075,8 +2081,10 @@
               </div>
               <div class="tk-ma-toggles" data-role="maToggles">
                 <button type="button" data-ma="50">50 SMA</button>
+                <button type="button" data-ma="100">100 SMA</button>
                 <button type="button" data-ma="200">200 SMA</button>
                 <button type="button" data-ma="rsi">RSI</button>
+                <button type="button" data-ma="macd">MACD</button>
               </div>
             </div>
             <div class="tk-chart-svg-wrap">
@@ -2157,6 +2165,49 @@
           }
           return out;
         }
+        function ema(pts, period) {
+          // EMA on closes; seed = SMA of first `period` bars.
+          const out = new Array(pts.length).fill(null);
+          if (pts.length < period) return out;
+          let sum = 0;
+          for (let i = 0; i < period; i++) sum += pts[i][4];
+          let e = sum / period;
+          out[period - 1] = e;
+          const k = 2 / (period + 1);
+          for (let i = period; i < pts.length; i++) {
+            e = pts[i][4] * k + e * (1 - k);
+            out[i] = e;
+          }
+          return out;
+        }
+        function macd(pts, fast, slow, sig) {
+          // Standard MACD(12,26,9): fast EMA − slow EMA, signal = EMA of MACD.
+          fast = fast || 12; slow = slow || 26; sig = sig || 9;
+          const eFast = ema(pts, fast);
+          const eSlow = ema(pts, slow);
+          const line   = new Array(pts.length).fill(null);
+          const signal = new Array(pts.length).fill(null);
+          const hist   = new Array(pts.length).fill(null);
+          for (let i = 0; i < pts.length; i++) {
+            if (eFast[i] != null && eSlow[i] != null) line[i] = eFast[i] - eSlow[i];
+          }
+          const first = line.findIndex(v => v != null);
+          if (first >= 0 && pts.length - first >= sig) {
+            let sum = 0;
+            for (let i = first; i < first + sig; i++) sum += line[i];
+            let s = sum / sig;
+            signal[first + sig - 1] = s;
+            const k = 2 / (sig + 1);
+            for (let i = first + sig; i < pts.length; i++) {
+              s = line[i] * k + s * (1 - k);
+              signal[i] = s;
+            }
+          }
+          for (let i = 0; i < pts.length; i++) {
+            if (line[i] != null && signal[i] != null) hist[i] = line[i] - signal[i];
+          }
+          return { line, signal, hist };
+        }
         function fiftyTwoWeek(dailyPts) {
           // Actual intraday high/low across the last ~252 trading days.
           const window = dailyPts.slice(-252);
@@ -2200,24 +2251,31 @@
 
         function drawChart(svg, pts, opts) {
           opts = opts || {};
-          const showRsi = !!opts.showRsi;
-          // Layout — vertical stack: price / volume / [RSI]. Volume strip
-          // is always drawn (a stock chart without volume feels incomplete);
-          // RSI stays togglable.
+          const showRsi  = !!opts.showRsi;
+          const showMacd = !!opts.showMacd;
+          // Layout — vertical stack: price / volume / [RSI] / [MACD]. Volume
+          // strip is always drawn; RSI and MACD stack below it, each togglable.
           const W = 900;
-          const VOL_H   = 42;
-          const VOL_GAP = 6;
-          const RSI_H   = 100;
-          const RSI_GAP = 10;
+          const VOL_H    = 42;
+          const VOL_GAP  = 6;
+          const RSI_H    = 100;
+          const RSI_GAP  = 10;
+          const MACD_H   = 100;
+          const MACD_GAP = 10;
           const M = { top: 12, right: 70, bottom: 26, left: 14 };
+          const paneCount = (showRsi ? 1 : 0) + (showMacd ? 1 : 0);
           const priceTop = M.top;
-          const priceH   = showRsi ? 220 : 250;
+          const priceH   = paneCount === 2 ? 200 : (paneCount === 1 ? 220 : 250);
           const priceBottom = priceTop + priceH;
           const volTop    = priceBottom + VOL_GAP;
           const volBottom = volTop + VOL_H;
           const rsiTop    = showRsi ? (volBottom + RSI_GAP) : volBottom;
           const rsiH      = showRsi ? RSI_H : 0;
-          const H         = (showRsi ? (rsiTop + rsiH) : volBottom) + M.bottom;
+          const rsiBottom = showRsi ? (rsiTop + rsiH) : volBottom;
+          const macdTop   = showMacd ? (rsiBottom + MACD_GAP) : rsiBottom;
+          const macdH     = showMacd ? MACD_H : 0;
+          const macdBottom = macdTop + macdH;
+          const H         = macdBottom + M.bottom;
           const plotW     = W - M.left - M.right;
           svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
@@ -2228,8 +2286,10 @@
           }
 
           const sma50   = opts.show50  ? sma(pts, 50)  : null;
+          const sma100  = opts.show100 ? sma(pts, 100) : null;
           const sma200  = opts.show200 ? sma(pts, 200) : null;
           const rsi14   = showRsi      ? rsi(pts, 14)  : null;
+          const macdVal = showMacd     ? macd(pts, 12, 26, 9) : null;
           const wk52    = opts.wk52    || null;
           const closes  = pts.map(p => p[4]);
           const med     = opts.median  != null ? opts.median : median(closes);
@@ -2243,6 +2303,7 @@
           const lows  = pts.map(p => p[3]);
           const vals  = [...highs, ...lows];
           if (sma50)  for (const v of sma50)  if (v != null) vals.push(v);
+          if (sma100) for (const v of sma100) if (v != null) vals.push(v);
           if (sma200) for (const v of sma200) if (v != null) vals.push(v);
           const priceRange = Math.max(...highs) - Math.min(...lows);
           const lastClose = closes[closes.length - 1];
@@ -2318,7 +2379,7 @@
             if (labelFmt === 'monthDay')  return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCDate();
             return String(d.getUTCHours()).padStart(2,'0') + ':' + String(d.getUTCMinutes()).padStart(2,'0');
           }
-          const xAxisY = showRsi ? (rsiTop + rsiH) : volBottom;
+          const xAxisY = macdBottom;
           const xLabelY = xAxisY + 15;
           for (let i = 0; i <= tickCount; i++) {
             const idx = Math.min(nBars - 1, Math.round((nBars - 1) * i / tickCount));
@@ -2326,7 +2387,8 @@
             const x = xForIdx(idx);
             s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${priceTop}" y2="${priceBottom}"/>`;
             s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${volTop}" y2="${volBottom}"/>`;
-            if (showRsi) s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
+            if (showRsi)  s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${rsiTop}"  y2="${rsiTop + rsiH}"/>`;
+            if (showMacd) s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${macdTop}" y2="${macdTop + macdH}"/>`;
             s += `<text class="axis-label" x="${x}" y="${xLabelY}" text-anchor="middle">${fmtTick(t)}</text>`;
           }
           s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${priceBottom}" y2="${priceBottom}"/>`;
@@ -2439,6 +2501,10 @@
             const d = smaPath(sma50);
             if (d) s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
           }
+          if (sma100) {
+            const d = smaPath(sma100);
+            if (d) s += `<path fill="none" stroke="#4ade80" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
+          }
           if (sma200) {
             const d = smaPath(sma200);
             if (d) s += `<path fill="none" stroke="#c084fc" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
@@ -2469,6 +2535,56 @@
             }
             s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${rsiTop + rsiH}" y2="${rsiTop + rsiH}"/>`;
             s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${rsiTop}" y2="${rsiTop + rsiH}"/>`;
+          }
+
+          if (showMacd && macdVal) {
+            // Symmetric Y-scale so zero sits in the middle of the pane.
+            let m = 0;
+            for (const v of macdVal.line)   if (v != null) { const a = Math.abs(v); if (a > m) m = a; }
+            for (const v of macdVal.signal) if (v != null) { const a = Math.abs(v); if (a > m) m = a; }
+            for (const v of macdVal.hist)   if (v != null) { const a = Math.abs(v); if (a > m) m = a; }
+            if (m > 0) {
+              const yM = v => macdTop + macdH / 2 - (v / m) * (macdH / 2 - 6);
+              // Zero line
+              const zeroY = yM(0);
+              s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${zeroY}" y2="${zeroY}" opacity="0.6"/>`;
+              // Histogram bars — green above zero, red below.
+              const barW = Math.max(1, plotW / pts.length * 0.7);
+              for (let i = 0; i < macdVal.hist.length; i++) {
+                const h = macdVal.hist[i]; if (h == null) continue;
+                const cx = xForIdx(i);
+                const y1 = yM(h), y2 = zeroY;
+                const top = Math.min(y1, y2), height = Math.abs(y2 - y1);
+                const color = h >= 0 ? 'rgba(34,197,94,0.55)' : 'rgba(239,68,68,0.55)';
+                s += `<rect x="${(cx - barW / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(0.5, height).toFixed(1)}" fill="${color}"/>`;
+              }
+              // MACD line (blue) and Signal line (orange).
+              function macdPath(arr) {
+                let out = '', started = false;
+                for (let i = 0; i < arr.length; i++) {
+                  const v = arr[i]; if (v == null) continue;
+                  out += (started ? 'L' : 'M') + xForIdx(i).toFixed(1) + ',' + yM(v).toFixed(1) + ' ';
+                  started = true;
+                }
+                return out;
+              }
+              s += `<path fill="none" stroke="#60a5fa" stroke-width="1.4" d="${macdPath(macdVal.line)}"/>`;
+              s += `<path fill="none" stroke="#fb923c" stroke-width="1.4" d="${macdPath(macdVal.signal)}"/>`;
+              // Right-edge tick + label with the latest MACD value.
+              const lastLine   = [...macdVal.line].reverse().find(v => v != null);
+              const lastSignal = [...macdVal.signal].reverse().find(v => v != null);
+              if (lastLine != null) {
+                const x = xForIdx(pts.length - 1), y = yM(lastLine);
+                s += `<circle cx="${x}" cy="${y}" r="3" fill="#60a5fa" stroke="#fff" stroke-width="1"/>`;
+                s += `<text class="axis-label" x="${x - 6}" y="${y - 6}" text-anchor="end" fill="#60a5fa">MACD ${lastLine.toFixed(2)}</text>`;
+              }
+              if (lastSignal != null) {
+                const x = xForIdx(pts.length - 1), y = yM(lastSignal);
+                s += `<text class="axis-label" x="${W - M.right + 6}" y="${y + 3}" fill="#fb923c">${lastSignal.toFixed(2)}</text>`;
+              }
+            }
+            s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${macdTop + macdH}" y2="${macdTop + macdH}"/>`;
+            s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${macdTop}" y2="${macdTop + macdH}"/>`;
           }
 
           // User-drawn trend lines. Anchored to (timestamp, price) pairs
@@ -2545,7 +2661,7 @@
         const footerL   = mount.querySelector('[data-role="footerLeft"]');
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
-        const state = { range: '6M', show50: false, show200: false, showRsi: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
+        const state = { range: '6M', show50: false, show100: false, show200: false, showRsi: false, showMacd: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
         const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
 
@@ -2756,7 +2872,8 @@
 
         function redraw() {
           drawChart(svgEl, sliceForRange(state.range, cache), {
-            show50: state.show50, show200: state.show200, showRsi: state.showRsi, wk52,
+            show50: state.show50, show100: state.show100, show200: state.show200,
+            showRsi: state.showRsi, showMacd: state.showMacd, wk52,
             lines: state.lines, pending: state.pendingPoint, hover: state.hover,
           });
         }
@@ -2802,9 +2919,11 @@
           const btn = e.target.closest('button[data-ma]');
           if (!btn) return;
           btn.classList.toggle('active');
-          if (btn.dataset.ma === '50')  state.show50  = btn.classList.contains('active');
-          if (btn.dataset.ma === '200') state.show200 = btn.classList.contains('active');
-          if (btn.dataset.ma === 'rsi') state.showRsi = btn.classList.contains('active');
+          if (btn.dataset.ma === '50')   state.show50   = btn.classList.contains('active');
+          if (btn.dataset.ma === '100')  state.show100  = btn.classList.contains('active');
+          if (btn.dataset.ma === '200')  state.show200  = btn.classList.contains('active');
+          if (btn.dataset.ma === 'rsi')  state.showRsi  = btn.classList.contains('active');
+          if (btn.dataset.ma === 'macd') state.showMacd = btn.classList.contains('active');
           redraw();
         });
         switchTo('6M');
