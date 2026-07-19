@@ -927,40 +927,42 @@
           </div>
         </div>
 
-        <div class="card idx-card">
+        <div class="card idx-card idx-chart-card"
+              data-index-symbol="IEF"
+              data-index-title="7–10Y Treasury"
+              data-index-desc="iShares 7-10 Year Treasury Bond ETF (IEF) — the tradeable proxy for the 10-year yield. Bond prices move inverse to yields, so IEF falling means yields are rising.">
           <div class="idx-header">
             <h3>7&ndash;10Y Treasury</h3>
             <div class="idx-desc">iShares 7-10 Year Treasury Bond ETF (IEF) &mdash; the tradeable proxy for the 10-year yield. Bond prices move inverse to yields, so IEF <em>falling</em> means yields are rising.</div>
           </div>
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-            {
-              "symbols": [["7-10Y Treasury (IEF)", "NASDAQ:IEF|1D"]],
-              "chartOnly": false,
-              "width": "100%",
-              "height": 280,
-              "locale": "en",
-              "colorTheme": "dark",
-              "autosize": false,
-              "showVolume": false,
-              "showMA": false,
-              "hideDateRanges": false,
-              "hideMarketStatus": false,
-              "hideSymbolLogo": true,
-              "scalePosition": "right",
-              "scaleMode": "Normal",
-              "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-              "fontSize": "10",
-              "noTimeScale": false,
-              "valuesTracking": "1",
-              "changeMode": "price-and-percent",
-              "chartType": "area",
-              "lineWidth": 2,
-              "dateRanges": ["1d|1","5d|5","1m|30","3m|60","6m|1D","ytd|1D","12m|1D","60m|1W","all|1M"],
-              "isTransparent": true
-            }
-            </script>
+          <div class="idx-chart-price-row">
+            <span class="idx-chart-price" data-role="price">&ndash;</span>
+            <span class="idx-chart-change" data-role="change"></span>
+            <span class="idx-chart-change-label" data-role="changeLabel"></span>
+          </div>
+          <div class="idx-card-ext" data-role="ext"></div>
+          <div class="idx-picker-row">
+            <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
+              <button type="button" data-range="1D">1D</button>
+              <button type="button" data-range="5D">5D</button>
+              <button type="button" data-range="1M">1M</button>
+              <button type="button" data-range="3M">3M</button>
+              <button type="button" data-range="6M" class="active">6M</button>
+              <button type="button" data-range="YTD">YTD</button>
+              <button type="button" data-range="1Y">1Y</button>
+              <button type="button" data-range="5Y">5Y</button>
+              <button type="button" data-range="All">All</button>
+            </div>
+            <div class="idx-ma-toggles" data-role="maToggles">
+              <button type="button" data-ma="50">50 SMA</button>
+              <button type="button" data-ma="200">200 SMA</button>
+              <button type="button" data-ma="rsi">RSI</button>
+            </div>
+          </div>
+          <svg class="idx-chart-svg" data-role="chart" viewBox="0 0 560 200" preserveAspectRatio="none" aria-label="7-10Y Treasury chart"></svg>
+          <div class="idx-chart-footer">
+            <span data-role="footerLeft">Loading&hellip;</span>
+            <span data-role="footerRight"></span>
           </div>
         </div>
 
