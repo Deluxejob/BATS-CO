@@ -2516,7 +2516,13 @@
             s += `<rect x="${M.left}" y="${yR(30)}"  width="${plotW}" height="${yR(0)  - yR(30)}"  fill="rgba(34, 211, 154, 0.10)"/>`;
             for (const v of [70, 50, 30]) {
               const y = yR(v);
-              s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+              if (v === 70) {
+                s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#ff5374" stroke-width="1" stroke-dasharray="4,3" opacity="0.55"/>`;
+              } else if (v === 30) {
+                s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#22d39a" stroke-width="1" stroke-dasharray="4,3" opacity="0.55"/>`;
+              } else {
+                s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+              }
               s += `<text class="axis-label" x="${W - M.right + 6}" y="${y + 3}">${v}</text>`;
             }
             let d = '', started = false;
