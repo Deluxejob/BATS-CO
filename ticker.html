@@ -1543,6 +1543,11 @@
       color: #fff; background: rgba(255, 83, 116, 0.2); border-color: var(--term-red);
     }
     .tk-draw-toolbar svg { display: block; }
+    /* Trend-line drawing needs precise clicks — impractical on touch. Hide
+       the floating toolbar on mobile so it doesn't crowd out the chart. */
+    @media (max-width: 720px) {
+      .tk-draw-toolbar { display: none; }
+    }
 
     .tk-chart-svg { width: 100%; height: auto; display: block; }
     .tk-chart-svg .grid-line { stroke: var(--term-border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
