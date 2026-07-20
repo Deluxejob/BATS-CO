@@ -1419,6 +1419,31 @@
     .tk-chart-change { font-size: 1.05rem; font-weight: 700; }
     .tk-chart-change.pos { color: var(--term-green); }
     .tk-chart-change.neg { color: var(--term-red); }
+    /* Pre-market / after-hours strip — sits below the last-close price row
+       when marketState is PRE, POST, or CLOSED with a recent extended-hours
+       print. Hidden during REGULAR trading (the price row is already live). */
+    .tk-chart-ext {
+      display: none;
+      margin-top: 0.15rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      gap: 0.55rem;
+      align-items: baseline;
+    }
+    .tk-chart-ext.visible { display: flex; flex-wrap: wrap; }
+    .tk-chart-ext .ext-tag {
+      font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em;
+      padding: 0.14rem 0.45rem; border-radius: 3px;
+      align-self: center;
+    }
+    .tk-chart-ext.pre  .ext-tag { background: rgba(110, 231, 255, 0.15); color: var(--term-cyan); }
+    .tk-chart-ext.post .ext-tag { background: rgba(255, 182, 88, 0.15); color: var(--term-amber); }
+    .tk-chart-ext .ext-price { color: var(--term-text); }
+    .tk-chart-ext .ext-chg { font-size: 0.85rem; font-weight: 700; }
+    .tk-chart-ext .ext-chg.pos { color: var(--term-green); }
+    .tk-chart-ext .ext-chg.neg { color: var(--term-red); }
     .tk-chart-change-label {
       font-size: 0.75rem; color: var(--term-dim); font-weight: 500;
     }
@@ -2080,6 +2105,7 @@
               <span class="tk-chart-change" data-role="change"></span>
               <span class="tk-chart-change-label" data-role="changeLabel"></span>
             </div>
+            <div class="tk-chart-ext" data-role="ext"></div>
             <div class="tk-picker-row">
               <div class="tk-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
                 <button type="button" data-range="1D">1D</button>
@@ -2674,6 +2700,7 @@
         const priceEl   = mount.querySelector('[data-role="price"]');
         const changeEl  = mount.querySelector('[data-role="change"]');
         const changeLbl = mount.querySelector('[data-role="changeLabel"]');
+        const extEl     = mount.querySelector('[data-role="ext"]');
         const svgEl     = mount.querySelector('[data-role="chart"]');
         const rangeEl   = mount.querySelector('[data-role="rangePicker"]');
         const maEl      = mount.querySelector('[data-role="maToggles"]');
@@ -2912,6 +2939,46 @@
           footerL.textContent = sym;
           footerR.textContent = 'as of ' + new Date(last[0] * 1000).toLocaleDateString('en-US');
         }
+
+        // Poll /api/quote to paint the pre-market / after-hours strip that
+        // sits right below the last-close price. Hidden during REGULAR hours
+        // — the main price row already shows the live regular-session move.
+        async function refreshQuote() {
+          if (!extEl) return;
+          try {
+            const r = await fetch('/api/quote?syms=' + encodeURIComponent(sym), { cache: 'no-store' });
+            if (!r.ok) return;
+            const j = await r.json();
+            const q = j && j.quotes && j.quotes[sym];
+            if (!q) return;
+            const state = String(q.marketState || '').toUpperCase();
+            let tier = null;
+            if (state === 'PRE' || state === 'PREPRE') {
+              if (q.preMarketPrice != null) tier = { tag: 'PRE', price: q.preMarketPrice, pct: q.preMarketChangePercent, cls: 'pre' };
+            } else if (state === 'POST' || state === 'POSTPOST') {
+              if (q.postMarketPrice != null) tier = { tag: 'AFT', price: q.postMarketPrice, pct: q.postMarketChangePercent, cls: 'post' };
+            } else if (state === 'CLOSED') {
+              // Market closed for the day — pick the more recent extended print.
+              const preTs  = Number(q.preMarketTime  || 0);
+              const postTs = Number(q.postMarketTime || 0);
+              if (q.postMarketPrice != null && postTs >= preTs) {
+                tier = { tag: 'AFT', price: q.postMarketPrice, pct: q.postMarketChangePercent, cls: 'post' };
+              } else if (q.preMarketPrice != null) {
+                tier = { tag: 'PRE', price: q.preMarketPrice, pct: q.preMarketChangePercent, cls: 'pre' };
+              }
+            }
+            extEl.className = 'tk-chart-ext' + (tier ? ' visible ' + tier.cls : '');
+            if (!tier) { extEl.innerHTML = ''; return; }
+            const pctCls = tier.pct == null ? '' : (tier.pct >= 0 ? 'pos' : 'neg');
+            const pctSign = tier.pct == null || tier.pct < 0 ? '' : '+';
+            extEl.innerHTML =
+              '<span class="ext-tag">' + tier.tag + '</span>' +
+              '<span class="ext-price">$' + fmtN(tier.price) + '</span>' +
+              '<span class="ext-chg ' + pctCls + '">' + pctSign + fmt(tier.pct, 2) + '%</span>';
+          } catch (e) { /* transient — try again next tick */ }
+        }
+        refreshQuote();
+        setInterval(refreshQuote, 60000);
 
         async function switchTo(rangeKey) {
           state.range = rangeKey;
