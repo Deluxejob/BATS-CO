@@ -298,6 +298,13 @@
     .yield-table .chg.pos { color: var(--term-green); }
     .yield-table .chg.neg { color: var(--term-red); }
     .yield-table tbody tr.featured th, .yield-table tbody tr.featured td { background: rgba(255,182,88,0.06); }
+    /* Rows are clickable — clicking any maturity swaps the featured chart
+       above to that yield's history. Hover cue so people notice. */
+    .yield-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .yield-table tbody tr:hover:not(.featured) th,
+    .yield-table tbody tr:hover:not(.featured) td { background: rgba(255,255,255,0.04); }
+    /* When the featured chart is on 2Y (daily-only), hide the 1D button. */
+    .rate-picker.no-intraday button[data-range="1D"] { display: none; }
     .yield-table .tag {
       display: inline-block;
       font-family: 'Inter', sans-serif;
@@ -1560,7 +1567,12 @@
       refreshLive();
       setInterval(refreshLive, 60000);
 
-      // ==================== 10Y INTRADAY CHART ====================
+      // ==================== FEATURED YIELD CHART ====================
+      // Any yield in TABLE_ROWS can be featured — click a row to swap. Live
+      // symbols (3M/5Y/10Y/30Y) fetch from /api/history via Yahoo. The 2Y
+      // has no free Yahoo intraday feed, so it charts daily closes parsed
+      // out of treasury_yields.csv instead; the 1D button is hidden while
+      // the 2Y is featured.
       const RANGE_MAP = {
         '1D':  { range: '1d',  interval: '5m'  },
         '5D':  { range: '5d',  interval: '15m' },
@@ -1572,26 +1584,86 @@
         '5Y':  { range: '5y',  interval: '1wk' },
         'All': { range: 'max', interval: '1mo' },
       };
+      const CHART_LABELS = {
+        '3M':  '3-Month T-Bill Yield',
+        '2Y':  '2-Year Treasury Yield',
+        '5Y':  '5-Year Treasury Yield',
+        '10Y': '10-Year Treasury Yield',
+        '30Y': '30-Year Treasury Yield',
+      };
       const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const chartCache = {};
+      const chartCache = {};                  // key: "sym|rangeKey"  → bars
+      let featuredLabel = '10Y';              // starts on the 10Y
+      let csv2Y = null;                       // parsed 2Y history (lazy)
 
       function activeRange() {
         return picker.querySelector('button.active')?.dataset.range || '1D';
       }
 
-      async function fetchBars(key) {
-        if (chartCache[key]) return chartCache[key];
+      // -------- Daily 2Y history parsed from treasury_yields.csv --------
+      // The CSV is newest-first; we reverse into ascending-time bars so
+      // drawChart can treat it identically to a Yahoo /api/history payload.
+      async function load2YHistory() {
+        if (csv2Y) return csv2Y;
+        try {
+          const r = await fetch('data/treasury_yields.csv', { cache: 'no-store' });
+          if (!r.ok) return [];
+          const txt = await r.text();
+          const lines = txt.trim().split(/\r?\n/);
+          const header = lines[0].split(',').map(s => s.replace(/^"|"$/g, ''));
+          const col = header.indexOf('2 Yr');
+          if (col < 0) return [];
+          const bars = [];
+          for (let i = 1; i < lines.length; i++) {
+            const cells = lines[i].split(',');
+            const y = parseFloat(cells[col]);
+            if (!isFinite(y)) continue;
+            const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(cells[0]);
+            if (!m) continue;
+            const ts = Math.round(Date.UTC(+m[3], +m[1]-1, +m[2]) / 1000);
+            bars.push([ts, y]);
+          }
+          csv2Y = bars.sort((a, b) => a[0] - b[0]);
+          return csv2Y;
+        } catch (e) { return []; }
+      }
+
+      async function fetchBars(label, key) {
+        const cacheKey = label + '|' + key;
+        if (chartCache[cacheKey]) return chartCache[cacheKey];
+        // 2Y — clip the daily-close CSV to the requested range.
+        if (label === '2Y') {
+          const all = await load2YHistory();
+          if (!all.length) return [];
+          const spec = { '5D':7, '1M':31, '3M':93, '6M':186, '1Y':365, '5Y':1830, 'All':1e9 };
+          const days = spec[key];
+          let bars;
+          if (key === 'YTD') {
+            const y = new Date().getUTCFullYear();
+            bars = all.filter(b => new Date(b[0] * 1000).getUTCFullYear() === y);
+          } else if (days) {
+            const cutoff = all[all.length - 1][0] - days * 86400;
+            bars = all.filter(b => b[0] >= cutoff);
+          } else {
+            bars = all.slice();
+          }
+          chartCache[cacheKey] = bars;
+          return bars;
+        }
+        // Live Yahoo yield symbols.
+        const spec = TABLE_ROWS.find(r => r.label === label);
+        if (!spec || !spec.ySym) return [];
         const cfg = RANGE_MAP[key];
         try {
-          const r = await fetch('/api/history?syms=%5ETNX&range=' + cfg.range + '&interval=' + cfg.interval, { cache: 'no-store' });
+          const r = await fetch('/api/history?syms=' + encodeURIComponent(spec.ySym) + '&range=' + cfg.range + '&interval=' + cfg.interval, { cache: 'no-store' });
           if (!r.ok) return [];
           const j = await r.json();
-          let bars = (j && j.series && j.series['^TNX']) || [];
+          let bars = (j && j.series && j.series[spec.ySym]) || [];
           if (cfg.filter === 'ytd') {
             const y = new Date().getUTCFullYear();
             bars = bars.filter(b => new Date(b[0] * 1000).getUTCFullYear() === y);
           }
-          chartCache[key] = bars;
+          chartCache[cacheKey] = bars;
           return bars;
         } catch (e) { return []; }
       }
@@ -1676,20 +1748,52 @@
       }
 
       async function repaintChart() {
-        const key = activeRange();
-        const bars = await fetchBars(key);
+        let key = activeRange();
+        // 2Y has no intraday, so if 1D is somehow active when 2Y is featured
+        // (e.g. user clicked 2Y while 1D was selected), fall back to 5D.
+        if (featuredLabel === '2Y' && key === '1D') {
+          const fallback = picker.querySelector('button[data-range="5D"]');
+          if (fallback) {
+            picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === fallback));
+            key = '5D';
+          }
+        }
+        const bars = await fetchBars(featuredLabel, key);
         drawChart(bars, key);
+        // Hero label reflects the featured yield.
+        const label = panel.querySelector('.r-label');
+        if (label) {
+          label.textContent = (CHART_LABELS[featuredLabel] || (featuredLabel + ' Treasury Yield')) +
+                              (featuredLabel === '2Y' ? ' · daily close' : ' · live');
+        }
       }
+
       picker.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-range]');
         if (!btn) return;
         picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
         repaintChart();
       });
+
+      // Row click → swap the featured yield.
+      tbody.addEventListener('click', (e) => {
+        const tr = e.target.closest('tr[data-label]');
+        if (!tr) return;
+        const label = tr.dataset.label;
+        if (label === featuredLabel) return;
+        featuredLabel = label;
+        // Move the highlight to the newly-featured row.
+        tbody.querySelectorAll('tr').forEach(r => r.classList.toggle('featured', r === tr));
+        // 2Y is daily-only — hide the 1D button while it's featured.
+        picker.classList.toggle('no-intraday', featuredLabel === '2Y');
+        repaintChart();
+      });
+
       repaintChart();
       setInterval(() => {
+        // Only invalidate the currently-visible (featured × active-range) key.
         const key = activeRange();
-        delete chartCache[key];
+        delete chartCache[featuredLabel + '|' + key];
         repaintChart();
       }, 60000);
     })();
