@@ -1670,22 +1670,19 @@
 
       function drawChart(bars, key) {
         const pts = bars.filter(b => b[1] != null && isFinite(b[1]));
-        if (pts.length < 2) { svg.innerHTML = ''; return; }
         const W = 560, H = 190, M = { top: 8, right: 44, bottom: 20, left: 8 };
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
         const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
-        const isIntraday = key === '1D';
-        let xFor;
-        if (isIntraday) {
-          const first = pts[0][0];
-          const d0 = new Date(first * 1000);
-          const sessionStart = first - (d0.getUTCHours() * 3600 + d0.getUTCMinutes() * 60 - 13.5 * 3600);
-          const sessionEnd   = sessionStart + 6.5 * 3600;
-          xFor = t => M.left + ((t - sessionStart) / (sessionEnd - sessionStart)) * plotW;
-        } else {
-          const n = pts.length;
-          xFor = (_t, i) => M.left + (i / Math.max(1, n - 1)) * plotW;
+        if (pts.length < 2) {
+          svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="11">Not enough data yet in this range.</text>`;
+          return;
         }
+        // Ordinal x-axis in every range — one slot per bar. Avoids the
+        // "chart looks empty" trap when the trading session just opened
+        // and only a handful of bars have printed.
+        const isIntraday = key === '1D';
+        const n = pts.length;
+        const xFor = (_t, i) => M.left + (i / Math.max(1, n - 1)) * plotW;
         const baseline = pts[0][1];
         const vals = pts.map(p => p[1]).concat([baseline]);
         let lo = Math.min(...vals), hi = Math.max(...vals);
@@ -1719,13 +1716,17 @@
         const xTick = (x, txt, anchor) =>
           s += `<text x="${x.toFixed(1)}" y="${tickY}" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="${anchor}">${txt}</text>`;
         if (isIntraday) {
-          const first = pts[0][0];
-          const d0 = new Date(first * 1000);
-          const sessionStart = first - (d0.getUTCHours() * 3600 + d0.getUTCMinutes() * 60 - 13.5 * 3600);
-          const sessionEnd   = sessionStart + 6.5 * 3600;
-          xTick(xFor(sessionStart),               '9:30',  'start');
-          xTick(xFor(sessionStart + 2.5 * 3600),  '12:00', 'middle');
-          xTick(xFor(sessionEnd),                 '4:00',  'end');
+          // For 1D just show first / middle / last bar times as h:mm ET.
+          const fmtTime = ts => {
+            const d = new Date(ts * 1000);
+            const h = d.getUTCHours() - 4;   // approximate ET conversion
+            const hh = ((h + 11) % 12) + 1;
+            return hh + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+          };
+          const mid = Math.floor(pts.length / 2);
+          xTick(xFor(pts[0][0], 0),                        fmtTime(pts[0][0]),                'start');
+          xTick(xFor(pts[mid][0], mid),                    fmtTime(pts[mid][0]),              'middle');
+          xTick(xFor(pts[pts.length-1][0], pts.length-1),  fmtTime(pts[pts.length-1][0]),     'end');
         } else {
           const spanDays = (pts[pts.length-1][0] - pts[0][0]) / 86400;
           const fmt = ts => {
@@ -1739,6 +1740,15 @@
           xTick(xFor(pts[0][0], 0),                          fmt(pts[0][0]),                    'start');
           xTick(xFor(pts[mid][0], mid),                      fmt(pts[mid][0]),                  'middle');
           xTick(xFor(pts[pts.length-1][0], pts.length-1),    fmt(pts[pts.length-1][0]),         'end');
+        }
+        // If the yield hasn't moved at all yet, add a hint so the flat line
+        // reads as "no move yet" rather than "chart is broken".
+        if (isIntraday) {
+          const min = Math.min(...pts.map(p => p[1]));
+          const max = Math.max(...pts.map(p => p[1]));
+          if (max - min < 0.005) {   // <0.5 basis points of movement
+            s += `<text x="${(W/2).toFixed(1)}" y="${(M.top + 14).toFixed(1)}" text-anchor="middle" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="10">unchanged from open (${pts.length} bars so far)</text>`;
+          }
         }
         svg.innerHTML = s;
         yieldEl.textContent = last.toFixed(2) + '%';
