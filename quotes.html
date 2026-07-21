@@ -1686,6 +1686,16 @@
         const baseline = pts[0][1];
         const vals = pts.map(p => p[1]).concat([baseline]);
         let lo = Math.min(...vals), hi = Math.max(...vals);
+        // Enforce a minimum visible y-span so a 0.2 bp intraday wiggle
+        // doesn't render like a 50 bp move. Yields quote in whole bp so
+        // 0.05 pp (5 bp) is our floor for the visible range on 1D; the
+        // longer-window views can auto-scale as usual.
+        const minSpan = isIntraday ? 0.05 : 0;
+        if (hi - lo < minSpan) {
+          const mid = (hi + lo) / 2;
+          lo = mid - minSpan / 2;
+          hi = mid + minSpan / 2;
+        }
         const pad = (hi - lo) * 0.2 || 0.01;
         lo -= pad; hi += pad;
         const yFor = v => M.top + plotH - ((v - lo) / (hi - lo)) * plotH;
