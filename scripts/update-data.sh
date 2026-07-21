@@ -152,6 +152,8 @@ fetch_yahoo_daily "VUG"  "$DATA_DIR/ratios/vug.csv"  "1075420800"  # 2004-01-30
 fetch_yahoo_daily "VTV"  "$DATA_DIR/ratios/vtv.csv"  "1075420800"  # 2004-01-30
 fetch_yahoo_daily "IWB"  "$DATA_DIR/ratios/iwb.csv"  "958953600"   # 2000-05-19
 fetch_yahoo_daily "DIA"  "$DATA_DIR/ratios/dia.csv"  "946857600"   # 2000-01-03
+fetch_yahoo_daily "VNQ"  "$DATA_DIR/ratios/vnq.csv"  "1095897600"  # 2004-09-23 (VNQ inception)
+fetch_yahoo_daily "AIQ"  "$DATA_DIR/ratios/aiq.csv"  "1526000000"  # 2018-05-11 (AIQ inception)
 # Risk-on / Risk-off
 fetch_yahoo_daily "SHY"  "$DATA_DIR/ratios/shy.csv"  "1027987200"  # 2002-07-30
 fetch_yahoo_daily "IEF"  "$DATA_DIR/ratios/ief.csv"  "1027987200"  # 2002-07-30
