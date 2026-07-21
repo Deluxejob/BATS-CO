@@ -224,6 +224,81 @@
     .idx-card-ext.post .ext-tag { background: rgba(255, 182, 88, 0.15); color: var(--term-amber); }
     .idx-card-ext .ext-pct.pos { color: var(--term-green); }
     .idx-card-ext .ext-pct.neg { color: var(--term-red); }
+
+    /* RATES card — our own 10Y intraday chart + live yield-curve table.
+       Replaces the TradingView Market Overview widget so we get a real
+       1D view and don't hit the TVC:US10Y paywall. */
+    .rates-panel { padding: 0.75rem 1rem 1rem; }
+    .rate-hero {
+      display: flex; align-items: baseline; gap: 0.55rem;
+      padding: 0.15rem 0 0.4rem 0.15rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+      flex-wrap: wrap;
+    }
+    .rate-hero .r-yield { font-size: 1.35rem; font-weight: 700; color: var(--term-amber); }
+    .rate-hero .r-chg { font-size: 0.85rem; font-weight: 600; }
+    .rate-hero .r-chg.pos { color: var(--term-green); }
+    .rate-hero .r-chg.neg { color: var(--term-red); }
+    .rate-hero .r-label { font-size: 0.72rem; color: var(--term-dim); }
+    .rate-picker {
+      display: flex; gap: 0.15rem; flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+    }
+    .rate-picker button {
+      background: transparent; color: var(--term-dim);
+      border: 1px solid var(--term-border); padding: 0.12rem 0.5rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em;
+      cursor: pointer; border-radius: 3px;
+    }
+    .rate-picker button:hover { color: var(--term-text); border-color: var(--term-amber); }
+    .rate-picker button.active {
+      background: var(--term-amber); color: #0a1218; border-color: var(--term-amber);
+    }
+    .rate-chart-wrap { position: relative; height: 190px; }
+    .rate-chart { width: 100%; height: 100%; display: block; }
+
+    /* Yield-curve table under the chart. */
+    .yield-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      margin-top: 0.75rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .yield-table th, .yield-table td {
+      padding: 0.4rem 0.55rem;
+      font-size: 0.78rem;
+      border-bottom: 1px solid var(--term-border);
+    }
+    .yield-table thead th {
+      font-family: 'Inter', sans-serif;
+      color: var(--term-dim); font-weight: 600;
+      font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+      text-align: right;
+    }
+    .yield-table thead th:first-child { text-align: left; }
+    .yield-table tbody th {
+      color: var(--term-text); font-weight: 600; text-align: left;
+    }
+    .yield-table tbody th .maturity { color: var(--term-dim); font-weight: 500; margin-left: 0.35rem; font-size: 0.72rem; }
+    .yield-table tbody td { text-align: right; }
+    .yield-table .yield { color: var(--term-amber); font-weight: 700; }
+    .yield-table .chg.pos { color: var(--term-green); }
+    .yield-table .chg.neg { color: var(--term-red); }
+    .yield-table tbody tr.featured th, .yield-table tbody tr.featured td { background: rgba(255,182,88,0.06); }
+    .yield-table .tag {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.55rem; font-weight: 700; letter-spacing: 0.08em;
+      padding: 0.05rem 0.32rem; border-radius: 3px;
+      margin-left: 0.35rem; vertical-align: middle;
+    }
+    .yield-table .tag.live  { background: rgba(34,211,154,0.15); color: var(--term-green); }
+    .yield-table .tag.daily { background: rgba(136,146,166,0.15); color: var(--term-dim); }
+    .yield-asof {
+      font-size: 0.68rem; color: var(--term-dim); margin-top: 0.5rem; text-align: right;
+    }
     /* Our own intraday chart — replaces the TradingView Symbol Overview
        so the TV logo doesn't overlap the first bars of the session. */
     .idx-card-price {
@@ -935,43 +1010,41 @@
           </div>
         </div>
 
-        <!-- Rates column — Treasury yield curve.
-             Uses TVC symbols so the yields tick intraday. FRED equivalents
-             only update once at the close, which made the "1D" view a flat
-             line. Fed Funds stays on FRED because the target rate doesn't
-             move intraday between FOMC decisions. -->
+        <!-- Rates column — our own 10Y intraday chart driven by ^TNX via
+             /api/history, plus a live yield-curve table below. Replaces
+             the TradingView Market Overview widget, which didn't offer a
+             1D tab for these symbols and paywalled TVC:US10Y. -->
         <div class="mkt-col">
           <div class="term-section-label">RATES <span class="sub">— US Treasury yield curve</span></div>
-          <div class="term-panel">
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-              {
-                "colorTheme": "dark",
-                "dateRange": "1D",
-                "showChart": true,
-                "locale": "en",
-                "width": "100%",
-                "height": 440,
-                "isTransparent": true,
-                "showSymbolLogo": true,
-                "showFloatingTooltip": true,
-                "tabs": [
-                  {
-                    "title": "Rates",
-                    "symbols": [
-                      {"s": "FRED:FEDFUNDS", "d": "Fed Funds Rate"},
-                      {"s": "TVC:US03MY",    "d": "3-Month T-Bill"},
-                      {"s": "TVC:US02Y",     "d": "2-Year Treasury"},
-                      {"s": "TVC:US05Y",     "d": "5-Year Treasury"},
-                      {"s": "TVC:US10Y",     "d": "10-Year Treasury"},
-                      {"s": "TVC:US30Y",     "d": "30-Year Treasury"}
-                    ]
-                  }
-                ]
-              }
-              </script>
+          <div class="term-panel rates-panel">
+            <div class="rate-hero">
+              <span class="r-yield" data-role="heroYield">&mdash;</span>
+              <span class="r-chg" data-role="heroChg">&mdash;</span>
+              <span class="r-label">10-Year Treasury Yield &middot; live</span>
             </div>
+            <div class="rate-picker" data-role="ratePicker">
+              <button type="button" data-range="1D" class="active">1D</button>
+              <button type="button" data-range="5D">5D</button>
+              <button type="button" data-range="1M">1M</button>
+              <button type="button" data-range="3M">3M</button>
+              <button type="button" data-range="6M">6M</button>
+              <button type="button" data-range="YTD">YTD</button>
+              <button type="button" data-range="1Y">1Y</button>
+              <button type="button" data-range="5Y">5Y</button>
+              <button type="button" data-range="All">All</button>
+            </div>
+            <div class="rate-chart-wrap">
+              <svg data-role="rateChart" class="rate-chart" viewBox="0 0 560 190" preserveAspectRatio="none" aria-label="10Y yield chart"></svg>
+            </div>
+            <table class="yield-table" data-role="yieldTable">
+              <thead>
+                <tr><th>Maturity</th><th>Yield</th><th>&Delta; 1D</th></tr>
+              </thead>
+              <tbody data-role="yieldTableBody">
+                <tr><td colspan="3" style="text-align:center; color:var(--term-dim);">Loading&hellip;</td></tr>
+              </tbody>
+            </table>
+            <div class="yield-asof" data-role="yieldAsOf">&mdash;</div>
           </div>
         </div>
 
@@ -1388,6 +1461,227 @@
       tick();
       setInterval(tick, 60000);
     }
+
+    // -------- RATES card — our own 10Y intraday chart + yield table --------
+    // Replaces the TradingView Market Overview widget (which paywalled
+    // TVC:US10Y and didn't offer a 1D tab for these symbols). The chart
+    // fetches ^TNX from /api/history, the table blends live Yahoo yields
+    // (^IRX, ^FVX, ^TNX, ^TYX) with the daily 2Y close from our own
+    // treasury_yields.csv.
+    (function () {
+      const panel = document.querySelector('.rates-panel');
+      if (!panel) return;
+      const svg     = panel.querySelector('[data-role="rateChart"]');
+      const yieldEl = panel.querySelector('[data-role="heroYield"]');
+      const chgEl   = panel.querySelector('[data-role="heroChg"]');
+      const picker  = panel.querySelector('[data-role="ratePicker"]');
+      const tbody   = panel.querySelector('[data-role="yieldTableBody"]');
+      const asOfEl  = panel.querySelector('[data-role="yieldAsOf"]');
+
+      // ==================== YIELD-CURVE TABLE ====================
+      const TABLE_ROWS = [
+        { label: '3M',  full: '3-Month T-Bill', ySym: '^IRX' },
+        { label: '2Y',  full: '2-Year',          csvKey: '2 Yr' },
+        { label: '5Y',  full: '5-Year',          ySym: '^FVX' },
+        { label: '10Y', full: '10-Year',         ySym: '^TNX', featured: true },
+        { label: '30Y', full: '30-Year',         ySym: '^TYX' },
+      ];
+      tbody.innerHTML = '';
+      for (const spec of TABLE_ROWS) {
+        const tr = document.createElement('tr');
+        if (spec.featured) tr.className = 'featured';
+        tr.dataset.label = spec.label;
+        const tag = spec.ySym ? '<span class="tag live">LIVE</span>' : '<span class="tag daily">DAILY</span>';
+        tr.innerHTML =
+          '<th>' + spec.label + '<span class="maturity">' + spec.full + '</span>' + tag + '</th>' +
+          '<td class="yield">&mdash;</td>' +
+          '<td class="chg">&mdash;</td>';
+        tbody.appendChild(tr);
+      }
+      function paintRow(label, y, chgBps) {
+        const tr = tbody.querySelector('tr[data-label="' + label + '"]');
+        if (!tr) return;
+        const yEl = tr.querySelector('.yield');
+        const cEl = tr.querySelector('.chg');
+        yEl.textContent = isFinite(y) ? y.toFixed(2) + '%' : '—';
+        if (chgBps == null || !isFinite(chgBps)) {
+          cEl.className = 'chg'; cEl.textContent = '—'; return;
+        }
+        cEl.className = 'chg ' + (chgBps > 0 ? 'pos' : (chgBps < 0 ? 'neg' : ''));
+        cEl.textContent = (chgBps > 0 ? '+' : '') + Math.round(chgBps) + ' bp';
+      }
+      // 2Y daily close from our own Treasury.gov CSV.
+      (async function load2Y() {
+        try {
+          const r = await fetch('data/treasury_yields.csv', { cache: 'no-store' });
+          if (!r.ok) return;
+          const txt = await r.text();
+          const lines = txt.trim().split(/\r?\n/);
+          const header = lines[0].split(',').map(s => s.replace(/^"|"$/g, ''));
+          const col2Y = header.indexOf('2 Yr');
+          if (col2Y < 0 || lines.length < 3) return;
+          const today = lines[1].split(',');
+          const prior = lines[2].split(',');
+          const y = parseFloat(today[col2Y]);
+          const p = parseFloat(prior[col2Y]);
+          paintRow('2Y', y, isFinite(y) && isFinite(p) ? (y - p) * 100 : null);
+          if (asOfEl) asOfEl.textContent =
+            '2Y = daily close ' + today[0] + ' · other rows live from Yahoo (60s refresh)';
+        } catch (e) { /* non-fatal */ }
+      })();
+      // 3M / 5Y / 10Y / 30Y live from Yahoo via /api/quote (60s poll).
+      const liveSyms = TABLE_ROWS.filter(s => s.ySym).map(s => s.ySym).join(',');
+      async function refreshLive() {
+        try {
+          const r = await fetch('/api/quote?syms=' + encodeURIComponent(liveSyms), { cache: 'no-store' });
+          if (!r.ok) return;
+          const j = await r.json();
+          const quotes = (j && j.quotes) || {};
+          for (const spec of TABLE_ROWS) {
+            if (!spec.ySym) continue;
+            const q = quotes[spec.ySym];
+            if (!q) continue;
+            const y = q.price, p = q.prevClose;
+            paintRow(spec.label, y, isFinite(y) && isFinite(p) ? (y - p) * 100 : null);
+          }
+        } catch (e) { /* transient */ }
+      }
+      refreshLive();
+      setInterval(refreshLive, 60000);
+
+      // ==================== 10Y INTRADAY CHART ====================
+      const RANGE_MAP = {
+        '1D':  { range: '1d',  interval: '5m'  },
+        '5D':  { range: '5d',  interval: '15m' },
+        '1M':  { range: '1mo', interval: '1h'  },
+        '3M':  { range: '3mo', interval: '1d'  },
+        '6M':  { range: '6mo', interval: '1d'  },
+        'YTD': { range: '1y',  interval: '1d', filter: 'ytd' },
+        '1Y':  { range: '1y',  interval: '1d'  },
+        '5Y':  { range: '5y',  interval: '1wk' },
+        'All': { range: 'max', interval: '1mo' },
+      };
+      const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const chartCache = {};
+
+      function activeRange() {
+        return picker.querySelector('button.active')?.dataset.range || '1D';
+      }
+
+      async function fetchBars(key) {
+        if (chartCache[key]) return chartCache[key];
+        const cfg = RANGE_MAP[key];
+        try {
+          const r = await fetch('/api/history?syms=%5ETNX&range=' + cfg.range + '&interval=' + cfg.interval, { cache: 'no-store' });
+          if (!r.ok) return [];
+          const j = await r.json();
+          let bars = (j && j.series && j.series['^TNX']) || [];
+          if (cfg.filter === 'ytd') {
+            const y = new Date().getUTCFullYear();
+            bars = bars.filter(b => new Date(b[0] * 1000).getUTCFullYear() === y);
+          }
+          chartCache[key] = bars;
+          return bars;
+        } catch (e) { return []; }
+      }
+
+      function drawChart(bars, key) {
+        const pts = bars.filter(b => b[1] != null && isFinite(b[1]));
+        if (pts.length < 2) { svg.innerHTML = ''; return; }
+        const W = 560, H = 190, M = { top: 8, right: 44, bottom: 20, left: 8 };
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
+        const isIntraday = key === '1D';
+        let xFor;
+        if (isIntraday) {
+          const first = pts[0][0];
+          const d0 = new Date(first * 1000);
+          const sessionStart = first - (d0.getUTCHours() * 3600 + d0.getUTCMinutes() * 60 - 13.5 * 3600);
+          const sessionEnd   = sessionStart + 6.5 * 3600;
+          xFor = t => M.left + ((t - sessionStart) / (sessionEnd - sessionStart)) * plotW;
+        } else {
+          const n = pts.length;
+          xFor = (_t, i) => M.left + (i / Math.max(1, n - 1)) * plotW;
+        }
+        const baseline = pts[0][1];
+        const vals = pts.map(p => p[1]).concat([baseline]);
+        let lo = Math.min(...vals), hi = Math.max(...vals);
+        const pad = (hi - lo) * 0.2 || 0.01;
+        lo -= pad; hi += pad;
+        const yFor = v => M.top + plotH - ((v - lo) / (hi - lo)) * plotH;
+        const last = pts[pts.length - 1][1];
+        const up = last >= baseline;
+        const stroke = up ? '#22d39a' : '#ff5374';
+        const fill   = up ? 'rgba(34,211,154,0.14)' : 'rgba(255,83,116,0.14)';
+        let s = '';
+        const yBase = yFor(baseline);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${yBase}" y2="${yBase}" stroke="#8892a6" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.55"/>`;
+        s += `<text x="${W - M.right + 4}" y="${yBase + 3}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="9">${baseline.toFixed(2)}%</text>`;
+        let dLine = '', dArea = '';
+        for (let i = 0; i < pts.length; i++) {
+          const x = xFor(pts[i][0], i).toFixed(2);
+          const y = yFor(pts[i][1]).toFixed(2);
+          dLine += (i ? 'L' : 'M') + x + ',' + y + ' ';
+          if (i === 0) dArea += 'M' + x + ',' + yBase.toFixed(2) + ' L' + x + ',' + y + ' ';
+          else         dArea += 'L' + x + ',' + y + ' ';
+        }
+        const lastX = xFor(pts[pts.length - 1][0], pts.length - 1).toFixed(2);
+        dArea += 'L' + lastX + ',' + yBase.toFixed(2) + ' Z';
+        s += `<path d="${dArea}" fill="${fill}" stroke="none"/>`;
+        s += `<path d="${dLine}" fill="none" stroke="${stroke}" stroke-width="1.6"/>`;
+        const yLast = yFor(last);
+        s += `<circle cx="${lastX}" cy="${yLast}" r="2.5" fill="${stroke}" stroke="#0a1218" stroke-width="1"/>`;
+        s += `<text x="${W - M.right + 4}" y="${(+yLast) + 3}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">${last.toFixed(2)}%</text>`;
+        const tickY = H - 6;
+        const xTick = (x, txt, anchor) =>
+          s += `<text x="${x.toFixed(1)}" y="${tickY}" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="${anchor}">${txt}</text>`;
+        if (isIntraday) {
+          const first = pts[0][0];
+          const d0 = new Date(first * 1000);
+          const sessionStart = first - (d0.getUTCHours() * 3600 + d0.getUTCMinutes() * 60 - 13.5 * 3600);
+          const sessionEnd   = sessionStart + 6.5 * 3600;
+          xTick(xFor(sessionStart),               '9:30',  'start');
+          xTick(xFor(sessionStart + 2.5 * 3600),  '12:00', 'middle');
+          xTick(xFor(sessionEnd),                 '4:00',  'end');
+        } else {
+          const spanDays = (pts[pts.length-1][0] - pts[0][0]) / 86400;
+          const fmt = ts => {
+            const d = new Date(ts * 1000);
+            if (spanDays > 800) return String(d.getUTCFullYear());
+            if (spanDays > 200) return MONTH_ABBR[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2);
+            if (spanDays > 45)  return MONTH_ABBR[d.getUTCMonth()];
+            return MONTH_ABBR[d.getUTCMonth()] + ' ' + d.getUTCDate();
+          };
+          const mid = Math.floor(pts.length / 2);
+          xTick(xFor(pts[0][0], 0),                          fmt(pts[0][0]),                    'start');
+          xTick(xFor(pts[mid][0], mid),                      fmt(pts[mid][0]),                  'middle');
+          xTick(xFor(pts[pts.length-1][0], pts.length-1),    fmt(pts[pts.length-1][0]),         'end');
+        }
+        svg.innerHTML = s;
+        yieldEl.textContent = last.toFixed(2) + '%';
+        const chg = last - baseline;
+        chgEl.className = 'r-chg ' + (chg >= 0 ? 'pos' : 'neg');
+        chgEl.textContent = (chg > 0 ? '+' : '') + chg.toFixed(3) + '%  (' + (chg > 0 ? '+' : '') + Math.round(chg * 100) + ' bp)';
+      }
+
+      async function repaintChart() {
+        const key = activeRange();
+        const bars = await fetchBars(key);
+        drawChart(bars, key);
+      }
+      picker.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-range]');
+        if (!btn) return;
+        picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        repaintChart();
+      });
+      repaintChart();
+      setInterval(() => {
+        const key = activeRange();
+        delete chartCache[key];
+        repaintChart();
+      }, 60000);
+    })();
 
     // Poll /api/quote every 60 s and paint the pre-market / after-hours
     // strip on each idx-card. During REGULAR hours the strip stays hidden
