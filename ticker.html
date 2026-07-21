@@ -175,6 +175,21 @@
     .star-toggle:hover { color: var(--term-amber); transform: scale(1.08); }
     .star-toggle.starred { color: var(--term-amber); }
     .star-toggle[hidden] { display: none; }
+    /* Subtle hint next to the star so first-time visitors know what it does.
+       Switches text when the ticker is already on the watchlist. */
+    .star-hint {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--term-dim);
+      margin-left: 0.1rem;
+      align-self: center;
+      user-select: none;
+    }
+    .star-hint.on { color: var(--term-amber); }
+    .star-hint[hidden] { display: none; }
+    @media (max-width: 480px) { .star-hint { font-size: 0.68rem; } }
     .ticker-search input {
       flex: 1;
       font: inherit;
@@ -1625,6 +1640,7 @@
         <div class="term-ticker-row">
           <h1 class="term-ticker" id="tickerHeadline">—</h1>
           <button type="button" id="starToggle" class="star-toggle" hidden title="Save to watchlist" aria-label="Save to watchlist">&#9734;</button>
+          <span id="starHint" class="star-hint" hidden>&larr; click to add to watchlist</span>
         </div>
         <p class="term-ticker-sub" id="tickerSub">Enter a symbol below</p>
       </div>
@@ -2011,7 +2027,8 @@
         catch (e) {}
       }
       function refreshStar() {
-        const btn = document.getElementById('starToggle');
+        const btn  = document.getElementById('starToggle');
+        const hint = document.getElementById('starHint');
         if (!btn || !sym) return;
         btn.hidden = false;
         const on = loadWatchlist().includes(sym);
@@ -2020,6 +2037,11 @@
         btn.innerHTML = on ? '★' : '☆';
         btn.title = on ? `Remove ${sym} from watchlist` : `Add ${sym} to watchlist`;
         btn.setAttribute('aria-label', btn.title);
+        if (hint) {
+          hint.hidden = false;
+          hint.classList.toggle('on', on);
+          hint.innerHTML = on ? 'on your watchlist' : '&larr; click to add to watchlist';
+        }
       }
       (function wireStar() {
         const btn = document.getElementById('starToggle');
