@@ -1413,6 +1413,29 @@
     }
 
     /* ---- Custom main chart card (replaces TradingView Symbol Overview) ---- */
+    /* Chart-only mode — set by ?chartOnly=1 on the URL. Used when this
+       page is embedded as an iframe by markets.html's chart popup. Hides
+       every section on the page except the main chart card so the iframe
+       only shows the chart. */
+    body.chart-only .site-header,
+    body.chart-only .site-footer,
+    body.chart-only .term-header,
+    body.chart-only .term-section:not(.term-section-chart),
+    body.chart-only .grid-2col,
+    body.chart-only .compare-chart-wrap,
+    body.chart-only .recent-pills,
+    body.chart-only #emptyState,
+    body.chart-only .tradingview-widget-container {
+      display: none !important;
+    }
+    body.chart-only { padding: 0; background: transparent; }
+    body.chart-only .tk-chart-card {
+      max-width: none;
+      margin: 0;
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+    }
     .tk-chart-card {
       display: flex; flex-direction: column;
       background: var(--term-panel);
@@ -1662,8 +1685,9 @@
     <!-- Ticker content -->
     <div id="tickerContent" style="display:none">
 
-      <!-- Chart -->
-      <section class="term-section">
+      <!-- Chart — tagged term-section-chart so ?chartOnly=1 iframe embeds
+           can keep just this section visible and drop the rest. -->
+      <section class="term-section term-section-chart">
         <div class="term-section-label">CHART <span class="sub">— range picker below the price</span></div>
         <div class="term-panel"><div id="chartWidgetMount"></div></div>
       </section>
@@ -1943,6 +1967,11 @@
       let sym = (params.get('sym') || '').trim().toUpperCase();
       // Normalize: BRK-B → BRK.B, strip anything not a ticker char
       sym = sym.replace(/-/g, '.').replace(/[^A-Z0-9.]/g, '');
+      // Chart-only mode: when this page is embedded as an iframe from
+      // markets.html's chart popup, hide the site chrome and every other
+      // section so only the main chart card renders. Toggled off the URL
+      // so the standalone page keeps its full layout.
+      if (params.get('chartOnly') === '1') document.body.classList.add('chart-only');
 
       const emptyState  = document.getElementById('emptyState');
       const tickerCont  = document.getElementById('tickerContent');

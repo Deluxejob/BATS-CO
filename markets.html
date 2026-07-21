@@ -134,12 +134,24 @@
       .idx-grid { grid-template-columns: 1fr; }
     }
     .idx-card { padding: 1rem 1.1rem; }
-    .idx-header { margin-bottom: .5rem; }
-    .idx-header h3 { margin: 0; font-size: 1.05rem; }
+    /* Header row now runs h3 on the left and the pre/after-hours strip on
+       the far right; the description wraps to the next line via a full-
+       width flex basis so it doesn't fight for horizontal space. */
+    .idx-header {
+      margin-bottom: .5rem;
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      column-gap: .75rem;
+      row-gap: .2rem;
+    }
+    .idx-header h3 { margin: 0; font-size: 1.05rem; flex: 0 0 auto; }
+    .idx-header .idx-card-ext { margin-left: auto; flex: 0 0 auto; }
     .idx-desc {
+      flex: 1 1 100%;
       font-size: .78rem;
       color: var(--text-dim);
-      margin-top: .25rem;
+      margin-top: 0;
       max-width: 30rem;
       line-height: 1.35;
     }
@@ -409,6 +421,63 @@
     .idx-card-ext.post .ext-tag { background: rgba(255, 182, 88, 0.15); color: #ffb658; }
     .idx-card-ext .ext-pct.pos { color: #22d39a; }
     .idx-card-ext .ext-pct.neg { color: #ff5374; }
+
+    /* Cards under Markets are clickable — hover cue + affordance. */
+    .idx-chart-card { cursor: pointer; transition: border-color 0.12s, transform 0.08s; }
+    .idx-chart-card:hover { border-color: rgba(255, 182, 88, 0.5); }
+    /* Range picker + MA toggle buttons should NOT trigger the modal — the
+       cursor stays as pointer on the buttons themselves (they're clickable
+       for range switching) but their click handler runs first and calls
+       stopPropagation via the delegated handler below. */
+
+    /* Chart popup modal — full-screen dark backdrop with a centered card
+       containing an iframe of ticker.html?sym=X&chartOnly=1. */
+    .chart-modal {
+      position: fixed; inset: 0;
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2vh 2vw;
+    }
+    .chart-modal[hidden] { display: none; }
+    .chart-modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(2px);
+    }
+    .chart-modal-body {
+      position: relative;
+      width: min(1100px, 96vw);
+      height: min(720px, 92vh);
+      background: var(--bg-card, #0f1826);
+      border: 1px solid var(--border, #223347);
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .chart-modal-close {
+      position: absolute; top: 8px; right: 12px;
+      width: 32px; height: 32px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #e6edf3;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 50%;
+      font-size: 1.3rem; line-height: 1; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2;
+    }
+    .chart-modal-close:hover { background: rgba(255, 83, 116, 0.2); border-color: #ff5374; color: #fff; }
+    .chart-modal iframe {
+      flex: 1;
+      width: 100%;
+      border: 0;
+      background: transparent;
+    }
+    @media (max-width: 720px) {
+      .chart-modal { padding: 0; }
+      .chart-modal-body { width: 100vw; height: 100vh; border-radius: 0; }
+    }
     .idx-chart-price {
       font-size: 1.55rem; font-weight: 700; color: var(--text);
     }
@@ -556,6 +625,7 @@
               data-index-desc="The 500 largest US stocks, cap-weighted.">
           <div class="idx-header">
             <h3>S&P 500</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">The 500 largest US stocks, cap-weighted.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -563,7 +633,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -595,6 +664,7 @@
               data-index-desc="Every stock listed on the Nasdaq exchange (~3,000+ names) — tech-heavy, broader than the Nasdaq 100.">
           <div class="idx-header">
             <h3>Nasdaq Composite</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">Every stock listed on the Nasdaq exchange (~3,000+ names) — tech-heavy, broader than the Nasdaq 100.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -602,7 +672,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -634,6 +703,7 @@
               data-index-desc="The middle tier by market cap ($3B–$18B).">
           <div class="idx-header">
             <h3>S&P MidCap 400</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">The middle tier by market cap ($3B–$18B).</div>
           </div>
           <div class="idx-chart-price-row">
@@ -641,7 +711,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -673,6 +742,7 @@
               data-index-desc="The smallest 2,000 US stocks by market cap.">
           <div class="idx-header">
             <h3>Russell 2000</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">The smallest 2,000 US stocks by market cap.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -680,7 +750,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -712,6 +781,7 @@
               data-index-desc="iShares MSCI EAFE — developed markets outside US & Canada (Europe, Japan, Australia).">
           <div class="idx-header">
             <h3>Intl Developed</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">iShares MSCI EAFE &mdash; developed markets outside US &amp; Canada (Europe, Japan, Australia).</div>
           </div>
           <div class="idx-chart-price-row">
@@ -719,7 +789,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -751,6 +820,7 @@
               data-index-desc="iShares MSCI EM — China, India, Taiwan, Brazil, and other developing economies.">
           <div class="idx-header">
             <h3>Emerging Markets</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">iShares MSCI EM &mdash; China, India, Taiwan, Brazil, and other developing economies.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -758,7 +828,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -790,6 +859,7 @@
               data-index-desc="Spot gold price in USD per troy ounce — the classic inflation and crisis hedge.">
           <div class="idx-header">
             <h3>Gold</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">Spot gold price in USD per troy ounce — the classic inflation and crisis hedge.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -797,7 +867,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -829,6 +898,7 @@
               data-index-desc="Spot silver price in USD per troy ounce — more volatile industrial cousin of gold.">
           <div class="idx-header">
             <h3>Silver</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">Spot silver price in USD per troy ounce — more volatile industrial cousin of gold.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -836,7 +906,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -868,6 +937,7 @@
               data-index-desc="West Texas Intermediate — the US benchmark crude oil price in USD per barrel.">
           <div class="idx-header">
             <h3>Crude Oil</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">West Texas Intermediate — the US benchmark crude oil price in USD per barrel.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -875,7 +945,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -907,6 +976,7 @@
               data-index-desc="US Dollar Index — dollar strength vs a basket of major currencies (EUR/JPY/GBP/CAD/SEK/CHF).">
           <div class="idx-header">
             <h3>US Dollar</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">US Dollar Index — dollar strength vs a basket of major currencies (EUR/JPY/GBP/CAD/SEK/CHF).</div>
           </div>
           <div class="idx-chart-price-row">
@@ -914,7 +984,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -946,6 +1015,7 @@
               data-index-desc="iShares 7-10 Year Treasury Bond ETF (IEF) — the tradeable proxy for the 10-year yield. Bond prices move inverse to yields, so IEF falling means yields are rising.">
           <div class="idx-header">
             <h3>7&ndash;10Y Treasury</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">iShares 7-10 Year Treasury Bond ETF (IEF) &mdash; the tradeable proxy for the 10-year yield. Bond prices move inverse to yields, so IEF <em>falling</em> means yields are rising.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -953,7 +1023,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -985,6 +1054,7 @@
               data-index-desc="CBOE Volatility Index — the market's fear gauge. Spikes on selloffs. Same series the BATS score reads.">
           <div class="idx-header">
             <h3>VIX</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
             <div class="idx-desc">CBOE Volatility Index &mdash; the market's fear gauge. Spikes on selloffs. Same series the BATS score reads.</div>
           </div>
           <div class="idx-chart-price-row">
@@ -992,7 +1062,6 @@
             <span class="idx-chart-change" data-role="change"></span>
             <span class="idx-chart-change-label" data-role="changeLabel"></span>
           </div>
-          <div class="idx-card-ext" data-role="ext"></div>
           <div class="idx-picker-row">
             <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
               <button type="button" data-range="1D">1D</button>
@@ -1110,6 +1179,18 @@
     </div>
 
   </main>
+
+  <!-- Chart popup — opens when any card under "Markets" is clicked. The
+       iframe loads ticker.html?sym=X&chartOnly=1 which strips ticker.html
+       down to just its main chart card, giving the popup the full-featured
+       candles / volume / RSI / MACD / drawing engine without duplication. -->
+  <div id="chartModal" class="chart-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Chart">
+    <div class="chart-modal-backdrop" data-close></div>
+    <div class="chart-modal-body">
+      <button class="chart-modal-close" type="button" aria-label="Close">&times;</button>
+      <iframe id="chartModalFrame" title="Detail chart" src="about:blank"></iframe>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
@@ -2195,6 +2276,55 @@
     }
     refresh();
     setInterval(refresh, 60000);
+  })();
+
+  // ---- Card click → chart popup ---------------------------------------
+  // Any `.idx-chart-card` under the Markets section opens a modal with an
+  // iframe of ticker.html?sym=X&chartOnly=1, which strips ticker.html to
+  // just its main chart. Clicks on interactive controls inside the card
+  // (range picker, MA toggles, buttons, links) are ignored so users can
+  // still fiddle with the inline chart without triggering the popup.
+  (function () {
+    const modal = document.getElementById('chartModal');
+    if (!modal) return;
+    const frame = modal.querySelector('#chartModalFrame');
+    const close = modal.querySelector('.chart-modal-close');
+    const back  = modal.querySelector('.chart-modal-backdrop');
+    let lastActive = null;
+
+    function openFor(sym) {
+      if (!sym) return;
+      lastActive = document.activeElement;
+      frame.src = 'ticker.html?sym=' + encodeURIComponent(sym) + '&chartOnly=1';
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+      frame.src = 'about:blank';
+      document.body.style.overflow = '';
+      if (lastActive && typeof lastActive.focus === 'function') lastActive.focus();
+    }
+
+    close.addEventListener('click', closeModal);
+    back.addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+
+    // Delegated click on every idx-chart-card under Markets. Ignore any
+    // click that lands on a real control so the range picker, MA toggles,
+    // etc. still work inline.
+    document.addEventListener('click', (e) => {
+      if (!modal.hidden) return;
+      const card = e.target.closest('.idx-chart-card[data-index-symbol]');
+      if (!card) return;
+      // Skip if the user clicked a button, link, or input inside the card.
+      if (e.target.closest('button, a, input, select, textarea, [role="tab"]')) return;
+      openFor(card.getAttribute('data-index-symbol'));
+    });
   })();
   </script>
 </body>
