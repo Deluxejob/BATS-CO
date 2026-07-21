@@ -935,7 +935,11 @@
           </div>
         </div>
 
-        <!-- Rates column — Treasury yield curve + Fed funds -->
+        <!-- Rates column — Treasury yield curve.
+             Uses TVC symbols so the yields tick intraday. FRED equivalents
+             only update once at the close, which made the "1D" view a flat
+             line. Fed Funds stays on FRED because the target rate doesn't
+             move intraday between FOMC decisions. -->
         <div class="mkt-col">
           <div class="term-section-label">RATES <span class="sub">— US Treasury yield curve</span></div>
           <div class="term-panel">
@@ -944,7 +948,7 @@
               <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
               {
                 "colorTheme": "dark",
-                "dateRange": "12M",
+                "dateRange": "1D",
                 "showChart": true,
                 "locale": "en",
                 "width": "100%",
@@ -957,11 +961,11 @@
                     "title": "Rates",
                     "symbols": [
                       {"s": "FRED:FEDFUNDS", "d": "Fed Funds Rate"},
-                      {"s": "FRED:DGS3MO",   "d": "3-Month T-Bill"},
-                      {"s": "FRED:DGS2",     "d": "2-Year Treasury"},
-                      {"s": "FRED:DGS5",     "d": "5-Year Treasury"},
-                      {"s": "FRED:DGS10",    "d": "10-Year Treasury"},
-                      {"s": "FRED:DGS30",    "d": "30-Year Treasury"}
+                      {"s": "TVC:US03MY",    "d": "3-Month T-Bill"},
+                      {"s": "TVC:US02Y",     "d": "2-Year Treasury"},
+                      {"s": "TVC:US05Y",     "d": "5-Year Treasury"},
+                      {"s": "TVC:US10Y",     "d": "10-Year Treasury"},
+                      {"s": "TVC:US30Y",     "d": "30-Year Treasury"}
                     ]
                   }
                 ]
