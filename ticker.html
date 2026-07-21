@@ -1965,8 +1965,12 @@
       // -----------------------------------------------------------------
       const params = new URLSearchParams(window.location.search);
       let sym = (params.get('sym') || '').trim().toUpperCase();
-      // Normalize: BRK-B → BRK.B, strip anything not a ticker char
-      sym = sym.replace(/-/g, '.').replace(/[^A-Z0-9.]/g, '');
+      // Normalize: BRK-B → BRK.B, strip anything not a ticker char. The
+      // leading ^ is Yahoo's prefix for index symbols (^GSPC, ^IXIC, ^RUT,
+      // ^MID, ^TNX etc.), so allow it through — without this the markets
+      // popup for SPX/Nasdaq/Russell fell back to blank charts and ^MID
+      // silently resolved to the MID ETF.
+      sym = sym.replace(/-/g, '.').replace(/[^A-Z0-9.^]/g, '');
       // Chart-only mode: when this page is embedded as an iframe from
       // markets.html's chart popup, hide the site chrome and every other
       // section so only the main chart card renders. Toggled off the URL
