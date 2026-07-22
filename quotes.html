@@ -225,6 +225,61 @@
     .idx-card-ext .ext-pct.pos { color: var(--term-green); }
     .idx-card-ext .ext-pct.neg { color: var(--term-red); }
 
+    /* Index-ETF cards are clickable — hover cue + pointer cursor. Clicks
+       on the range picker buttons still work inline; the modal opens on
+       clicks anywhere else on the card. */
+    .idx-card[data-sym] { cursor: pointer; transition: border-color 0.12s; }
+    .idx-card[data-sym]:hover { border-color: var(--term-amber); }
+
+    /* Chart popup modal — same shape as the one on markets.html. Iframes
+       ticker.html?sym=X&chartOnly=1 so we reuse the main chart engine. */
+    .chart-modal {
+      position: fixed; inset: 0;
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2vh 2vw;
+    }
+    .chart-modal[hidden] { display: none; }
+    .chart-modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(2px);
+    }
+    .chart-modal-body {
+      position: relative;
+      width: min(1100px, 96vw);
+      height: min(720px, 92vh);
+      background: var(--term-panel, #0f1826);
+      border: 1px solid var(--term-border, #223347);
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .chart-modal-close {
+      position: absolute; top: 8px; right: 12px;
+      width: 32px; height: 32px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #e6edf3;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 50%;
+      font-size: 1.3rem; line-height: 1; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2;
+    }
+    .chart-modal-close:hover { background: rgba(255, 83, 116, 0.2); border-color: var(--term-red); color: #fff; }
+    .chart-modal iframe {
+      flex: 1;
+      width: 100%;
+      border: 0;
+      background: transparent;
+    }
+    @media (max-width: 720px) {
+      .chart-modal { padding: 0; }
+      .chart-modal-body { width: 100vw; height: 100vh; border-radius: 0; }
+    }
+
     /* RATES card — our own 10Y intraday chart + live yield-curve table.
        Replaces the TradingView Market Overview widget so we get a real
        1D view and don't hit the TVC:US10Y paywall. Fixed height + flex
@@ -1203,6 +1258,17 @@
 
   </main>
 
+  <!-- Chart popup — reused across the site. Opens when a major-index ETF
+       card (SPY / QQQ / DIA / IWM) is clicked; iframes ticker.html with
+       ?chartOnly=1 so only the main chart card renders. -->
+  <div id="chartModal" class="chart-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Chart">
+    <div class="chart-modal-backdrop" data-close></div>
+    <div class="chart-modal-body">
+      <button class="chart-modal-close" type="button" aria-label="Close">&times;</button>
+      <iframe id="chartModalFrame" title="Detail chart" src="about:blank"></iframe>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
   </footer>
@@ -1212,6 +1278,51 @@
     (function () {
       const yearEl = document.getElementById('footerYear');
       if (yearEl) yearEl.textContent = new Date().getUTCFullYear();
+    })();
+
+    // ---- Index-card click → chart popup -------------------------------
+    // The four major-index ETF cards (SPY / QQQ / DIA / IWM) at the top of
+    // the page open a modal with the same rich chart as ticker.html — the
+    // modal iframes ticker.html?sym=X&chartOnly=1, which strips ticker.html
+    // to only the main chart card. Clicks on the range picker buttons or
+    // any interactive control inside the card are ignored so the inline
+    // range-switching still works.
+    (function () {
+      const modal = document.getElementById('chartModal');
+      if (!modal) return;
+      const frame = modal.querySelector('#chartModalFrame');
+      const closeBtn = modal.querySelector('.chart-modal-close');
+      const backdrop = modal.querySelector('.chart-modal-backdrop');
+      let lastActive = null;
+
+      function openFor(sym) {
+        if (!sym) return;
+        lastActive = document.activeElement;
+        frame.src = 'ticker.html?sym=' + encodeURIComponent(sym) + '&chartOnly=1';
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeModal() {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        frame.src = 'about:blank';
+        document.body.style.overflow = '';
+        if (lastActive && typeof lastActive.focus === 'function') lastActive.focus();
+      }
+      closeBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!modal.hidden) return;
+        const card = e.target.closest('.idx-card[data-sym]');
+        if (!card) return;
+        if (e.target.closest('button, a, input, select, textarea, [role="tab"]')) return;
+        openFor(card.dataset.sym);
+      });
     })();
 
     // Ticker search → navigate to ticker.html?sym=XXX
