@@ -113,6 +113,8 @@
     if (!raw) return;
     const sym = raw.replace(/[^A-Z0-9.\-\^]/g, '');
     if (!sym) return;
-    window.location.href = 'ticker.html?sym=' + encodeURIComponent(sym);
+    // #chart anchor scrolls the loaded page to the chart section — repeat
+    // lookups shouldn't dump the reader back at the page header.
+    window.location.href = 'ticker.html?sym=' + encodeURIComponent(sym) + '#chart';
   });
 })();
