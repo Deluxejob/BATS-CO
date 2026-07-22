@@ -2308,13 +2308,25 @@
           let forStrip = q;
           if (futSym && extHours && quotes[futSym]) {
             const fq = quotes[futSym];
+            // Show the *implied index level* (what the index would open at
+            // if it moved by the futures' %), not the raw futures price.
+            // Futures trade at a small premium/discount to the cash index
+            // (cost of carry, dividends) — showing the futures level
+            // directly would leave a visual mismatch between the price
+            // and the percent (e.g. price ≈ yesterday's close while
+            // percent says -0.4%). The implied level reconciles cleanly.
+            const pct = fq.dayChangePct;
+            const indexPrev = (q && q.prevClose) || null;
+            const implied = (indexPrev != null && isFinite(pct) && isFinite(indexPrev))
+              ? indexPrev * (1 + pct / 100)
+              : fq.price;
             forStrip = Object.assign({}, fq, {
               marketState:            indexState,
-              preMarketPrice:         fq.price,
-              preMarketChangePercent: fq.dayChangePct,
+              preMarketPrice:         implied,
+              preMarketChangePercent: pct,
               preMarketTime:          null,
-              postMarketPrice:        fq.price,
-              postMarketChangePercent: fq.dayChangePct,
+              postMarketPrice:        implied,
+              postMarketChangePercent: pct,
               postMarketTime:         null,
             });
           }
