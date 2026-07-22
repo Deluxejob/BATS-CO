@@ -1336,7 +1336,7 @@
         if (!raw) return;
         const sym = raw.replace(/[^A-Z0-9.\-]/g, '');
         if (!sym) return;
-        window.location.href = `ticker.html?sym=${encodeURIComponent(sym)}#chart`;
+        window.location.href = `ticker.html?sym=${encodeURIComponent(sym)}#top`;
       });
       input.focus();
     })();

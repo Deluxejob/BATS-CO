@@ -366,7 +366,7 @@
         e.preventDefault();
         const clean = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
         if (!clean) return;
-        window.location.href = `ticker.html?sym=${encodeURIComponent(clean)}#chart`;
+        window.location.href = `ticker.html?sym=${encodeURIComponent(clean)}#top`;
       });
     })();
 

@@ -1657,7 +1657,7 @@
 
   <main class="terminal">
 
-    <div class="term-header">
+    <div id="top" class="term-header">
       <div class="title-block">
         <p class="eyebrow">TICKER // LOOKUP</p>
         <div class="term-ticker-row">
@@ -1686,10 +1686,8 @@
     <div id="tickerContent" style="display:none">
 
       <!-- Chart — tagged term-section-chart so ?chartOnly=1 iframe embeds
-           can keep just this section visible and drop the rest. id="chart"
-           is the anchor target ticker-lookup forms scroll to, so a repeat
-           search lands here instead of the page header. -->
-      <section id="chart" class="term-section term-section-chart">
+           can keep just this section visible and drop the rest. -->
+      <section class="term-section term-section-chart">
         <div class="term-section-label">CHART <span class="sub">— range picker below the price</span></div>
         <div class="term-panel"><div id="chartWidgetMount"></div></div>
       </section>
@@ -1992,7 +1990,7 @@
         if (!raw) return;
         const clean = raw.replace(/[^A-Z0-9.\-]/g, '');
         if (!clean) return;
-        window.location.href = `ticker.html?sym=${encodeURIComponent(clean)}#chart`;
+        window.location.href = `ticker.html?sym=${encodeURIComponent(clean)}#top`;
       });
 
       // ----- Recently Viewed Tickers (localStorage) -----

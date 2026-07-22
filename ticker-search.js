@@ -113,8 +113,10 @@
     if (!raw) return;
     const sym = raw.replace(/[^A-Z0-9.\-\^]/g, '');
     if (!sym) return;
-    // #chart anchor scrolls the loaded page to the chart section — repeat
-    // lookups shouldn't dump the reader back at the page header.
-    window.location.href = 'ticker.html?sym=' + encodeURIComponent(sym) + '#chart';
+    // #top anchor scrolls the loaded page to the ticker-lookup header —
+    // repeat searches land at "TICKER // LOOKUP" with the symbol visible
+    // at the top-left and the chart right below, instead of scrolling
+    // all the way back up to the site nav.
+    window.location.href = 'ticker.html?sym=' + encodeURIComponent(sym) + '#top';
   });
 })();
