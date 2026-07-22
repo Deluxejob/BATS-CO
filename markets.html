@@ -2237,11 +2237,24 @@
     function paintStrip(q, stripEl) {
       if (!q) return;
       const state = String(q.marketState || '').toUpperCase();
+      // Yahoo only fills preMarketPrice/postMarketPrice on tradable
+      // instruments (ETFs, single stocks). On index symbols (^GSPC, ^IXIC,
+      // ^MID, ^RUT, ^VIX, ^TNX ...) those fields are null, but during PRE/
+      // POST the regular `price` field is already the extended-hours value,
+      // so fall back to (price − prevClose) when the dedicated fields are
+      // missing.
+      function fallback(tag, cls) {
+        if (q.price == null || q.prevClose == null || !isFinite(q.price) || !isFinite(q.prevClose)) return null;
+        if (q.price === q.prevClose) return null;
+        return { tag, price: q.price, pct: ((q.price - q.prevClose) / q.prevClose) * 100, cls };
+      }
       let tier = null;
       if (state === 'PRE' || state === 'PREPRE') {
         if (q.preMarketPrice != null) tier = { tag: 'PRE', price: q.preMarketPrice, pct: q.preMarketChangePercent, cls: 'pre' };
+        else tier = fallback('PRE', 'pre');
       } else if (state === 'POST' || state === 'POSTPOST') {
         if (q.postMarketPrice != null) tier = { tag: 'AFT', price: q.postMarketPrice, pct: q.postMarketChangePercent, cls: 'post' };
+        else tier = fallback('AFT', 'post');
       } else if (state === 'CLOSED') {
         const preTs  = Number(q.preMarketTime  || 0);
         const postTs = Number(q.postMarketTime || 0);
