@@ -2294,17 +2294,30 @@
           paintHeader(q, card);
           const strip = card.querySelector('[data-role="ext"]');
           if (!strip) continue;
-          // Prefer the futures companion for the extended-hours strip if
-          // we have one and the market is off-hours — Yahoo's `^` symbols
-          // don't tick during PRE/POST/CLOSED. The paint fn does its own
-          // state check; we just hand it the futures quote when it makes
-          // sense, else the plain index quote.
+          // During off-hours the `^` index price is frozen at yesterday's
+          // regular-session close — no tick. The e-mini futures companion
+          // trades nearly 24/6 and gives a real read on where the index
+          // will open. Synthesize pre/post fields on a copy of the
+          // futures quote so paintStrip can render it via the normal
+          // path (state === 'PRE' → use preMarketPrice, etc.).
           const futSym = FUTURES_COMPANION[sym];
-          const state = String((q && q.marketState) || '').toUpperCase();
-          const extHours = state === 'PRE' || state === 'PREPRE' ||
-                           state === 'POST' || state === 'POSTPOST' ||
-                           state === 'CLOSED';
-          const forStrip = (futSym && extHours && quotes[futSym]) ? quotes[futSym] : q;
+          const indexState = String((q && q.marketState) || '').toUpperCase();
+          const extHours = indexState === 'PRE' || indexState === 'PREPRE' ||
+                           indexState === 'POST' || indexState === 'POSTPOST' ||
+                           indexState === 'CLOSED';
+          let forStrip = q;
+          if (futSym && extHours && quotes[futSym]) {
+            const fq = quotes[futSym];
+            forStrip = Object.assign({}, fq, {
+              marketState:            indexState,
+              preMarketPrice:         fq.price,
+              preMarketChangePercent: fq.dayChangePct,
+              preMarketTime:          null,
+              postMarketPrice:        fq.price,
+              postMarketChangePercent: fq.dayChangePct,
+              postMarketTime:         null,
+            });
+          }
           paintStrip(forStrip, strip);
         }
       } catch (e) { /* transient — try again next tick */ }
