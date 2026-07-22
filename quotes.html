@@ -2474,7 +2474,7 @@
 
     // -----------------------------------------------------------------
     // Earnings Calendar — fetches /api/earnings-calendar for the next
-    // 7 days and renders one tab per weekday. Scrollable table body so
+    // 14 days and renders one tab per weekday. Scrollable table body so
     // busy days (150+ companies) don't take over the page.
     // -----------------------------------------------------------------
     (function () {
@@ -2483,7 +2483,7 @@
       const META  = document.getElementById('ecMeta');
       if (!TBODY || !TABS || !META) return;
 
-      const DAYS_AHEAD = 7;
+      const DAYS_AHEAD = 14;
       const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const state = { earnings: [], byDate: new Map(), dates: [], activeDate: null };
 
