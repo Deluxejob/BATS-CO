@@ -2200,7 +2200,21 @@
   (function startExtendedHoursRefresh() {
     const cards = Array.from(document.querySelectorAll('.idx-chart-card[data-index-symbol]'));
     if (!cards.length) return;
-    const syms = cards.map(c => c.getAttribute('data-index-symbol')).join(',');
+    // Yahoo doesn't publish extended-hours quotes for `^`-prefixed index
+    // symbols, but the corresponding futures contracts trade nearly 24/6
+    // and give a real read on where the index will open. Map each index
+    // to its e-mini futures ticker so the strip can fall back to those
+    // during PRE / POST hours.
+    const FUTURES_COMPANION = {
+      '^GSPC': 'ES=F',   // S&P 500 e-mini
+      '^IXIC': 'NQ=F',   // Nasdaq 100 e-mini (closest liquid contract to ^IXIC)
+      '^RUT':  'RTY=F',  // Russell 2000 e-mini
+      '^DJI':  'YM=F',   // Dow e-mini
+      '^MID':  'EMD=F',  // S&P 400 Midcap e-mini
+    };
+    const cardSyms   = cards.map(c => c.getAttribute('data-index-symbol'));
+    const futuresSyms = cardSyms.map(s => FUTURES_COMPANION[s]).filter(Boolean);
+    const syms = cardSyms.concat(futuresSyms).join(',');
     const fmtPrice = (v) => v == null || !isFinite(v)
       ? '—'
       : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2279,7 +2293,19 @@
           const q = quotes[sym];
           paintHeader(q, card);
           const strip = card.querySelector('[data-role="ext"]');
-          if (strip) paintStrip(q, strip);
+          if (!strip) continue;
+          // Prefer the futures companion for the extended-hours strip if
+          // we have one and the market is off-hours — Yahoo's `^` symbols
+          // don't tick during PRE/POST/CLOSED. The paint fn does its own
+          // state check; we just hand it the futures quote when it makes
+          // sense, else the plain index quote.
+          const futSym = FUTURES_COMPANION[sym];
+          const state = String((q && q.marketState) || '').toUpperCase();
+          const extHours = state === 'PRE' || state === 'PREPRE' ||
+                           state === 'POST' || state === 'POSTPOST' ||
+                           state === 'CLOSED';
+          const forStrip = (futSym && extHours && quotes[futSym]) ? quotes[futSym] : q;
+          paintStrip(forStrip, strip);
         }
       } catch (e) { /* transient — try again next tick */ }
     }
