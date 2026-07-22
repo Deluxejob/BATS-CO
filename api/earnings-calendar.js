@@ -34,19 +34,60 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'FINNHUB_API_KEY not configured' });
   }
 
-  const url = 'https://finnhub.io/api/v1/calendar/earnings' +
-    '?from=' + encodeURIComponent(from) +
-    '&to='   + encodeURIComponent(to) +
-    '&token=' + encodeURIComponent(key);
+  // Finnhub caps its response at ~1500 rows per call. On a 14-day window
+  // during earnings season that overflow silently drops the near-term
+  // days, which is exactly what we don't want. Split the requested
+  // window into ≤7-day chunks, fan out in parallel, and merge.
+  function fmt(d) {
+    return d.getUTCFullYear() + '-' +
+           String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+           String(d.getUTCDate()).padStart(2, '0');
+  }
+  function makeChunks(fromStr, toStr, chunkDays) {
+    const start = new Date(fromStr + 'T00:00:00Z');
+    const end   = new Date(toStr   + 'T00:00:00Z');
+    const chunks = [];
+    let cursor = start;
+    while (cursor <= end) {
+      const next = new Date(cursor);
+      next.setUTCDate(next.getUTCDate() + chunkDays - 1);
+      const chunkEnd = next > end ? end : next;
+      chunks.push([fmt(cursor), fmt(chunkEnd)]);
+      const jump = new Date(chunkEnd);
+      jump.setUTCDate(jump.getUTCDate() + 1);
+      cursor = jump;
+    }
+    return chunks;
+  }
+
+  async function fetchOne(f, t) {
+    const url = 'https://finnhub.io/api/v1/calendar/earnings' +
+      '?from=' + encodeURIComponent(f) +
+      '&to='   + encodeURIComponent(t) +
+      '&token=' + encodeURIComponent(key);
+    const r = await fetch(url, { headers: { 'User-Agent': FINNHUB_UA } });
+    if (!r.ok) throw new Error('finnhub http ' + r.status);
+    const payload = await r.json();
+    return Array.isArray(payload && payload.earningsCalendar) ? payload.earningsCalendar : [];
+  }
 
   try {
-    const r = await fetch(url, { headers: { 'User-Agent': FINNHUB_UA } });
-    if (!r.ok) {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      return res.status(502).json({ error: 'finnhub http ' + r.status });
+    const chunks = makeChunks(from, to, 7);
+    const results = await Promise.all(chunks.map(([f, t]) => fetchOne(f, t)));
+    // Merge + dedupe on (symbol|date) so overlaps at chunk boundaries
+    // don't produce dupes (there shouldn't be any given the +1 day step,
+    // but cheap insurance).
+    const seen = new Set();
+    const arr = [];
+    for (const chunk of results) {
+      for (const x of chunk) {
+        if (!x || !x.symbol || !x.date) continue;
+        const key = x.symbol + '|' + x.date;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        arr.push(x);
+      }
     }
-    const payload = await r.json();
-    const arr = Array.isArray(payload && payload.earningsCalendar) ? payload.earningsCalendar : [];
 
     const rows = arr
       .filter(x => x && x.symbol && x.date)
