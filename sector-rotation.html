@@ -55,6 +55,61 @@
       color:var(--text-faint); font-size:.85rem;
     }
 
+    /* Regime Score gauge — 0–100 mapping of the current spread. High =
+       risk-on (green), low = defensive (red), 50 = neutral. Sits right
+       under the regime label so the number is anchored to what it
+       scores. Piecewise-linear across the 7 regime bands defined in JS. */
+    .sr-score-block{
+      max-width:460px;
+      margin:1.1rem auto 0.7rem;
+    }
+    .sr-score-block .score-num{
+      text-align:center;
+      font-family:'JetBrains Mono',monospace;
+      font-size:0.85rem;
+      color:var(--text-dim);
+      margin-bottom:0.45rem;
+      letter-spacing:0.02em;
+    }
+    .sr-score-block .score-num .value{
+      font-size:1.6rem; font-weight:800;
+      color:var(--text); margin-right:0.15rem;
+    }
+    .sr-score-block .score-num .label{
+      color:var(--text-dim);
+      font-size:0.72rem;
+      letter-spacing:0.1em;
+      text-transform:uppercase;
+      margin-left:0.5rem;
+    }
+    .sr-score-block .score-track{
+      position:relative;
+      height:10px; border-radius:5px;
+      background:linear-gradient(to right,
+        rgba(239,68,68,0.85)   0%,
+        rgba(248,113,113,0.65) 30%,
+        rgba(168,179,196,0.4)  50%,
+        rgba(74,222,128,0.65)  70%,
+        rgba(34,197,94,0.85)  100%);
+    }
+    .sr-score-block .marker{
+      position:absolute;
+      top:-4px; bottom:-4px;
+      width:6px; background:var(--text);
+      border-radius:2px;
+      transform:translateX(-3px);
+      box-shadow:0 0 0 2px rgba(0,0,0,0.55);
+    }
+    .sr-score-block .score-labels{
+      display:flex; justify-content:space-between;
+      margin-top:0.35rem;
+      font-family:'JetBrains Mono',monospace;
+      font-size:0.68rem;
+      color:var(--text-dim);
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+
     /* Momentum badge inside the regime card — one-line "is the tape
        improving or worsening recently?" indicator. Five states:
          firm    : 1M spread >  3M by  >0.5 pp — strong firming
@@ -675,6 +730,30 @@
         return { up: 'Cautious risk-off', down: null };
       };
       const flip = neighborBuckets(spread);
+
+      // ---- Regime Score (0-100) ----
+      // Piecewise-linear mapping of the spread onto 0-100, aligned with
+      // the 7 regime bands so a boundary in spread maps to a boundary in
+      // score. Direction matches the spread's natural sign: high score =
+      // risk-on (green), low score = defensive (red).
+      //   spread ≤ -8   → 0-15    Deep defensive
+      //   -8 to -5      → 15-30   Defensive / risk-off
+      //   -5 to -1      → 30-45   Cautious risk-off
+      //   -1 to +1      → 45-55   Rotation stalled
+      //   +1 to +5      → 55-70   Cautious risk-on
+      //   +5 to +8      → 70-85   Risk-on expansion
+      //   spread ≥ +8   → 85-100  Deep risk-on
+      const regimeScore = (s) => {
+        if (s <= -8) return Math.max(0, 15 + (s + 8) * (15/4));   // -12 → 0
+        if (s <= -5) return 15 + (s + 8) * (15/3);
+        if (s <= -1) return 30 + (s + 5) * (15/4);
+        if (s <=  1) return 45 + (s + 1) * (10/2);
+        if (s <=  5) return 55 + (s - 1) * (15/4);
+        if (s <=  8) return 70 + (s - 5) * (15/3);
+        return Math.min(100, 85 + (s - 8) * (15/4));               // +12 → 100
+      };
+      const rScore = Math.max(0, Math.min(100, regimeScore(spread)));
+      const rScoreRounded = Math.round(rScore);
       const canFlipUp   = flip.up   && topCyc && topDef;
       const canFlipDown = flip.down && topCyc;
       const flipUpHtml = canFlipUp ? (
@@ -722,6 +801,17 @@
         <div class="sr-regime ${cls}">
           <div class="regime-tag">Current regime</div>
           <div class="regime-label">${label}</div>
+          <div class="sr-score-block">
+            <div class="score-num"><span class="value">${rScoreRounded}</span>/ 100 <span class="label">Regime Score</span></div>
+            <div class="score-track">
+              <div class="marker" style="left:${rScore.toFixed(2)}%"></div>
+            </div>
+            <div class="score-labels">
+              <span>Defensive</span>
+              <span>Neutral</span>
+              <span>Risk-on</span>
+            </div>
+          </div>
           <div class="regime-sub">${sub}</div>
           <div class="sr-momentum ${momCls}">
             <span class="glyph">${momGlyph}</span>
