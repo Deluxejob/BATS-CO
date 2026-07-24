@@ -700,13 +700,13 @@
         momSentence = 'The last month has been <strong>more defensive</strong> than the last three months. Regime is getting worse.';
       } else if (spread3mChange > 0.5) {
         momCls = 'stdy-up'; momGlyph = '↗'; momState = 'Steady but rising';
-        momSentence = 'Both windows agree, and the overall reading is <strong>coming up from a lower point</strong>. Tape is quietly improving.';
+        momSentence = 'The 1-month and 3-month readings are close today, but the <strong>3-month has been rising</strong> this past week. Tape is quietly improving.';
       } else if (spread3mChange < -0.5) {
         momCls = 'stdy-dn'; momGlyph = '↘'; momState = 'Steady but falling';
-        momSentence = 'Both windows agree, but the overall reading is <strong>coming down from a higher point</strong>. Tape is quietly worsening.';
+        momSentence = 'The 1-month and 3-month readings are close today, but the <strong>3-month has been falling</strong> this past week. Tape is quietly worsening.';
       } else {
         momCls = 'stdy'; momGlyph = '≈'; momState = 'Steady';
-        momSentence = 'The last month looks like the last three months, and the reading has been flat. Regime call is well-supported.';
+        momSentence = 'The 1-month reading looks like the 3-month reading, and the spread has been flat this past week. Regime call is well-supported.';
       }
       // Small numeric caveat at the end — pick the metric that
       // determined the state so the number in parens explains the label.
