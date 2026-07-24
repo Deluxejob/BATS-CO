@@ -95,6 +95,44 @@
     .sr-momentum.det     .state{ color:#ef4444; }
     .sr-momentum .sentence{ color:var(--text); }
 
+    /* "What would flip this?" — two-line trigger block on the regime
+       card that names the swing sectors for the nearest bucket
+       transitions in each direction. */
+    .sr-flip{
+      margin:0.55rem auto 0.55rem;
+      max-width:640px;
+      text-align:left;
+      font-size:0.83rem;
+    }
+    .sr-flip .flip-header{
+      color:var(--text-dim);
+      font-family:'JetBrains Mono',monospace;
+      font-size:0.7rem; letter-spacing:0.1em;
+      text-transform:uppercase; font-weight:700;
+      margin-bottom:0.3rem;
+    }
+    .sr-flip .flip-line{
+      display:flex; align-items:baseline;
+      gap:0.5rem; padding:0.15rem 0;
+      color:var(--text);
+    }
+    .sr-flip .flip-line .arrow{
+      font-family:'JetBrains Mono',monospace;
+      font-weight:800; font-size:1rem;
+      min-width:0.9rem;
+    }
+    .sr-flip .flip-line.up   .arrow{ color:#22c55e; }
+    .sr-flip .flip-line.down .arrow{ color:#ef4444; }
+    .sr-flip .flip-line .target{ font-weight:700; }
+    .sr-flip .flip-line.up   .target{ color:#4ade80; }
+    .sr-flip .flip-line.down .target{ color:#f87171; }
+    .sr-flip .flip-line .cond{ color:var(--text-dim); }
+    .sr-flip .flip-line .cond strong{
+      color:var(--text);
+      font-family:'JetBrains Mono',monospace;
+      font-size:0.9em; font-weight:700;
+    }
+
     .sr-section{ max-width:1080px; margin:2rem auto; padding:0 1rem; }
     .sr-section h2{ margin:0 0 1rem; font-size:1.2rem; }
 
@@ -615,6 +653,49 @@
         ? '(3M spread has moved ' + (spread3mChange >= 0 ? '+' : '') + spread3mChange.toFixed(2) + ' pp over the last 5 trading days)'
         : '(1M spread ' + (momDelta >= 0 ? '+' : '−') + momDeltaAbs + ' pp vs 3M)';
 
+      // ---- "What would flip this?" — swing-sector triggers ----
+      // The regime is spread = avg(cyc 3M) − avg(def 3M). The single
+      // biggest lever is the TOP CYCLICAL — the same ticker drives the
+      // spread up (if it keeps climbing) AND down (if it rolls over).
+      // We name it on both lines so the reader sees clearly that it's
+      // the swing factor. The top defensive gets named as the secondary
+      // bull lever (its cooling raises the spread from the other side).
+      const cycRanked = cyc.filter(r => r.r['3m'] != null).slice().sort((a,b) => b.r['3m'] - a.r['3m']);
+      const defRanked = def.filter(r => r.r['3m'] != null).slice().sort((a,b) => b.r['3m'] - a.r['3m']);
+      const topCyc = cycRanked[0];
+      const topDef = defRanked[0];
+      // Neighboring bucket labels based on current spread — null at the
+      // extremes (no bucket further up from Risk-on, no bucket further
+      // down from Defensive).
+      const neighborBuckets = (s) => {
+        if (s > 5)  return { up: null, down: 'Cautious risk-on' };
+        if (s > 1)  return { up: 'Risk-on expansion',   down: 'Rotation stalled' };
+        if (s > -1) return { up: 'Cautious risk-on',    down: 'Cautious risk-off' };
+        if (s > -5) return { up: 'Rotation stalled',    down: 'Defensive / risk-off' };
+        return { up: 'Cautious risk-off', down: null };
+      };
+      const flip = neighborBuckets(spread);
+      const canFlipUp   = flip.up   && topCyc && topDef;
+      const canFlipDown = flip.down && topCyc;
+      const flipUpHtml = canFlipUp ? (
+        '<div class="flip-line up">' +
+          '<span class="arrow">&uarr;</span>' +
+          '<span class="target">' + flip.up + '</span>' +
+          '<span class="cond">&mdash; if <strong>' + topCyc.sector.sym + '</strong> keeps climbing or ' +
+          '<strong>' + topDef.sector.sym + '</strong> cools</span>' +
+        '</div>') : '';
+      const flipDnHtml = canFlipDown ? (
+        '<div class="flip-line down">' +
+          '<span class="arrow">&darr;</span>' +
+          '<span class="target">' + flip.down + '</span>' +
+          '<span class="cond">&mdash; if <strong>' + topCyc.sector.sym + '</strong> gives back its lead</span>' +
+        '</div>') : '';
+      const flipHtml = (canFlipUp || canFlipDown) ? (
+        '<div class="sr-flip">' +
+          '<div class="flip-header">What would flip this?</div>' +
+          flipUpHtml + flipDnHtml +
+        '</div>') : '';
+
       let cls, label, sub;
       if (spread > 5) {
         cls='risk-on';
@@ -647,6 +728,7 @@
             <span class="state">${momState}</span>
             <span class="sentence">${momSentence} <span style="color:var(--text-dim);">${momCaveat}</span></span>
           </div>
+          ${flipHtml}
           <div class="regime-score">
             3M cyclicals ${fmtPct(cyc3)} vs defensives ${fmtPct(def3)} &nbsp;·&nbsp; spread ${fmtPct(spread)}
           </div>
