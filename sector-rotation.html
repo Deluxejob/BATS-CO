@@ -132,6 +132,20 @@
     .sr-ratio-note{
       color:var(--text-dim); font-size:.85rem; margin:.6rem 0 0; line-height:1.5;
     }
+
+    /* Regime-history strip — the cyclicals-vs-defensives 3M spread plotted
+       over ~1yr with the five regime buckets drawn as shaded horizontal
+       bands. Uses the same daily sector CSVs the grid does. */
+    .sr-regime-history{
+      background:var(--card,var(--bg-card));
+      border:1px solid var(--border); border-radius:10px;
+      padding:1.1rem 1.15rem;
+    }
+    .sr-regime-history svg{ width:100%; height:230px; display:block; }
+    .sr-regime-history .footnote{
+      color:var(--text-dim); font-size:0.82rem;
+      margin:0.7rem 0 0; line-height:1.5;
+    }
   </style>
 </head>
 <body>
@@ -170,6 +184,22 @@
     </section>
 
     <section id="regimeSection"></section>
+
+    <section class="sr-section" id="regimeHistorySection">
+      <h2>How did we get here? <span style="color:var(--text-dim);font-weight:normal;font-size:0.9rem;">&mdash; the last ~1 year of the same 3M spread</span></h2>
+      <div class="sr-regime-history">
+        <svg id="regimeSpreadChart" viewBox="0 0 940 220" preserveAspectRatio="none"></svg>
+        <p class="footnote">
+          The blue line is the same spread the regime card is built on:
+          avg 3M return of cyclicals minus avg 3M return of defensives,
+          recomputed for every trading day. Shaded bands show the five
+          regime buckets &mdash; the dot on the right is today. Watch the
+          <em>direction</em>: sitting near zero and drifting down means
+          the tape is quietly getting more defensive; crossing back above
+          zero means growth names are catching a bid again.
+        </p>
+      </div>
+    </section>
 
     <section class="sr-section">
       <h2>Sector performance grid</h2>
@@ -376,6 +406,123 @@
             3M cyclicals ${fmtPct(cyc3)} vs defensives ${fmtPct(def3)} &nbsp;·&nbsp; spread ${fmtPct(spread)}
           </div>
         </div>`;
+
+      // ---- regime history strip (last ~1yr of the same 3M spread) ----
+      // Same math the card uses, replayed for every trading day. Aligning
+      // by DATE (not by index) so it stays correct even when one sector's
+      // CSV starts later than another's (XLC 2018, XLRE 2015). The last
+      // point is overwritten with the card's live-adjusted spread so the
+      // rightmost dot lines up with the number shown above it.
+      (function renderSpreadHistory() {
+        const svg = document.getElementById('regimeSpreadChart');
+        if (!svg) return;
+        const CYC = SECTORS.filter(s => s.group === 'cyc').map(s => s.sym);
+        const DEF = SECTORS.filter(s => s.group === 'def').map(s => s.sym);
+        const LOOKBACK = HORIZONS.find(h => h.key === '3m').bars;   // 63 trading days
+        const bySym = {};
+        for (const sym of [...CYC, ...DEF]) {
+          const arr = seriesBySym[sym] || [];
+          bySym[sym] = new Map(arr.map(r => [r.date, r.close]));
+        }
+        // XLK has the longest continuous history among cyclicals — use it
+        // as the canonical calendar. Any date the other sectors don't
+        // have (younger ETF starts later) drops out of the average.
+        const cal = seriesBySym['XLK'] || [];
+        if (cal.length < LOOKBACK + 30) { svg.innerHTML = ''; return; }
+        const HISTORY = 260;    // ~1 year of trading days
+        const startIdx = Math.max(LOOKBACK, cal.length - HISTORY);
+        const points = [];
+        const retFor = (sym, dNow, dBase) => {
+          const m = bySym[sym];
+          const now = m.get(dNow), base = m.get(dBase);
+          return (isFinite(now) && isFinite(base) && base)
+            ? ((now / base) - 1) * 100 : null;
+        };
+        for (let i = startIdx; i < cal.length; i++) {
+          const dNow = cal[i].date;
+          const dBase = cal[i - LOOKBACK].date;
+          const cycRets = CYC.map(s => retFor(s, dNow, dBase)).filter(x => x != null);
+          const defRets = DEF.map(s => retFor(s, dNow, dBase)).filter(x => x != null);
+          if (cycRets.length < 3 || defRets.length < 3) continue;
+          const avg2 = a => a.reduce((x,y)=>x+y,0) / a.length;
+          points.push({ d: dNow, t: new Date(dNow).getTime(), spread: avg2(cycRets) - avg2(defRets) });
+        }
+        if (!points.length) { svg.innerHTML = ''; return; }
+        // Last point uses the card's live-adjusted spread so the dot
+        // matches the number in the regime card above.
+        points[points.length - 1].spread = spread;
+
+        const W = 940, H = 220, M = { top: 15, right: 55, bottom: 25, left: 40 };
+        const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
+        const first = points[0], last = points[points.length - 1];
+        const vals = points.map(p => p.spread);
+        const rawLo = Math.min(-6, ...vals), rawHi = Math.max(6, ...vals);
+        const yLo = Math.floor(rawLo), yHi = Math.ceil(rawHi);
+        const xFor = t => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
+        const yFor = v => M.top + plotH - ((v - yLo) / (yHi - yLo)) * plotH;
+
+        let s = '';
+        // Bucket bands, bottom-up
+        const bands = [
+          { lo: yLo, hi: -5,  color: 'rgba(239,68,68,0.18)' },
+          { lo: -5,  hi: -1,  color: 'rgba(248,113,113,0.14)' },
+          { lo: -1,  hi:  1,  color: 'rgba(168,179,196,0.10)' },
+          { lo:  1,  hi:  5,  color: 'rgba(74,222,128,0.14)' },
+          { lo:  5,  hi: yHi, color: 'rgba(34,197,94,0.18)' },
+        ];
+        for (const b of bands) {
+          const y1 = yFor(b.hi), y2 = yFor(b.lo);
+          if (y2 - y1 <= 0) continue;
+          s += `<rect x="${M.left}" y="${y1}" width="${plotW}" height="${y2 - y1}" fill="${b.color}"/>`;
+        }
+        // Threshold lines
+        const thresholds = [
+          { v:  5, color: '#22c55e' },
+          { v:  1, color: '#4ade80' },
+          { v: -1, color: '#f87171' },
+          { v: -5, color: '#ef4444' },
+        ];
+        for (const th of thresholds) {
+          const y = yFor(th.v);
+          s += `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="${th.color}" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.7"/>`;
+          s += `<text x="${W - M.right + 4}" y="${y + 3}" fill="${th.color}" font-family="JetBrains Mono, monospace" font-size="9" opacity="0.85">${th.v > 0 ? '+' : ''}${th.v}%</text>`;
+        }
+        // Zero baseline
+        const yZero = yFor(0);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${yZero}" y2="${yZero}" stroke="#c9d3e0" stroke-width="0.9" opacity="0.5"/>`;
+        // Y-axis labels
+        for (let v = Math.ceil(yLo); v <= yHi; v += 2) {
+          if (v === 0) continue;
+          const y = yFor(v);
+          s += `<text x="${M.left - 6}" y="${y + 3}" text-anchor="end" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="9">${v > 0 ? '+' : ''}${v}%</text>`;
+        }
+        // Month ticks
+        const monthAbbr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const seen = new Set();
+        for (const p of points) {
+          const d = new Date(p.t);
+          const key = d.getUTCFullYear() + '-' + d.getUTCMonth();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const x = xFor(p.t);
+          s += `<line x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}" stroke="#22334a" stroke-width="0.5" opacity="0.4"/>`;
+          s += `<text x="${x}" y="${M.top + plotH + 15}" text-anchor="middle" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="9">${monthAbbr[d.getUTCMonth()]}</text>`;
+        }
+        // Axes
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}" stroke="#22334a" stroke-width="1"/>`;
+        s += `<line x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}" stroke="#22334a" stroke-width="1"/>`;
+        // Spread line
+        const linePath = points.map((p, i) => (i ? 'L' : 'M') + xFor(p.t).toFixed(1) + ',' + yFor(p.spread).toFixed(1)).join(' ');
+        s += `<path d="${linePath}" fill="none" stroke="#64d3ff" stroke-width="1.4"/>`;
+        // Latest dot + value
+        const dotColor = last.spread >= 0 ? '#22d39a' : '#ff5374';
+        const xC = xFor(last.t), yC = yFor(last.spread);
+        s += `<circle cx="${xC}" cy="${yC}" r="4" fill="${dotColor}" stroke="#0a1218" stroke-width="1.2"/>`;
+        const lblOffset = last.spread >= 0 ? -8 : 14;
+        s += `<text x="${xC - 6}" y="${yC + lblOffset}" text-anchor="end" fill="${dotColor}" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">${last.spread > 0 ? '+' : ''}${last.spread.toFixed(2)}%</text>`;
+
+        svg.innerHTML = s;
+      })();
 
       // ---- leaders / laggards (3M) ----
       const ranked = rows.slice().sort((a,b)=>(b.r['3m']??-1e9) - (a.r['3m']??-1e9));
