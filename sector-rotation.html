@@ -178,6 +178,14 @@
     }
     .sr-flip .flip-line.up   .arrow{ color:#22c55e; }
     .sr-flip .flip-line.down .arrow{ color:#ef4444; }
+    .sr-flip .flip-line .verb{
+      color:var(--text-dim);
+      font-family:'JetBrains Mono',monospace;
+      font-size:0.75rem;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      font-weight:700;
+    }
     .sr-flip .flip-line .target{ font-weight:700; }
     .sr-flip .flip-line.up   .target{ color:#4ade80; }
     .sr-flip .flip-line.down .target{ color:#f87171; }
@@ -759,6 +767,7 @@
       const flipUpHtml = canFlipUp ? (
         '<div class="flip-line up">' +
           '<span class="arrow">&uarr;</span>' +
+          '<span class="verb">Lifts to</span> ' +
           '<span class="target">' + flip.up + '</span>' +
           '<span class="cond">&mdash; if <strong>' + topCyc.sector.sym + '</strong> keeps climbing or ' +
           '<strong>' + topDef.sector.sym + '</strong> cools</span>' +
@@ -766,6 +775,7 @@
       const flipDnHtml = canFlipDown ? (
         '<div class="flip-line down">' +
           '<span class="arrow">&darr;</span>' +
+          '<span class="verb">Slips to</span> ' +
           '<span class="target">' + flip.down + '</span>' +
           '<span class="cond">&mdash; if <strong>' + topCyc.sector.sym + '</strong> gives back its lead</span>' +
         '</div>') : '';
