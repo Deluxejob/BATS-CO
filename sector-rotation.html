@@ -55,6 +55,46 @@
       color:var(--text-faint); font-size:.85rem;
     }
 
+    /* Momentum badge inside the regime card — one-line "is the tape
+       improving or worsening recently?" indicator. Five states:
+         firm    : 1M spread >  3M by  >0.5 pp — strong firming
+         stdy-up : within ±0.5 pp AND 3M spread rising  >0.5 pp / 5d
+         stdy    : within ±0.5 pp AND 3M spread flat
+         stdy-dn : within ±0.5 pp AND 3M spread falling >0.5 pp / 5d
+         det     : 1M spread <  3M by  >0.5 pp — strong deteriorating
+       Sits between the regime explanation and the raw-numbers score. */
+    .sr-momentum{
+      display:inline-flex; align-items:baseline;
+      gap:0.55rem; flex-wrap:wrap;
+      padding:0.45rem 0.85rem;
+      margin:1rem auto 0.2rem; border-radius:6px;
+      border:1px solid;
+      font-size:0.86rem;
+      max-width:640px; text-align:left;
+    }
+    .sr-momentum.firm    { background:rgba(34,197,94,0.10);  border-color:rgba(34,197,94,0.4); }
+    .sr-momentum.stdy-up { background:rgba(34,197,94,0.05);  border-color:rgba(34,197,94,0.25); }
+    .sr-momentum.stdy    { background:rgba(168,179,196,0.08); border-color:rgba(168,179,196,0.3); }
+    .sr-momentum.stdy-dn { background:rgba(239,68,68,0.05);  border-color:rgba(239,68,68,0.25); }
+    .sr-momentum.det     { background:rgba(239,68,68,0.10);  border-color:rgba(239,68,68,0.4); }
+    .sr-momentum .glyph{ font-size:1.05rem; font-weight:800; line-height:1; }
+    .sr-momentum.firm    .glyph{ color:#22c55e; }
+    .sr-momentum.stdy-up .glyph{ color:#4ade80; }
+    .sr-momentum.stdy    .glyph{ color:var(--text-dim); }
+    .sr-momentum.stdy-dn .glyph{ color:#f87171; }
+    .sr-momentum.det     .glyph{ color:#ef4444; }
+    .sr-momentum .state{
+      font-family:'JetBrains Mono',monospace;
+      font-weight:800; letter-spacing:0.08em;
+      text-transform:uppercase; font-size:0.82em;
+    }
+    .sr-momentum.firm    .state{ color:#22c55e; }
+    .sr-momentum.stdy-up .state{ color:#4ade80; }
+    .sr-momentum.stdy    .state{ color:var(--text-dim); }
+    .sr-momentum.stdy-dn .state{ color:#f87171; }
+    .sr-momentum.det     .state{ color:#ef4444; }
+    .sr-momentum .sentence{ color:var(--text); }
+
     .sr-section{ max-width:1080px; margin:2rem auto; padding:0 1rem; }
     .sr-section h2{ margin:0 0 1rem; font-size:1.2rem; }
 
@@ -142,18 +182,6 @@
       padding:1.1rem 1.15rem;
     }
     .sr-regime-history svg{ width:100%; height:230px; display:block; }
-    .sr-regime-history .chart-legend{
-      display:flex; flex-wrap:wrap; gap:1.3rem;
-      margin:0 0 0.55rem; font-size:0.8rem;
-      color:var(--text-dim); font-family:'JetBrains Mono',monospace;
-    }
-    .sr-regime-history .chart-legend .lg-swatch{
-      display:inline-block; width:22px; height:0;
-      vertical-align:middle; margin-right:0.45rem;
-    }
-    .sr-regime-history .chart-legend .lg-swatch.thick{ border-top:2px solid #64d3ff; }
-    .sr-regime-history .chart-legend .lg-swatch.thin{  border-top:1.5px solid #ffb658; }
-    .sr-regime-history .chart-legend .lg-hint{ opacity:0.7; }
     .sr-regime-history .see-below{
       margin:0 0 0.85rem; font-size:0.85rem; color:var(--text-dim);
     }
@@ -285,10 +313,6 @@
           Not sure what you're looking at?
           <a href="#regimeMethodology">See how the Regime Spread is calculated &darr;</a>
         </p>
-        <div class="chart-legend">
-          <span><span class="lg-swatch thick"></span>3M spread <span class="lg-hint">&mdash; smoothed regime</span></span>
-          <span><span class="lg-swatch thin"></span>1M spread <span class="lg-hint">&mdash; faster, more current</span></span>
-        </div>
         <svg id="regimeSpreadChart" viewBox="0 0 940 220" preserveAspectRatio="none"></svg>
         <p class="footnote">
           Shaded bands are the five regime buckets (&plusmn;1% and
@@ -533,6 +557,64 @@
       const def3 = avg(def.map(r => r.r['3m']).filter(x=>x!=null));
       const spread = cyc3 - def3;
 
+      // 1M spread — same math, shorter lookback. Used for the momentum
+      // badge only (has recent tape been more or less defensive than
+      // the trailing three months?). The chart itself still plots only
+      // the 3M line to keep it readable.
+      const cyc1 = avg(cyc.map(r => r.r['1m']).filter(x=>x!=null));
+      const def1 = avg(def.map(r => r.r['1m']).filter(x=>x!=null));
+      const spread1m = cyc1 - def1;
+      const momDelta = spread1m - spread;   // + = firming (1M less defensive), - = deteriorating
+
+      // Trajectory of the 3M spread itself over the last week — used
+      // to split STEADY into rising / flat / falling sub-states. Reads
+      // the daily-close CSV directly (no live prices) so the delta is
+      // measured over consistent daily bars. XLK's calendar is
+      // canonical; sectors that miss a date drop out of that bar.
+      const CYC_SYMS = SECTORS.filter(s => s.group === 'cyc').map(s => s.sym);
+      const DEF_SYMS = SECTORS.filter(s => s.group === 'def').map(s => s.sym);
+      const spread3mAt = (daysAgo) => {
+        const ret = sym => {
+          const arr = seriesBySym[sym];
+          if (!arr || arr.length < 63 + daysAgo + 1) return null;
+          const now = arr[arr.length - 1 - daysAgo].close;
+          const base = arr[arr.length - 1 - daysAgo - 63].close;
+          return (now && base) ? ((now / base) - 1) * 100 : null;
+        };
+        const c = CYC_SYMS.map(ret).filter(x => x != null);
+        const d = DEF_SYMS.map(ret).filter(x => x != null);
+        if (c.length < 3 || d.length < 3) return null;
+        return avg(c) - avg(d);
+      };
+      const s3Now = spread3mAt(0);
+      const s3Prev = spread3mAt(5);
+      const spread3mChange = (s3Now != null && s3Prev != null) ? (s3Now - s3Prev) : 0;
+
+      let momCls, momGlyph, momState, momSentence;
+      if (momDelta > 0.5) {
+        momCls = 'firm'; momGlyph = '▲'; momState = 'Firming';
+        momSentence = 'The last month has been <strong>less defensive</strong> than the last three months. Regime is easing.';
+      } else if (momDelta < -0.5) {
+        momCls = 'det'; momGlyph = '▼'; momState = 'Deteriorating';
+        momSentence = 'The last month has been <strong>more defensive</strong> than the last three months. Regime is getting worse.';
+      } else if (spread3mChange > 0.5) {
+        momCls = 'stdy-up'; momGlyph = '↗'; momState = 'Steady but rising';
+        momSentence = 'Both windows agree, and the overall reading is <strong>coming up from a lower point</strong>. Tape is quietly improving.';
+      } else if (spread3mChange < -0.5) {
+        momCls = 'stdy-dn'; momGlyph = '↘'; momState = 'Steady but falling';
+        momSentence = 'Both windows agree, but the overall reading is <strong>coming down from a higher point</strong>. Tape is quietly worsening.';
+      } else {
+        momCls = 'stdy'; momGlyph = '≈'; momState = 'Steady';
+        momSentence = 'The last month looks like the last three months, and the reading has been flat. Regime call is well-supported.';
+      }
+      // Small numeric caveat at the end — pick the metric that
+      // determined the state so the number in parens explains the label.
+      const momDeltaAbs = Math.abs(momDelta).toFixed(2);
+      const isSubState = momCls === 'stdy-up' || momCls === 'stdy-dn';
+      const momCaveat = isSubState
+        ? '(3M spread has moved ' + (spread3mChange >= 0 ? '+' : '') + spread3mChange.toFixed(2) + ' pp over the last 5 trading days)'
+        : '(1M spread ' + (momDelta >= 0 ? '+' : '−') + momDeltaAbs + ' pp vs 3M)';
+
       let cls, label, sub;
       if (spread > 5) {
         cls='risk-on';
@@ -560,27 +642,28 @@
           <div class="regime-tag">Current regime</div>
           <div class="regime-label">${label}</div>
           <div class="regime-sub">${sub}</div>
+          <div class="sr-momentum ${momCls}">
+            <span class="glyph">${momGlyph}</span>
+            <span class="state">${momState}</span>
+            <span class="sentence">${momSentence} <span style="color:var(--text-dim);">${momCaveat}</span></span>
+          </div>
           <div class="regime-score">
             3M cyclicals ${fmtPct(cyc3)} vs defensives ${fmtPct(def3)} &nbsp;·&nbsp; spread ${fmtPct(spread)}
           </div>
         </div>`;
 
-      // ---- regime history strip (last ~1yr of BOTH the 3M and 1M spread) ----
-      // Same math the card uses, replayed for every trading day, at two
-      // lookback windows: 63 bars (3M — smoother, primary series in cyan)
-      // and 21 bars (1M — faster, secondary series in amber). Aligning by
-      // DATE (not by index) so a sector CSV that starts later (XLC 2018,
-      // XLRE 2015) doesn't corrupt the earlier bars — it just drops out
-      // of that day's average. Last point of each series is overwritten
-      // with the corresponding live-adjusted spread so the rightmost
-      // dots line up with the numbers on the regime card above.
+      // ---- regime history strip (last ~1yr of the 3M spread) ----
+      // Same math the card uses, replayed for every trading day. Aligning
+      // by DATE (not by index) so it stays correct even when one sector's
+      // CSV starts later than another's (XLC 2018, XLRE 2015). The last
+      // point is overwritten with the card's live-adjusted spread so the
+      // rightmost dot lines up with the number shown above it.
       (function renderSpreadHistory() {
         const svg = document.getElementById('regimeSpreadChart');
         if (!svg) return;
         const CYC = SECTORS.filter(s => s.group === 'cyc').map(s => s.sym);
         const DEF = SECTORS.filter(s => s.group === 'def').map(s => s.sym);
-        const LOOKBACK_3M = HORIZONS.find(h => h.key === '3m').bars;   // 63
-        const LOOKBACK_1M = HORIZONS.find(h => h.key === '1m').bars;   // 21
+        const LOOKBACK = HORIZONS.find(h => h.key === '3m').bars;   // 63 trading days
         const bySym = {};
         for (const sym of [...CYC, ...DEF]) {
           const arr = seriesBySym[sym] || [];
@@ -590,55 +673,35 @@
         // as the canonical calendar. Any date the other sectors don't
         // have (younger ETF starts later) drops out of the average.
         const cal = seriesBySym['XLK'] || [];
-        if (cal.length < LOOKBACK_3M + 30) { svg.innerHTML = ''; return; }
-        const HISTORY = 260;    // ~1 year of trading days to display
-        const startIdx = Math.max(LOOKBACK_3M, cal.length - HISTORY);
+        if (cal.length < LOOKBACK + 30) { svg.innerHTML = ''; return; }
+        const HISTORY = 260;    // ~1 year of trading days
+        const startIdx = Math.max(LOOKBACK, cal.length - HISTORY);
+        const points = [];
         const retFor = (sym, dNow, dBase) => {
           const m = bySym[sym];
           const now = m.get(dNow), base = m.get(dBase);
           return (isFinite(now) && isFinite(base) && base)
             ? ((now / base) - 1) * 100 : null;
         };
-        // Build the two series in a single pass over the display window.
-        const avg2 = a => a.reduce((x,y)=>x+y,0) / a.length;
-        const points3m = [], points1m = [];
         for (let i = startIdx; i < cal.length; i++) {
           const dNow = cal[i].date;
-          const t = new Date(dNow).getTime();
-          // 3M spread
-          const dBase3 = cal[i - LOOKBACK_3M].date;
-          const cyc3Rets = CYC.map(s => retFor(s, dNow, dBase3)).filter(x => x != null);
-          const def3Rets = DEF.map(s => retFor(s, dNow, dBase3)).filter(x => x != null);
-          if (cyc3Rets.length >= 3 && def3Rets.length >= 3) {
-            points3m.push({ d: dNow, t, spread: avg2(cyc3Rets) - avg2(def3Rets) });
-          }
-          // 1M spread (same date range as 3M so lines align on the x-axis)
-          if (i >= LOOKBACK_1M) {
-            const dBase1 = cal[i - LOOKBACK_1M].date;
-            const cyc1Rets = CYC.map(s => retFor(s, dNow, dBase1)).filter(x => x != null);
-            const def1Rets = DEF.map(s => retFor(s, dNow, dBase1)).filter(x => x != null);
-            if (cyc1Rets.length >= 3 && def1Rets.length >= 3) {
-              points1m.push({ d: dNow, t, spread: avg2(cyc1Rets) - avg2(def1Rets) });
-            }
-          }
+          const dBase = cal[i - LOOKBACK].date;
+          const cycRets = CYC.map(s => retFor(s, dNow, dBase)).filter(x => x != null);
+          const defRets = DEF.map(s => retFor(s, dNow, dBase)).filter(x => x != null);
+          if (cycRets.length < 3 || defRets.length < 3) continue;
+          const avg2 = a => a.reduce((x,y)=>x+y,0) / a.length;
+          points.push({ d: dNow, t: new Date(dNow).getTime(), spread: avg2(cycRets) - avg2(defRets) });
         }
-        if (!points3m.length) { svg.innerHTML = ''; return; }
-        // Live-align the last point of each series so both dots match the
-        // math the current-regime card + drivers section are showing.
-        points3m[points3m.length - 1].spread = spread;
-        const cyc1Live = avg(cyc.map(r => r.r['1m']).filter(x => x != null));
-        const def1Live = avg(def.map(r => r.r['1m']).filter(x => x != null));
-        const spread1m = cyc1Live - def1Live;
-        if (points1m.length && isFinite(spread1m)) {
-          points1m[points1m.length - 1].spread = spread1m;
-        }
+        if (!points.length) { svg.innerHTML = ''; return; }
+        // Last point uses the card's live-adjusted spread so the dot
+        // matches the number in the regime card above.
+        points[points.length - 1].spread = spread;
 
         const W = 940, H = 220, M = { top: 15, right: 55, bottom: 25, left: 40 };
         const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
-        const first = points3m[0], last = points3m[points3m.length - 1];
-        // Include BOTH series in the y-range so neither line clips.
-        const allVals = points3m.map(p => p.spread).concat(points1m.map(p => p.spread));
-        const rawLo = Math.min(-6, ...allVals), rawHi = Math.max(6, ...allVals);
+        const first = points[0], last = points[points.length - 1];
+        const vals = points.map(p => p.spread);
+        const rawLo = Math.min(-6, ...vals), rawHi = Math.max(6, ...vals);
         const yLo = Math.floor(rawLo), yHi = Math.ceil(rawHi);
         const xFor = t => M.left + ((t - first.t) / (last.t - first.t || 1)) * plotW;
         const yFor = v => M.top + plotH - ((v - yLo) / (yHi - yLo)) * plotH;
@@ -681,7 +744,7 @@
         // Month ticks
         const monthAbbr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         const seen = new Set();
-        for (const p of points3m) {
+        for (const p of points) {
           const d = new Date(p.t);
           const key = d.getUTCFullYear() + '-' + d.getUTCMonth();
           if (seen.has(key)) continue;
@@ -693,37 +756,15 @@
         // Axes
         s += `<line x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}" stroke="#22334a" stroke-width="1"/>`;
         s += `<line x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}" stroke="#22334a" stroke-width="1"/>`;
-        // 1M spread line (secondary, amber, thinner) — draw FIRST so 3M
-        // overlays it visually where they cross.
-        if (points1m.length) {
-          const pts1 = points1m.filter(p => p.t >= first.t);   // clip to same x-range
-          if (pts1.length > 1) {
-            const path1 = pts1.map((p, i) => (i ? 'L' : 'M') + xFor(p.t).toFixed(1) + ',' + yFor(p.spread).toFixed(1)).join(' ');
-            s += `<path d="${path1}" fill="none" stroke="#ffb658" stroke-width="1.0" opacity="0.9"/>`;
-          }
-        }
-        // 3M spread line (primary, cyan, thicker)
-        const linePath = points3m.map((p, i) => (i ? 'L' : 'M') + xFor(p.t).toFixed(1) + ',' + yFor(p.spread).toFixed(1)).join(' ');
+        // Spread line
+        const linePath = points.map((p, i) => (i ? 'L' : 'M') + xFor(p.t).toFixed(1) + ',' + yFor(p.spread).toFixed(1)).join(' ');
         s += `<path d="${linePath}" fill="none" stroke="#64d3ff" stroke-width="1.4"/>`;
-        // Latest 3M dot + value (label on the LEFT of the dot)
+        // Latest dot + value
         const dotColor = last.spread >= 0 ? '#22d39a' : '#ff5374';
         const xC = xFor(last.t), yC = yFor(last.spread);
         s += `<circle cx="${xC}" cy="${yC}" r="4" fill="${dotColor}" stroke="#0a1218" stroke-width="1.2"/>`;
         const lblOffset = last.spread >= 0 ? -8 : 14;
         s += `<text x="${xC - 6}" y="${yC + lblOffset}" text-anchor="end" fill="${dotColor}" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">${last.spread > 0 ? '+' : ''}${last.spread.toFixed(2)}%</text>`;
-        // Latest 1M dot + value (smaller, amber, label also on the LEFT
-        // but shifted up/down to avoid colliding with the 3M label when
-        // the two dots sit close together).
-        if (points1m.length) {
-          const last1 = points1m[points1m.length - 1];
-          const xC1 = xFor(last1.t), yC1 = yFor(last1.spread);
-          s += `<circle cx="${xC1}" cy="${yC1}" r="3" fill="#ffb658" stroke="#0a1218" stroke-width="1"/>`;
-          const close = Math.abs(yC1 - yC) < 14;
-          const off1 = close
-            ? (yC1 <= yC ? -22 : 22)                          // stack labels if dots overlap
-            : (last1.spread >= 0 ? -8 : 14);                  // otherwise position by sign
-          s += `<text x="${xC1 - 6}" y="${yC1 + off1}" text-anchor="end" fill="#ffb658" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">${last1.spread > 0 ? '+' : ''}${last1.spread.toFixed(2)}%</text>`;
-        }
 
         svg.innerHTML = s;
       })();
