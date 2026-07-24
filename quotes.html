@@ -1779,7 +1779,7 @@
         } catch (e) { return []; }
       }
 
-      function drawChart(bars, key) {
+      function drawChart(bars, key, prevClose) {
         const pts = bars.filter(b => b[1] != null && isFinite(b[1]));
         const W = 560, H = 190, M = { top: 8, right: 44, bottom: 20, left: 8 };
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -1794,7 +1794,13 @@
         const isIntraday = key === '1D';
         const n = pts.length;
         const xFor = (_t, i) => M.left + (i / Math.max(1, n - 1)) * plotW;
-        const baseline = pts[0][1];
+        // On 1D, anchor the hero quote to yesterday's close (matches the
+        // table's "Δ 1D" convention). Longer ranges keep "return over the
+        // window" semantics with baseline = first bar. Prev close is fetched
+        // by repaintChart alongside the bars; falls back to first bar if
+        // the /api/quote leg failed for any reason.
+        const usePrevClose = isIntraday && prevClose != null && isFinite(prevClose);
+        const baseline = usePrevClose ? prevClose : pts[0][1];
         const vals = pts.map(p => p[1]).concat([baseline]);
         let lo = Math.min(...vals), hi = Math.max(...vals);
         // Enforce a minimum visible y-span so a 0.2 bp intraday wiggle
@@ -1863,12 +1869,19 @@
           xTick(xFor(pts[pts.length-1][0], pts.length-1),    fmt(pts[pts.length-1][0]),         'end');
         }
         // If the yield hasn't moved at all yet, add a hint so the flat line
-        // reads as "no move yet" rather than "chart is broken".
+        // reads as "no move yet" rather than "chart is broken". When we're
+        // anchored to prev close we also require the current level to sit
+        // ON the baseline before calling it "unchanged" — a flat line that
+        // gapped away from prev close overnight isn't unchanged, it's
+        // holding a gap.
         if (isIntraday) {
           const min = Math.min(...pts.map(p => p[1]));
           const max = Math.max(...pts.map(p => p[1]));
-          if (max - min < 0.005) {   // <0.5 basis points of movement
-            s += `<text x="${(W/2).toFixed(1)}" y="${(M.top + 14).toFixed(1)}" text-anchor="middle" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="10">unchanged from open (${pts.length} bars so far)</text>`;
+          const flatIntraday = (max - min) < 0.005;
+          const onBaseline = Math.abs(pts[pts.length - 1][1] - baseline) < 0.005;
+          if (flatIntraday && (usePrevClose ? onBaseline : true)) {
+            const anchor = usePrevClose ? 'vs prev close' : 'from open';
+            s += `<text x="${(W/2).toFixed(1)}" y="${(M.top + 14).toFixed(1)}" text-anchor="middle" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="10">unchanged ${anchor} (${pts.length} bars so far)</text>`;
           }
         }
         svg.innerHTML = s;
@@ -1889,8 +1902,26 @@
             key = '5D';
           }
         }
-        const bars = await fetchBars(featuredLabel, key);
-        drawChart(bars, key);
+        // On 1D we also fetch the current quote for its prevClose — that
+        // becomes the chart's baseline so the hero quote reads as change
+        // vs yesterday's close (same convention as the table). Non-1D
+        // views don't need it and skip the /api/quote leg.
+        const spec = TABLE_ROWS.find(r => r.label === featuredLabel);
+        let bars, prevClose = null;
+        if (key === '1D' && spec && spec.ySym) {
+          const [b, qResp] = await Promise.all([
+            fetchBars(featuredLabel, key),
+            fetch('/api/quote?syms=' + encodeURIComponent(spec.ySym), { cache: 'no-store' })
+              .then(r => (r.ok ? r.json() : null))
+              .catch(() => null),
+          ]);
+          bars = b;
+          const q = qResp && qResp.quotes && qResp.quotes[spec.ySym];
+          if (q && isFinite(q.prevClose)) prevClose = q.prevClose;
+        } else {
+          bars = await fetchBars(featuredLabel, key);
+        }
+        drawChart(bars, key, prevClose);
         // Hero label reflects the featured yield.
         const label = panel.querySelector('.r-label');
         if (label) {
