@@ -142,10 +142,28 @@
       padding:1.1rem 1.15rem;
     }
     .sr-regime-history svg{ width:100%; height:230px; display:block; }
+    .sr-regime-history .see-below{
+      margin:0 0 0.85rem; font-size:0.85rem; color:var(--text-dim);
+    }
+    .sr-regime-history .see-below a{
+      color:var(--warn,#ffb658); text-decoration:none; font-weight:600;
+    }
+    .sr-regime-history .see-below a:hover{ text-decoration:underline; }
     .sr-regime-history .footnote{
       color:var(--text-dim); font-size:0.82rem;
       margin:0.7rem 0 0; line-height:1.5;
     }
+
+    /* Methodology block at the bottom — long-form explainer for the
+       regime-history chart. Kept out of the chart's own card so the
+       chart stays scannable. */
+    .sr-methodology p{ line-height:1.6; margin:0 0 0.9rem; font-size:0.92rem; }
+    .sr-methodology .sym{
+      font-family:'JetBrains Mono',monospace;
+      color:var(--text-dim); font-size:0.82em;
+      margin-right:0.15rem;
+    }
+    .sr-methodology strong{ color:var(--text); }
   </style>
 </head>
 <body>
@@ -188,15 +206,18 @@
     <section class="sr-section" id="regimeHistorySection">
       <h2>How did we get here? <span style="color:var(--text-dim);font-weight:normal;font-size:0.9rem;">&mdash; the last ~1 year of the same 3M spread</span></h2>
       <div class="sr-regime-history">
+        <p class="see-below">
+          Not sure what you're looking at?
+          <a href="#regimeMethodology">See how this chart is built &darr;</a>
+        </p>
         <svg id="regimeSpreadChart" viewBox="0 0 940 220" preserveAspectRatio="none"></svg>
         <p class="footnote">
-          The blue line is the same spread the regime card is built on:
-          avg 3M return of cyclicals minus avg 3M return of defensives,
-          recomputed for every trading day. Shaded bands show the five
-          regime buckets &mdash; the dot on the right is today. Watch the
-          <em>direction</em>: sitting near zero and drifting down means
-          the tape is quietly getting more defensive; crossing back above
-          zero means growth names are catching a bid again.
+          Shaded bands are the five regime buckets (&plusmn;1% and
+          &plusmn;5% thresholds &mdash; matching the labels on the
+          current-regime card above). The dot on the right is today.
+          Watch the <em>direction</em>: drifting down through zero means
+          the tape is quietly getting more defensive; crossing back up
+          means growth names are catching a bid again.
         </p>
       </div>
     </section>
@@ -235,6 +256,49 @@
           utilities). This ratio going up = risk-on. Falling = risk-off.
         </p>
       </div>
+    </section>
+
+    <section class="sr-section sr-methodology" id="regimeMethodology">
+      <h2>How the regime spread is calculated</h2>
+      <p>
+        We take 9 of the 11 S&amp;P sector ETFs and split them into two
+        camps by <em>how they behave when the economy is expected to grow
+        or shrink</em>:
+      </p>
+      <p>
+        <strong>Five cyclicals</strong> &mdash; do well when investors
+        expect growth:
+        <span class="sym">XLK</span>Technology,
+        <span class="sym">XLF</span>Financials,
+        <span class="sym">XLI</span>Industrials,
+        <span class="sym">XLY</span>Consumer Discretionary,
+        <span class="sym">XLC</span>Communication Services.
+      </p>
+      <p>
+        <strong>Four defensives</strong> &mdash; hold up when investors
+        get nervous:
+        <span class="sym">XLV</span>Health Care,
+        <span class="sym">XLP</span>Consumer Staples,
+        <span class="sym">XLU</span>Utilities,
+        <span class="sym">XLRE</span>Real Estate.
+      </p>
+      <p>
+        Energy (<span class="sym">XLE</span>) and Materials
+        (<span class="sym">XLB</span>) sit out &mdash; they trade on
+        commodity prices more than on growth expectations, so we don't
+        count them in either camp.
+      </p>
+      <p>
+        For each of those 9 ETFs we measure the total return over the
+        last 3 months (63 trading days). Average the five cyclicals,
+        average the four defensives, subtract. The result is the blue
+        line on the regime-history chart:
+        <strong>average cyclical 3M return &minus; average defensive 3M return</strong>.
+        A positive number means growth-sensitive names are beating the
+        defensive ones (bullish rotation). A negative number means the
+        opposite &mdash; money is hiding in food, soap, utilities, and
+        health care.
+      </p>
     </section>
   </main>
 
