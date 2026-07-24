@@ -154,6 +154,69 @@
       margin:0.7rem 0 0; line-height:1.5;
     }
 
+    /* Drivers section — per-sector 3M return bars, grouped by cyclical
+       vs defensive. Bars are centered on zero: right/green for positive,
+       left/red for negative. All bars share the same magnitude scale so
+       lengths are visually comparable across the two camps. */
+    .sr-drivers .sr-drivers-group{
+      background:var(--card,var(--bg-card));
+      border:1px solid var(--border); border-radius:10px;
+      padding:1rem 1.15rem;
+      margin-bottom:0.9rem;
+    }
+    .sr-drivers .sr-drivers-group h3{
+      margin:0 0 0.5rem;
+      font-size:0.75rem; letter-spacing:0.12em;
+      text-transform:uppercase; color:var(--text-dim); font-weight:700;
+    }
+    .sr-drivers .sr-drivers-group h3 .group-avg{
+      font-family:'JetBrains Mono',monospace;
+      font-weight:700; margin-left:0.4rem;
+      letter-spacing:0; text-transform:none;
+      font-size:0.95em;
+    }
+    .sr-drivers .sr-drivers-group h3 .group-avg.pos{ color:#22d39a; }
+    .sr-drivers .sr-drivers-group h3 .group-avg.neg{ color:#ff5374; }
+    .sr-driver-row{
+      display:grid; grid-template-columns:200px 1fr 72px;
+      gap:0.7rem; align-items:center; padding:0.28rem 0;
+      font-size:0.86rem;
+    }
+    .sr-driver-label{ color:var(--text); }
+    .sr-driver-label .sym{
+      font-family:'JetBrains Mono',monospace;
+      color:var(--text-dim); font-size:0.82em;
+      margin-right:0.35rem; font-weight:600;
+    }
+    .sr-driver-track{
+      position:relative; height:16px;
+      background:rgba(200,200,200,0.04); border-radius:3px;
+    }
+    .sr-driver-track::before{
+      content:''; position:absolute;
+      top:-2px; bottom:-2px; left:50%;
+      width:1px; background:rgba(200,200,200,0.35);
+    }
+    .sr-driver-bar{ position:absolute; top:2px; bottom:2px; border-radius:2px; }
+    .sr-driver-bar.pos{ left:50%; background:rgba(34,197,94,0.65); }
+    .sr-driver-bar.neg{ right:50%; background:rgba(239,68,68,0.65); }
+    .sr-driver-value{
+      font-family:'JetBrains Mono',monospace;
+      font-weight:700; text-align:right;
+      font-variant-numeric:tabular-nums;
+      font-size:0.9rem;
+    }
+    .sr-driver-value.pos{ color:#22d39a; }
+    .sr-driver-value.neg{ color:#ff5374; }
+    .sr-drivers-note{
+      color:var(--text-dim); font-size:0.85rem;
+      margin:0.4rem 0 0; line-height:1.55;
+    }
+    .sr-drivers-note strong{ color:var(--text); }
+    @media (max-width: 640px){
+      .sr-driver-row{ grid-template-columns:130px 1fr 62px; font-size:0.78rem; gap:0.5rem; }
+    }
+
     /* Methodology block at the bottom — long-form explainer for the
        regime-history chart. Kept out of the chart's own card so the
        chart stays scannable. */
@@ -219,6 +282,21 @@
           the tape is quietly getting more defensive; crossing back up
           means growth names are catching a bid again.
         </p>
+      </div>
+    </section>
+
+    <section class="sr-section" id="regimeDriversSection">
+      <h2>What's driving the reading? <span style="color:var(--text-dim);font-weight:normal;font-size:0.9rem;">&mdash; each sector's 3M return</span></h2>
+      <div class="sr-drivers">
+        <div class="sr-drivers-group">
+          <h3>Cyclicals <span class="group-avg" id="cycGroupAvg">&mdash;</span></h3>
+          <div id="cycBars"></div>
+        </div>
+        <div class="sr-drivers-group">
+          <h3>Defensives <span class="group-avg" id="defGroupAvg">&mdash;</span></h3>
+          <div id="defBars"></div>
+        </div>
+        <p class="sr-drivers-note" id="driversNote"></p>
       </div>
     </section>
 
@@ -586,6 +664,47 @@
         s += `<text x="${xC - 6}" y="${yC + lblOffset}" text-anchor="end" fill="${dotColor}" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">${last.spread > 0 ? '+' : ''}${last.spread.toFixed(2)}%</text>`;
 
         svg.innerHTML = s;
+      })();
+
+      // ---- "What's driving the reading?" — per-sector 3M return bars ----
+      // Grouped by cyc/def so a reader can see WHICH sectors are carrying
+      // the reading. Bars centered on zero, sorted within each camp,
+      // shared magnitude scale so cyc and def visually compare 1:1.
+      (function renderRegimeDrivers() {
+        const cycRows = rows.filter(r => r.sector.group === 'cyc' && r.r['3m'] != null)
+                            .sort((a,b) => b.r['3m'] - a.r['3m']);
+        const defRows = rows.filter(r => r.sector.group === 'def' && r.r['3m'] != null)
+                            .sort((a,b) => b.r['3m'] - a.r['3m']);
+        if (!cycRows.length || !defRows.length) return;
+
+        const maxMag = Math.max(1, ...cycRows.concat(defRows).map(r => Math.abs(r.r['3m'])));
+        const rowHtml = (r) => {
+          const v = r.r['3m'];
+          const cls = v >= 0 ? 'pos' : 'neg';
+          const w = (Math.abs(v) / maxMag) * 50;   // 50% = half-track (center to edge)
+          return `
+            <div class="sr-driver-row">
+              <div class="sr-driver-label"><span class="sym">${r.sector.sym}</span>${r.sector.name}</div>
+              <div class="sr-driver-track"><div class="sr-driver-bar ${cls}" style="width:${w.toFixed(2)}%"></div></div>
+              <div class="sr-driver-value ${cls}">${fmtPct(v)}</div>
+            </div>`;
+        };
+        document.getElementById('cycBars').innerHTML = cycRows.map(rowHtml).join('');
+        document.getElementById('defBars').innerHTML = defRows.map(rowHtml).join('');
+
+        const cycAvgEl = document.getElementById('cycGroupAvg');
+        const defAvgEl = document.getElementById('defGroupAvg');
+        cycAvgEl.textContent = 'avg ' + fmtPct(cyc3);
+        cycAvgEl.className = 'group-avg ' + (cyc3 >= 0 ? 'pos' : 'neg');
+        defAvgEl.textContent = 'avg ' + fmtPct(def3);
+        defAvgEl.className = 'group-avg ' + (def3 >= 0 ? 'pos' : 'neg');
+
+        document.getElementById('driversNote').innerHTML =
+          'Both camp averages feed straight into the Regime Spread above: ' +
+          '<strong>avg cyclical ' + fmtPct(cyc3) + ' &minus; avg defensive ' + fmtPct(def3) +
+          ' = ' + fmtPct(spread) + '</strong>. ' +
+          'A single outlier on either side can carry (or drag) an entire camp &mdash; ' +
+          'when one bar dwarfs the others, the regime reading is more fragile than the label suggests.';
       })();
 
       // ---- leaders / laggards (3M) ----
