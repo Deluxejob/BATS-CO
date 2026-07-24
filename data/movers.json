@@ -1,5 +1,5 @@
 {
-  "generatedAt": 1784905855,
+  "generatedAt": 1784912185,
   "gainers": [
     {
       "symbol": "RNG",
@@ -74,15 +74,6 @@
       "marketCap": 5887020032
     },
     {
-      "symbol": "SGRY",
-      "shortName": "Surgery Partners, Inc.",
-      "price": 16.51,
-      "changePct": 8.47569,
-      "change": 1.29,
-      "volume": 557322,
-      "marketCap": 2159312640
-    },
-    {
       "symbol": "MBLY",
       "shortName": "Mobileye Global Inc.",
       "price": 8.095,
@@ -126,15 +117,6 @@
       "change": 4.5049973,
       "volume": 154045,
       "marketCap": 7486083072
-    },
-    {
-      "symbol": "UHS",
-      "shortName": "Universal Health Services, Inc.",
-      "price": 161.02,
-      "changePct": 6.4454284,
-      "change": 9.75,
-      "volume": 351702,
-      "marketCap": 9747563520
     },
     {
       "symbol": "CSQR",
@@ -209,15 +191,6 @@
       "marketCap": 4372851712
     },
     {
-      "symbol": "GWRE",
-      "shortName": "Guidewire Software, Inc.",
-      "price": 137.865,
-      "changePct": 4.936064,
-      "change": 6.4850006,
-      "volume": 162787,
-      "marketCap": 11478139904
-    },
-    {
       "symbol": "NOW",
       "shortName": "ServiceNow, Inc.",
       "price": 96.4451,
@@ -225,6 +198,33 @@
       "change": 4.5050964,
       "volume": 9624818,
       "marketCap": 99710926848
+    },
+    {
+      "symbol": "VRSN",
+      "shortName": "VeriSign, Inc.",
+      "price": 274.25,
+      "changePct": 4.843648,
+      "change": 12.670013,
+      "volume": 597860,
+      "marketCap": 24956749824
+    },
+    {
+      "symbol": "GDDY",
+      "shortName": "GoDaddy Inc.",
+      "price": 91.77,
+      "changePct": 4.7363544,
+      "change": 4.149994,
+      "volume": 167405,
+      "marketCap": 12151250944
+    },
+    {
+      "symbol": "HUBS",
+      "shortName": "HubSpot, Inc.",
+      "price": 198.605,
+      "changePct": 4.523447,
+      "change": 8.595001,
+      "volume": 154943,
+      "marketCap": 10166730752
     }
   ],
   "losers": [
@@ -409,15 +409,6 @@
       "marketCap": 3191997184
     },
     {
-      "symbol": "SIMO",
-      "shortName": "Silicon Motion Technology Corpo",
-      "price": 266.505,
-      "changePct": -7.8092504,
-      "change": -22.574982,
-      "volume": 89578,
-      "marketCap": 9036607488
-    },
-    {
       "symbol": "PENG",
       "shortName": "Penguin Solutions, Inc.",
       "price": 53.97,
@@ -452,6 +443,15 @@
       "change": -5.064995,
       "volume": 5460903,
       "marketCap": 40566358016
+    },
+    {
+      "symbol": "HOOD",
+      "shortName": "Robinhood Markets, Inc.",
+      "price": 94.23,
+      "changePct": -7.234963,
+      "change": -7.3499985,
+      "volume": 6962086,
+      "marketCap": 84854595584
     }
   ],
   "actives": [
@@ -476,19 +476,19 @@
     {
       "symbol": "NVDA",
       "shortName": "NVIDIA Corporation",
-      "price": 208.02,
-      "changePct": -0.35446936,
-      "change": -0.73999023,
-      "volume": 19154344,
-      "marketCap": 5038452244480
+      "price": 208.01,
+      "changePct": -0.35926422,
+      "change": -0.75,
+      "volume": 19154586,
+      "marketCap": 5038210023424
     },
     {
       "symbol": "TSLA",
       "shortName": "Tesla, Inc.",
       "price": 312.71,
-      "changePct": -2.1830955,
+      "changePct": -2.1833684,
       "change": -6.980011,
-      "volume": 17346496,
+      "volume": 17346541,
       "marketCap": 1235063013376
     },
     {
@@ -557,11 +557,11 @@
     {
       "symbol": "SPCX",
       "shortName": "Space Exploration Technologies ",
-      "price": 113.19,
-      "changePct": -4.2709703,
-      "change": -5.0499954,
-      "volume": 11860749,
-      "marketCap": 1491186221056
+      "price": 113.2,
+      "changePct": -4.262518,
+      "change": -5.040001,
+      "volume": 11871473,
+      "marketCap": 1491317948416
     },
     {
       "symbol": "VZ",
@@ -618,15 +618,6 @@
       "marketCap": 68130598912
     },
     {
-      "symbol": "TMHC",
-      "shortName": "Taylor Morrison Home Corporatio",
-      "price": 72.45,
-      "changePct": -0.027603561,
-      "change": -0.0200043,
-      "volume": 9192777,
-      "marketCap": 6665396224
-    },
-    {
       "symbol": "MARA",
       "shortName": "MARA Holdings, Inc.",
       "price": 12.35,
@@ -679,6 +670,15 @@
       "change": -12.5,
       "volume": 8543736,
       "marketCap": 1114472185856
+    },
+    {
+      "symbol": "PLUG",
+      "shortName": "Plug Power, Inc.",
+      "price": 2.115,
+      "changePct": -3.4246597,
+      "change": -0.07500005,
+      "volume": 8522370,
+      "marketCap": 2950571008
     }
   ]
 }
