@@ -200,28 +200,29 @@
     .sr-section h2{ margin:0 0 1rem; font-size:1.2rem; }
 
     .sr-grid{
-      width:100%; border-collapse:separate; border-spacing:2px;
+      width:100%; table-layout:fixed;
+      border-collapse:separate; border-spacing:2px;
       background:var(--border); border-radius:8px; overflow:hidden;
-      font-family:'JetBrains Mono',monospace; font-size:.9rem;
+      font-family:'JetBrains Mono',monospace; font-size:.85rem;
     }
     .sr-grid thead th{
       background:var(--card,var(--bg-card)); color:var(--text-dim);
-      padding:.55rem .6rem; text-align:right; font-weight:600;
-      font-family:'Inter',sans-serif; font-size:.78rem;
+      padding:.5rem .5rem; text-align:right; font-weight:600;
+      font-family:'Inter',sans-serif; font-size:.75rem;
       text-transform:uppercase; letter-spacing:.08em;
     }
     .sr-grid thead th:first-child, .sr-grid tbody th{ text-align:left; }
     .sr-grid tbody th{
       background:var(--card,var(--bg-card));
-      padding:.55rem .6rem; font-weight:600;
+      padding:.5rem .5rem; font-weight:600;
       font-family:'Inter',sans-serif;
     }
-    .sr-grid .sym{ color:var(--text-dim); font-size:.75rem; margin-right:.4rem; }
+    .sr-grid .sym{ color:var(--text-dim); font-size:.72rem; margin-right:.35rem; }
     .sr-grid td{
-      padding:.55rem .6rem; text-align:right;
+      padding:.5rem .35rem; text-align:right;
       background:var(--card,var(--bg-card));
     }
-    .sr-cell{ display:inline-block; padding:.15rem .5rem; border-radius:5px; font-weight:600; }
+    .sr-cell{ display:inline-block; padding:.15rem .4rem; border-radius:5px; font-weight:600; }
     .sr-p5{ background:rgba(34,197,94,.85);  color:#000; }
     .sr-p4{ background:rgba(34,197,94,.55);  color:#000; }
     .sr-p3{ background:rgba(34,197,94,.3);   color:#000; }
@@ -543,6 +544,11 @@
     ];
 
     const HORIZONS = [
+      // bars:0 is a sentinel for "1D" — returnOver uses the live day-change
+      // from /api/sectors instead of a bar-count lookback so the number
+      // reflects today's move vs prior session close, ticking live during
+      // trading hours.
+      { key:'1d', label:'1D',  bars:0   },
       { key:'1w', label:'1W',  bars:5   },
       { key:'1m', label:'1M',  bars:21  },
       { key:'3m', label:'3M',  bars:63  },
@@ -568,7 +574,18 @@
 
     function pct(from, to){ return (to/from - 1) * 100; }
 
-    function returnOver(series, bars, livePrice){
+    function returnOver(series, bars, livePrice, liveDayPct){
+      // Special-case 1D (bars=0): prefer the live intraday day-change from
+      // /api/sectors — that value uses the correct prior-session close as
+      // its reference, so it works whether or not today's CSV row has been
+      // written yet. Falls back to CSV last-close-vs-prior-close when the
+      // live feed is unavailable.
+      if (bars === 0) {
+        if (liveDayPct != null && isFinite(liveDayPct)) return liveDayPct;
+        const n = series.length;
+        if (n < 2) return null;
+        return pct(series[n - 2].close, series[n - 1].close);
+      }
       const n = series.length;
       if (n < bars + 1) return null;
       const start = series[n - bars - 1].close;
@@ -600,9 +617,14 @@
     (async function(){
       let live = {};
       try {
-        const r = await fetch('data/sectors_live.json?_=' + Date.now());
+        // /api/sectors fetches Yahoo v7 quotes at request time (CDN-cached
+        // 60s) — always ≤60s stale, so the 1D column ticks fresh during
+        // trading hours. The static data/sectors_live.json is now the
+        // fallback path inside that API, not the primary source, so the
+        // bot's ~1-hour cron gaps no longer show up here.
+        const r = await fetch('/api/sectors?t=' + Date.now(), { cache: 'no-store' });
         const j = await r.json();
-        for (const k of Object.keys(j.sectors)) {
+        for (const k of Object.keys(j.sectors || {})) {
           const row = j.sectors[k];
           live[row.symbol] = { price: row.price, prev: row.prevClose, dayPct: row.changePct };
         }
@@ -628,8 +650,9 @@
       const rows = SECTORS.map(s => {
         const sr = seriesBySym[s.sym];
         const lp = live[s.sym]?.price;
+        const ldp = live[s.sym]?.dayPct;
         const r = {};
-        for (const h of HORIZONS) r[h.key] = returnOver(sr, h.bars, lp);
+        for (const h of HORIZONS) r[h.key] = returnOver(sr, h.bars, lp, ldp);
         return { sector:s, r };
       });
 
