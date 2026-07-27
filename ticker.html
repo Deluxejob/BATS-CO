@@ -747,6 +747,7 @@
       opacity: 0.4;
       stroke-dasharray: 2 3;
     }
+    .earn-chart .zero-line { stroke: #c9d3e0; stroke-width: 1; opacity: 0.55; }
     .earn-legend {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.62rem;
@@ -4766,14 +4767,20 @@
         const plotW = W - M.left - M.right;
         const plotH = H - M.top - M.bottom;
 
-        // Y range based on ALL est+actual points
+        // Y range based on ALL est+actual points. Allow negative yMin so
+        // companies with historical EPS losses (rawMin < 0) render their
+        // negative dots BELOW the zero line instead of getting clamped
+        // to the axis. If the min is already non-negative the natural
+        // yMin from (rawMin - pad) could still go slightly below zero;
+        // in that case anchor the axis at 0 so the chart doesn't waste
+        // space on ghost negatives.
         const vals = data.flatMap(d => [d.estimate, d.actual]).filter(Number.isFinite);
         if (vals.length < 2) return;
         const rawMax = Math.max(...vals);
         const rawMin = Math.min(...vals);
         const pad = Math.max((rawMax - rawMin) * 0.20, Math.abs(rawMax) * 0.10, 0.10);
         const yMax = rawMax + pad;
-        const yMin = Math.max(0, rawMin - pad);
+        const yMin = rawMin < 0 ? rawMin - pad : Math.max(0, rawMin - pad);
 
         const n = data.length;
         const groupW = plotW / n;
@@ -4793,10 +4800,13 @@
         const fmt$ = (v) => (Math.abs(v) < 10 ? v.toFixed(2) : v.toFixed(1));
 
         let s = '';
-        // Y grid + labels
+        // Y grid + labels. Value at exactly 0 gets a slightly bolder
+        // "zero-line" class so the positive/negative boundary reads
+        // clearly when a company's EPS history crosses zero.
         for (let v = Math.ceil(yMin / step) * step; v <= yMax + 1e-6; v += step) {
           const y = yFor(v);
-          s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+          const cls = Math.abs(v) < 1e-9 ? 'zero-line' : 'grid-line';
+          s += `<line class="${cls}" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
           s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt$(v)}</text>`;
         }
         // Bottom axis line
