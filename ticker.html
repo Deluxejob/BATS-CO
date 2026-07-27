@@ -1440,6 +1440,28 @@
       display: flex; flex-direction: column;
       background: var(--term-panel);
     }
+    /* Chart card title — hidden on the normal ticker page (the big
+       term-header shows the ticker already). Only rendered when the
+       chart is embedded via ?chartOnly=1 in a popup iframe, so the
+       reader knows what commodity / index / stock they're looking at
+       when the surrounding page chrome is gone. */
+    .tk-chart-title { display: none; }
+    body.chart-only .tk-chart-title {
+      display: block;
+      font-size: 1.4rem; font-weight: 700;
+      color: var(--term-text);
+      margin: 0 0 0.6rem;
+      line-height: 1.2;
+    }
+    body.chart-only .tk-chart-title .sym {
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.6rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
     .tk-chart-price-row {
       display: flex; align-items: baseline; gap: 0.7rem;
       margin: 0.15rem 0 0.55rem;
@@ -1985,12 +2007,21 @@
       // -----------------------------------------------------------------
       const params = new URLSearchParams(window.location.search);
       let sym = (params.get('sym') || '').trim().toUpperCase();
-      // Normalize: BRK-B → BRK.B, strip anything not a ticker char. The
-      // leading ^ is Yahoo's prefix for index symbols (^GSPC, ^IXIC, ^RUT,
-      // ^MID, ^TNX etc.), so allow it through — without this the markets
-      // popup for SPX/Nasdaq/Russell fell back to blank charts and ^MID
-      // silently resolved to the MID ETF.
-      sym = sym.replace(/-/g, '.').replace(/[^A-Z0-9.^]/g, '');
+      // Strip anything that isn't a valid Yahoo ticker character.
+      // Allowed:
+      //   A-Z 0-9     standard ticker chars
+      //   ^           leading prefix for indices (^GSPC ^IXIC ^RUT ^TNX)
+      //   .           class-share separator on some Yahoo formats (BRK.B)
+      //   -           class shares (BRK-B — Yahoo's canonical form) AND
+      //               the DXY quote symbol (DX-Y.NYB)
+      //   =           futures suffix (GC=F Gold, SI=F Silver, CL=F Oil,
+      //               ES=F NQ=F etc.). Without this, the markets popup
+      //               for Gold/Silver/Oil fell back to blank or wrong
+      //               tickers — GC=F got scrubbed to GCF, and CL=F got
+      //               scrubbed to CLF which is Cleveland-Cliffs. Same
+      //               deal for the dollar index — DX-Y.NYB got its dash
+      //               replaced with a dot and became an unknown symbol.
+      sym = sym.replace(/[^A-Z0-9.\-=^]/g, '');
       // Chart-only mode: when this page is embedded as an iframe from
       // markets.html's chart popup, hide the site chrome and every other
       // section so only the main chart card renders. Toggled off the URL
@@ -2180,6 +2211,7 @@
         if (!mount) return;
         mount.innerHTML = `
           <div class="tk-chart-card">
+            <div class="tk-chart-title" data-role="chartTitle"></div>
             <div class="tk-chart-price-row">
               <span class="tk-chart-price" data-role="price">&ndash;</span>
               <span class="tk-chart-change" data-role="change"></span>
@@ -2783,6 +2815,25 @@
         const changeLbl = mount.querySelector('[data-role="changeLabel"]');
         const extEl     = mount.querySelector('[data-role="ext"]');
         const perfEl    = mount.querySelector('[data-role="perf"]');
+        const titleEl   = mount.querySelector('[data-role="chartTitle"]');
+
+        // Populate the chart-only title. Reads &name=X off the URL — set
+        // by markets.html's modal opener from each card's data-index-title
+        // ("Gold", "Silver", "Crude Oil", "US Dollar", …). Falls back to
+        // the raw ticker symbol when there's no name (direct navigation
+        // to a stock page in chart-only mode).
+        if (titleEl) {
+          const nameParam = (params.get('name') || '').trim();
+          const escape = (s) => String(s).replace(/[&<>"']/g, c => (
+            { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+          ));
+          if (nameParam) {
+            titleEl.innerHTML = escape(nameParam) +
+              '<span class="sym">' + escape(sym) + '</span>';
+          } else {
+            titleEl.textContent = sym;
+          }
+        }
         const svgEl     = mount.querySelector('[data-role="chart"]');
         const rangeEl   = mount.querySelector('[data-role="rangePicker"]');
         const maEl      = mount.querySelector('[data-role="maToggles"]');

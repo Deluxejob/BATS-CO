@@ -2352,10 +2352,12 @@
     const back  = modal.querySelector('.chart-modal-backdrop');
     let lastActive = null;
 
-    function openFor(sym) {
+    function openFor(sym, name) {
       if (!sym) return;
       lastActive = document.activeElement;
-      frame.src = 'ticker.html?sym=' + encodeURIComponent(sym) + '&chartOnly=1';
+      const src = 'ticker.html?sym=' + encodeURIComponent(sym) + '&chartOnly=1' +
+                  (name ? '&name=' + encodeURIComponent(name) : '');
+      frame.src = src;
       modal.hidden = false;
       modal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -2383,7 +2385,10 @@
       if (!card) return;
       // Skip if the user clicked a button, link, or input inside the card.
       if (e.target.closest('button, a, input, select, textarea, [role="tab"]')) return;
-      openFor(card.getAttribute('data-index-symbol'));
+      openFor(
+        card.getAttribute('data-index-symbol'),
+        card.getAttribute('data-index-title')
+      );
     });
   })();
   </script>
