@@ -1957,7 +1957,7 @@
     const fmtN = v => v == null || !isFinite(v) ? '—' : v.toLocaleString('en-US', { maximumFractionDigits: 2 });
     const fmt  = (v, d=2) => v == null || !isFinite(v) ? '—' : v.toFixed(d);
 
-    function sliceForRange(rangeKey, cache) {
+    function sliceForRange(rangeKey, cache, sym) {
       const intra   = cache.intra5d   || null;
       const daily1y = cache.daily1y   || null;
       const weekly5y = cache.weekly5y || null;
@@ -1965,6 +1965,16 @@
       if (rangeKey === '1D' && intra) {
         if (!intra.length) return [];
         const lastTs = intra[intra.length - 1][0];
+        // 24/7 markets (crypto — Yahoo's -USD suffix) don't have a
+        // trading-day boundary at midnight UTC. Filtering by "today's
+        // UTC date" for BTC-USD gives you only the hours since 00:00
+        // UTC — which at 00:33 is a 33-minute chart. Switch to a rolling
+        // "last 24 hours" slice for these tickers so the 1D bucket
+        // always shows a full trading day of activity.
+        if (typeof sym === 'string' && /-USD$/.test(sym)) {
+          const cutoff = lastTs - 24 * 3600;
+          return intra.filter(([t]) => t >= cutoff);
+        }
         const lastDate = new Date(lastTs * 1000).toISOString().slice(0, 10);
         return intra.filter(([t]) => new Date(t * 1000).toISOString().slice(0, 10) === lastDate);
       }
@@ -2209,7 +2219,7 @@
       }
 
       function redraw() {
-        drawChart(svgEl, sliceForRange(state.range, cache), {
+        drawChart(svgEl, sliceForRange(state.range, cache, sym), {
           show50: state.show50, show200: state.show200, showRsi: state.showRsi, wk52,
         });
       }
