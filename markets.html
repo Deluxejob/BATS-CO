@@ -698,6 +698,45 @@
         </div>
 
         <div class="card idx-card idx-chart-card"
+              data-index-symbol="^DJI"
+              data-index-title="Dow Jones Industrial Average"
+              data-index-desc="The 30 blue-chip US industrials — price-weighted, not cap-weighted like most other indices.">
+          <div class="idx-header">
+            <h3>Dow Jones Industrial Average</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
+            <div class="idx-desc">The 30 blue-chip US industrials &mdash; price-weighted, not cap-weighted like most other indices.</div>
+          </div>
+          <div class="idx-chart-price-row">
+            <span class="idx-chart-price" data-role="price">&ndash;</span>
+            <span class="idx-chart-change" data-role="change"></span>
+            <span class="idx-chart-change-label" data-role="changeLabel"></span>
+          </div>
+          <div class="idx-picker-row">
+            <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
+              <button type="button" data-range="1D">1D</button>
+              <button type="button" data-range="5D">5D</button>
+              <button type="button" data-range="1M">1M</button>
+              <button type="button" data-range="3M">3M</button>
+              <button type="button" data-range="6M" class="active">6M</button>
+              <button type="button" data-range="YTD">YTD</button>
+              <button type="button" data-range="1Y">1Y</button>
+              <button type="button" data-range="5Y">5Y</button>
+              <button type="button" data-range="All">All</button>
+            </div>
+            <div class="idx-ma-toggles" data-role="maToggles">
+              <button type="button" data-ma="50">50 SMA</button>
+              <button type="button" data-ma="200">200 SMA</button>
+              <button type="button" data-ma="rsi">RSI</button>
+            </div>
+          </div>
+          <svg class="idx-chart-svg" data-role="chart" viewBox="0 0 560 200" preserveAspectRatio="none" aria-label="Dow Jones Industrial Average chart"></svg>
+          <div class="idx-chart-footer">
+            <span data-role="footerLeft">Loading&hellip;</span>
+            <span data-role="footerRight"></span>
+          </div>
+        </div>
+
+        <div class="card idx-card idx-chart-card"
               data-index-symbol="^MID"
               data-index-title="S&P MidCap 400"
               data-index-desc="The middle tier by market cap ($3B–$18B).">
@@ -769,6 +808,45 @@
             </div>
           </div>
           <svg class="idx-chart-svg" data-role="chart" viewBox="0 0 560 200" preserveAspectRatio="none" aria-label="Russell 2000 chart"></svg>
+          <div class="idx-chart-footer">
+            <span data-role="footerLeft">Loading&hellip;</span>
+            <span data-role="footerRight"></span>
+          </div>
+        </div>
+
+        <div class="card idx-card idx-chart-card"
+              data-index-symbol="BTC-USD"
+              data-index-title="Bitcoin"
+              data-index-desc="Spot Bitcoin price in US dollars — the largest cryptocurrency by market cap, often traded as a risk-on / risk-off barometer.">
+          <div class="idx-header">
+            <h3>Bitcoin</h3>
+            <div class="idx-card-ext" data-role="ext"></div>
+            <div class="idx-desc">Spot Bitcoin price in US dollars &mdash; the largest cryptocurrency by market cap, often traded as a risk-on / risk-off barometer.</div>
+          </div>
+          <div class="idx-chart-price-row">
+            <span class="idx-chart-price" data-role="price">&ndash;</span>
+            <span class="idx-chart-change" data-role="change"></span>
+            <span class="idx-chart-change-label" data-role="changeLabel"></span>
+          </div>
+          <div class="idx-picker-row">
+            <div class="idx-range-picker" data-role="rangePicker" role="tablist" aria-label="Time range">
+              <button type="button" data-range="1D">1D</button>
+              <button type="button" data-range="5D">5D</button>
+              <button type="button" data-range="1M">1M</button>
+              <button type="button" data-range="3M">3M</button>
+              <button type="button" data-range="6M" class="active">6M</button>
+              <button type="button" data-range="YTD">YTD</button>
+              <button type="button" data-range="1Y">1Y</button>
+              <button type="button" data-range="5Y">5Y</button>
+              <button type="button" data-range="All">All</button>
+            </div>
+            <div class="idx-ma-toggles" data-role="maToggles">
+              <button type="button" data-ma="50">50 SMA</button>
+              <button type="button" data-ma="200">200 SMA</button>
+              <button type="button" data-ma="rsi">RSI</button>
+            </div>
+          </div>
+          <svg class="idx-chart-svg" data-role="chart" viewBox="0 0 560 200" preserveAspectRatio="none" aria-label="Bitcoin chart"></svg>
           <div class="idx-chart-footer">
             <span data-role="footerLeft">Loading&hellip;</span>
             <span data-role="footerRight"></span>
