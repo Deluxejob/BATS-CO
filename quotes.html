@@ -372,6 +372,88 @@
     .yield-asof {
       font-size: 0.66rem; color: var(--term-dim); margin-top: 0.3rem; text-align: right;
     }
+
+    /* FUTURES card — our own hero chart + live futures table. Replaces the
+       TradingView Market Overview widget so we get real CME/NYMEX/COMEX
+       front-month contracts (which TV free tier doesn't render — real
+       futures data on TV requires a paid subscription). Same shape as
+       the RATES card next to it: hero price/change/label at top, mini
+       intraday chart in the middle, table of contracts at the bottom,
+       click any row to swap the featured contract. Fixed height so it
+       aligns with RATES / CRYPTO on either side. */
+    .fut-panel {
+      display: flex;
+      flex-direction: column;
+      height: 462px;
+      box-sizing: border-box;
+    }
+    .fut-hero {
+      display: flex; align-items: baseline; gap: 0.55rem;
+      padding: 0.05rem 0 0.3rem 0.15rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+      flex-wrap: wrap;
+    }
+    .fut-hero .f-price { font-size: 1.35rem; font-weight: 700; color: var(--term-amber); }
+    .fut-hero .f-chg   { font-size: 0.85rem; font-weight: 600; }
+    .fut-hero .f-chg.pos { color: var(--term-green); }
+    .fut-hero .f-chg.neg { color: var(--term-red); }
+    .fut-hero .f-label { font-size: 0.72rem; color: var(--term-dim); }
+    .fut-picker {
+      display: flex; gap: 0.15rem; flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+    }
+    .fut-picker button {
+      background: transparent; color: var(--term-dim);
+      border: 1px solid var(--term-border); padding: 0.12rem 0.5rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em;
+      cursor: pointer; border-radius: 3px;
+    }
+    .fut-picker button:hover { color: var(--term-text); border-color: var(--term-amber); }
+    .fut-picker button.active {
+      background: var(--term-amber); color: #0a1218; border-color: var(--term-amber);
+    }
+    .fut-chart-wrap { position: relative; flex: 1; min-height: 90px; }
+    .fut-chart      { width: 100%; height: 100%; display: block; }
+
+    .fut-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      margin-top: 0.75rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .fut-table th, .fut-table td {
+      padding: 0.26rem 0.55rem;
+      font-size: 0.74rem;
+      border-bottom: 1px solid var(--term-border);
+    }
+    .fut-table thead th {
+      font-family: 'Inter', sans-serif;
+      color: var(--term-dim); font-weight: 600;
+      font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+      text-align: right;
+    }
+    .fut-table thead th:first-child { text-align: left; }
+    .fut-table tbody th {
+      color: var(--term-text); font-weight: 600; text-align: left;
+    }
+    .fut-table tbody th .fut-sub {
+      color: var(--term-dim); font-weight: 500; margin-left: 0.35rem;
+      font-size: 0.72rem;
+    }
+    .fut-table tbody td { text-align: right; }
+    .fut-table .last { color: var(--term-amber); font-weight: 700; }
+    .fut-table .chg.pos { color: var(--term-green); }
+    .fut-table .chg.neg { color: var(--term-red); }
+    .fut-table tbody tr.featured th,
+    .fut-table tbody tr.featured td { background: rgba(255,182,88,0.06); }
+    .fut-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .fut-table tbody tr:hover:not(.featured) th,
+    .fut-table tbody tr:hover:not(.featured) td { background: rgba(255,255,255,0.04); }
+    .fut-asof {
+      font-size: 0.66rem; color: var(--term-dim); margin-top: 0.3rem; text-align: right;
+    }
     /* Our own intraday chart — replaces the TradingView Symbol Overview
        so the TV logo doesn't overlap the first bars of the session. */
     .idx-card-price {
@@ -1046,40 +1128,44 @@
     <!-- Row 3: Futures / Forex / Crypto — 3 columns, each with its own label -->
     <section class="term-section">
       <div class="grid-3 mkt-col-grid">
-        <!-- Futures column -->
+        <!-- Futures column — custom card driven by Yahoo /api/quote and
+             /api/history for real CME/NYMEX/COMEX front-month contracts.
+             Replaces the TradingView Market Overview widget which showed
+             FOREXCOM CFDs (change values didn't match CNBC's implied-open
+             reference) and can't render real futures on the free tier.
+             Change column now = current − prior daily settle, same as
+             CNBC. -->
         <div class="mkt-col">
-          <div class="term-section-label">FUTURES <span class="sub">— 24h index / commodity feeds</span></div>
-          <div class="term-panel">
-            <div class="tradingview-widget-container">
-              <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-              {
-                "colorTheme": "dark",
-                "dateRange": "1D",
-                "showChart": true,
-                "locale": "en",
-                "width": "100%",
-                "height": 440,
-                "isTransparent": true,
-                "showSymbolLogo": true,
-                "showFloatingTooltip": true,
-                "tabs": [
-                  {
-                    "title": "Futures / 24h",
-                    "symbols": [
-                      {"s": "FOREXCOM:SPXUSD", "d": "S&P 500"},
-                      {"s": "FOREXCOM:NSXUSD", "d": "Nasdaq 100"},
-                      {"s": "FOREXCOM:DJI",    "d": "Dow 30"},
-                      {"s": "AMEX:IWM",        "d": "Russell 2000 (IWM)"},
-                      {"s": "TVC:USOIL",       "d": "Crude Oil"},
-                      {"s": "TVC:GOLD",        "d": "Gold"},
-                      {"s": "NASDAQ:TLT",      "d": "20+Y Treasury"}
-                    ]
-                  }
-                ]
-              }
-              </script>
+          <div class="term-section-label">FUTURES <span class="sub">— front-month contracts, live</span></div>
+          <div class="term-panel fut-panel">
+            <div class="fut-hero">
+              <span class="f-price" data-role="heroPrice">&mdash;</span>
+              <span class="f-chg" data-role="heroChg">&mdash;</span>
+              <span class="f-label" data-role="heroLabel">Loading&hellip;</span>
             </div>
+            <div class="fut-picker" data-role="futPicker">
+              <button type="button" data-range="1D" class="active">1D</button>
+              <button type="button" data-range="5D">5D</button>
+              <button type="button" data-range="1M">1M</button>
+              <button type="button" data-range="3M">3M</button>
+              <button type="button" data-range="6M">6M</button>
+              <button type="button" data-range="YTD">YTD</button>
+              <button type="button" data-range="1Y">1Y</button>
+              <button type="button" data-range="5Y">5Y</button>
+              <button type="button" data-range="All">All</button>
+            </div>
+            <div class="fut-chart-wrap">
+              <svg data-role="futChart" class="fut-chart" viewBox="0 0 560 190" preserveAspectRatio="none" aria-label="Futures chart"></svg>
+            </div>
+            <table class="fut-table" data-role="futTable">
+              <thead>
+                <tr><th>Contract</th><th>Last</th><th>&Delta; from prior settle</th></tr>
+              </thead>
+              <tbody data-role="futTableBody">
+                <tr><td colspan="3" style="text-align:center; color:var(--term-dim);">Loading&hellip;</td></tr>
+              </tbody>
+            </table>
+            <div class="fut-asof" data-role="futAsOf">Live from Yahoo (60s refresh) &middot; click any row to feature its chart</div>
           </div>
         </div>
 
@@ -1956,6 +2042,261 @@
         // Only invalidate the currently-visible (featured × active-range) key.
         const key = activeRange();
         delete chartCache[featuredLabel + '|' + key];
+        repaintChart();
+      }, 60000);
+    })();
+
+    // -------- FUTURES card — our own front-month contracts feed --------
+    // Six CME/NYMEX/COMEX front-month futures (E-mini S&P 500/Nasdaq 100/
+    // Dow/Russell 2000, WTI Crude, Gold) plus the 20+Y Treasury ETF (TLT
+    // — no widely-quoted futures equivalent). Prices from /api/quote,
+    // intraday chart from /api/history. The Δ column shows
+    // current − prior daily settle, which matches CNBC's implied-open
+    // reference. Click any row to swap the featured chart.
+    (function () {
+      const panel = document.querySelector('.fut-panel');
+      if (!panel) return;
+      const svg     = panel.querySelector('[data-role="futChart"]');
+      const priceEl = panel.querySelector('[data-role="heroPrice"]');
+      const heroChg = panel.querySelector('[data-role="heroChg"]');
+      const labelEl = panel.querySelector('[data-role="heroLabel"]');
+      const picker  = panel.querySelector('[data-role="futPicker"]');
+      const tbody   = panel.querySelector('[data-role="futTableBody"]');
+
+      const TABLE_ROWS = [
+        { sym: 'ES=F',  label: 'ES',  name: 'S&P 500 E-mini',       featured: true },
+        { sym: 'NQ=F',  label: 'NQ',  name: 'Nasdaq 100 E-mini' },
+        { sym: 'YM=F',  label: 'YM',  name: 'Dow E-mini' },
+        { sym: 'RTY=F', label: 'RTY', name: 'Russell 2000 E-mini' },
+        { sym: 'CL=F',  label: 'CL',  name: 'WTI Crude' },
+        { sym: 'GC=F',  label: 'GC',  name: 'Gold' },
+        { sym: 'TLT',   label: 'TLT', name: '20+Y Treasury ETF' },
+      ];
+      const liveSyms = TABLE_ROWS.map(r => r.sym).join(',');
+
+      // Build the table shell — one row per contract.
+      tbody.innerHTML = '';
+      for (const spec of TABLE_ROWS) {
+        const tr = document.createElement('tr');
+        if (spec.featured) tr.className = 'featured';
+        tr.dataset.sym = spec.sym;
+        tr.innerHTML =
+          '<th>' + spec.label + '<span class="fut-sub">' + spec.name + '</span></th>' +
+          '<td class="last">&mdash;</td>' +
+          '<td class="chg">&mdash;</td>';
+        tbody.appendChild(tr);
+      }
+
+      function fmtPrice(v) {
+        if (v == null || !isFinite(v)) return '—';
+        return v.toLocaleString('en-US', {
+          minimumFractionDigits: 2, maximumFractionDigits: 2,
+        });
+      }
+      function fmtDelta(v) {
+        if (v == null || !isFinite(v)) return '—';
+        const sign = v > 0 ? '+' : '';
+        return sign + v.toLocaleString('en-US', {
+          minimumFractionDigits: 2, maximumFractionDigits: 2,
+        });
+      }
+
+      function paintRow(sym, price, prevClose) {
+        const tr = tbody.querySelector('tr[data-sym="' + sym + '"]');
+        if (!tr) return;
+        const lastEl = tr.querySelector('.last');
+        const chgEl  = tr.querySelector('.chg');
+        lastEl.textContent = fmtPrice(price);
+        if (!isFinite(price) || !isFinite(prevClose) || !prevClose) {
+          chgEl.className = 'chg'; chgEl.textContent = '—'; return;
+        }
+        const delta = price - prevClose;
+        const pct   = (delta / prevClose) * 100;
+        chgEl.className = 'chg ' + (delta > 0 ? 'pos' : (delta < 0 ? 'neg' : ''));
+        const psign = pct >= 0 ? '+' : '';
+        chgEl.textContent = fmtDelta(delta) + ' (' + psign + pct.toFixed(2) + '%)';
+      }
+
+      function paintHero(spec, price, prevClose) {
+        priceEl.textContent = fmtPrice(price);
+        if (!isFinite(price) || !isFinite(prevClose) || !prevClose) {
+          heroChg.className = 'f-chg'; heroChg.textContent = '—';
+        } else {
+          const delta = price - prevClose;
+          const pct   = (delta / prevClose) * 100;
+          heroChg.className = 'f-chg ' + (delta >= 0 ? 'pos' : 'neg');
+          const psign = pct >= 0 ? '+' : '';
+          heroChg.textContent = fmtDelta(delta) + ' (' + psign + pct.toFixed(2) + '%)';
+        }
+        labelEl.textContent = spec.name + ' (' + spec.sym + ') · live';
+      }
+
+      // ==================== LIVE QUOTES (60s poll) ====================
+      async function refreshLive() {
+        try {
+          const r = await fetch('/api/quote?syms=' + encodeURIComponent(liveSyms), { cache: 'no-store' });
+          if (!r.ok) return;
+          const j = await r.json();
+          const quotes = (j && j.quotes) || {};
+          for (const spec of TABLE_ROWS) {
+            const q = quotes[spec.sym];
+            if (!q) continue;
+            paintRow(spec.sym, q.price, q.prevClose);
+          }
+          // Update hero if the currently-featured symbol is in this batch
+          const featTr = tbody.querySelector('tr.featured');
+          const featSym = featTr && featTr.dataset.sym;
+          const featSpec = TABLE_ROWS.find(r => r.sym === featSym);
+          const featQ = featSym && quotes[featSym];
+          if (featSpec && featQ) paintHero(featSpec, featQ.price, featQ.prevClose);
+        } catch (e) { /* transient — try again next tick */ }
+      }
+      refreshLive();
+      setInterval(refreshLive, 60000);
+
+      // ==================== FEATURED CHART ====================
+      const RANGE_MAP = {
+        '1D':  { range: '1d',  interval: '5m'  },
+        '5D':  { range: '5d',  interval: '15m' },
+        '1M':  { range: '1mo', interval: '1h'  },
+        '3M':  { range: '3mo', interval: '1d'  },
+        '6M':  { range: '6mo', interval: '1d'  },
+        'YTD': { range: '1y',  interval: '1d',  filter: 'ytd' },
+        '1Y':  { range: '1y',  interval: '1d'  },
+        '5Y':  { range: '5y',  interval: '1wk' },
+        'All': { range: 'max', interval: '1mo' },
+      };
+      const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const chartCache = {};
+      let featuredSym = 'ES=F';
+
+      function activeRange() {
+        return picker.querySelector('button.active')?.dataset.range || '1D';
+      }
+
+      async function fetchBars(sym, key) {
+        const cacheKey = sym + '|' + key;
+        if (chartCache[cacheKey]) return chartCache[cacheKey];
+        const cfg = RANGE_MAP[key];
+        try {
+          const r = await fetch('/api/history?syms=' + encodeURIComponent(sym) +
+            '&range=' + cfg.range + '&interval=' + cfg.interval, { cache: 'no-store' });
+          if (!r.ok) return [];
+          const j = await r.json();
+          let bars = (j && j.series && j.series[sym]) || [];
+          if (cfg.filter === 'ytd') {
+            const y = new Date().getUTCFullYear();
+            bars = bars.filter(b => new Date(b[0] * 1000).getUTCFullYear() === y);
+          }
+          chartCache[cacheKey] = bars;
+          return bars;
+        } catch (e) { return []; }
+      }
+
+      function drawChart(bars, key) {
+        const pts = bars.filter(b => b[1] != null && isFinite(b[1]));
+        const W = 560, H = 190, M = { top: 8, right: 60, bottom: 20, left: 8 };
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
+        if (pts.length < 2) {
+          svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="11">Not enough data yet in this range.</text>`;
+          return;
+        }
+        const isIntraday = key === '1D';
+        const n = pts.length;
+        const xFor = (_t, i) => M.left + (i / Math.max(1, n - 1)) * plotW;
+        const baseline = pts[0][1];
+        const vals = pts.map(p => p[1]).concat([baseline]);
+        let lo = Math.min(...vals), hi = Math.max(...vals);
+        const pad = (hi - lo) * 0.2 || (Math.abs(hi) * 0.005 + 0.01);
+        lo -= pad; hi += pad;
+        const yFor = v => M.top + plotH - ((v - lo) / (hi - lo)) * plotH;
+        const last = pts[pts.length - 1][1];
+        const up = last >= baseline;
+        const stroke = up ? '#22d39a' : '#ff5374';
+        const fill   = up ? 'rgba(34,211,154,0.14)' : 'rgba(255,83,116,0.14)';
+        let s = '';
+        const yBase = yFor(baseline);
+        s += `<line x1="${M.left}" x2="${W - M.right}" y1="${yBase}" y2="${yBase}" stroke="#8892a6" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.55"/>`;
+        s += `<text x="${W - M.right + 4}" y="${yBase + 3}" fill="#8892a6" font-family="JetBrains Mono, monospace" font-size="9">${fmtPrice(baseline)}</text>`;
+        let dLine = '', dArea = '';
+        for (let i = 0; i < pts.length; i++) {
+          const x = xFor(pts[i][0], i).toFixed(2);
+          const y = yFor(pts[i][1]).toFixed(2);
+          dLine += (i ? 'L' : 'M') + x + ',' + y + ' ';
+          if (i === 0) dArea += 'M' + x + ',' + yBase.toFixed(2) + ' L' + x + ',' + y + ' ';
+          else         dArea += 'L' + x + ',' + y + ' ';
+        }
+        const lastX = xFor(pts[pts.length - 1][0], pts.length - 1).toFixed(2);
+        dArea += 'L' + lastX + ',' + yBase.toFixed(2) + ' Z';
+        s += `<path d="${dArea}" fill="${fill}" stroke="none"/>`;
+        s += `<path d="${dLine}" fill="none" stroke="${stroke}" stroke-width="1.6"/>`;
+        const yLast = yFor(last);
+        s += `<circle cx="${lastX}" cy="${yLast}" r="2.5" fill="${stroke}" stroke="#0a1218" stroke-width="1"/>`;
+        s += `<text x="${W - M.right + 4}" y="${(+yLast) + 3}" fill="${stroke}" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">${fmtPrice(last)}</text>`;
+        const tickY = H - 6;
+        const xTick = (x, txt, anchor) =>
+          s += `<text x="${x.toFixed(1)}" y="${tickY}" fill="#7b8697" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="${anchor}">${txt}</text>`;
+        if (isIntraday) {
+          const fmtTime = ts => {
+            const d = new Date(ts * 1000);
+            const h = d.getUTCHours() - 4;
+            const hh = ((h + 11) % 12) + 1;
+            return hh + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+          };
+          const mid = Math.floor(pts.length / 2);
+          xTick(xFor(pts[0][0], 0),                        fmtTime(pts[0][0]),                'start');
+          xTick(xFor(pts[mid][0], mid),                    fmtTime(pts[mid][0]),              'middle');
+          xTick(xFor(pts[pts.length-1][0], pts.length-1),  fmtTime(pts[pts.length-1][0]),     'end');
+        } else {
+          const spanDays = (pts[pts.length-1][0] - pts[0][0]) / 86400;
+          const fmt = ts => {
+            const d = new Date(ts * 1000);
+            if (spanDays > 800) return String(d.getUTCFullYear());
+            if (spanDays > 200) return MONTH_ABBR[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2);
+            if (spanDays > 45)  return MONTH_ABBR[d.getUTCMonth()];
+            return MONTH_ABBR[d.getUTCMonth()] + ' ' + d.getUTCDate();
+          };
+          const mid = Math.floor(pts.length / 2);
+          xTick(xFor(pts[0][0], 0),                          fmt(pts[0][0]),                    'start');
+          xTick(xFor(pts[mid][0], mid),                      fmt(pts[mid][0]),                  'middle');
+          xTick(xFor(pts[pts.length-1][0], pts.length-1),    fmt(pts[pts.length-1][0]),         'end');
+        }
+        svg.innerHTML = s;
+      }
+
+      async function repaintChart() {
+        const key = activeRange();
+        const bars = await fetchBars(featuredSym, key);
+        drawChart(bars, key);
+      }
+
+      // Range picker
+      picker.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-range]');
+        if (!btn) return;
+        picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        repaintChart();
+      });
+
+      // Row click → swap the featured contract.
+      tbody.addEventListener('click', (e) => {
+        const tr = e.target.closest('tr[data-sym]');
+        if (!tr) return;
+        const sym = tr.dataset.sym;
+        if (sym === featuredSym) return;
+        featuredSym = sym;
+        tbody.querySelectorAll('tr').forEach(r => r.classList.toggle('featured', r === tr));
+        refreshLive();      // update hero immediately
+        repaintChart();     // update chart immediately
+      });
+
+      repaintChart();
+      setInterval(() => {
+        // Invalidate the currently-visible (featured × active-range) key
+        // so a fresh fetch pulls in the latest bar every minute.
+        const key = activeRange();
+        delete chartCache[featuredSym + '|' + key];
         repaintChart();
       }, 60000);
     })();
