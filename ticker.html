@@ -1042,6 +1042,65 @@
       margin-top: 0.55rem;
     }
 
+    /* ---------- Share bar under the main chart ---------- */
+    /* Serializes the current chart state (range, active MAs, RSI/MACD
+       toggles, drawn trend lines) into URL query params so the recipient
+       of a shared link sees the same view the sender configured. Trend
+       lines base64-encoded into a `lines` param — practical URL cap of
+       ~4000 chars gives room for ~60-70 lines; beyond that we surface an
+       error toast rather than building a broken share. */
+    .tk-share-bar {
+      display: flex; align-items: center;
+      gap: 0.5rem; flex-wrap: wrap;
+      padding: 0.9rem 0.3rem 0.3rem;
+      border-top: 1px solid var(--term-border);
+      margin-top: 0.7rem;
+    }
+    .tk-share-label {
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; letter-spacing: 0.04em;
+      margin-right: 0.3rem;
+    }
+    .tk-share-btn {
+      width: 34px; height: 34px; padding: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--term-border);
+      color: var(--term-dim);
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .tk-share-btn:hover {
+      color: var(--term-text);
+      background: rgba(255, 182, 88, 0.10);
+      border-color: var(--term-amber);
+    }
+    .tk-share-btn:active { transform: scale(0.95); }
+    .tk-share-btn svg { width: 16px; height: 16px; display: block; }
+    .tk-share-toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--term-panel, #0d1720);
+      color: var(--term-text);
+      border: 1px solid var(--term-border);
+      padding: 0.7rem 1.1rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10000;
+      pointer-events: none;
+      max-width: 90vw;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .tk-share-toast.visible { opacity: 1; }
+    .tk-share-toast.error   { border-color: var(--term-red);   color: var(--term-red); }
+    .tk-share-toast.success { border-color: var(--term-green); color: var(--term-green); }
+
     /* ---------- Peer Comparison chart ---------- */
     .compare-controls {
       display: flex;
@@ -2341,6 +2400,24 @@
               <span data-role="footerLeft">Loading&hellip;</span>
               <span data-role="footerRight"></span>
             </div>
+            <div class="tk-share-bar" data-role="shareBar">
+              <span class="tk-share-label">Share this chart:</span>
+              <button class="tk-share-btn" data-share="x" title="Share on X" aria-label="Share on X">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </button>
+              <button class="tk-share-btn" data-share="linkedin" title="Share on LinkedIn" aria-label="Share on LinkedIn">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              </button>
+              <button class="tk-share-btn" data-share="reddit" title="Share on Reddit" aria-label="Share on Reddit">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+              </button>
+              <button class="tk-share-btn" data-share="email" title="Share via email" aria-label="Share via email">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>
+              </button>
+              <button class="tk-share-btn" data-share="copy" title="Copy link" aria-label="Copy link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
           </div>
         `;
 
@@ -2938,19 +3015,63 @@
         const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
 
-        // Persisted trend lines — one bucket per symbol.
+        // ---- Hydrate state from shared-URL params ----------------------
+        // Read range / MA / RSI / MACD toggles and trend lines out of the
+        // URL. Set at share time by the share bar's `buildShareUrl()`;
+        // when a recipient clicks the shared link, this hydrates the chart
+        // into the same view the sender was looking at.
+        //   ?range=6M                  time window
+        //   &ma=50,200                 active moving averages (any subset)
+        //   &ind=rsi,macd              indicators (rsi and/or macd)
+        //   &lines=<base64 json>       trend-line array (see buildShareUrl)
+        const VALID_RANGES = ['1D','5D','1M','3M','6M','YTD','1Y','5Y','All'];
+        const _shareRange = (params.get('range') || '').trim();
+        if (_shareRange && VALID_RANGES.includes(_shareRange)) state.range = _shareRange;
+        const _shareMa = (params.get('ma') || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (_shareMa.includes('50'))  state.show50  = true;
+        if (_shareMa.includes('100')) state.show100 = true;
+        if (_shareMa.includes('200')) state.show200 = true;
+        const _shareInd = (params.get('ind') || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+        if (_shareInd.includes('rsi'))  state.showRsi  = true;
+        if (_shareInd.includes('macd')) state.showMacd = true;
+        const _shareLinesParam = params.get('lines');
+        // "Shared view" = the URL explicitly carries trend lines. In that
+        // mode we skip localStorage save so a recipient's in-session
+        // interactions don't overwrite their own saved drawings for the
+        // same ticker.
+        const isSharedView = !!_shareLinesParam;
+
+        // Persisted trend lines — one bucket per symbol. In shared-view
+        // mode we take state.lines from the URL param instead of local
+        // storage (the whole point of a share link is that the recipient
+        // sees the sender's drawings).
         const STORAGE_KEY = 'bats.trendlines.' + sym;
-        try {
-          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-          if (Array.isArray(saved)) {
-            state.lines = saved.filter(function (l) {
-              return l && typeof l.t1 === 'number' && typeof l.p1 === 'number'
-                       && typeof l.t2 === 'number' && typeof l.p2 === 'number';
-            });
-          }
-        } catch (e) { /* corrupted storage — start fresh */ }
+        if (_shareLinesParam) {
+          try {
+            const json = atob(_shareLinesParam.replace(/-/g, '+').replace(/_/g, '/'));
+            const compact = JSON.parse(json);
+            if (Array.isArray(compact)) {
+              state.lines = compact
+                .filter(l => Array.isArray(l) && l.length >= 4)
+                .map(l => ({ t1: +l[0], p1: +l[1], t2: +l[2], p2: +l[3] }))
+                .filter(l => [l.t1, l.p1, l.t2, l.p2].every(Number.isFinite));
+            }
+          } catch (e) { /* invalid share lines — ignore */ }
+        } else {
+          try {
+            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            if (Array.isArray(saved)) {
+              state.lines = saved.filter(function (l) {
+                return l && typeof l.t1 === 'number' && typeof l.p1 === 'number'
+                         && typeof l.t2 === 'number' && typeof l.p2 === 'number';
+              });
+            }
+          } catch (e) { /* corrupted storage — start fresh */ }
+        }
 
         function saveLines() {
+          // Don't persist a sender's shared drawings as the recipient's own.
+          if (isSharedView) return;
           try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.lines)); } catch (e) {}
         }
         function updateClearBtn() {
@@ -3274,7 +3395,144 @@
           if (btn.dataset.ma === 'macd') state.showMacd = btn.classList.contains('active');
           redraw();
         });
-        switchTo('6M');
+
+        // Reflect any URL-hydrated MA / indicator state as active buttons
+        // so the toggles visually match what the chart is drawing.
+        if (state.show50)   maEl.querySelector('[data-ma="50"]').classList.add('active');
+        if (state.show100)  maEl.querySelector('[data-ma="100"]').classList.add('active');
+        if (state.show200)  maEl.querySelector('[data-ma="200"]').classList.add('active');
+        if (state.showRsi)  maEl.querySelector('[data-ma="rsi"]').classList.add('active');
+        if (state.showMacd) maEl.querySelector('[data-ma="macd"]').classList.add('active');
+        updateClearBtn();
+
+        // ---- Share bar wiring ----------------------------------------
+        // Serializes the current chart state into a shareable URL, wires
+        // up the five destination buttons (X / LinkedIn / Reddit / Email /
+        // Copy), and surfaces a toast for the copy-success + too-long
+        // paths. Called lazily at click time so the URL always reflects
+        // whatever the sender has on-screen right now.
+        (function initShareBar() {
+          const shareBar = mount.querySelector('[data-role="shareBar"]');
+          if (!shareBar) return;
+
+          // Toast lives on the body (fixed-positioned) so it's not clipped
+          // by any ancestor overflow. Reused across all share buttons.
+          let toastEl = document.querySelector('.tk-share-toast');
+          if (!toastEl) {
+            toastEl = document.createElement('div');
+            toastEl.className = 'tk-share-toast';
+            toastEl.setAttribute('role', 'status');
+            toastEl.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toastEl);
+          }
+          let toastTimer = null;
+          function showToast(msg, kind) {
+            toastEl.textContent = msg;
+            toastEl.className = 'tk-share-toast visible' + (kind ? ' ' + kind : '');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+              toastEl.className = 'tk-share-toast' + (kind ? ' ' + kind : '');
+            }, 2600);
+          }
+
+          const MAX_SHARE_URL_LEN = 4000;
+
+          function buildShareUrl() {
+            const url = new URL(window.location.origin + window.location.pathname);
+            url.searchParams.set('sym', sym);
+            if (state.range && state.range !== '6M') url.searchParams.set('range', state.range);
+            const mas = [];
+            if (state.show50)  mas.push('50');
+            if (state.show100) mas.push('100');
+            if (state.show200) mas.push('200');
+            if (mas.length) url.searchParams.set('ma', mas.join(','));
+            const inds = [];
+            if (state.showRsi)  inds.push('rsi');
+            if (state.showMacd) inds.push('macd');
+            if (inds.length) url.searchParams.set('ind', inds.join(','));
+            if (state.lines && state.lines.length) {
+              // Compact each line to a 4-tuple so JSON is tight, then
+              // base64-encode with the URL-safe alphabet (btoa gives
+              // regular base64, so swap +/= manually).
+              const compact = state.lines.map(l => [l.t1, +l.p1.toFixed(4), l.t2, +l.p2.toFixed(4)]);
+              const json = JSON.stringify(compact);
+              const b64  = btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+              url.searchParams.set('lines', b64);
+            }
+            return url.toString();
+          }
+
+          const shareTitle = (name) => (name || sym) + ' chart from BATS.CO';
+
+          function openWindow(url) {
+            // Try popup; fall back to same-tab if blocked.
+            const w = window.open(url, '_blank', 'noopener,noreferrer,width=650,height=650');
+            if (!w) window.location.href = url;
+          }
+
+          async function handleShare(destination) {
+            const shareUrl = buildShareUrl();
+            if (shareUrl.length > MAX_SHARE_URL_LEN) {
+              const linesN = (state.lines && state.lines.length) || 0;
+              showToast(
+                'Too many markups on this chart to share as a link (' + linesN + ' trend lines). ' +
+                'Remove a few and try again.',
+                'error'
+              );
+              return;
+            }
+            const title = shareTitle(sym);
+            switch (destination) {
+              case 'x':
+                openWindow('https://twitter.com/intent/tweet' +
+                  '?text=' + encodeURIComponent(title) +
+                  '&url='  + encodeURIComponent(shareUrl));
+                break;
+              case 'linkedin':
+                openWindow('https://www.linkedin.com/sharing/share-offsite/' +
+                  '?url=' + encodeURIComponent(shareUrl));
+                break;
+              case 'reddit':
+                openWindow('https://www.reddit.com/submit' +
+                  '?url='  + encodeURIComponent(shareUrl) +
+                  '&title=' + encodeURIComponent(title));
+                break;
+              case 'email':
+                window.location.href = 'mailto:' +
+                  '?subject=' + encodeURIComponent(title) +
+                  '&body='    + encodeURIComponent(shareUrl);
+                break;
+              case 'copy':
+                try {
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(shareUrl);
+                  } else {
+                    // Legacy fallback for older browsers / non-HTTPS
+                    const ta = document.createElement('textarea');
+                    ta.value = shareUrl;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                  }
+                  showToast('Link copied — paste anywhere.', 'success');
+                } catch (e) {
+                  showToast('Could not copy — your browser blocked it.', 'error');
+                }
+                break;
+            }
+          }
+
+          shareBar.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-share]');
+            if (!btn) return;
+            handleShare(btn.dataset.share);
+          });
+        })();
+
+        switchTo(state.range);
       }
 
       // -----------------------------------------------------------------
