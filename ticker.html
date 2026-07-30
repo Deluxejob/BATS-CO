@@ -2590,10 +2590,21 @@
           const yFor = v => priceTop + priceH - ((v - yLo) / (yHi - yLo)) * priceH;
 
           let s = '';
+          // Y grid + right-side labels. Use a "nice step" algorithm targeting
+          // ~6 gridlines so the axis stays clean for any price magnitude —
+          // works for $1 penny stocks and $100K Bitcoin alike. The old
+          // hand-rolled ladder capped at $1,000 which stacked ~40 labels
+          // on high-priced assets (fix mirrors the same repair on
+          // markets.html's idx-chart-card renderer).
           const range = yHi - yLo;
-          const step = range > 5000 ? 1000 : range > 1000 ? 500 : range > 500 ? 250
-                     : range > 200  ? 100  : range > 50   ? 25  : range > 20   ? 10
-                     : range > 5    ? 2    : range > 2    ? 1   : range > 1    ? 0.5 : 0.1;
+          function niceStep(r, targetTicks) {
+            const raw = r / targetTicks;
+            const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+            const norm = raw / mag;
+            const s = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+            return s * mag;
+          }
+          const step = niceStep(range, 6);
           for (let v = Math.ceil(yLo / step) * step; v <= yHi; v += step) {
             const y = yFor(v);
             s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
