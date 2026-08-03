@@ -2822,15 +2822,15 @@
           }
           if (sma50) {
             const d = smaPath(sma50);
-            if (d) s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
+            if (d) s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
           }
           if (sma100) {
             const d = smaPath(sma100);
-            if (d) s += `<path fill="none" stroke="#4ade80" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
+            if (d) s += `<path fill="none" stroke="#4ade80" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
           }
           if (sma200) {
             const d = smaPath(sma200);
-            if (d) s += `<path fill="none" stroke="#c084fc" stroke-width="1.3" opacity="0.9" d="${d}"/>`;
+            if (d) s += `<path fill="none" stroke="#c084fc" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
           }
 
           if (showRsi && rsi14 && rsi14.some(v => v != null)) {
@@ -2931,7 +2931,7 @@
                 const x2 = xFor(ln.t2), y2 = yFor(ln.p2);
                 const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
                 if (maxX < M.left || minX > W - M.right) continue;
-                s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#ffb658" stroke-width="1.8" opacity="0.95"/>`;
+                s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#ffb658" stroke-width="1.4" opacity="0.95"/>`;
                 // Endpoint circles — enlarge the one being hovered so the user
                 // sees a visual affordance that it's grabbable.
                 const hoverA = opts.hover && opts.hover.lineIdx === i && opts.hover.end === 'a';
