@@ -1548,11 +1548,17 @@
     (function renderIndexMinis() {
       const grid = document.getElementById('indexMinis');
       if (!grid) return;
+      // Actual indices (matching markets.html), not their ETF trackers.
+      // ^GSPC = S&P 500 index, ^NDX = Nasdaq 100 index, ^DJI = Dow Jones
+      // Industrial Average, ^RUT = Russell 2000 index. Yahoo won't return
+      // pre/post-market fields for these `^`-prefixed symbols (indices
+      // don't trade), but the futures-companion logic in the ext-hours
+      // refresh below picks up the slack via ES=F / NQ=F / YM=F / RTY=F.
       const items = [
-        { title: 'S&P 500',      label: 'SPY' },
-        { title: 'Nasdaq 100',   label: 'QQQ' },
-        { title: 'Dow 30',       label: 'DIA' },
-        { title: 'Russell 2000', label: 'IWM' },
+        { title: 'S&P 500',      label: '^GSPC' },
+        { title: 'Nasdaq 100',   label: '^NDX'  },
+        { title: 'Dow 30',       label: '^DJI'  },
+        { title: 'Russell 2000', label: '^RUT'  },
       ];
       for (const it of items) {
         const card = document.createElement('div');
@@ -1640,15 +1646,21 @@
       const svg       = card.querySelector('.idx-chart');
       const prevClose = q ? q.prevClose : null;
 
-      // Price row: always shows the latest regular-session move.
+      // Price row: always shows the latest regular-session move. Comma-
+      // format so 4- and 5-digit index values (Dow ~52,000, Nasdaq 100
+      // ~27,000) read cleanly in the tight card layout instead of
+      // running together as "$52000.00".
+      const fmt2 = (v) => v.toLocaleString('en-US', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2,
+      });
       const price = (q && q.price != null) ? q.price : (bars.length ? bars[bars.length - 1][1] : null);
       if (price != null && isFinite(price)) {
-        priceEl.textContent = '$' + price.toFixed(2);
+        priceEl.textContent = '$' + fmt2(price);
         if (prevClose != null && isFinite(prevClose)) {
           const diff = price - prevClose;
           const pct  = (diff / prevClose) * 100;
           const s = diff >= 0 ? '+' : '';
-          chgEl.textContent = `${s}${diff.toFixed(2)} (${s}${pct.toFixed(2)}%)`;
+          chgEl.textContent = `${s}${fmt2(diff)} (${s}${pct.toFixed(2)}%)`;
           chgEl.className = 'chg ' + (diff >= 0 ? 'pos' : 'neg');
         }
       }
@@ -2309,7 +2321,23 @@
     function startExtendedHoursRefresh() {
       const strips = Array.from(document.querySelectorAll('.idx-card-ext[data-sym]'));
       if (!strips.length) return;
-      const syms = strips.map(s => s.dataset.sym).join(',');
+
+      // Yahoo doesn't publish pre/post-market quotes for `^`-prefixed
+      // index symbols (indices are computed, not traded), but the
+      // e-mini futures contracts trade nearly 24/6 and give a real read
+      // on where each index will open. Map each index to its companion
+      // futures ticker so the ext-hours strip can fall back to those
+      // during PRE / POST / CLOSED windows.
+      const FUTURES_COMPANION = {
+        '^GSPC': 'ES=F',    // S&P 500 e-mini
+        '^NDX':  'NQ=F',    // Nasdaq 100 e-mini
+        '^DJI':  'YM=F',    // Dow e-mini
+        '^RUT':  'RTY=F',   // Russell 2000 e-mini
+      };
+      const stripSyms   = strips.map(s => s.dataset.sym);
+      const futuresSyms = stripSyms.map(s => FUTURES_COMPANION[s]).filter(Boolean);
+      const syms = Array.from(new Set(stripSyms.concat(futuresSyms))).join(',');
+
       const fmtPrice = (v) => v == null || !isFinite(v)
         ? '—'
         : '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2352,7 +2380,42 @@
           if (!r.ok) return;
           const data = await r.json();
           const quotes = (data && data.quotes) || {};
-          for (const s of strips) paint(quotes[s.dataset.sym], s);
+          for (const strip of strips) {
+            const sym = strip.dataset.sym;
+            const q   = quotes[sym];
+            const futSym = FUTURES_COMPANION[sym];
+            const indexState = String((q && q.marketState) || '').toUpperCase();
+            const extHours = indexState === 'PRE' || indexState === 'PREPRE' ||
+                             indexState === 'POST' || indexState === 'POSTPOST' ||
+                             indexState === 'CLOSED';
+            // If it's off-hours AND we have a futures companion quote,
+            // synthesize pre/post fields on a copy of the futures quote
+            // so paint() can render it via the normal path. We show the
+            // *implied index level* (indexPrev × (1 + futuresPct)), not
+            // the raw futures price — futures trade at a small basis to
+            // the cash index (cost of carry, dividends), and showing the
+            // raw futures level would leave a visual mismatch between
+            // the price and the percent.
+            let forStrip = q;
+            if (futSym && extHours && quotes[futSym]) {
+              const fq = quotes[futSym];
+              const pct = fq.dayChangePct;
+              const indexPrev = (q && q.prevClose) || null;
+              const implied = (indexPrev != null && isFinite(pct) && isFinite(indexPrev))
+                ? indexPrev * (1 + pct / 100)
+                : fq.price;
+              forStrip = Object.assign({}, fq, {
+                marketState:            indexState,
+                preMarketPrice:         implied,
+                preMarketChangePercent: pct,
+                preMarketTime:          null,
+                postMarketPrice:        implied,
+                postMarketChangePercent: pct,
+                postMarketTime:         null,
+              });
+            }
+            paint(forStrip, strip);
+          }
         } catch (e) { /* transient network error — try again next tick */ }
       }
       refresh();
