@@ -3337,27 +3337,36 @@
             const state = String(q.marketState || '').toUpperCase();
             let tier = null;
             if (state === 'PRE' || state === 'PREPRE') {
-              if (q.preMarketPrice != null) tier = { tag: 'Pre-Market', price: q.preMarketPrice, pct: q.preMarketChangePercent, cls: 'pre' };
+              if (q.preMarketPrice != null) tier = { tag: 'Pre-Market', price: q.preMarketPrice, chg: q.preMarketChange, pct: q.preMarketChangePercent, cls: 'pre' };
             } else if (state === 'POST' || state === 'POSTPOST') {
-              if (q.postMarketPrice != null) tier = { tag: 'After Market', price: q.postMarketPrice, pct: q.postMarketChangePercent, cls: 'post' };
+              if (q.postMarketPrice != null) tier = { tag: 'After Market', price: q.postMarketPrice, chg: q.postMarketChange, pct: q.postMarketChangePercent, cls: 'post' };
             } else if (state === 'CLOSED') {
               // Market closed for the day — pick the more recent extended print.
               const preTs  = Number(q.preMarketTime  || 0);
               const postTs = Number(q.postMarketTime || 0);
               if (q.postMarketPrice != null && postTs >= preTs) {
-                tier = { tag: 'After Market', price: q.postMarketPrice, pct: q.postMarketChangePercent, cls: 'post' };
+                tier = { tag: 'After Market', price: q.postMarketPrice, chg: q.postMarketChange, pct: q.postMarketChangePercent, cls: 'post' };
               } else if (q.preMarketPrice != null) {
-                tier = { tag: 'Pre-Market', price: q.preMarketPrice, pct: q.preMarketChangePercent, cls: 'pre' };
+                tier = { tag: 'Pre-Market', price: q.preMarketPrice, chg: q.preMarketChange, pct: q.preMarketChangePercent, cls: 'pre' };
               }
             }
             extEl.className = 'tk-chart-ext' + (tier ? ' visible ' + tier.cls : '');
             if (!tier) { extEl.innerHTML = ''; return; }
-            const pctCls = tier.pct == null ? '' : (tier.pct >= 0 ? 'pos' : 'neg');
-            const pctSign = tier.pct == null || tier.pct < 0 ? '' : '+';
+            // Dollar change + percent, matching the regular-session row's
+            // "+33.94 (+7.00%)" style so a reader can read magnitude in
+            // both units without doing the math themselves. Yahoo returns
+            // preMarketChange / postMarketChange as absolute dollar deltas
+            // vs. the previous regular-session close.
+            const pctCls  = tier.pct == null ? '' : (tier.pct >= 0 ? 'pos' : 'neg');
+            const pctSign = tier.pct != null && tier.pct >= 0 ? '+' : '';
+            const chgSign = tier.chg != null && tier.chg >= 0 ? '+' : '';
+            const chgTxt  = tier.chg != null && isFinite(tier.chg)
+              ? chgSign + fmtN(tier.chg) + ' (' + pctSign + fmt(tier.pct, 2) + '%)'
+              : pctSign + fmt(tier.pct, 2) + '%';
             extEl.innerHTML =
               '<span class="ext-tag">' + tier.tag + '</span>' +
               '<span class="ext-price">$' + fmtN(tier.price) + '</span>' +
-              '<span class="ext-chg ' + pctCls + '">' + pctSign + fmt(tier.pct, 2) + '%</span>';
+              '<span class="ext-chg ' + pctCls + '">' + chgTxt + '</span>';
           } catch (e) { /* transient — try again next tick */ }
         }
         refreshQuote();
