@@ -1246,37 +1246,7 @@
       </div>
     </section>
 
-    <!-- Earnings calendar (Finnhub, upcoming week) - inserted between crypto row and movers -->
-    <section class="term-section">
-      <div class="term-section-label">
-        EARNINGS CALENDAR
-        <span class="sub">&mdash; top companies reporting the coming week &middot; sorted by revenue estimate &middot; Finnhub</span>
-      </div>
-      <div class="term-panel">
-        <div class="ec-tabs" id="ecTabs"></div>
-        <div class="ec-table-wrap">
-          <table class="ec-table">
-            <thead>
-              <tr>
-                <th style="width: 90px;">Ticker</th>
-                <th style="width: 70px;">Time</th>
-                <th class="num" style="width: 110px;">EPS est.</th>
-                <th class="num" style="width: 140px;">Revenue est.</th>
-                <th style="width: 80px;">Qtr</th>
-              </tr>
-            </thead>
-            <tbody id="ecTbody">
-              <tr><td colspan="5" class="ec-loading">Loading&hellip;</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="ec-footer">
-          <span class="ec-meta" id="ecMeta"></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Row 4: Movers — 3 side-by-side scrollable boxes (Yahoo screener) -->
+    <!-- Movers — 3 side-by-side scrollable boxes (Yahoo screener) -->
     <section class="term-section">
       <div class="term-section-label"><span data-role="moversTitle">TODAY&rsquo;S MOVERS</span> <span class="sub" data-role="moversSub">— 25 per column, refreshes every 5&ndash;10 min during market hours &middot; click any ticker to open its page</span></div>
       <div class="movers-grid">
@@ -1317,7 +1287,39 @@
       <p class="term-news-meta" id="moversMeta" style="text-align:right"></p>
     </section>
 
-    <!-- Row 5: Economic Calendar -->
+    <!-- Earnings calendar (Finnhub, upcoming week) — sits below Movers so
+         readers see today's session-appropriate movers first, then the
+         upcoming reporters. -->
+    <section class="term-section">
+      <div class="term-section-label">
+        EARNINGS CALENDAR
+        <span class="sub">&mdash; top companies reporting the coming week &middot; sorted by revenue estimate &middot; Finnhub</span>
+      </div>
+      <div class="term-panel">
+        <div class="ec-tabs" id="ecTabs"></div>
+        <div class="ec-table-wrap">
+          <table class="ec-table">
+            <thead>
+              <tr>
+                <th style="width: 90px;">Ticker</th>
+                <th style="width: 70px;">Time</th>
+                <th class="num" style="width: 110px;">EPS est.</th>
+                <th class="num" style="width: 140px;">Revenue est.</th>
+                <th style="width: 80px;">Qtr</th>
+              </tr>
+            </thead>
+            <tbody id="ecTbody">
+              <tr><td colspan="5" class="ec-loading">Loading&hellip;</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="ec-footer">
+          <span class="ec-meta" id="ecMeta"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Economic Calendar -->
     <section class="term-section">
       <div class="term-section-label">ECONOMIC CALENDAR <span class="sub">— major US and global data releases</span></div>
       <div class="term-panel">
