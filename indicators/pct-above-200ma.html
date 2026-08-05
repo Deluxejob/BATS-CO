@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>% of Stocks Above 200 MA — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="How BATS.CO uses the percentage of large-cap S&P constituents trading above their 200-day moving average, and what 20 years of data show — including the strongest contrarian buy signal we track." />
+  <!-- BATS SEO block -->
+  <link rel="canonical" href="https://bats.co/indicators/pct-above-200ma.html">
+  <meta property="og:site_name" content="BATS.CO">
+  <meta property="og:title" content="% of Stocks Above 200 MA — BATS.CO Indicator Explainer">
+  <meta property="og:description" content="How BATS.CO uses the percentage of large-cap S&P constituents trading above their 200-day moving average, and what 20 years of data show — including the strongest contrarian buy signal we track.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bats.co/indicators/pct-above-200ma.html">
+  <meta property="og:image" content="https://bats.co/og-card.png">
+  <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="% of Stocks Above 200 MA — BATS.CO Indicator Explainer">
+  <meta name="twitter:description" content="How BATS.CO uses the percentage of large-cap S&P constituents trading above their 200-day moving average, and what 20 years of data show — including the strongest contrarian buy signal we track.">
+  <meta name="twitter:image" content="https://bats.co/og-card.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="../index.html">← Back to dashboard</a></p>
+    </div>
+    <div class="market-toggle" role="tablist" aria-label="Choose market">
+      <a href="../index.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
+      <a href="../index.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../markets.html">Markets</a>
+      <a href="../quotes.html">Quotes</a>
+      <a href="../market-ratios.html">Market Ratios</a>
+      <a href="../pe-ratio.html">PE Ratio</a>
+      <a href="../concentration.html">Concentration</a>
+      <a href="../sector-rotation.html">Sector Rotation</a>
+      <a href="../extremes.html">Extremes</a>
+      <a href="../consumer.html">Consumer</a>
+      <a href="../pe.html">Private Equity</a>
+      <a href="../index.html#about">About</a>
+    </nav>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">INDICATOR EXPLAINER · #06</p>
+      <h1>% of Stocks Above 200 MA &mdash; how broad is the trend?</h1>
+      <p class="lede">
+        Of the ~100 large-cap S&amp;P constituents we track, how many are currently
+        trading above their own 200-day moving average? This one number captures
+        something the index alone can't: <strong>are stocks broadly participating
+        in the trend, or is a handful of megacaps carrying everything?</strong>
+      </p>
+    </section>
+
+    <section id="current-reading-section">
+      <div class="section-head">
+        <h2>Today's reading</h2>
+        <p>Same number you'll see on this component's card on the main dashboard.</p>
+      </div>
+      <div id="currentReading"><div class="comp-card current-reading-card"><em>Loading current reading&hellip;</em></div></div>
+    </section>
+
+    <section id="whatis">
+      <h2>What is "% of stocks above their 200-day MA"?</h2>
+      <p>
+        For each stock in our tracked universe (~100 continuously-public large-cap
+        S&amp;P constituents), we compute its 200-day moving average and check
+        whether today's price is above or below that line. The BATS number is
+        simply <strong>the percentage of the universe currently above trend</strong>.
+      </p>
+      <p>
+        This is a classic Wall Street breadth measure &mdash; professional
+        platforms track it as <code>$SPXA200R</code> on the full S&amp;P 500.
+        We compute our own version from mega-cap constituents so we don't
+        depend on a paid data feed. Same conceptual signal, slightly narrower
+        universe.
+      </p>
+      <div class="key-thresholds card">
+        <h3>Historical distribution (2005&ndash;2026)</h3>
+        <ul>
+          <li><span class="range">Median</span> ~75% (uptrend is the base case)</li>
+          <li><span class="range">Extreme low</span> below 15% (crisis: 2008, 2020 COVID)</li>
+          <li><span class="range">Extreme high</span> above 90% (broad rally: post-crisis recoveries)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="howbats">
+      <h2>How BATS uses % above 200 MA</h2>
+      <p>
+        This is a <strong>trend/participation</strong> indicator with a strong
+        contrarian tail at the low end. Broad participation is bullish (score
+        goes up). Extreme breadth washouts are also bullish &mdash; the score
+        goes to the floor, but the BATS bucket flips to "Extremely Oversold =
+        Aggressive Buy" because the historical forward returns from that zone
+        are exceptional.
+      </p>
+      <p>
+        Same direction convention as our other components:
+        <strong>very few stocks above trend &rarr; LOW BATS</strong> (crash zone,
+        buy signal), <strong>most stocks above trend &rarr; HIGH BATS</strong>
+        (broad healthy uptrend).
+      </p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table">
+          <thead>
+            <tr><th>% above 200 MA</th><th class="num">BATS points</th><th>Bucket</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Below 15%</td><td class="num">5</td><td><span class="bucket-dot" style="background:var(--s-ext)"></span>Extremely Oversold</td></tr>
+            <tr><td>15% &ndash; 30%</td><td class="num">5 &ndash; 25</td><td><span class="bucket-dot" style="background:var(--s1)"></span>Very Oversold &rarr; Oversold</td></tr>
+            <tr><td>30% &ndash; 45%</td><td class="num">25 &ndash; 45</td><td><span class="bucket-dot" style="background:var(--s2)"></span>Slightly Bearish</td></tr>
+            <tr><td>45% &ndash; 65%</td><td class="num">45 &ndash; 65</td><td><span class="bucket-dot" style="background:var(--s3)"></span>Neutral &rarr; Slightly Bullish</td></tr>
+            <tr><td>65% &ndash; 85%</td><td class="num">65 &ndash; 80</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish</td></tr>
+            <tr><td>Above 85%</td><td class="num">80 &ndash; 90</td><td><span class="bucket-dot" style="background:var(--s5)"></span>Bullish (broad rally)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="disclaimer" style="margin-top:1rem">
+        <strong>Note:</strong> Notice the score CAPS at ~90 &mdash; we do not
+        punish extreme breadth. The backtest below shows why: historically,
+        very high breadth just means the trend is broadly intact. It has NOT
+        been an exhaustion signal.
+      </p>
+    </section>
+
+    <section id="backtest" class="backtest">
+      <div class="section-head">
+        <h2>Does it work? &mdash; Historical backtest (2005&ndash;2026)</h2>
+        <p>
+          For every trading day where we have a valid breadth reading, we
+          compute this indicator's BATS score and measure how the S&amp;P 500
+          actually performed 6 and 12 months later. ~5,000 samples across
+          two crashes (2008, 2020) and multiple recoveries.
+        </p>
+      </div>
+      <div class="backtest-highlight" id="backtestHighlight">
+        <em>Loading backtest&hellip;</em>
+      </div>
+      <div class="backtest-table-wrap">
+        <table id="backtestTable" class="backtest-table"></table>
+      </div>
+      <p class="backtest-meta" id="backtestMeta">Loading historical data&hellip;</p>
+    </section>
+
+    <section id="findings">
+      <h2>What the data actually says</h2>
+      <p>Three findings from the 20-year backtest &mdash; and one of them is the strongest single-indicator buy signal in the entire BATS toolkit:</p>
+      <div class="findings-grid">
+        <div class="finding finding-pos">
+          <div class="finding-num">1</div>
+          <h3>Extreme breadth washouts = strongest contrarian buy signal we track.</h3>
+          <p>
+            When less than 15% of stocks were above their 200-day MA, the S&amp;P was
+            up an average of <strong>+37.3%</strong> over the next 12 months, with
+            <strong>every single one of 135 historical instances positive</strong>. Between 15-25%,
+            forward returns averaged <strong>+30%</strong>, 95% positive. That's dramatically
+            above the +12% baseline &mdash; the biggest edge of any single indicator
+            in the BATS composite.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> When most stocks look broken and the tape
+            feels ugly, history says step in. This has worked in 100% of historical
+            instances at the extreme.
+          </p>
+        </div>
+
+        <div class="finding finding-neg">
+          <div class="finding-num">2</div>
+          <h3>The 30&ndash;40% "recovering but not safe yet" zone is the WEAKEST bucket.</h3>
+          <p>
+            When breadth sits between 30% and 40%, forward 12mo returns average only
+            <strong>+8.1%</strong> with <strong>72%</strong> positive &mdash; meaningfully below the +12%
+            baseline. This is the zone where the market is bouncing off a low but
+            hasn't confirmed the recovery. Same pattern our SPX-vs-200MA indicator
+            shows at moderately-below-trend levels.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Don't confuse "off the lows" with "safe."
+            Breadth needs to broaden past 40-50% before the trend gets its footing.
+          </p>
+        </div>
+
+        <div class="finding finding-info">
+          <div class="finding-num">3</div>
+          <h3>No exhaustion at extreme highs.</h3>
+          <p>
+            When 90-100% of stocks were above their 200-day MA (broad, healthy
+            uptrends), forward 12mo returns averaged <strong>+11.2%</strong> with
+            <strong>83%</strong> positive &mdash; essentially baseline. There is no
+            "too many stocks in uptrends" penalty in the data. The intuition that
+            extreme breadth precedes selloffs is <em>not supported by history</em>.
+          </p>
+          <p class="finding-takeaway">
+            <strong>Takeaway:</strong> Broad rallies don't die of old age. When
+            most of the market is trending up, respect the trend &mdash; the
+            historical data says it continues at baseline pace.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>The extreme low is the money reading.</strong>
+          Below 20% breadth is rare (about 4% of trading days) but has
+          historically been the single best contrarian buy signal in our
+          toolkit. When you see it, other components will usually confirm
+          (VIX spike, RSI oversold, credit stress).
+        </li>
+        <li>
+          <strong>Middle-range readings track baseline.</strong>
+          Between 40% and 85%, forward returns cluster near baseline. This
+          indicator's edge comes from the tails.
+        </li>
+        <li>
+          <strong>High breadth isn't a sell signal.</strong>
+          Even at 95%+ readings, forward returns stayed near baseline.
+          Broad rallies persist. Don't fade broad participation just
+          because it's high.
+        </li>
+        <li>
+          <strong>Watch for breadth thrusts.</strong>
+          When this indicator jumps from below 40% to above 70% in a short
+          window, historically that has marked major bottoms (2009, 2020,
+          2022). The market signaling "everything is participating now" is
+          a strong bullish confirmation.
+        </li>
+        <li>
+          <strong>Universe caveat.</strong>
+          We compute this from ~100 large-cap S&amp;P constituents that
+          have been continuously public since 2005. This slightly overweights
+          mega-caps vs the full 500. In Mag-7-dominated regimes this may
+          read HIGHER than the equal-weight universe would. We may expand
+          to the full 500 constituents later.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns
+        are not guarantees. Always do your own research or talk to a financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../index.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    window.BATS_DATA_BASE = '../data/';
+    window.BATS_BACKTEST_KIND = 'pct_above_200ma';
+    window.BATS_INDICATOR_KEY = 'pct_above_200ma';
+  </script>
+  <script src="../app.js"></script>
+  <script src="../backtest.js"></script>
+  <script src="../ticker-search.js" defer></script>
+</body>
+</html>

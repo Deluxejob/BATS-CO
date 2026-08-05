@@ -31,16 +31,16 @@ jobs:
           chmod +x scripts/update-data.sh
           bash scripts/update-data.sh
 
-      - name: Set up Python for AAII refresh
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install xlrd + openpyxl for parsing AAII / NAAIM
-        run: pip install --quiet xlrd openpyxl
+      - name: Install openpyxl for parsing NAAIM
+        run: pip install --quiet openpyxl
 
-      - name: Refresh AAII (weekly — tolerant of no-new-data)
-        run: python scripts/update-aaii.py
+      - name: Refresh % of stocks above 200 MA (daily — fetches ~100 tickers from Yahoo)
+        run: python scripts/update-pct-above-200ma.py
 
       - name: Refresh NAAIM (weekly — tolerant of no-new-data)
         run: python scripts/update-naaim.py

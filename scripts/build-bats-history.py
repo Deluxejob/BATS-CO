@@ -57,7 +57,7 @@ def warn(msg: str) -> None:
 
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               aaii=10, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10)
+               pct_above_200ma=10, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -115,14 +115,14 @@ def score_ma200(d):
     else:          s = 95
     return clamp(s, 2, 98)
 
-def score_aaii(bbs):
-    if bbs is None: return None
-    if   bbs <= -30: s = 5
-    elif bbs <= -15: s = 5  + (bbs + 30) * 20 / 15
-    elif bbs <=   0: s = 25 + (bbs + 15) * 25 / 15
-    elif bbs <=  15: s = 50 + (bbs)      * 20 / 15
-    elif bbs <=  30: s = 70 + (bbs - 15) * 20 / 15
-    else:            s = 95
+def score_pct_above_200ma(pct):
+    if pct is None: return None
+    if   pct <= 15: s = 5
+    elif pct <= 30: s = 5  + (pct - 15) * (25 - 5)  / 15
+    elif pct <= 45: s = 25 + (pct - 30) * (45 - 25) / 15
+    elif pct <= 65: s = 45 + (pct - 45) * (65 - 45) / 20
+    elif pct <= 85: s = 65 + (pct - 65) * (80 - 65) / 20
+    else:           s = 80 + (pct - 85) * (90 - 80) / 15
     return clamp(s, 2, 98)
 
 def score_naaim(v):
@@ -195,12 +195,13 @@ def load_vix(fname='vix.csv'):
         except: pass
     return out
 
-def load_aaii():
-    rows = _read_csv('aaii.csv')
+def load_pct_above_200ma():
+    """pct_above_200ma.csv: Date,Pct,Coverage — column 1 is the percentage."""
+    rows = _read_csv('pct_above_200ma.csv')
     if not rows: return None
     out = {}
     for row in rows[1:]:
-        try: out[row[0]] = float(row[4])
+        try: out[row[0]] = float(row[1])
         except: pass
     return out
 
@@ -300,13 +301,13 @@ def main():
     rsp   = load_close(MC['equal'])
     hyg   = load_close('hyg.csv')
     lqd   = load_close('lqd.csv')
-    aaii  = load_aaii()
+    pct_above = load_pct_above_200ma()
     naaim = load_naaim()
     yields = load_yields()
     sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
-                    hyg=hyg, lqd=lqd, aaii=aaii, naaim=naaim, yields=yields,
+                    hyg=hyg, lqd=lqd, pct_above=pct_above, naaim=naaim, yields=yields,
                     sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
     if missing:
@@ -318,7 +319,7 @@ def main():
     rsp_dates = sorted(rsp.keys())
     hyg_dates = sorted(hyg.keys())
     lqd_dates = sorted(lqd.keys())
-    aaii_dates = sorted(aaii.keys())
+    pct_above_dates = sorted(pct_above.keys())
     naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
     sector_dates = sorted(sector_osc.keys())
@@ -337,9 +338,9 @@ def main():
             continue
 
         v_vix = vix.get(d)
-        # Weekly-ish series: use most recent reading on or before d
-        i = snap_le_idx(aaii_dates, d)
-        v_aaii = aaii[aaii_dates[i]] if i >= 0 else None
+        # Daily/weekly series: use most recent reading on or before d
+        i = snap_le_idx(pct_above_dates, d)
+        v_pct = pct_above[pct_above_dates[i]] if i >= 0 else None
         i = snap_le_idx(naaim_dates, d)
         v_naaim = naaim[naaim_dates[i]] if i >= 0 else None
         i = snap_le_idx(yields_dates, d)
@@ -368,7 +369,7 @@ def main():
             breadth=score_breadth(breadth),
             rsi=score_rsi(v_rsi),
             ma200=score_ma200(v_ma),
-            aaii=score_aaii(v_aaii),
+            pct_above_200ma=score_pct_above_200ma(v_pct),
             naaim=score_naaim(v_naaim),
             junk=score_junk(junk),
             spread=score_spread(v_spread),

@@ -226,7 +226,7 @@ function rsiAdvisory(rsi) {
 // The National Association of Active Investment Managers polls its members
 // each Wednesday: what's your current equity exposure? Responses range from
 // -200% (fully leveraged short) to +200% (fully leveraged long). The aggregate
-// mean is the "NAAIM Number." Institutional sister to AAII, published since 2006.
+// mean is the "NAAIM Number." Published weekly since 2006.
 //
 // Direction of BATS mapping — same as market state:
 //   Managers heavily long (high NAAIM)  -> HIGH BATS (market in confident state)
@@ -240,9 +240,8 @@ function rsiAdvisory(rsi) {
 //   Very Oversold (NAAIM ≤ 10, managers defensive): +13.6% avg 12mo, 75% hit
 //   Oversold      (NAAIM 10-35):                    +13.3% avg 12mo, 83% hit
 //   Very Bullish  (NAAIM > 100, leveraged long):    +11.9% avg 12mo, 82% hit
-// Unlike AAII, NAAIM's Very Bullish extreme is NOT punished — institutions
-// ride trends better than retail. But the "buy when defensive" side matches
-// AAII, giving us TWO independent institutional/retail confirmations at oversold.
+// NAAIM's Very Bullish extreme is NOT punished — institutions ride trends
+// well when they're aggressively long, so we score them monotonically.
 //
 // Weekly data — dashboard carries the most recent reading forward.
 function scoreNAAIM(v) {
@@ -267,50 +266,53 @@ function naaimAdvisory(v) {
   return                { tone: 'info',        text: 'Managers using leverage on the long side — historically NOT a warning (institutions ride trends better than retail). Forward 12mo returns have averaged +12% from this zone.' };
 }
 
-// ---- AAII Investor Sentiment Survey — Bull-Bear Spread ----
+// ---- % of Stocks Above 200-day Moving Average ----
 //
-// AAII (American Association of Individual Investors) has run a weekly survey
-// of retail investors since 1987 asking whether they're Bullish, Bearish, or
-// Neutral about the next 6 months. The Bull-Bear Spread (Bullish% - Bearish%)
-// is a widely-watched CONTRARIAN indicator.
+// Classic breadth indicator: of the ~100 large-cap S&P constituents we track,
+// how many are currently trading above their own 200-day moving average? A
+// high reading means broad participation in the uptrend; a low reading means
+// most stocks are broken.
 //
-// Direction of BATS mapping — CONTRARIAN:
-//   Retail extremely BEARISH (very negative spread) -> LOW BATS (buy signal)
-//   Retail extremely BULLISH (very positive spread) -> HIGH BATS (careful)
+// Direction of BATS mapping — trend/participation with a CONTRARIAN tail at
+// extreme washouts:
+//   Very low (<15%)   -> LOW BATS score (crash zone — historically the
+//                        strongest contrarian buy signal in our toolkit)
+//   Middle (30-60%)   -> mid-range
+//   High (>65%)       -> HIGH BATS score (broad, healthy uptrend)
 //
-// Distribution 1987-2026 (~2,025 weekly readings):
-//   min -54, 10th -17, median +7, 90th +28, max +63
-//   Note the positive median: retail is slightly bullish on average.
+// Backtest 2005-2026 (4,980 samples, 102 tickers), baseline SPY 12mo = +12.31%:
+//   0-10%  above 200MA:  +37.3% avg 12mo, 100% hit  (n=135)  ← contrarian buy
+//   10-20% above 200MA:  +30.1% avg 12mo,  95% hit  (n=58)
+//   20-30% above 200MA:  +16.0% avg 12mo,  82% hit
+//   30-40% above 200MA:  +8.1%  avg 12mo,  72% hit  ← WEAKEST zone
+//   40-70% above 200MA:  ~baseline
+//   70-100% above 200MA: ~baseline (NO exhaustion penalty at high extreme)
 //
-// Backtest 1987-2026:
-//   Very Oversold (spread ≤ -30):  +13.0% avg 12mo, 77% hit (n=117)
-//   Oversold      (spread -30 to -15): +12.4% avg 12mo, 80% hit (n=181)
-//   Very Bullish  (spread ≥ +30): +4.5% avg 12mo, 69% hit (n=244)  <- WORST bucket
-// The classic contrarian pattern holds: extremes fire on both sides, retail
-// is famously wrong at optimism extremes.
-//
-// Data is WEEKLY — the live dashboard carries the most recent reading forward.
-function scoreAAII(bbs) {
-  if (bbs == null || isNaN(bbs)) return null;
+// The 30-40% "recovering but not safe yet" zone is the weakest bucket, same
+// phenomenon MA200-distance shows at -6% to -1%. Extreme highs do NOT
+// underperform — the trend just continues, so no hockey-stick at the top.
+function scorePctAbove200MA(pct) {
+  if (pct == null || isNaN(pct)) return null;
   let s;
-  if (bbs <= -30)      s = 5;
-  else if (bbs <= -15) s = 5  + (bbs + 30) * 20 / 15;
-  else if (bbs <=   0) s = 25 + (bbs + 15) * 25 / 15;
-  else if (bbs <=  15) s = 50 + (bbs)      * 20 / 15;
-  else if (bbs <=  30) s = 70 + (bbs - 15) * 20 / 15;
-  else                 s = 95;
+  if (pct <= 15)       s = 5;                                    // extreme washout → contrarian buy floor
+  else if (pct <= 30)  s = 5  + (pct - 15) * (25 - 5)  / 15;    // 15→5,  30→25
+  else if (pct <= 45)  s = 25 + (pct - 30) * (45 - 25) / 15;    // 30→25, 45→45
+  else if (pct <= 65)  s = 45 + (pct - 45) * (65 - 45) / 20;    // 45→45, 65→65
+  else if (pct <= 85)  s = 65 + (pct - 65) * (80 - 65) / 20;    // 65→65, 85→80
+  else                 s = 80 + (pct - 85) * (90 - 80) / 15;    // 85→80, 100→90
   return Math.max(2, Math.min(98, s));
 }
 
-function aaiiAdvisory(bbs) {
-  if (bbs == null || isNaN(bbs)) return null;
-  if (bbs <= -30) return { tone: 'opportunity', text: 'Extreme retail bearishness — historically a contrarian buy signal. When AAII spread dropped below -30, S&P 500 was up +13% avg over next 12 months (77% positive).' };
-  if (bbs <= -15) return { tone: 'opportunity', text: 'Retail investors are unusually bearish — contrarian bullish. Forward 12mo returns have averaged +12.4% from this zone (80% positive).' };
-  if (bbs <=  -5) return { tone: 'info',        text: 'Retail slightly bearish. Sentiment is cautious but not extreme.' };
-  if (bbs <=   5) return { tone: 'info',        text: 'Balanced retail sentiment — neither too bullish nor too bearish.' };
-  if (bbs <=  15) return { tone: 'info',        text: 'Retail moderately bullish. Within normal range.' };
-  if (bbs <=  30) return { tone: 'info',        text: 'Retail solidly bullish. Getting toward the upper end of normal.' };
-  return                { tone: 'watch',        text: 'Extreme retail bullishness — historically a contrarian warning. Forward 12mo returns have averaged just +4.5% from this zone (only 69% positive) — the worst bucket we track.' };
+function pctAbove200MAAdvisory(pct) {
+  if (pct == null || isNaN(pct)) return null;
+  if (pct <= 15) return { tone: 'opportunity', text: 'Extreme breadth washout — one of the strongest contrarian buy signals in our toolkit. Historically forward 12mo returns from below 15% have averaged +37%, with 100% of instances positive (n=135).' };
+  if (pct <= 25) return { tone: 'opportunity', text: 'Very few stocks above their 200-day MA — deeply oversold breadth. Forward 12mo returns from this zone have averaged +30%, 95% positive.' };
+  if (pct <= 35) return { tone: 'watch',       text: 'Broad weakness — most stocks below their long-term trend. Recovery zone, still risky. Forward returns from here have historically underperformed baseline (~+8% avg vs +12% baseline).' };
+  if (pct <= 50) return { tone: 'info',        text: 'Mixed participation — roughly half the market is above trend, half below. Neutral breadth.' };
+  if (pct <= 65) return { tone: 'info',        text: 'Majority of stocks above their 200-day MA — healthy participation. Forward returns near baseline.' };
+  if (pct <= 80) return { tone: 'info',        text: 'Broad participation — most stocks are in uptrends. Trend is intact, forward returns near baseline.' };
+  if (pct <= 90) return { tone: 'info',        text: 'Very broad participation — trend is strong across the market. Not overbought; forward returns near baseline.' };
+  return                { tone: 'info',        text: 'Extreme broad participation — nearly all stocks above their 200-day MA. History does NOT punish this — forward returns from here have run near baseline (~+11% avg 12mo, 83% positive). Not an exhaustion signal.' };
 }
 
 // ---- S&P 500 vs 200-day Moving Average ----
@@ -672,21 +674,21 @@ const COMPONENTS = [
     explainer: 'indicators/ma200.html',
   },
   {
-    key: 'aaii',
-    name: 'AAII Retail Sentiment',
-    desc: 'Weekly retail investor survey (Bullish% − Bearish%). Contrarian: retail extremes are historically wrong. Very positive = careful; very negative = buy signal.',
+    key: 'pct_above_200ma',
+    name: '% of Stocks Above 200 MA',
+    desc: 'Breadth: of ~100 large-cap S&P constituents, how many are trading above their own 200-day MA. High = broad participation (bullish); very low = washout (historically the strongest contrarian buy signal we track).',
     weight: 10,
     status: 'live',
     raw: 0,
-    value: '0.00% (loading)',
-    signal: scoreAAII(0),
-    advisory: aaiiAdvisory(0),
-    explainer: 'indicators/aaii.html',
+    value: '— (loading)',
+    signal: scorePctAbove200MA(50),
+    advisory: pctAbove200MAAdvisory(50),
+    explainer: 'indicators/pct-above-200ma.html',
   },
   {
     key: 'naaim',
     name: 'NAAIM Manager Exposure',
-    desc: 'Weekly survey of active investment managers — how much equity exposure they hold. Institutional sister to AAII. Low readings = defensive = historically buy zone.',
+    desc: 'Weekly survey of active investment managers — how much equity exposure they hold. Low readings = defensive = historically buy zone.',
     weight: 5,
     status: 'live',
     raw: 0,
@@ -1060,14 +1062,15 @@ function parseDateCloseLive(text) {
   return rows;
 }
 
-// AAII: Date,Bullish,Neutral,Bearish,BullBearSpread (weekly, since 1987)
-function parseAAIILive(text) {
+// % Above 200 MA: Date,Pct,Coverage (daily, computed nightly from ~100 large caps)
+function parsePctAbove200MALive(text) {
   const lines = text.trim().split(/\r?\n/);
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const parts = lines[i].split(',');
-    const spread = parseFloat(parts[4]);
-    if (parts[0] && !isNaN(spread)) rows.push({ date: parts[0], spread });
+    const pct = parseFloat(parts[1]);
+    const cov = parseFloat(parts[2]);
+    if (parts[0] && !isNaN(pct)) rows.push({ date: parts[0], pct, coverage: isNaN(cov) ? null : cov });
   }
   return rows;
 }
@@ -1104,11 +1107,11 @@ function findNaaimOnOrBefore(naaimRows, targetDate) {
   return null;
 }
 
-// Find the most recent AAII reading on or before `targetDate` (YYYY-MM-DD).
-// AAII rows are chronologically sorted, so walk from the end.
-function findAaiiOnOrBefore(aaiiRows, targetDate) {
-  for (let i = aaiiRows.length - 1; i >= 0; i--) {
-    if (aaiiRows[i].date <= targetDate) return aaiiRows[i];
+// Find the most recent % Above 200 MA reading on or before `targetDate`.
+// Rows are daily and chronologically sorted; walk from the end.
+function findPctOnOrBefore(pctRows, targetDate) {
+  for (let i = pctRows.length - 1; i >= 0; i--) {
+    if (pctRows[i].date <= targetDate) return pctRows[i];
   }
   return null;
 }
@@ -1138,15 +1141,15 @@ function computeRsiSeriesLive(closes, period = 14) {
 
 async function loadLiveData() {
   // Market-specific data files (VIX/VXN, RSP/QQEW, SPY/QQQ, SPX/NDX)
-  // Universal data files (HYG, LQD, AAII, NAAIM, yields_history — apply to both markets)
-  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, aaiiText, naaimText, yieldsText, sectorOscText] = await Promise.all([
+  // Universal data files (HYG, LQD, % Above 200 MA, NAAIM, yields_history — apply to both markets)
+  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, pctAboveText, naaimText, yieldsText, sectorOscText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + MC.volCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthEqualCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthCapCsv),
     fetchCSVText(APP_DATA_BASE + 'hyg.csv'),
     fetchCSVText(APP_DATA_BASE + 'lqd.csv'),
     fetchCSVText(APP_DATA_BASE + MC.indexCsv),
-    fetchCSVText(APP_DATA_BASE + 'aaii.csv'),
+    fetchCSVText(APP_DATA_BASE + 'pct_above_200ma.csv'),
     fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
     fetchCSVText(APP_DATA_BASE + 'yields_history.csv'),
     fetchCSVText(APP_DATA_BASE + 'sector_osc.csv'),
@@ -1172,7 +1175,7 @@ async function loadLiveData() {
     }
     return out;
   })(sectorOscText);
-  const aaii = parseAAIILive(aaiiText);
+  const pctAbove = parsePctAbove200MALive(pctAboveText);
   const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
   const sma200 = computeSmaSeries(spx.map(r => r.close), 200); // 200-day MA of index (SPX or NDX)
@@ -1199,17 +1202,17 @@ async function loadLiveData() {
     return null;
   }
 
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')          || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')      || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')      || {}).weight || 0;
-  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')        || {}).weight || 0;
-  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')  || {}).weight || 0;
-  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')         || {}).weight || 0;
-  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')        || {}).weight || 0;
-  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread') || {}).weight || 0;
-  const wSector  = (COMPONENTS.find(c => c.key === 'sector_osc')   || {}).weight || 0;
-  const wROC5    = (COMPONENTS.find(c => c.key === 'roc5')         || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread + wSector + wROC5;
+  const wVix     = (COMPONENTS.find(c => c.key === 'vix')              || {}).weight || 0;
+  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')          || {}).weight || 0;
+  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')          || {}).weight || 0;
+  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')            || {}).weight || 0;
+  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
+  const wPct     = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
+  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
+  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
+  const wSector  = (COMPONENTS.find(c => c.key === 'sector_osc')       || {}).weight || 0;
+  const wROC5    = (COMPONENTS.find(c => c.key === 'roc5')             || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wPct + wNAAIM + wSpread + wSector + wROC5;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -1222,8 +1225,8 @@ async function loadLiveData() {
     if (si == null || si < 20 || vi == null || rsi[si] == null) return null;
     if (hi == null || hi < 20 || li == null || li < 20) return null;
     if (xi == null || sma200[xi] == null) return null;
-    const aaiiRec = findAaiiOnOrBefore(aaii, d);
-    if (!aaiiRec) return null;
+    const pctRec = findPctOnOrBefore(pctAbove, d);
+    if (!pctRec) return null;
     const naaimRec = findNaaimOnOrBefore(naaim, d);
     if (!naaimRec) return null;
     const yieldsRec = findYieldsOnOrBefore(d);
@@ -1246,12 +1249,12 @@ async function loadLiveData() {
     const rs = scoreRSI(rsi[si]);
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
-    const as_ = scoreAAII(aaiiRec.spread);
+    const ps = scorePctAbove200MA(pctRec.pct);
     const ns = scoreNAAIM(naaimRec.value);
     const yss = scoreYieldSpread(yieldSpread);
     const sos = scoreSectorOsc(sectorOscVal);
     const roc = scoreROC5(roc5Val);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null || sos == null || roc == null || wTotal <= 0) return null;
+    if (vs == null || bs == null || rs == null || js == null || ms == null || ps == null || ns == null || yss == null || sos == null || roc == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -1259,8 +1262,9 @@ async function loadLiveData() {
       rsiVal: rsi[si],
       junkSpread,
       ma200Dist,
-      aaiiSpread: aaiiRec.spread,
-      aaiiDate: aaiiRec.date,
+      pctAboveVal: pctRec.pct,
+      pctAboveCoverage: pctRec.coverage,
+      pctAboveDate: pctRec.date,
       naaimValue: naaimRec.value,
       naaimDate: naaimRec.date,
       yieldSpread,
@@ -1268,8 +1272,8 @@ async function loadLiveData() {
       sectorOsc: sectorOscVal,
       sectorOscDate: sectorRec.date,
       roc5: roc5Val,
-      vs, bs, rs, js, ms, as_, ns, yss, sos, roc,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5) / wTotal,
+      vs, bs, rs, js, ms, ps, ns, yss, sos, roc,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ps * wPct + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5) / wTotal,
     };
   }
 
@@ -1299,7 +1303,7 @@ function updateComponentsWithLatest(current) {
   const rsiComp  = COMPONENTS.find(c => c.key === 'spy_rsi');
   const maComp   = COMPONENTS.find(c => c.key === 'ma200');
   const junkComp = COMPONENTS.find(c => c.key === 'junk_demand');
-  const aaiiComp = COMPONENTS.find(c => c.key === 'aaii');
+  const pctComp  = COMPONENTS.find(c => c.key === 'pct_above_200ma');
 
   if (vixComp) {
     vixComp.raw = current.vix;
@@ -1334,12 +1338,11 @@ function updateComponentsWithLatest(current) {
     junkComp.signal = current.js;
     junkComp.advisory = junkDemandAdvisory(current.junkSpread);
   }
-  if (aaiiComp) {
-    aaiiComp.raw = current.aaiiSpread;
-    const sign = current.aaiiSpread >= 0 ? '+' : '';
-    aaiiComp.value = `${sign}${current.aaiiSpread.toFixed(1)}% (${current.aaiiDate})`;
-    aaiiComp.signal = current.as_;
-    aaiiComp.advisory = aaiiAdvisory(current.aaiiSpread);
+  if (pctComp) {
+    pctComp.raw = current.pctAboveVal;
+    pctComp.value = `${current.pctAboveVal.toFixed(1)}%`;
+    pctComp.signal = current.ps;
+    pctComp.advisory = pctAbove200MAAdvisory(current.pctAboveVal);
   }
   const naaimComp = COMPONENTS.find(c => c.key === 'naaim');
   if (naaimComp) {

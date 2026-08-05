@@ -223,14 +223,14 @@ function computeSmaSeriesBacktest(closes, period = SMA_PERIOD) {
   return sma;
 }
 
-// Parser for the weekly AAII CSV (Date,Bullish,Neutral,Bearish,BullBearSpread).
-function parseAAII(text) {
+// Parser for the daily % Above 200 MA CSV (Date,Pct,Coverage).
+function parsePctAbove(text) {
   const lines = text.trim().split(/\r?\n/);
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const parts = lines[i].split(',');
-    const spread = parseFloat(parts[4]);
-    if (parts[0] && !isNaN(spread)) rows.push({ date: parts[0], spread });
+    const pct = parseFloat(parts[1]);
+    if (parts[0] && !isNaN(pct)) rows.push({ date: parts[0], pct });
   }
   return rows;
 }
@@ -260,11 +260,11 @@ function parseYieldsHistory(text) {
   return rows;
 }
 
-// Given a sorted-by-date AAII array, return the row whose date is the latest
+// Given a sorted-by-date array, return the row whose date is the latest
 // one ≤ targetDate (i.e. the reading in effect on that day).
-function aaiiOnOrBefore(aaiiRows, targetDate) {
-  for (let i = aaiiRows.length - 1; i >= 0; i--) {
-    if (aaiiRows[i].date <= targetDate) return aaiiRows[i];
+function pctOnOrBefore(pctRows, targetDate) {
+  for (let i = pctRows.length - 1; i >= 0; i--) {
+    if (pctRows[i].date <= targetDate) return pctRows[i];
   }
   return null;
 }
@@ -307,37 +307,35 @@ async function runNaaimBacktest() {
 }
 
 // ============================================================
-// AAII BACKTEST — weekly Bull-Bear spread vs SPX forward returns.
-// Uses each AAII reading date (not carried forward — we sample at the source).
+// % ABOVE 200 MA BACKTEST — daily breadth vs SPX forward returns.
 // ============================================================
-async function runAaiiBacktest() {
-  const [aaiiText, spxText] = await Promise.all([
-    fetchText(DATA_BASE + 'aaii.csv'),
+async function runPctAbove200MABacktest() {
+  const [pctText, spxText] = await Promise.all([
+    fetchText(DATA_BASE + 'pct_above_200ma.csv'),
     fetchText(DATA_BASE + BT_MC.indexCsv),
   ]);
-  const aaii = parseAAII(aaiiText);
+  const pct = parsePctAbove(pctText);
   const spx = parseDateClose(spxText);
   const spxByDate = new Map();
   spx.forEach((r, i) => spxByDate.set(r.date, i));
 
   const trades = [];
-  for (const a of aaii) {
-    // Find the SPX close on the AAII reading date, or the next trading day.
-    let xi = spxByDate.get(a.date);
+  for (const p of pct) {
+    let xi = spxByDate.get(p.date);
     if (xi == null) {
       for (let i = 0; i < spx.length; i++) {
-        if (spx[i].date >= a.date) { xi = i; break; }
+        if (spx[i].date >= p.date) { xi = i; break; }
       }
     }
     if (xi == null) continue;
-    const score = scoreAAII(a.spread);
+    const score = scorePctAbove200MA(p.pct);
     if (score == null) continue;
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
     const spx12  = spx[xi + TRADING_DAYS_12MO];
     trades.push({
-      date: a.date,
-      raw: a.spread,
+      date: p.date,
+      raw: p.pct,
       score,
       bucket: bucketOf(score),
       ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
@@ -464,14 +462,14 @@ async function runJunkBacktest() {
 // are currently set in COMPONENTS (app.js). This is the actual product.
 // ============================================================
 async function runBlendedBacktest() {
-  const [vixText, rspText, spyText, spxText, hygText, lqdText, aaiiText, naaimText, yieldsText] = await Promise.all([
+  const [vixText, rspText, spyText, spxText, hygText, lqdText, pctText, naaimText, yieldsText] = await Promise.all([
     fetchText(DATA_BASE + BT_MC.volCsv),
     fetchText(DATA_BASE + BT_MC.breadthEqualCsv),
     fetchText(DATA_BASE + BT_MC.breadthCapCsv),
     fetchText(DATA_BASE + BT_MC.indexCsv),
     fetchText(DATA_BASE + 'hyg.csv'),
     fetchText(DATA_BASE + 'lqd.csv'),
-    fetchText(DATA_BASE + 'aaii.csv'),
+    fetchText(DATA_BASE + 'pct_above_200ma.csv'),
     fetchText(DATA_BASE + 'naaim.csv'),
     fetchText(DATA_BASE + 'yields_history.csv'),
   ]);
@@ -482,7 +480,7 @@ async function runBlendedBacktest() {
   const hyg = parseDateClose(hygText);
   const lqd = parseDateClose(lqdText);
   const yields = parseYieldsHistory(yieldsText);
-  const aaii = parseAAII(aaiiText);
+  const pctAbove = parsePctAbove(pctText);
   const naaim = parseNAAIM(naaimText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
   const sma200 = computeSmaSeriesBacktest(spx.map(r => r.close), SMA_PERIOD);
@@ -498,19 +496,19 @@ async function runBlendedBacktest() {
   const lqdByDate = new Map();
   lqd.forEach((r, i) => lqdByDate.set(r.date, i));
 
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')          || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')      || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')      || {}).weight || 0;
-  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')        || {}).weight || 0;
-  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')  || {}).weight || 0;
-  const wAAII    = (COMPONENTS.find(c => c.key === 'aaii')         || {}).weight || 0;
-  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')        || {}).weight || 0;
-  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread') || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wAAII + wNAAIM + wSpread;
+  const wVix     = (COMPONENTS.find(c => c.key === 'vix')              || {}).weight || 0;
+  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')          || {}).weight || 0;
+  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')          || {}).weight || 0;
+  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')            || {}).weight || 0;
+  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
+  const wPct     = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
+  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
+  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
+  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wPct + wNAAIM + wSpread;
   if (wTotal <= 0) throw new Error('No live weights configured');
 
-  // Rolling pointers for the weekly-series carry-forward (O(n) instead of O(n²)).
-  let aaiiPtr = -1;
+  // Rolling pointers for the daily-series carry-forward (O(n) instead of O(n²)).
+  let pctPtr = -1;
   let naaimPtr = -1;
   let yieldsPtr = -1;
 
@@ -527,10 +525,10 @@ async function runBlendedBacktest() {
     if (rsi[si] == null || sma200[xi] == null) continue;
 
     // Advance carry-forward pointers to the most recent reading ≤ this trading day.
-    while (aaiiPtr + 1 < aaii.length && aaii[aaiiPtr + 1].date <= d) aaiiPtr++;
+    while (pctPtr + 1 < pctAbove.length && pctAbove[pctPtr + 1].date <= d) pctPtr++;
     while (naaimPtr + 1 < naaim.length && naaim[naaimPtr + 1].date <= d) naaimPtr++;
     while (yieldsPtr + 1 < yields.length && yields[yieldsPtr + 1].date <= d) yieldsPtr++;
-    if (aaiiPtr < 0 || naaimPtr < 0 || yieldsPtr < 0) continue;
+    if (pctPtr < 0 || naaimPtr < 0 || yieldsPtr < 0) continue;
 
     const rspRet = (rsp[i].close / rsp[i - BREADTH_LOOKBACK].close - 1) * 100;
     const spyRet = (spy[si].close / spy[si - BREADTH_LOOKBACK].close - 1) * 100;
@@ -540,7 +538,7 @@ async function runBlendedBacktest() {
     const junkSpread = hygRet - lqdRet;
     const yieldSpread = yields[yieldsPtr].spread;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
-    const aaiiSpread = aaii[aaiiPtr].spread;
+    const pctVal = pctAbove[pctPtr].pct;
     const naaimVal = naaim[naaimPtr].value;
 
     const vs = scoreVIX(vix[vi].close);
@@ -548,12 +546,12 @@ async function runBlendedBacktest() {
     const rs = scoreRSI(rsi[si]);
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
-    const as_ = scoreAAII(aaiiSpread);
+    const ps = scorePctAbove200MA(pctVal);
     const ns = scoreNAAIM(naaimVal);
     const yss = scoreYieldSpread(yieldSpread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || as_ == null || ns == null || yss == null) continue;
+    if (vs == null || bs == null || rs == null || js == null || ms == null || ps == null || ns == null || yss == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + as_ * wAAII + ns * wNAAIM + yss * wSpread) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ps * wPct + ns * wNAAIM + yss * wSpread) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -695,14 +693,14 @@ function renderBacktest({ summary, baseline, dateFrom, dateTo }) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   const kind = (typeof window !== 'undefined' && window.BATS_BACKTEST_KIND) || 'vix';
-  const runner = kind === 'breadth'   ? runBreadthBacktest
-               : kind === 'rsi'       ? runRsiBacktest
-               : kind === 'junk'      ? runJunkBacktest
-               : kind === 'ma200'     ? runMa200Backtest
-               : kind === 'aaii'      ? runAaiiBacktest
-               : kind === 'naaim'     ? runNaaimBacktest
-               : kind === 'yield_spread' ? runYieldSpreadBacktest
-               : kind === 'blended'   ? runBlendedBacktest
+  const runner = kind === 'breadth'          ? runBreadthBacktest
+               : kind === 'rsi'              ? runRsiBacktest
+               : kind === 'junk'             ? runJunkBacktest
+               : kind === 'ma200'            ? runMa200Backtest
+               : kind === 'pct_above_200ma'  ? runPctAbove200MABacktest
+               : kind === 'naaim'            ? runNaaimBacktest
+               : kind === 'yield_spread'     ? runYieldSpreadBacktest
+               : kind === 'blended'          ? runBlendedBacktest
                : runVixBacktest;
   runner()
     .then(renderBacktest)
