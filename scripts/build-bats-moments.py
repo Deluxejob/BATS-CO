@@ -51,8 +51,9 @@ def warn(msg: str) -> None:
 
 
 # --- Component weights (must match COMPONENTS in app.js) ---
-WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               pct_above_200ma=10, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10)
+WEIGHTS = dict(vix=25, breadth=10, rsi=10, ma200=10,
+               pct_above_200ma=20, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10,
+               sector_regime=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -166,6 +167,21 @@ def score_roc5(roc):
     return clamp(s, 2, 98)
 
 
+def score_sector_regime(spread):
+    """Cyclical vs defensive 3M spread. Piecewise-linear 0-100 map, same as
+    sector-rotation.html."""
+    if spread is None: return None
+    s = spread
+    if s <= -8: score = max(0.0, 15.0 + (s + 8) * (15.0 / 4))
+    elif s <= -5: score = 15.0 + (s + 8) * (15.0 / 3)
+    elif s <= -1: score = 30.0 + (s + 5) * (15.0 / 4)
+    elif s <=  1: score = 45.0 + (s + 1) * (10.0 / 2)
+    elif s <=  5: score = 55.0 + (s - 1) * (15.0 / 4)
+    elif s <=  8: score = 70.0 + (s - 5) * (15.0 / 3)
+    else:         score = min(100.0, 85.0 + (s - 8) * (15.0 / 4))
+    return clamp(score, 2, 98)
+
+
 # --- Wilder's 14-day RSI (matches app.js) ---
 def rsi_wilder(closes, period=14):
     if len(closes) < period + 1: return None
@@ -216,6 +232,17 @@ def load_vix(fname='vix.csv'):
 def load_pct_above_200ma():
     """pct_above_200ma.csv: Date,Pct,Coverage — column 1 is the percentage."""
     rows = _read_csv('pct_above_200ma.csv')
+    if not rows: return None
+    out = {}
+    for row in rows[1:]:
+        try: out[row[0]] = float(row[1])
+        except: pass
+    return out
+
+
+def load_sector_regime():
+    """sector_regime.csv: Date,Spread,Score — column 1 is the 3M cyclical-defensive spread."""
+    rows = _read_csv('sector_regime.csv')
     if not rows: return None
     out = {}
     for row in rows[1:]:
@@ -339,12 +366,14 @@ def main():
     hyg   = load_close('hyg.csv')
     lqd   = load_close('lqd.csv')
     pct_above = load_pct_above_200ma()
+    sector_regime = load_sector_regime()
     naaim = load_naaim()
     yields = load_yields()
     sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
-                    hyg=hyg, lqd=lqd, pct_above=pct_above, naaim=naaim, yields=yields,
+                    hyg=hyg, lqd=lqd, pct_above=pct_above, sector_regime=sector_regime,
+                    naaim=naaim, yields=yields,
                     sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
     if missing:
@@ -358,6 +387,7 @@ def main():
     lqd_dates = sorted(lqd.keys())
     vix_dates = sorted(vix.keys())
     pct_above_dates = sorted(pct_above.keys())
+    sector_regime_dates = sorted(sector_regime.keys())
     naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
     sector_dates = sorted(sector_osc.keys())
@@ -372,13 +402,15 @@ def main():
         d_lqd  = snap_le(lqd_dates, target)
         d_vix  = snap_le(vix_dates, target)
         d_pct  = snap_le(pct_above_dates, target)
+        d_secreg = snap_le(sector_regime_dates, target)
         d_naaim = snap_le(naaim_dates, target)
         d_yields = snap_le(yields_dates, target)
         d_sector = snap_le(sector_dates, target)
 
-        v_vix    = vix.get(d_vix)          if d_vix    else None
-        v_pct    = pct_above.get(d_pct)    if d_pct    else None
-        v_naaim  = naaim.get(d_naaim)      if d_naaim  else None
+        v_vix    = vix.get(d_vix)                if d_vix    else None
+        v_pct    = pct_above.get(d_pct)          if d_pct    else None
+        v_secreg = sector_regime.get(d_secreg)   if d_secreg else None
+        v_naaim  = naaim.get(d_naaim)            if d_naaim  else None
         v_rsi    = rsi_at(spy_dates, spy, d_spy) if d_spy else None
         v_ma     = ma200_dist(spx_dates, spx, d_spx) if d_spx else None
         v_spread = yields.get(d_yields) if d_yields else None
@@ -409,6 +441,7 @@ def main():
             'spread':          dict(raw=v_spread, score=score_spread(v_spread),                  weight=WEIGHTS['spread']),
             'sector_osc':      dict(raw=v_sector, score=score_sector_osc(v_sector),              weight=WEIGHTS['sector_osc']),
             'roc5':            dict(raw=v_roc5,   score=score_roc5(v_roc5),                      weight=WEIGHTS['roc5']),
+            'sector_regime':   dict(raw=v_secreg, score=score_sector_regime(v_secreg),           weight=WEIGHTS['sector_regime']),
         }
 
         # Weighted blend

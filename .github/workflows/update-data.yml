@@ -69,6 +69,9 @@ jobs:
       - name: Rebuild BATS sector oscillator (must run before moments/history)
         run: python scripts/build-sector-osc.py
 
+      - name: Rebuild Sector Rotation Regime (must run before moments/history)
+        run: python scripts/build-sector-regime.py
+
       - name: Regenerate BATS moments — S&P 500
         run: python scripts/build-bats-moments.py --market=sp500
 

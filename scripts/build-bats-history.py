@@ -56,8 +56,9 @@ def warn(msg: str) -> None:
 
 
 # --- Component weights (must match COMPONENTS in app.js) ---
-WEIGHTS = dict(vix=25, breadth=25, rsi=10, ma200=10,
-               pct_above_200ma=10, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10)
+WEIGHTS = dict(vix=25, breadth=10, rsi=10, ma200=10,
+               pct_above_200ma=20, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10,
+               sector_regime=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
@@ -169,6 +170,22 @@ def score_roc5(roc):
     return clamp(s, 2, 98)
 
 
+def score_sector_regime(spread):
+    """Cyclical vs defensive 3M spread. Piecewise-linear 0-100 map, same as
+    sector-rotation.html. High score = risk-on, low = defensive. Pure trend
+    indicator — deep-defensive extremes are NOT contrarian in the backtest."""
+    if spread is None: return None
+    s = spread
+    if s <= -8: score = max(0.0, 15.0 + (s + 8) * (15.0 / 4))
+    elif s <= -5: score = 15.0 + (s + 8) * (15.0 / 3)
+    elif s <= -1: score = 30.0 + (s + 5) * (15.0 / 4)
+    elif s <=  1: score = 45.0 + (s + 1) * (10.0 / 2)
+    elif s <=  5: score = 55.0 + (s - 1) * (15.0 / 4)
+    elif s <=  8: score = 70.0 + (s - 5) * (15.0 / 3)
+    else:         score = min(100.0, 85.0 + (s - 8) * (15.0 / 4))
+    return clamp(score, 2, 98)
+
+
 # --- Loaders ---
 def _read_csv(fname):
     path = os.path.join(DATA_DIR, fname)
@@ -198,6 +215,17 @@ def load_vix(fname='vix.csv'):
 def load_pct_above_200ma():
     """pct_above_200ma.csv: Date,Pct,Coverage — column 1 is the percentage."""
     rows = _read_csv('pct_above_200ma.csv')
+    if not rows: return None
+    out = {}
+    for row in rows[1:]:
+        try: out[row[0]] = float(row[1])
+        except: pass
+    return out
+
+
+def load_sector_regime():
+    """sector_regime.csv: Date,Spread,Score — column 1 is the 3M cyclical-defensive spread."""
+    rows = _read_csv('sector_regime.csv')
     if not rows: return None
     out = {}
     for row in rows[1:]:
@@ -302,12 +330,14 @@ def main():
     hyg   = load_close('hyg.csv')
     lqd   = load_close('lqd.csv')
     pct_above = load_pct_above_200ma()
+    sector_regime = load_sector_regime()
     naaim = load_naaim()
     yields = load_yields()
     sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
-                    hyg=hyg, lqd=lqd, pct_above=pct_above, naaim=naaim, yields=yields,
+                    hyg=hyg, lqd=lqd, pct_above=pct_above, sector_regime=sector_regime,
+                    naaim=naaim, yields=yields,
                     sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
     if missing:
@@ -320,6 +350,7 @@ def main():
     hyg_dates = sorted(hyg.keys())
     lqd_dates = sorted(lqd.keys())
     pct_above_dates = sorted(pct_above.keys())
+    sector_regime_dates = sorted(sector_regime.keys())
     naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
     sector_dates = sorted(sector_osc.keys())
@@ -341,6 +372,8 @@ def main():
         # Daily/weekly series: use most recent reading on or before d
         i = snap_le_idx(pct_above_dates, d)
         v_pct = pct_above[pct_above_dates[i]] if i >= 0 else None
+        i = snap_le_idx(sector_regime_dates, d)
+        v_secreg = sector_regime[sector_regime_dates[i]] if i >= 0 else None
         i = snap_le_idx(naaim_dates, d)
         v_naaim = naaim[naaim_dates[i]] if i >= 0 else None
         i = snap_le_idx(yields_dates, d)
@@ -375,6 +408,7 @@ def main():
             spread=score_spread(v_spread),
             sector_osc=score_sector_osc(v_sector),
             roc5=score_roc5(v_roc5),
+            sector_regime=score_sector_regime(v_secreg),
         )
 
         w_sum = 0

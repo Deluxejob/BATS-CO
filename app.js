@@ -457,6 +457,50 @@ function junkDemandAdvisory(spread) {
   return                      { tone: 'opportunity', text: 'Extreme risk appetite — investors chasing high-yield bonds aggressively. Strong bullish confirmation historically (+15% avg forward 12mo).' };
 }
 
+// ---- Sector Rotation Regime — cyclicals vs defensives 3M spread ----
+//
+// Measures where the money is flowing at a rotation level: are investors
+// bidding up cyclical sectors (tech, financials, industrials, discretionary,
+// communication) or hiding in defensives (staples, utilities, health care,
+// real estate)? Formula matches the sector-rotation.html page verbatim:
+//
+//   spread = avg(cyclical 3M returns) - avg(defensive 3M returns)
+//
+// Same 0-100 piecewise score mapping the live page uses. Direction: high
+// score = risk-on, low = defensive.
+//
+// PURE TREND indicator — NOT contrarian. Backtest 2000-2026 (6,630 samples):
+//   Deep defensive (score 0-15):  +4.8% avg 12mo, 58% hit  ← below baseline
+//   Rotation stalled (45-55):     +6.5% avg 12mo, 75% hit  ← baseline
+//   Deep risk-on (score 85+):     +13.5% avg 12mo, 88% hit ← best bucket
+// Baseline: +7.8%, 76%. Unlike VIX or % Above 200MA, deep-defensive does
+// NOT bounce back — when cyclicals are getting crushed, forward returns
+// stay weak. Extreme risk-on continues trending (no exhaustion penalty).
+function scoreSectorRegime(spread) {
+  if (spread == null || isNaN(spread)) return null;
+  const s = spread;
+  let score;
+  if (s <= -8)      score = Math.max(0, 15 + (s + 8) * (15 / 4));
+  else if (s <= -5) score = 15 + (s + 8) * (15 / 3);
+  else if (s <= -1) score = 30 + (s + 5) * (15 / 4);
+  else if (s <=  1) score = 45 + (s + 1) * (10 / 2);
+  else if (s <=  5) score = 55 + (s - 1) * (15 / 4);
+  else if (s <=  8) score = 70 + (s - 5) * (15 / 3);
+  else              score = Math.min(100, 85 + (s - 8) * (15 / 4));
+  return Math.max(2, Math.min(98, score));
+}
+
+function sectorRegimeAdvisory(spread) {
+  if (spread == null || isNaN(spread)) return null;
+  if (spread <= -8) return { tone: 'watch',       text: 'Deep defensive rotation — cyclicals badly lagging defensives. Historically forward returns from here averaged only +4.8% (58% positive), meaningfully worse than the +7.8% baseline. This is NOT a contrarian buy signal — when the tape rotates this defensively, it has tended to stay defensive.' };
+  if (spread <= -5) return { tone: 'watch',       text: 'Defensive rotation — money moving into staples, utilities, health care. Bearish trend signal.' };
+  if (spread <= -1) return { tone: 'watch',       text: 'Cautious risk-off — defensives modestly leading. Early warning of a rotation shift.' };
+  if (spread <=  1) return { tone: 'info',        text: 'Rotation stalled — cyclicals and defensives roughly tied. Market waiting for a catalyst.' };
+  if (spread <=  5) return { tone: 'info',        text: 'Cautious risk-on — cyclicals modestly ahead of defensives. Trend tilted positive.' };
+  if (spread <=  8) return { tone: 'info',        text: 'Risk-on expansion — cyclicals clearly beating defensives. Healthy trend confirmation.' };
+  return                { tone: 'opportunity', text: 'Deep risk-on rotation — cyclicals dominating defensives. Historically the strongest forward-return bucket: +13.5% avg 12mo (88% positive). Trend is broadly intact and continuing.' };
+}
+
 // ---- BATS Sector Oscillator — McClellan-style breadth on the 11 SPDR ETFs ----
 //
 // Computed nightly by scripts/build-sector-osc.py into data/sector_osc.csv.
@@ -641,7 +685,7 @@ const COMPONENTS = [
     key: 'breadth',
     name: 'Market Breadth',
     desc: `How many stocks are participating (${MC.breadthLabel} 20-day spread). Confirmatory: broad participation is bullish, narrow rallies are fragile.`,
-    weight: 25,
+    weight: 10,
     status: 'live',
     raw: -0.8,
     value: '−0.8% (demo)',
@@ -677,7 +721,7 @@ const COMPONENTS = [
     key: 'pct_above_200ma',
     name: '% of Stocks Above 200 MA',
     desc: 'Breadth: of ~100 large-cap S&P constituents, how many are trading above their own 200-day MA. High = broad participation (bullish); very low = washout (historically the strongest contrarian buy signal we track).',
-    weight: 10,
+    weight: 20,
     status: 'live',
     raw: 0,
     value: '— (loading)',
@@ -744,6 +788,18 @@ const COMPONENTS = [
     signal: scoreROC5(0),
     advisory: roc5Advisory(0),
     explainer: 'indicators/roc5.html',
+  },
+  {
+    key: 'sector_regime',
+    name: 'Sector Rotation Regime',
+    desc: '3-month cyclical vs defensive spread — where the money is flowing at a rotation level. Trend indicator: positive spread = risk-on (cyclicals leading), negative = risk-off (defensives leading). Historically the deep risk-on tail averaged +13.5% forward 12mo, 88% positive.',
+    weight: 10,
+    status: 'live',
+    raw: 0,
+    value: '0.00 pp (loading)',
+    signal: scoreSectorRegime(0),
+    advisory: sectorRegimeAdvisory(0),
+    explainer: 'indicators/sector-regime.html',
   },
 ];
 
@@ -1062,6 +1118,19 @@ function parseDateCloseLive(text) {
   return rows;
 }
 
+// Sector Regime: Date,Spread,Score (daily, computed nightly from data/sectors/*.csv)
+function parseSectorRegimeLive(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const spread = parseFloat(parts[1]);
+    const score = parseFloat(parts[2]);
+    if (parts[0] && !isNaN(spread)) rows.push({ date: parts[0], spread, score: isNaN(score) ? null : score });
+  }
+  return rows;
+}
+
 // % Above 200 MA: Date,Pct,Coverage (daily, computed nightly from ~100 large caps)
 function parsePctAbove200MALive(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -1142,7 +1211,7 @@ function computeRsiSeriesLive(closes, period = 14) {
 async function loadLiveData() {
   // Market-specific data files (VIX/VXN, RSP/QQEW, SPY/QQQ, SPX/NDX)
   // Universal data files (HYG, LQD, % Above 200 MA, NAAIM, yields_history — apply to both markets)
-  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, pctAboveText, naaimText, yieldsText, sectorOscText] = await Promise.all([
+  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, pctAboveText, naaimText, yieldsText, sectorOscText, sectorRegimeText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + MC.volCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthEqualCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthCapCsv),
@@ -1153,6 +1222,7 @@ async function loadLiveData() {
     fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
     fetchCSVText(APP_DATA_BASE + 'yields_history.csv'),
     fetchCSVText(APP_DATA_BASE + 'sector_osc.csv'),
+    fetchCSVText(APP_DATA_BASE + 'sector_regime.csv'),
   ]);
   // VIX ships as OHLC; VXN as Date,Close. Same field name downstream.
   const vix = MC.volIsOHLC ? parseVIXLive(volText) : parseDateCloseLive(volText).map(r => ({ date: r.date, close: r.close }));
@@ -1176,6 +1246,7 @@ async function loadLiveData() {
     return out;
   })(sectorOscText);
   const pctAbove = parsePctAbove200MALive(pctAboveText);
+  const sectorRegime = parseSectorRegimeLive(sectorRegimeText);
   const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
   const sma200 = computeSmaSeries(spx.map(r => r.close), 200); // 200-day MA of index (SPX or NDX)
@@ -1202,17 +1273,18 @@ async function loadLiveData() {
     return null;
   }
 
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')              || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')          || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')          || {}).weight || 0;
-  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')            || {}).weight || 0;
-  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
-  const wPct     = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
-  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
-  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
-  const wSector  = (COMPONENTS.find(c => c.key === 'sector_osc')       || {}).weight || 0;
-  const wROC5    = (COMPONENTS.find(c => c.key === 'roc5')             || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wPct + wNAAIM + wSpread + wSector + wROC5;
+  const wVix       = (COMPONENTS.find(c => c.key === 'vix')              || {}).weight || 0;
+  const wBreadth   = (COMPONENTS.find(c => c.key === 'breadth')          || {}).weight || 0;
+  const wRSI       = (COMPONENTS.find(c => c.key === 'spy_rsi')          || {}).weight || 0;
+  const wMA        = (COMPONENTS.find(c => c.key === 'ma200')            || {}).weight || 0;
+  const wJunk      = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
+  const wPct       = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
+  const wNAAIM     = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
+  const wSpread    = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
+  const wSector    = (COMPONENTS.find(c => c.key === 'sector_osc')       || {}).weight || 0;
+  const wROC5      = (COMPONENTS.find(c => c.key === 'roc5')             || {}).weight || 0;
+  const wSecRegime = (COMPONENTS.find(c => c.key === 'sector_regime')    || {}).weight || 0;
+  const wTotal     = wVix + wBreadth + wRSI + wMA + wJunk + wPct + wNAAIM + wSpread + wSector + wROC5 + wSecRegime;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -1227,6 +1299,8 @@ async function loadLiveData() {
     if (xi == null || sma200[xi] == null) return null;
     const pctRec = findPctOnOrBefore(pctAbove, d);
     if (!pctRec) return null;
+    const secRegRec = findPctOnOrBefore(sectorRegime, d);   // same lookup shape (daily, on-or-before)
+    if (!secRegRec) return null;
     const naaimRec = findNaaimOnOrBefore(naaim, d);
     if (!naaimRec) return null;
     const yieldsRec = findYieldsOnOrBefore(d);
@@ -1254,7 +1328,8 @@ async function loadLiveData() {
     const yss = scoreYieldSpread(yieldSpread);
     const sos = scoreSectorOsc(sectorOscVal);
     const roc = scoreROC5(roc5Val);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || ps == null || ns == null || yss == null || sos == null || roc == null || wTotal <= 0) return null;
+    const srs = scoreSectorRegime(secRegRec.spread);
+    if (vs == null || bs == null || rs == null || js == null || ms == null || ps == null || ns == null || yss == null || sos == null || roc == null || srs == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -1272,8 +1347,10 @@ async function loadLiveData() {
       sectorOsc: sectorOscVal,
       sectorOscDate: sectorRec.date,
       roc5: roc5Val,
-      vs, bs, rs, js, ms, ps, ns, yss, sos, roc,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ps * wPct + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5) / wTotal,
+      sectorRegimeSpread: secRegRec.spread,
+      sectorRegimeDate: secRegRec.date,
+      vs, bs, rs, js, ms, ps, ns, yss, sos, roc, srs,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ps * wPct + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5 + srs * wSecRegime) / wTotal,
     };
   }
 
@@ -1374,6 +1451,14 @@ function updateComponentsWithLatest(current) {
     rocComp.value = `${sign}${current.roc5.toFixed(2)}%`;
     rocComp.signal = current.roc;
     rocComp.advisory = roc5Advisory(current.roc5);
+  }
+  const secRegimeComp = COMPONENTS.find(c => c.key === 'sector_regime');
+  if (secRegimeComp) {
+    secRegimeComp.raw = current.sectorRegimeSpread;
+    const sign = current.sectorRegimeSpread >= 0 ? '+' : '';
+    secRegimeComp.value = `${sign}${current.sectorRegimeSpread.toFixed(2)} pp`;
+    secRegimeComp.signal = current.srs;
+    secRegimeComp.advisory = sectorRegimeAdvisory(current.sectorRegimeSpread);
   }
 }
 

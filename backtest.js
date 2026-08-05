@@ -223,6 +223,18 @@ function computeSmaSeriesBacktest(closes, period = SMA_PERIOD) {
   return sma;
 }
 
+// Parser for the daily Sector Regime CSV (Date,Spread,Score).
+function parseSectorRegime(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const spread = parseFloat(parts[1]);
+    if (parts[0] && !isNaN(spread)) rows.push({ date: parts[0], spread });
+  }
+  return rows;
+}
+
 // Parser for the daily % Above 200 MA CSV (Date,Pct,Coverage).
 function parsePctAbove(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -297,6 +309,45 @@ async function runNaaimBacktest() {
     trades.push({
       date: n.date,
       raw: n.value,
+      score,
+      bucket: bucketOf(score),
+      ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
+      ret12mo: spx12 ? (spx12.close / spxNow - 1) * 100 : null,
+    });
+  }
+  return summarize(trades);
+}
+
+// ============================================================
+// SECTOR ROTATION REGIME BACKTEST — daily cyclical-vs-defensive spread
+// ============================================================
+async function runSectorRegimeBacktest() {
+  const [srText, spxText] = await Promise.all([
+    fetchText(DATA_BASE + 'sector_regime.csv'),
+    fetchText(DATA_BASE + BT_MC.indexCsv),
+  ]);
+  const sr = parseSectorRegime(srText);
+  const spx = parseDateClose(spxText);
+  const spxByDate = new Map();
+  spx.forEach((r, i) => spxByDate.set(r.date, i));
+
+  const trades = [];
+  for (const s of sr) {
+    let xi = spxByDate.get(s.date);
+    if (xi == null) {
+      for (let i = 0; i < spx.length; i++) {
+        if (spx[i].date >= s.date) { xi = i; break; }
+      }
+    }
+    if (xi == null) continue;
+    const score = scoreSectorRegime(s.spread);
+    if (score == null) continue;
+    const spxNow = spx[xi].close;
+    const spx6   = spx[xi + TRADING_DAYS_6MO];
+    const spx12  = spx[xi + TRADING_DAYS_12MO];
+    trades.push({
+      date: s.date,
+      raw: s.spread,
       score,
       bucket: bucketOf(score),
       ret6mo:  spx6  ? (spx6.close  / spxNow - 1) * 100 : null,
@@ -462,7 +513,7 @@ async function runJunkBacktest() {
 // are currently set in COMPONENTS (app.js). This is the actual product.
 // ============================================================
 async function runBlendedBacktest() {
-  const [vixText, rspText, spyText, spxText, hygText, lqdText, pctText, naaimText, yieldsText] = await Promise.all([
+  const [vixText, rspText, spyText, spxText, hygText, lqdText, pctText, srText, naaimText, yieldsText] = await Promise.all([
     fetchText(DATA_BASE + BT_MC.volCsv),
     fetchText(DATA_BASE + BT_MC.breadthEqualCsv),
     fetchText(DATA_BASE + BT_MC.breadthCapCsv),
@@ -470,6 +521,7 @@ async function runBlendedBacktest() {
     fetchText(DATA_BASE + 'hyg.csv'),
     fetchText(DATA_BASE + 'lqd.csv'),
     fetchText(DATA_BASE + 'pct_above_200ma.csv'),
+    fetchText(DATA_BASE + 'sector_regime.csv'),
     fetchText(DATA_BASE + 'naaim.csv'),
     fetchText(DATA_BASE + 'yields_history.csv'),
   ]);
@@ -481,6 +533,7 @@ async function runBlendedBacktest() {
   const lqd = parseDateClose(lqdText);
   const yields = parseYieldsHistory(yieldsText);
   const pctAbove = parsePctAbove(pctText);
+  const sectorRegime = parseSectorRegime(srText);
   const naaim = parseNAAIM(naaimText);
   const rsi = computeRsiSeries(spy.map(r => r.close));
   const sma200 = computeSmaSeriesBacktest(spx.map(r => r.close), SMA_PERIOD);
@@ -496,19 +549,21 @@ async function runBlendedBacktest() {
   const lqdByDate = new Map();
   lqd.forEach((r, i) => lqdByDate.set(r.date, i));
 
-  const wVix     = (COMPONENTS.find(c => c.key === 'vix')              || {}).weight || 0;
-  const wBreadth = (COMPONENTS.find(c => c.key === 'breadth')          || {}).weight || 0;
-  const wRSI     = (COMPONENTS.find(c => c.key === 'spy_rsi')          || {}).weight || 0;
-  const wMA      = (COMPONENTS.find(c => c.key === 'ma200')            || {}).weight || 0;
-  const wJunk    = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
-  const wPct     = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
-  const wNAAIM   = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
-  const wSpread  = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
-  const wTotal   = wVix + wBreadth + wRSI + wMA + wJunk + wPct + wNAAIM + wSpread;
+  const wVix       = (COMPONENTS.find(c => c.key === 'vix')              || {}).weight || 0;
+  const wBreadth   = (COMPONENTS.find(c => c.key === 'breadth')          || {}).weight || 0;
+  const wRSI       = (COMPONENTS.find(c => c.key === 'spy_rsi')          || {}).weight || 0;
+  const wMA        = (COMPONENTS.find(c => c.key === 'ma200')            || {}).weight || 0;
+  const wJunk      = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
+  const wPct       = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
+  const wSecRegime = (COMPONENTS.find(c => c.key === 'sector_regime')    || {}).weight || 0;
+  const wNAAIM     = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
+  const wSpread    = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
+  const wTotal     = wVix + wBreadth + wRSI + wMA + wJunk + wPct + wSecRegime + wNAAIM + wSpread;
   if (wTotal <= 0) throw new Error('No live weights configured');
 
   // Rolling pointers for the daily-series carry-forward (O(n) instead of O(n²)).
   let pctPtr = -1;
+  let srPtr = -1;
   let naaimPtr = -1;
   let yieldsPtr = -1;
 
@@ -526,9 +581,10 @@ async function runBlendedBacktest() {
 
     // Advance carry-forward pointers to the most recent reading ≤ this trading day.
     while (pctPtr + 1 < pctAbove.length && pctAbove[pctPtr + 1].date <= d) pctPtr++;
+    while (srPtr + 1 < sectorRegime.length && sectorRegime[srPtr + 1].date <= d) srPtr++;
     while (naaimPtr + 1 < naaim.length && naaim[naaimPtr + 1].date <= d) naaimPtr++;
     while (yieldsPtr + 1 < yields.length && yields[yieldsPtr + 1].date <= d) yieldsPtr++;
-    if (pctPtr < 0 || naaimPtr < 0 || yieldsPtr < 0) continue;
+    if (pctPtr < 0 || srPtr < 0 || naaimPtr < 0 || yieldsPtr < 0) continue;
 
     const rspRet = (rsp[i].close / rsp[i - BREADTH_LOOKBACK].close - 1) * 100;
     const spyRet = (spy[si].close / spy[si - BREADTH_LOOKBACK].close - 1) * 100;
@@ -539,6 +595,7 @@ async function runBlendedBacktest() {
     const yieldSpread = yields[yieldsPtr].spread;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const pctVal = pctAbove[pctPtr].pct;
+    const srVal = sectorRegime[srPtr].spread;
     const naaimVal = naaim[naaimPtr].value;
 
     const vs = scoreVIX(vix[vi].close);
@@ -547,11 +604,12 @@ async function runBlendedBacktest() {
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
     const ps = scorePctAbove200MA(pctVal);
+    const srs = scoreSectorRegime(srVal);
     const ns = scoreNAAIM(naaimVal);
     const yss = scoreYieldSpread(yieldSpread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || ps == null || ns == null || yss == null) continue;
+    if (vs == null || bs == null || rs == null || js == null || ms == null || ps == null || srs == null || ns == null || yss == null) continue;
 
-    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ps * wPct + ns * wNAAIM + yss * wSpread) / wTotal;
+    const blended = (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ps * wPct + srs * wSecRegime + ns * wNAAIM + yss * wSpread) / wTotal;
 
     const spxNow = spx[xi].close;
     const spx6   = spx[xi + TRADING_DAYS_6MO];
@@ -698,6 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
                : kind === 'junk'             ? runJunkBacktest
                : kind === 'ma200'            ? runMa200Backtest
                : kind === 'pct_above_200ma'  ? runPctAbove200MABacktest
+               : kind === 'sector_regime'    ? runSectorRegimeBacktest
                : kind === 'naaim'            ? runNaaimBacktest
                : kind === 'yield_spread'     ? runYieldSpreadBacktest
                : kind === 'blended'          ? runBlendedBacktest
