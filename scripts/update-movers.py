@@ -79,14 +79,31 @@ def fetch_screener(scr_id: str):
     return result[0].get("quotes", [])
 
 
-def normalize(quote):
-    """Pick just the fields the frontend actually needs, keep JSON tiny."""
+def normalize(quote, session):
+    """Pick just the fields the frontend needs, using the price/change
+    fields for the given session ("regular"/"pre"/"post"). Keeps the JSON
+    payload identical in shape across sessions — the client renders the
+    same way regardless of which flavor it picked, and the numbers
+    already reflect the right session.
+    """
+    if session == "pre":
+        price = quote.get("preMarketPrice")
+        pct   = quote.get("preMarketChangePercent")
+        chg   = quote.get("preMarketChange")
+    elif session == "post":
+        price = quote.get("postMarketPrice")
+        pct   = quote.get("postMarketChangePercent")
+        chg   = quote.get("postMarketChange")
+    else:
+        price = quote.get("regularMarketPrice")
+        pct   = quote.get("regularMarketChangePercent")
+        chg   = quote.get("regularMarketChange")
     return {
         "symbol":    quote.get("symbol"),
         "shortName": quote.get("shortName") or quote.get("longName") or "",
-        "price":     quote.get("regularMarketPrice"),
-        "changePct": quote.get("regularMarketChangePercent"),
-        "change":    quote.get("regularMarketChange"),
+        "price":     price,
+        "changePct": pct,
+        "change":    chg,
         "volume":    quote.get("regularMarketVolume"),
         "marketCap": quote.get("marketCap"),
     }
@@ -106,27 +123,31 @@ def merge_unique(pools):
     return list(seen.values())
 
 
-def partition_by_direction(candidates):
-    """From a mixed pool, return (real_gainers, real_losers) sorted by
-    absolute % change desc. Tickers with pct == None or 0 are dropped
-    from the direction buckets (nothing interesting to show)."""
+def partition_by_pct(candidates, pct_key):
+    """From a mixed pool, partition by the sign of pct_key. Returns
+    (gainers, losers) sorted by pct desc / asc so the biggest movers
+    surface first. Tickers where pct_key is None/0 drop out entirely
+    (nothing interesting to show)."""
     gainers, losers = [], []
     for q in candidates:
-        pct = q.get("regularMarketChangePercent")
+        pct = q.get(pct_key)
         if pct is None:
             continue
         if pct > 0:
             gainers.append(q)
         elif pct < 0:
             losers.append(q)
-    gainers.sort(key=lambda q: q["regularMarketChangePercent"], reverse=True)
-    losers.sort(key=lambda q: q["regularMarketChangePercent"])
+    gainers.sort(key=lambda q: q[pct_key], reverse=True)
+    losers.sort(key=lambda q: q[pct_key])
     return gainers, losers
 
 
 def main() -> int:
     # Yahoo mis-classifies rows across day_gainers / day_losers, so pull
-    # both and re-partition locally by direction.
+    # both and re-partition locally. most_actives is included in the pool
+    # too — during pre-market / after-hours the pre/post fields on those
+    # rows are populated and give us pre-market movers "for free" without
+    # needing a separate (nonexistent) pre_market_gainers screener.
     gainers_raw = fetch_screener("day_gainers")
     losers_raw  = fetch_screener("day_losers")
     actives_raw = fetch_screener("most_actives")
@@ -135,29 +156,67 @@ def main() -> int:
         warn("All three screener fetches failed; leaving movers.json unchanged.")
         return 0
 
-    candidates = merge_unique([gainers_raw, losers_raw])
-    gainers, losers = partition_by_direction(candidates)
+    # Merge all three so we have a broader candidate pool for pre/post
+    # sorting — biggest overnight movers often live in most_actives even
+    # if day_gainers hasn't caught up yet.
+    candidates = merge_unique([gainers_raw, losers_raw, actives_raw])
 
-    actives = actives_raw or []
-    actives.sort(
+    # ---- Regular-session partition (existing behavior) --------------
+    reg_gainers, reg_losers = partition_by_pct(candidates, "regularMarketChangePercent")
+    reg_actives = sorted(
+        [q for q in candidates if q.get("regularMarketVolume") is not None],
         key=lambda q: q.get("regularMarketVolume") or 0,
         reverse=True,
     )
 
+    # ---- Pre-market partition --------------------------------------
+    # Only tickers where Yahoo populated a preMarket price/pct qualify.
+    # "actives" for pre/post = whatever moved the most in absolute terms
+    # (Yahoo doesn't expose pre-market volume in the screener payload).
+    pre_gainers, pre_losers = partition_by_pct(candidates, "preMarketChangePercent")
+    pre_actives = sorted(
+        [q for q in candidates if q.get("preMarketChangePercent") is not None],
+        key=lambda q: abs(q.get("preMarketChangePercent") or 0),
+        reverse=True,
+    )
+
+    # ---- After-hours partition -------------------------------------
+    post_gainers, post_losers = partition_by_pct(candidates, "postMarketChangePercent")
+    post_actives = sorted(
+        [q for q in candidates if q.get("postMarketChangePercent") is not None],
+        key=lambda q: abs(q.get("postMarketChangePercent") or 0),
+        reverse=True,
+    )
+
+    def pack(rows, session):
+        return [normalize(q, session) for q in rows[:LIST_SIZE] if q.get("symbol")]
+
     payload = {
         "generatedAt": int(time.time()),
-        "gainers": [normalize(q) for q in gainers[:LIST_SIZE] if q.get("symbol")],
-        "losers":  [normalize(q) for q in losers[:LIST_SIZE]  if q.get("symbol")],
-        "actives": [normalize(q) for q in actives[:LIST_SIZE] if q.get("symbol")],
+        # Regular session — kept at the top level for backward compat.
+        "gainers": pack(reg_gainers, "regular"),
+        "losers":  pack(reg_losers,  "regular"),
+        "actives": pack(reg_actives, "regular"),
+        # Pre-market (04:00-09:30 ET) — populated when Yahoo has preMarket
+        # fields on the screener rows. Empty overnight / on weekends.
+        "preGainers": pack(pre_gainers, "pre"),
+        "preLosers":  pack(pre_losers,  "pre"),
+        "preActives": pack(pre_actives, "pre"),
+        # After-hours (16:00-20:00 ET) — same idea for postMarket fields.
+        "postGainers": pack(post_gainers, "post"),
+        "postLosers":  pack(post_losers,  "post"),
+        "postActives": pack(post_actives, "post"),
     }
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
     print(
-        f"Wrote {OUT_PATH}: {len(payload['gainers'])} gainers, "
-        f"{len(payload['losers'])} losers, {len(payload['actives'])} actives "
-        f"(from {len(candidates)} unique candidates in gainers+losers pools)"
+        f"Wrote {OUT_PATH}: "
+        f"regular {len(payload['gainers'])}/{len(payload['losers'])}/{len(payload['actives'])}, "
+        f"pre {len(payload['preGainers'])}/{len(payload['preLosers'])}/{len(payload['preActives'])}, "
+        f"post {len(payload['postGainers'])}/{len(payload['postLosers'])}/{len(payload['postActives'])} "
+        f"(from {len(candidates)} unique candidates)"
     )
     return 0
 

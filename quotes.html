@@ -1278,7 +1278,7 @@
 
     <!-- Row 4: Movers — 3 side-by-side scrollable boxes (Yahoo screener) -->
     <section class="term-section">
-      <div class="term-section-label">TODAY&rsquo;S MOVERS <span class="sub">— 25 per column, refreshes every 5&ndash;10 min during market hours &middot; click any ticker to open its page</span></div>
+      <div class="term-section-label"><span data-role="moversTitle">TODAY&rsquo;S MOVERS</span> <span class="sub" data-role="moversSub">— 25 per column, refreshes every 5&ndash;10 min during market hours &middot; click any ticker to open its page</span></div>
       <div class="movers-grid">
         <div class="mover-box">
           <div class="mover-head">
@@ -2573,6 +2573,65 @@
         }).join('');
       }
 
+      const titleEl = document.querySelector('[data-role="moversTitle"]');
+      const subEl   = document.querySelector('[data-role="moversSub"]');
+
+      // Detect current session by New York time. The bot always publishes
+      // all three flavors of gainers/losers/actives, but the reader wants
+      // the one that matches "right now": pre-market movers at 8 AM ET,
+      // regular-session movers at noon, after-hours at 5 PM.
+      // Windows (ET):
+      //   04:00 - 09:30  pre-market
+      //   09:30 - 16:00  regular
+      //   16:00 - 20:00  after-hours
+      //   otherwise      show whichever set has data (usually regular)
+      function currentEtSession() {
+        try {
+          const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York', weekday: 'short',
+            hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+          }).formatToParts(new Date());
+          const wd = parts.find(p => p.type === 'weekday')?.value || '';
+          const hh = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
+          const mm = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+          const t = hh * 60 + mm;
+          if (wd === 'Sat' || wd === 'Sun') return 'closed';
+          if (t >= 240  && t < 570)  return 'pre';        // 04:00-09:30 ET
+          if (t >= 570  && t < 960)  return 'regular';    // 09:30-16:00 ET
+          if (t >= 960  && t < 1200) return 'post';       // 16:00-20:00 ET
+          return 'closed';
+        } catch (e) { return 'regular'; }
+      }
+
+      // Given the payload and the desired session, return the {gainers,
+      // losers, actives, label, sub} to render. Falls back to regular if
+      // the desired session's lists are empty (bot hasn't caught up yet).
+      function pickSession(payload, wanted) {
+        const isNonEmpty = (arr) => Array.isArray(arr) && arr.length > 0;
+        const pre = {
+          gainers: payload.preGainers, losers: payload.preLosers, actives: payload.preActives,
+        };
+        const post = {
+          gainers: payload.postGainers, losers: payload.postLosers, actives: payload.postActives,
+        };
+        const regular = {
+          gainers: payload.gainers, losers: payload.losers, actives: payload.actives,
+        };
+        const preReady  = isNonEmpty(pre.gainers)  || isNonEmpty(pre.losers);
+        const postReady = isNonEmpty(post.gainers) || isNonEmpty(post.losers);
+        if (wanted === 'pre' && preReady) {
+          return { ...pre, label: 'PRE-MARKET MOVERS',
+                   sub: '— overnight moves before the 9:30 AM ET open · click any ticker to open its page' };
+        }
+        if (wanted === 'post' && postReady) {
+          return { ...post, label: 'AFTER-HOURS MOVERS',
+                   sub: '— extended session after the 4:00 PM ET close · click any ticker to open its page' };
+        }
+        // Fallback: regular session (matches original behavior).
+        return { ...regular, label: 'TODAY’S MOVERS',
+                 sub: '— 25 per column, refreshes every 5–10 min during market hours · click any ticker to open its page' };
+      }
+
       let loadedOnce = false;
       async function refresh() {
         let payload;
@@ -2590,9 +2649,15 @@
           return;
         }
         loadedOnce = true;
-        renderList('gainers', payload);
-        renderList('losers',  payload);
-        renderList('actives', payload);
+        // Pick the session flavor and re-shape the payload so renderList
+        // can stay symbol-agnostic.
+        const picked = pickSession(payload, currentEtSession());
+        if (titleEl) titleEl.textContent = picked.label;
+        if (subEl)   subEl.textContent   = picked.sub;
+        const shaped = { gainers: picked.gainers, losers: picked.losers, actives: picked.actives };
+        renderList('gainers', shaped);
+        renderList('losers',  shaped);
+        renderList('actives', shaped);
 
         if (metaEl && payload.generatedAt) {
           const ageSec = Math.max(0, Math.floor(Date.now()/1000) - payload.generatedAt);
