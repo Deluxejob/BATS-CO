@@ -2310,9 +2310,13 @@
       '^DJI':  'YM=F',   // Dow e-mini
       '^MID':  'EMD=F',  // S&P 400 Midcap e-mini
     };
-    const cardSyms   = cards.map(c => c.getAttribute('data-index-symbol'));
-    const futuresSyms = cardSyms.map(s => FUTURES_COMPANION[s]).filter(Boolean);
-    const syms = cardSyms.concat(futuresSyms).join(',');
+    // Shared super-set — must match quotes.html's SHARED_INDEX_SYMS
+    // exactly (same order, same characters) so both pages hit the SAME
+    // Vercel edge-cache entry. When a user toggles between markets and
+    // quotes within a 30s window, they see identical prices for the
+    // shared tickers (S&P 500, Dow, futures) — no more stale-snapshot
+    // discrepancy from independently-cached URLs.
+    const syms = 'EMD=F,ES=F,NQ=F,RTY=F,YM=F,^DJI,^GSPC,^IXIC,^MID,^NDX,^RUT';
     const fmtPrice = (v) => v == null || !isFinite(v)
       ? '—'
       : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2433,7 +2437,7 @@
       } catch (e) { /* transient — try again next tick */ }
     }
     refresh();
-    setInterval(refresh, 60000);
+    setInterval(refresh, 30000);
   })();
 
   // ---- Card click → chart popup ---------------------------------------

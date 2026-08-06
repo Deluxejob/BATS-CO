@@ -115,12 +115,13 @@ export default async function handler(req, res) {
       if (c && c.symbol) quotes[c.symbol] = c;
     }
 
-    // Cache 60 s at the edge — tight enough that pre-market / post-market
-    // prices on the quotes page tick reasonably fresh, still cheap for
-    // repeat page loads. Watchlist consumers get slightly fresher data
-    // than before too.
+    // Cache 30 s at the edge with a short 15 s stale-while-revalidate window
+    // (max total staleness 45 s vs the old 120 s). Tight enough that the
+    // major-index cards on markets.html and quotes.html stay within seconds
+    // of each other when a user toggles between the two pages, while still
+    // being cheap for repeat page loads.
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=60');
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=15');
     return res.status(200).json({ symbols: syms, count: Object.keys(quotes).length, quotes });
   } catch (err) {
     res.setHeader('Access-Control-Allow-Origin', '*');

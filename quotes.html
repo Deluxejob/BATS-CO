@@ -2334,9 +2334,17 @@
         '^DJI':  'YM=F',    // Dow e-mini
         '^RUT':  'RTY=F',   // Russell 2000 e-mini
       };
-      const stripSyms   = strips.map(s => s.dataset.sym);
-      const futuresSyms = stripSyms.map(s => FUTURES_COMPANION[s]).filter(Boolean);
-      const syms = Array.from(new Set(stripSyms.concat(futuresSyms))).join(',');
+      // Shared super-set of tickers used by BOTH the quotes page and
+      // the markets page's Index Dashboards. Sorted so the request URL
+      // is byte-identical across both pages — that way Vercel's edge
+      // cache serves ONE response to both, and a user toggling between
+      // pages sees consistent numbers for the shared indices (S&P 500,
+      // Dow, etc.) instead of two independent 30-60s-stale snapshots.
+      // Extra symbols (from the other page's cards) are silently
+      // ignored by paint() below — response is only ~5KB even at 11
+      // symbols, so the overhead is negligible.
+      const SHARED_INDEX_SYMS = 'EMD=F,ES=F,NQ=F,RTY=F,YM=F,^DJI,^GSPC,^IXIC,^MID,^NDX,^RUT';
+      const syms = SHARED_INDEX_SYMS;
 
       const fmtPrice = (v) => v == null || !isFinite(v)
         ? '—'
@@ -2419,7 +2427,7 @@
         } catch (e) { /* transient network error — try again next tick */ }
       }
       refresh();
-      setInterval(refresh, 60000);
+      setInterval(refresh, 30000);
     }
 
     // Row 2: breadth tilt gauges — computed live from our sector-ETF CSVs.
