@@ -358,6 +358,74 @@ function ma200Advisory(distPct) {
   return                      { tone: 'info',        text: 'Far above the 200-day MA — but history shows extreme uptrends have CONTINUED (+14.5% avg forward 12mo, 98% positive). Not automatically overbought.' };
 }
 
+// ---- S&P 500 vs 50-day Moving Average ----
+//
+// Faster-moving cousin of the 200-day component. Where MA200 captures the
+// long-term trend, MA50 flags shorter-term shifts — the market drops below
+// its 50-day much more often than its 200-day, and often WELL BEFORE
+// it drops below 200. Golden/death crosses (50 vs 200) are widely watched
+// by traders, so this indicator has cultural weight too.
+//
+// Direction: same as MA200 — high distance = trend intact, negative
+// distance = trend faltering.
+//
+// Distribution — SPX typical range: ±3% around 50MA, with tails hitting
+// ±8% during volatility. Thresholds are tighter than MA200 accordingly.
+function scoreMA50(distPct) {
+  if (distPct == null || isNaN(distPct)) return null;
+  let s;
+  if (distPct <= -8)      s = 5;
+  else if (distPct <= -3) s = 5  + (distPct + 8)  * (30 - 5)  / 5;    // -8→5,  -3→30
+  else if (distPct <=  0) s = 30 + (distPct + 3)  * (50 - 30) / 3;    // -3→30,  0→50
+  else if (distPct <=  3) s = 50 + (distPct)      * (70 - 50) / 3;    //  0→50, +3→70
+  else if (distPct <=  6) s = 70 + (distPct - 3)  * (88 - 70) / 3;    // +3→70, +6→88
+  else                    s = 90;
+  return Math.max(2, Math.min(98, s));
+}
+
+function ma50Advisory(distPct) {
+  if (distPct == null || isNaN(distPct)) return null;
+  if (distPct <= -8) return { tone: 'watch',       text: 'Well below the 50-day MA — short-term trend is broken. Historically this reading precedes further weakness before recovery.' };
+  if (distPct <= -3) return { tone: 'watch',       text: 'Below the 50-day MA — short-term momentum negative. Watch for continuation.' };
+  if (distPct <= -1) return { tone: 'info',        text: 'Just below the 50-day MA — mild short-term weakness.' };
+  if (distPct <=  1) return { tone: 'info',        text: 'Right around the 50-day MA — short-term inflection.' };
+  if (distPct <=  3) return { tone: 'info',        text: 'Above the 50-day MA — healthy short-term uptrend.' };
+  if (distPct <=  6) return { tone: 'info',        text: 'Well above the 50-day MA — strong short-term momentum.' };
+  return                    { tone: 'info',        text: 'Far above the 50-day MA — very strong short-term rally, but stretched. Watch Pivot Top for signs of exhaustion.' };
+}
+
+// ---- % of Stocks Above 50-day Moving Average ----
+//
+// Faster-moving breadth cousin of the 200-day version. The 50-day breadth
+// swings farther and faster than the 200-day (short-term pullbacks pull
+// it to 20-30% quickly, then short-term rallies push it back to 80-90%).
+//
+// Same direction as its slow cousin: extreme low = washout/contrarian buy,
+// middle = neutral, high = broad participation. Backtest mapping mirrors
+// pct_above_200ma's shape — deep washouts on the 50-day still historically
+// resolve bullish, even if they resolve faster.
+function scorePctAbove50MA(pct) {
+  if (pct == null || isNaN(pct)) return null;
+  let s;
+  if (pct <= 15)       s = 5;
+  else if (pct <= 30)  s = 5  + (pct - 15) * (25 - 5)  / 15;
+  else if (pct <= 45)  s = 25 + (pct - 30) * (45 - 25) / 15;
+  else if (pct <= 65)  s = 45 + (pct - 45) * (65 - 45) / 20;
+  else if (pct <= 85)  s = 65 + (pct - 65) * (80 - 65) / 20;
+  else                 s = 80 + (pct - 85) * (90 - 80) / 15;
+  return Math.max(2, Math.min(98, s));
+}
+
+function pctAbove50MAAdvisory(pct) {
+  if (pct == null || isNaN(pct)) return null;
+  if (pct <= 15) return { tone: 'opportunity', text: 'Extreme short-term washout — very few stocks above their 50-day MA. Historically a contrarian short-term buy setup.' };
+  if (pct <= 30) return { tone: 'opportunity', text: 'Broadly oversold at the short-term horizon. Short-term bounce setups often trigger from here.' };
+  if (pct <= 45) return { tone: 'info',        text: 'Weak short-term breadth — most stocks under their 50-day MA. Trend faltering short-term.' };
+  if (pct <= 60) return { tone: 'info',        text: 'Mixed short-term participation — split market.' };
+  if (pct <= 75) return { tone: 'info',        text: 'Healthy short-term breadth — most stocks above their 50-day MA. Trend intact short-term.' };
+  return                { tone: 'info',        text: 'Very broad short-term participation — trend broadly intact at the fast horizon. Not overbought; forward returns near baseline.' };
+}
+
 // Compute the simple moving average over a chronological array of closes.
 // Returns an array where element i is the trailing period-day SMA (null for i<period-1).
 function computeSmaSeries(closes, period = 200) {
@@ -718,6 +786,18 @@ const COMPONENTS = [
     explainer: 'indicators/ma200.html',
   },
   {
+    key: 'ma50',
+    name: `${MC.indexTicker} vs 50-day MA`,
+    desc: 'Faster-moving trend cousin of MA200. Captures short-term shifts — market drops below its 50-day well before its 200-day. Above = short-term uptrend; below = short-term weakness.',
+    weight: 5,
+    status: 'live',
+    raw: 0,
+    value: '0.00% (loading)',
+    signal: scoreMA50(0),
+    advisory: ma50Advisory(0),
+    explainer: 'indicators/ma200.html',
+  },
+  {
     key: 'pct_above_200ma',
     name: '% of Stocks Above 200 MA',
     desc: 'Breadth: of ~100 large-cap S&P constituents, how many are trading above their own 200-day MA. High = broad participation (bullish); very low = washout (historically the strongest contrarian buy signal we track).',
@@ -727,6 +807,18 @@ const COMPONENTS = [
     value: '— (loading)',
     signal: scorePctAbove200MA(50),
     advisory: pctAbove200MAAdvisory(50),
+    explainer: 'indicators/pct-above-200ma.html',
+  },
+  {
+    key: 'pct_above_50ma',
+    name: '% of Stocks Above 50 MA',
+    desc: 'Faster-moving breadth cousin of the 200 MA version. Swings farther and faster — captures short-term participation shifts before the long-term measure does.',
+    weight: 5,
+    status: 'live',
+    raw: 0,
+    value: '— (loading)',
+    signal: scorePctAbove50MA(50),
+    advisory: pctAbove50MAAdvisory(50),
     explainer: 'indicators/pct-above-200ma.html',
   },
   {
@@ -974,6 +1066,168 @@ function setGauge(value) {
 }
 
 // ============================================================
+// SUB-SCORES — Upside Trend + Pivot Top
+// Both are derived from the same live component signals used in main BATS.
+// Upside Trend: 0-100, higher = trend healthier.
+// Pivot Top:    0-100, higher = MORE pivot/top risk (inverted direction).
+// ============================================================
+function computeUpsideTrend(current) {
+  if (!current) return null;
+  // Weighted average of trend-oriented component scores (all 0-100).
+  const items = [
+    { w: 15, s: current.ms   },   // MA200
+    { w: 10, s: current.ms50 },   // MA50 (faster)
+    { w: 20, s: current.ps   },   // % Above 200 MA
+    { w: 10, s: current.ps50 },   // % Above 50 MA (faster)
+    { w: 15, s: current.srs  },   // Sector Regime
+    { w: 10, s: current.js   },   // Junk Bond Demand
+    { w: 10, s: current.sos  },   // Sector Oscillator
+    { w: 10, s: current.roc  },   // ROC-5
+  ];
+  let sum = 0, wsum = 0;
+  for (const it of items) {
+    if (it.s == null) continue;
+    sum  += it.s * it.w;
+    wsum += it.w;
+  }
+  if (wsum === 0) return null;
+  const score = sum / wsum;
+  let state, sentence;
+  if      (score >= 75) { state = 'Trend strong';    sentence = 'Broad participation, momentum intact, cyclicals leading.'; }
+  else if (score >= 60) { state = 'Trend intact';    sentence = 'Uptrend healthy across most trend measures.'; }
+  else if (score >= 45) { state = 'Trend neutral';   sentence = 'Mixed signals — no clear trend direction.'; }
+  else if (score >= 30) { state = 'Trend faltering'; sentence = 'Trend signals weakening — watch for continuation.'; }
+  else                  { state = 'Trend broken';    sentence = 'Broad breakdown — trend has failed.'; }
+  return { score, state, sentence };
+}
+
+function computePivotTop(current) {
+  if (!current) return null;
+  // Each contribution is 0-100 = "how much pivot risk does this indicator add?"
+  // Higher final score = more risk of a short-term top forming.
+  const contribs = [];
+  // RSI overbought — 0 at RSI 60, 100 at RSI 80
+  if (current.rsiVal != null) {
+    contribs.push({ w: 30, s: Math.max(0, Math.min(100, (current.rsiVal - 60) * 5)) });
+  }
+  // NAAIM extreme leverage — 0 at NAAIM 75, 100 at NAAIM 100
+  if (current.naaimValue != null) {
+    contribs.push({ w: 25, s: Math.max(0, Math.min(100, (current.naaimValue - 75) * 4)) });
+  }
+  // SPX overextended above 50MA — 0 at +2%, 100 at +7%
+  if (current.ma50Dist != null) {
+    contribs.push({ w: 30, s: Math.max(0, Math.min(100, (current.ma50Dist - 2) * 20)) });
+  }
+  // VIX complacency (very low VIX = tail risk mispriced) — 0 at 14, 100 at 9
+  if (current.vix != null) {
+    contribs.push({ w: 15, s: Math.max(0, Math.min(100, (14 - current.vix) * 20)) });
+  }
+  let sum = 0, wsum = 0;
+  for (const c of contribs) { sum += c.s * c.w; wsum += c.w; }
+  if (wsum === 0) return null;
+  const score = sum / wsum;
+  let state, sentence;
+  if      (score >= 70) { state = 'Top forming'; sentence = 'Multiple overheated signals firing — high risk of a short-term top.'; }
+  else if (score >= 50) { state = 'Watch top';   sentence = 'Some overheated readings — pivot risk elevated.'; }
+  else if (score >= 30) { state = 'Warming';     sentence = 'Mild overextension in a few components.'; }
+  else                  { state = 'Clean tape';  sentence = 'No significant overheated signals — no top warning.'; }
+  return { score, state, sentence };
+}
+
+// Draw a minimalist semicircular sub-gauge:
+// - Grey background arc (from 180° to 0°)
+// - Colored fill arc from 180° down to (180 - score*1.8)°
+// - Needle at score position
+// - Numeric readout is separate DOM (populated by setSubGauge)
+function buildSubGauge(svgId, palette) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  const cx = 100, cy = 100, rOuter = 80, rInner = 55;
+  const bgColor = palette === 'red' ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)';
+  const trackColor = 'rgba(139,149,168,0.15)';
+
+  // Background track (full semicircle).
+  const track = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  track.setAttribute('d', subGaugeArcPath(cx, cy, rOuter, rInner, 180, 0));
+  track.setAttribute('fill', trackColor);
+  svg.appendChild(track);
+
+  // Filled arc (gets its endpoint updated by setSubGauge).
+  const fill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  fill.setAttribute('id', svgId + '_fill');
+  fill.setAttribute('fill', bgColor);
+  svg.appendChild(fill);
+
+  // Needle.
+  const needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  needle.setAttribute('id', svgId + '_needle');
+  needle.setAttribute('x1', cx);
+  needle.setAttribute('y1', cy);
+  needle.setAttribute('x2', cx);
+  needle.setAttribute('y2', cy - rOuter + 4);
+  needle.setAttribute('stroke', '#e6edf6');
+  needle.setAttribute('stroke-width', '2.5');
+  needle.setAttribute('stroke-linecap', 'round');
+  needle.style.transformOrigin = `${cx}px ${cy}px`;
+  needle.style.transition = 'transform 1s cubic-bezier(.22,1,.36,1)';
+  svg.appendChild(needle);
+
+  // Pivot circle.
+  const pivot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  pivot.setAttribute('cx', cx);
+  pivot.setAttribute('cy', cy);
+  pivot.setAttribute('r', '7');
+  pivot.setAttribute('fill', '#0a0e1a');
+  pivot.setAttribute('stroke', '#e6edf6');
+  pivot.setAttribute('stroke-width', '2');
+  svg.appendChild(pivot);
+}
+
+function subGaugeArcPath(cx, cy, rOuter, rInner, startDeg, endDeg) {
+  const toXY = (r, deg) => {
+    const rad = (deg * Math.PI) / 180;
+    return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+  };
+  const p1 = toXY(rOuter, startDeg);
+  const p2 = toXY(rOuter, endDeg);
+  const p3 = toXY(rInner, endDeg);
+  const p4 = toXY(rInner, startDeg);
+  return [
+    `M ${p1.x} ${p1.y}`,
+    `A ${rOuter} ${rOuter} 0 0 0 ${p2.x} ${p2.y}`,
+    `L ${p3.x} ${p3.y}`,
+    `A ${rInner} ${rInner} 0 0 1 ${p4.x} ${p4.y}`,
+    'Z',
+  ].join(' ');
+}
+
+function setSubGauge(svgId, subScore, valueElId, stateElId, palette) {
+  const valueEl = document.getElementById(valueElId);
+  const stateEl = document.getElementById(stateElId);
+  if (!subScore) {
+    if (valueEl) valueEl.textContent = '—';
+    if (stateEl) stateEl.textContent = 'No data';
+    return;
+  }
+  const s = Math.max(0, Math.min(100, subScore.score));
+  const endDeg = 180 - (s / 100) * 180;
+
+  const cx = 100, cy = 100, rOuter = 80, rInner = 55;
+  const fill = document.getElementById(svgId + '_fill');
+  if (fill) fill.setAttribute('d', subGaugeArcPath(cx, cy, rOuter, rInner, 180, endDeg));
+
+  const needle = document.getElementById(svgId + '_needle');
+  if (needle) {
+    // Needle rotation: score 0 = pointing left (0°), score 100 = pointing right (180° math).
+    // The default needle points UP (90° math). Rotate CW by (90 - targetMathAngle).
+    const rotateBy = 90 - endDeg;
+    needle.style.transform = `rotate(${rotateBy}deg)`;
+  }
+  if (valueEl) valueEl.textContent = Math.round(s);
+  if (stateEl) stateEl.textContent = subScore.state;
+}
+
+// ============================================================
 // LEGEND
 // ============================================================
 function buildLegend() {
@@ -1144,6 +1398,9 @@ function parsePctAbove200MALive(text) {
   return rows;
 }
 
+// % Above 50 MA: same CSV shape as the 200-day file.
+function parsePctAbove50MALive(text) { return parsePctAbove200MALive(text); }
+
 // NAAIM: Date,NAAIM (weekly, since 2006). Two-column simple CSV.
 function parseNAAIMLive(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -1211,7 +1468,7 @@ function computeRsiSeriesLive(closes, period = 14) {
 async function loadLiveData() {
   // Market-specific data files (VIX/VXN, RSP/QQEW, SPY/QQQ, SPX/NDX)
   // Universal data files (HYG, LQD, % Above 200 MA, NAAIM, yields_history — apply to both markets)
-  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, pctAboveText, naaimText, yieldsText, sectorOscText, sectorRegimeText] = await Promise.all([
+  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, pctAboveText, pctAbove50Text, naaimText, yieldsText, sectorOscText, sectorRegimeText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + MC.volCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthEqualCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthCapCsv),
@@ -1219,6 +1476,7 @@ async function loadLiveData() {
     fetchCSVText(APP_DATA_BASE + 'lqd.csv'),
     fetchCSVText(APP_DATA_BASE + MC.indexCsv),
     fetchCSVText(APP_DATA_BASE + 'pct_above_200ma.csv'),
+    fetchCSVText(APP_DATA_BASE + 'pct_above_50ma.csv'),
     fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
     fetchCSVText(APP_DATA_BASE + 'yields_history.csv'),
     fetchCSVText(APP_DATA_BASE + 'sector_osc.csv'),
@@ -1246,10 +1504,12 @@ async function loadLiveData() {
     return out;
   })(sectorOscText);
   const pctAbove = parsePctAbove200MALive(pctAboveText);
+  const pctAbove50 = parsePctAbove50MALive(pctAbove50Text);
   const sectorRegime = parseSectorRegimeLive(sectorRegimeText);
   const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
   const sma200 = computeSmaSeries(spx.map(r => r.close), 200); // 200-day MA of index (SPX or NDX)
+  const sma50  = computeSmaSeries(spx.map(r => r.close), 50);  // 50-day MA of same index
 
   const vixByDate = new Map(); vix.forEach((r, i) => vixByDate.set(r.date, i));
   const spyByDate = new Map(); spy.forEach((r, i) => spyByDate.set(r.date, i));
@@ -1277,14 +1537,16 @@ async function loadLiveData() {
   const wBreadth   = (COMPONENTS.find(c => c.key === 'breadth')          || {}).weight || 0;
   const wRSI       = (COMPONENTS.find(c => c.key === 'spy_rsi')          || {}).weight || 0;
   const wMA        = (COMPONENTS.find(c => c.key === 'ma200')            || {}).weight || 0;
+  const wMA50      = (COMPONENTS.find(c => c.key === 'ma50')             || {}).weight || 0;
   const wJunk      = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
   const wPct       = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
+  const wPct50     = (COMPONENTS.find(c => c.key === 'pct_above_50ma')   || {}).weight || 0;
   const wNAAIM     = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
   const wSpread    = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
   const wSector    = (COMPONENTS.find(c => c.key === 'sector_osc')       || {}).weight || 0;
   const wROC5      = (COMPONENTS.find(c => c.key === 'roc5')             || {}).weight || 0;
   const wSecRegime = (COMPONENTS.find(c => c.key === 'sector_regime')    || {}).weight || 0;
-  const wTotal     = wVix + wBreadth + wRSI + wMA + wJunk + wPct + wNAAIM + wSpread + wSector + wROC5 + wSecRegime;
+  const wTotal     = wVix + wBreadth + wRSI + wMA + wMA50 + wJunk + wPct + wPct50 + wNAAIM + wSpread + wSector + wROC5 + wSecRegime;
 
   function batsAt(rspRowIdx) {
     if (rspRowIdx < 20) return null;
@@ -1297,8 +1559,11 @@ async function loadLiveData() {
     if (si == null || si < 20 || vi == null || rsi[si] == null) return null;
     if (hi == null || hi < 20 || li == null || li < 20) return null;
     if (xi == null || sma200[xi] == null) return null;
+    if (sma50[xi] == null) return null;
     const pctRec = findPctOnOrBefore(pctAbove, d);
     if (!pctRec) return null;
+    const pct50Rec = findPctOnOrBefore(pctAbove50, d);
+    if (!pct50Rec) return null;
     const secRegRec = findPctOnOrBefore(sectorRegime, d);   // same lookup shape (daily, on-or-before)
     if (!secRegRec) return null;
     const naaimRec = findNaaimOnOrBefore(naaim, d);
@@ -1316,6 +1581,7 @@ async function loadLiveData() {
     const yieldSpread = yieldsRec.spread;
     const sectorOscVal = sectorRec.oscillator;
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
+    const ma50Dist  = (spx[xi].close / sma50[xi]  - 1) * 100;
     // ROC-5: needs at least 5 prior daily closes on the same index series.
     const roc5Val = (xi >= 5) ? ((spx[xi].close / spx[xi - 5].close - 1) * 100) : null;
     const vs = scoreVIX(vix[vi].close);
@@ -1323,13 +1589,15 @@ async function loadLiveData() {
     const rs = scoreRSI(rsi[si]);
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
+    const ms50 = scoreMA50(ma50Dist);
     const ps = scorePctAbove200MA(pctRec.pct);
+    const ps50 = scorePctAbove50MA(pct50Rec.pct);
     const ns = scoreNAAIM(naaimRec.value);
     const yss = scoreYieldSpread(yieldSpread);
     const sos = scoreSectorOsc(sectorOscVal);
     const roc = scoreROC5(roc5Val);
     const srs = scoreSectorRegime(secRegRec.spread);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || ps == null || ns == null || yss == null || sos == null || roc == null || srs == null || wTotal <= 0) return null;
+    if (vs == null || bs == null || rs == null || js == null || ms == null || ms50 == null || ps == null || ps50 == null || ns == null || yss == null || sos == null || roc == null || srs == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vix[vi].close,
@@ -1337,9 +1605,13 @@ async function loadLiveData() {
       rsiVal: rsi[si],
       junkSpread,
       ma200Dist,
+      ma50Dist,
       pctAboveVal: pctRec.pct,
       pctAboveCoverage: pctRec.coverage,
       pctAboveDate: pctRec.date,
+      pctAbove50Val: pct50Rec.pct,
+      pctAbove50Coverage: pct50Rec.coverage,
+      pctAbove50Date: pct50Rec.date,
       naaimValue: naaimRec.value,
       naaimDate: naaimRec.date,
       yieldSpread,
@@ -1349,8 +1621,8 @@ async function loadLiveData() {
       roc5: roc5Val,
       sectorRegimeSpread: secRegRec.spread,
       sectorRegimeDate: secRegRec.date,
-      vs, bs, rs, js, ms, ps, ns, yss, sos, roc, srs,
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ps * wPct + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5 + srs * wSecRegime) / wTotal,
+      vs, bs, rs, js, ms, ms50, ps, ps50, ns, yss, sos, roc, srs,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ms50 * wMA50 + ps * wPct + ps50 * wPct50 + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5 + srs * wSecRegime) / wTotal,
     };
   }
 
@@ -1420,6 +1692,21 @@ function updateComponentsWithLatest(current) {
     pctComp.value = `${current.pctAboveVal.toFixed(1)}%`;
     pctComp.signal = current.ps;
     pctComp.advisory = pctAbove200MAAdvisory(current.pctAboveVal);
+  }
+  const pct50Comp = COMPONENTS.find(c => c.key === 'pct_above_50ma');
+  if (pct50Comp) {
+    pct50Comp.raw = current.pctAbove50Val;
+    pct50Comp.value = `${current.pctAbove50Val.toFixed(1)}%`;
+    pct50Comp.signal = current.ps50;
+    pct50Comp.advisory = pctAbove50MAAdvisory(current.pctAbove50Val);
+  }
+  const ma50Comp = COMPONENTS.find(c => c.key === 'ma50');
+  if (ma50Comp) {
+    ma50Comp.raw = current.ma50Dist;
+    const sign = current.ma50Dist >= 0 ? '+' : '';
+    ma50Comp.value = `${sign}${current.ma50Dist.toFixed(2)}%`;
+    ma50Comp.signal = current.ms50;
+    ma50Comp.advisory = ma50Advisory(current.ma50Dist);
   }
   const naaimComp = COMPONENTS.find(c => c.key === 'naaim');
   if (naaimComp) {
@@ -1705,15 +1992,19 @@ async function init() {
   if (isMainPage) {
     buildLegend();
     buildGauge();
+    buildSubGauge('upsideTrendGauge', 'green');
+    buildSubGauge('pivotTopGauge', 'red');
   }
 
   // Try to load real market values from the CSVs; fall back to the demo
   // values already sitting in COMPONENTS if the fetch fails (file://, offline).
   let latestDate = null;
+  let currentSnapshot = null;
   try {
     const { current, history } = await loadLiveData();
     updateComponentsWithLatest(current);
     latestDate = current.date;
+    currentSnapshot = current;
     if (isMainPage) renderHistoricalContext(history);
     const dateNote = document.getElementById('gaugeDateNote');
     if (dateNote) dateNote.textContent = `Latest close: ${current.date}`;
@@ -1727,6 +2018,11 @@ async function init() {
     buildComponents();
     buildComposition();
     setGauge(computeBatsScore());
+    // Sub-gauges: computed from the live snapshot's component scores.
+    const upside = currentSnapshot ? computeUpsideTrend(currentSnapshot) : null;
+    const pivot  = currentSnapshot ? computePivotTop(currentSnapshot)   : null;
+    setSubGauge('upsideTrendGauge', upside, 'upsideTrendValue', 'upsideTrendState', 'green');
+    setSubGauge('pivotTopGauge',    pivot,  'pivotTopValue',    'pivotTopState',    'red');
   }
 
   if (isIndicatorPage) {

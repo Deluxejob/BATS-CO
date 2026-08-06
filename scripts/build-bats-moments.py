@@ -51,8 +51,9 @@ def warn(msg: str) -> None:
 
 
 # --- Component weights (must match COMPONENTS in app.js) ---
-WEIGHTS = dict(vix=25, breadth=10, rsi=10, ma200=10,
-               pct_above_200ma=20, naaim=5, junk=10, spread=5, sector_osc=10, roc5=10,
+WEIGHTS = dict(vix=25, breadth=10, rsi=10, ma200=10, ma50=5,
+               pct_above_200ma=20, pct_above_50ma=5,
+               naaim=5, junk=10, spread=5, sector_osc=10, roc5=10,
                sector_regime=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
@@ -167,6 +168,30 @@ def score_roc5(roc):
     return clamp(s, 2, 98)
 
 
+def score_pct_above_50ma(pct):
+    """Same shape as the 200MA version — faster-moving cousin."""
+    if pct is None: return None
+    if   pct <= 15: s = 5
+    elif pct <= 30: s = 5  + (pct - 15) * (25 - 5)  / 15
+    elif pct <= 45: s = 25 + (pct - 30) * (45 - 25) / 15
+    elif pct <= 65: s = 45 + (pct - 45) * (65 - 45) / 20
+    elif pct <= 85: s = 65 + (pct - 65) * (80 - 65) / 20
+    else:           s = 80 + (pct - 85) * (90 - 80) / 15
+    return clamp(s, 2, 98)
+
+
+def score_ma50(d):
+    """SPX distance from 50-day MA."""
+    if d is None: return None
+    if   d <= -8: s = 5
+    elif d <= -3: s = 5  + (d + 8) * (30 - 5)  / 5
+    elif d <=  0: s = 30 + (d + 3) * (50 - 30) / 3
+    elif d <=  3: s = 50 +  d      * (70 - 50) / 3
+    elif d <=  6: s = 70 + (d - 3) * (88 - 70) / 3
+    else:         s = 90
+    return clamp(s, 2, 98)
+
+
 def score_sector_regime(spread):
     """Cyclical vs defensive 3M spread. Piecewise-linear 0-100 map, same as
     sector-rotation.html."""
@@ -232,6 +257,16 @@ def load_vix(fname='vix.csv'):
 def load_pct_above_200ma():
     """pct_above_200ma.csv: Date,Pct,Coverage — column 1 is the percentage."""
     rows = _read_csv('pct_above_200ma.csv')
+    if not rows: return None
+    out = {}
+    for row in rows[1:]:
+        try: out[row[0]] = float(row[1])
+        except: pass
+    return out
+
+
+def load_pct_above_50ma():
+    rows = _read_csv('pct_above_50ma.csv')
     if not rows: return None
     out = {}
     for row in rows[1:]:
@@ -366,13 +401,15 @@ def main():
     hyg   = load_close('hyg.csv')
     lqd   = load_close('lqd.csv')
     pct_above = load_pct_above_200ma()
+    pct_above_50 = load_pct_above_50ma()
     sector_regime = load_sector_regime()
     naaim = load_naaim()
     yields = load_yields()
     sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
-                    hyg=hyg, lqd=lqd, pct_above=pct_above, sector_regime=sector_regime,
+                    hyg=hyg, lqd=lqd, pct_above=pct_above, pct_above_50=pct_above_50,
+                    sector_regime=sector_regime,
                     naaim=naaim, yields=yields,
                     sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
@@ -387,6 +424,7 @@ def main():
     lqd_dates = sorted(lqd.keys())
     vix_dates = sorted(vix.keys())
     pct_above_dates = sorted(pct_above.keys())
+    pct_above_50_dates = sorted(pct_above_50.keys())
     sector_regime_dates = sorted(sector_regime.keys())
     naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
@@ -402,6 +440,7 @@ def main():
         d_lqd  = snap_le(lqd_dates, target)
         d_vix  = snap_le(vix_dates, target)
         d_pct  = snap_le(pct_above_dates, target)
+        d_pct50 = snap_le(pct_above_50_dates, target)
         d_secreg = snap_le(sector_regime_dates, target)
         d_naaim = snap_le(naaim_dates, target)
         d_yields = snap_le(yields_dates, target)
@@ -409,10 +448,18 @@ def main():
 
         v_vix    = vix.get(d_vix)                if d_vix    else None
         v_pct    = pct_above.get(d_pct)          if d_pct    else None
+        v_pct50  = pct_above_50.get(d_pct50)     if d_pct50  else None
         v_secreg = sector_regime.get(d_secreg)   if d_secreg else None
         v_naaim  = naaim.get(d_naaim)            if d_naaim  else None
         v_rsi    = rsi_at(spy_dates, spy, d_spy) if d_spy else None
         v_ma     = ma200_dist(spx_dates, spx, d_spx) if d_spx else None
+        # 50-day MA distance at d_spx (rolling 50-day window)
+        v_ma50 = None
+        if d_spx and d_spx in spx:
+            _i = spx_dates.index(d_spx)
+            if _i >= 49:
+                window = [spx[spx_dates[i]] for i in range(_i - 49, _i + 1)]
+                v_ma50 = (spx[d_spx] / (sum(window) / 50) - 1) * 100
         v_spread = yields.get(d_yields) if d_yields else None
         v_sector = sector_osc.get(d_sector) if d_sector else None
         # 5-day rate of change on the index (SPX or NDX depending on market)
@@ -435,7 +482,9 @@ def main():
             'breadth':         dict(raw=breadth,  score=score_breadth(breadth),                  weight=WEIGHTS['breadth']),
             'rsi':             dict(raw=v_rsi,    score=score_rsi(v_rsi),                        weight=WEIGHTS['rsi']),
             'ma200':           dict(raw=v_ma,     score=score_ma200(v_ma),                       weight=WEIGHTS['ma200']),
+            'ma50':            dict(raw=v_ma50,   score=score_ma50(v_ma50),                      weight=WEIGHTS['ma50']),
             'pct_above_200ma': dict(raw=v_pct,    score=score_pct_above_200ma(v_pct),            weight=WEIGHTS['pct_above_200ma']),
+            'pct_above_50ma':  dict(raw=v_pct50,  score=score_pct_above_50ma(v_pct50),           weight=WEIGHTS['pct_above_50ma']),
             'naaim':           dict(raw=v_naaim,  score=score_naaim(v_naaim),                    weight=WEIGHTS['naaim']),
             'junk':            dict(raw=junk,     score=score_junk(junk),                        weight=WEIGHTS['junk']),
             'spread':          dict(raw=v_spread, score=score_spread(v_spread),                  weight=WEIGHTS['spread']),

@@ -301,14 +301,30 @@
         <a href="?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
       </div>
       <p class="hero-eyebrow">Tracking the <span data-market-label>S&amp;P 500</span> &middot; Updated daily after market close</p>
-      <div class="gauge-wrap">
-        <svg viewBox="-24 -6 448 268" class="gauge" id="sentimentGauge" aria-label="Market sentiment gauge"></svg>
-        <div class="gauge-readout">
-          <div class="reading-label" id="readingLabel">Neutral</div>
-          <div class="reading-action" id="readingAction">No Real Trend</div>
-          <div class="reading-value"><span id="readingValue">50</span><span class="reading-suffix">/100</span></div>
-          <div class="reading-subtitle" id="readingSubtitle"></div>
-          <div class="updated" id="gaugeDateNote">Loading latest close…</div>
+      <div class="gauges-row">
+        <div class="sub-gauge sub-gauge-upside">
+          <div class="sub-gauge-title">Upside Trend</div>
+          <svg viewBox="0 0 200 130" class="sub-gauge-svg" id="upsideTrendGauge" aria-label="Upside Trend sub-gauge"></svg>
+          <div class="sub-gauge-value" id="upsideTrendValue">—</div>
+          <div class="sub-gauge-state" id="upsideTrendState">Loading…</div>
+          <div class="sub-gauge-hint">Higher = trend healthier</div>
+        </div>
+        <div class="gauge-wrap gauge-main">
+          <svg viewBox="-24 -6 448 268" class="gauge" id="sentimentGauge" aria-label="Market sentiment gauge"></svg>
+          <div class="gauge-readout">
+            <div class="reading-label" id="readingLabel">Neutral</div>
+            <div class="reading-action" id="readingAction">No Real Trend</div>
+            <div class="reading-value"><span id="readingValue">50</span><span class="reading-suffix">/100</span></div>
+            <div class="reading-subtitle" id="readingSubtitle"></div>
+            <div class="updated" id="gaugeDateNote">Loading latest close…</div>
+          </div>
+        </div>
+        <div class="sub-gauge sub-gauge-pivot">
+          <div class="sub-gauge-title">Pivot Top</div>
+          <svg viewBox="0 0 200 130" class="sub-gauge-svg" id="pivotTopGauge" aria-label="Pivot Top sub-gauge"></svg>
+          <div class="sub-gauge-value" id="pivotTopValue">—</div>
+          <div class="sub-gauge-state" id="pivotTopState">Loading…</div>
+          <div class="sub-gauge-hint">Higher = more top risk</div>
         </div>
       </div>
       <div class="historical-context" id="historicalContext"></div>

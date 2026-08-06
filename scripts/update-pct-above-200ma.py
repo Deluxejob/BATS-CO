@@ -28,7 +28,8 @@ import urllib.error
 from datetime import datetime, timezone
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-OUT_PATH = os.path.join(REPO_ROOT, "data", "pct_above_200ma.csv")
+OUT_PATH_200 = os.path.join(REPO_ROOT, "data", "pct_above_200ma.csv")
+OUT_PATH_50  = os.path.join(REPO_ROOT, "data", "pct_above_50ma.csv")
 
 # Same universe used in the backtest (backtest_pct_above_200ma.py in scratch).
 # ~100 large-cap S&P constituents continuously public since <= 2005.
@@ -111,27 +112,9 @@ def compute_sma_dates(bars, window=200):
     return out
 
 
-def main() -> int:
-    print(f"Fetching {len(UNIVERSE)} tickers from Yahoo...")
-    above_by_date = {}  # date -> {symbol: bool}
-    fetched_ok = 0
-    for sym in UNIVERSE:
-        bars = fetch_daily(sym)
-        if bars is None or len(bars) < 250:
-            continue
-        flags = compute_sma_dates(bars, 200)
-        for d, above in flags.items():
-            above_by_date.setdefault(d, {})[sym] = above
-        fetched_ok += 1
-        # Be polite to Yahoo — small delay between tickers.
-        time.sleep(0.15)
-
-    print(f"Successfully fetched {fetched_ok}/{len(UNIVERSE)} tickers")
-
-    if fetched_ok < 50:
-        warn(f"Only {fetched_ok} tickers fetched (need >= 50). Leaving CSV unchanged.")
-        return 0
-
+def _write_pct_csv(out_path: str, above_by_date: dict, ma_label: str) -> int:
+    """Given {date -> {sym: True/False}} and an output path, compute the daily
+    % above and write to CSV. Returns number of rows written (0 if skipped)."""
     rows = []
     for d in sorted(above_by_date.keys()):
         flags = above_by_date[d]
@@ -142,30 +125,59 @@ def main() -> int:
         rows.append((d, f"{pct:.2f}", len(flags)))
 
     if len(rows) < 500:
-        warn(f"Only {len(rows)} rows computed (need >= 500). Leaving CSV unchanged.")
+        warn(f"Only {len(rows)} rows for {ma_label} (need >= 500). Leaving {out_path} unchanged.")
         return 0
 
-    # If an existing CSV is meaningfully longer/newer, warn but still overwrite —
-    # a fresh fetch is the source of truth.
-    if os.path.exists(OUT_PATH):
+    # Refuse to overwrite a meaningfully longer existing file (Yahoo may be truncated).
+    if os.path.exists(out_path):
         try:
-            with open(OUT_PATH, "r", encoding="utf-8") as f:
-                existing = sum(1 for _ in f) - 1  # minus header
+            with open(out_path, "r", encoding="utf-8") as f:
+                existing = sum(1 for _ in f) - 1
             if existing > len(rows) + 20:
-                warn(f"Existing CSV has {existing} rows, new fetch only {len(rows)}. "
-                     "Leaving existing unchanged (Yahoo may be truncated).")
+                warn(f"Existing {out_path} has {existing} rows, new fetch only {len(rows)}. "
+                     "Leaving unchanged.")
                 return 0
         except Exception:
             pass
 
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    with open(OUT_PATH, "w", newline="", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["Date", "Pct", "Coverage"])
         w.writerows(rows)
-    print(f"Wrote {OUT_PATH}: {len(rows)} rows, "
-          f"latest {rows[-1][0]} = {rows[-1][1]}% above 200 MA "
+    print(f"Wrote {out_path}: {len(rows)} rows, "
+          f"latest {rows[-1][0]} = {rows[-1][1]}% above {ma_label} "
           f"({rows[-1][2]} stocks)")
+    return len(rows)
+
+
+def main() -> int:
+    print(f"Fetching {len(UNIVERSE)} tickers from Yahoo...")
+    above_200_by_date = {}  # date -> {symbol: bool}   (close > 200-day SMA)
+    above_50_by_date  = {}  # date -> {symbol: bool}   (close > 50-day SMA)
+    fetched_ok = 0
+    for sym in UNIVERSE:
+        bars = fetch_daily(sym)
+        if bars is None or len(bars) < 250:
+            continue
+        flags200 = compute_sma_dates(bars, 200)
+        flags50  = compute_sma_dates(bars, 50)
+        for d, above in flags200.items():
+            above_200_by_date.setdefault(d, {})[sym] = above
+        for d, above in flags50.items():
+            above_50_by_date.setdefault(d, {})[sym] = above
+        fetched_ok += 1
+        # Be polite to Yahoo — small delay between tickers.
+        time.sleep(0.15)
+
+    print(f"Successfully fetched {fetched_ok}/{len(UNIVERSE)} tickers")
+
+    if fetched_ok < 50:
+        warn(f"Only {fetched_ok} tickers fetched (need >= 50). Leaving CSVs unchanged.")
+        return 0
+
+    _write_pct_csv(OUT_PATH_200, above_200_by_date, "200 MA")
+    _write_pct_csv(OUT_PATH_50,  above_50_by_date,  "50 MA")
     return 0
 
 
