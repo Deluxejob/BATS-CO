@@ -1193,14 +1193,23 @@ function buildSubGauge(svgId, palette, side) {
     line.setAttribute('stroke-width', t.major ? 2 : 1.25);
     line.setAttribute('stroke-linecap', 'round');
     svg.appendChild(line);
-    // Label just OUTSIDE the ring on the arc side (radius rOuter + 14). Fits safely
-    // inside a viewBox that extends 20+px beyond rOuter.
+    // Label just OUTSIDE the ring. The 0 and 100 labels sit at the chord edge
+    // (top/bottom of the vertical arc, right AT cx), so their text would extend
+    // past the viewBox edge with the default middle anchor. Anchor them INWARD
+    // (end for left-gauge chord, start for right-gauge chord) so they read as
+    // "attached to the tick" and never clip.
     if (t.label) {
-      const lx = cx + (rOuter + 16) * Math.cos(rad);
+      const isAtChord = (t.v === 0 || t.v === 100);
+      const anchor = isAtChord
+        ? (side === 'left' ? 'end' : 'start')
+        : 'middle';
+      // Slight horizontal pad away from the chord to keep the label off the tick.
+      const padX = isAtChord ? (side === 'left' ? -3 : 3) : 0;
+      const lx = cx + (rOuter + 16) * Math.cos(rad) + padX;
       const ly = cy - (rOuter + 16) * Math.sin(rad);
       const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       txt.setAttribute('x', lx); txt.setAttribute('y', ly);
-      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('text-anchor', anchor);
       txt.setAttribute('dominant-baseline', 'middle');
       txt.setAttribute('fill', '#8b95a8');
       txt.setAttribute('font-family', "'JetBrains Mono', ui-monospace, monospace");
