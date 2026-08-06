@@ -1320,14 +1320,18 @@ function setSubGauge(svgId, subScore, valueElId, stateElId, palette, side) {
   const fill = document.getElementById(svgId + '_fill');
   if (fill) fill.setAttribute('d', subGaugeArcPath(cx, cy, rOuter, rInner, side, s));
 
-  // Needle: default (in SVG) points to score=50 (outermost). Rotate so it points to `s`.
-  // Angle at score s minus angle at score 50, both in radians, converted back to degrees.
+  // Needle: default (in SVG) points to score=50 (outermost). Rotate to point to `s`.
+  // Compute the needle's target math-angle delta (targetRad - baseRad, in degrees).
+  // SVG rotation is CW-positive; our math angles are CCW-positive with y flipped,
+  // which means positive math rotation IS positive SVG rotation for our setup.
+  // (For LEFT sub-gauge going score 50→69: math goes -180°→-214°, delta = -34°,
+  // needle needs to swing CW visually from 9 o'clock toward 11 o'clock → rotate(+34°)
+  // matches once we sign-flip the math delta.)
   const targetRad = subGaugeAngleRad(s, side);
   const baseRad   = subGaugeAngleRad(50, side);
   const rotateBy  = (baseRad - targetRad) * 180 / Math.PI;
   const needle = document.getElementById(svgId + '_needle');
-  // Note: SVG y is flipped, so a CCW math rotation is CW in SVG. Use negative sign.
-  if (needle) needle.style.transform = `rotate(${-rotateBy}deg)`;
+  if (needle) needle.style.transform = `rotate(${rotateBy}deg)`;
 
   if (valueEl) valueEl.textContent = Math.round(s);
   if (stateEl) stateEl.textContent = subScore.state;
