@@ -224,18 +224,28 @@ section { margin: 2.5rem 0; }
 }
 .gauge { width: 100%; height: auto; display: block; }
 
-/* Three-gauge flanking row: [Upside Trend] [MAIN BATS] [Pivot Top] */
+/* Three-gauge flanking row: [Upside Trend] [MAIN BATS] [Pivot Top].
+   Tight gap (6px) so the three cards read as one instrument cluster
+   with a small visual seam between them, not three separated panels. */
 .gauges-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 6px;
   flex-wrap: wrap;   /* wrap gracefully when viewport can't hold all three */
 }
 .gauges-row .gauge-wrap.gauge-main {
   flex: 0 1 520px;
   min-width: 320px;
   order: 2;   /* keep main visually centered even after wrap */
+  /* Card frame that visually matches the two flanking sub-gauge cards
+     so the row reads as three balanced instruments in one cockpit.
+     Padding pulls in a bit at the sides so the colored arc doesn't
+     touch the border. */
+  padding: 0.75rem 1rem 1rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 .sub-gauge-upside { order: 1; }
 .sub-gauge-pivot  { order: 3; }
@@ -247,12 +257,17 @@ section { margin: 2.5rem 0; }
   align-items: center;
   gap: 0.35rem;
   padding: 0.75rem 0.5rem 0.6rem;
-  /* No card background — sub-gauges read as part of the main hero, not
-     three separate boxes. The outward-bulging arcs make the "cockpit"
-     visual come from position + shape, not from card outlines. */
+  /* Matching card frame — same background/border/radius as the main
+     gauge so the three cards read as a coherent instrument cluster,
+     each with its own boundary but a shared visual language. */
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
-.sub-gauge-upside { padding-right: 0;    margin-right: -1rem; }
-.sub-gauge-pivot  { padding-left:  0;    margin-left:  -1rem; }
+/* No inward margin overlap — let each box stand on its own edge so
+   the vertical borders of all three cards line up cleanly in the row. */
+.sub-gauge-upside { margin-right: 0; padding-right: 0.5rem; }
+.sub-gauge-pivot  { margin-left:  0; padding-left:  0.5rem; }
 .sub-gauge-title {
   font-size: 0.75rem;
   font-weight: 700;
