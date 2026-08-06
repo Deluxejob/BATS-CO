@@ -1134,97 +1134,195 @@ function computePivotTop(current) {
   return { score, state, sentence };
 }
 
-// Draw a minimalist semicircular sub-gauge:
-// - Grey background arc (from 180° to 0°)
-// - Colored fill arc from 180° down to (180 - score*1.8)°
-// - Needle at score position
-// - Numeric readout is separate DOM (populated by setSubGauge)
-function buildSubGauge(svgId, palette) {
+// Draw a cockpit-style sub-gauge that "opens outward" — a 180° arc where the
+// FLAT chord side faces the main BATS gauge and the arc CURVES AWAY from it.
+// Left sub-gauge: arc bulges left (like a "(" shape). Right sub-gauge: mirror.
+// Needle sweeps along the arc; score 0 at bottom, 100 at top.
+//
+// SVG viewBox is portrait-ish (150 × 200). Arc center is on the inner edge
+// (right side for left sub-gauge, left side for right sub-gauge) so the arc
+// can bulge outward to fill the box.
+//
+// side: 'left' means arc opens right (bulges left); 'right' means mirror.
+function buildSubGauge(svgId, palette, side) {
   const svg = document.getElementById(svgId);
   if (!svg) return;
-  const cx = 100, cy = 100, rOuter = 80, rInner = 55;
-  const bgColor = palette === 'red' ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)';
-  const trackColor = 'rgba(139,149,168,0.15)';
+  const rOuter = 140, rInner = 100;
+  // Anchor arc center to the INNER edge of the viewBox (facing main gauge).
+  const cy = 180;
+  const cx = side === 'left' ? 198 : 2;   // right edge for left sub, left edge for right sub
 
-  // Background track (full semicircle).
+  const fillColor  = palette === 'red' ? 'rgba(239,68,68,0.65)'  : 'rgba(34,197,94,0.65)';
+  const trackColor = 'rgba(139,149,168,0.32)';
+
+  // Track: 180° arc from top of the flat edge, through the outer bulge, to the bottom of the flat edge.
+  // Math angles: for LEFT sub-gauge, from 90° (top) counter-clockwise through 180° (left) to 270° (bottom).
+  // For RIGHT sub-gauge, from 90° (top) clockwise through 0° (right) to -90° (bottom).
   const track = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  track.setAttribute('d', subGaugeArcPath(cx, cy, rOuter, rInner, 180, 0));
+  track.setAttribute('d', subGaugeArcPath(cx, cy, rOuter, rInner, side, 100));  // full-scale track (score=100 sweep)
   track.setAttribute('fill', trackColor);
   svg.appendChild(track);
 
-  // Filled arc (gets its endpoint updated by setSubGauge).
+  // Filled arc — starts at score 0 (empty). Updated by setSubGauge.
   const fill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   fill.setAttribute('id', svgId + '_fill');
-  fill.setAttribute('fill', bgColor);
+  fill.setAttribute('fill', fillColor);
   svg.appendChild(fill);
 
-  // Needle.
+  // Tick marks at 0 / 25 / 50 / 75 / 100 INSIDE the ring (safe from viewBox clipping).
+  const ticks = [
+    { v: 0,   label: '0',   major: true  },
+    { v: 25,  label: '',    major: false },
+    { v: 50,  label: '50',  major: true  },
+    { v: 75,  label: '',    major: false },
+    { v: 100, label: '100', major: true  },
+  ];
+  ticks.forEach(t => {
+    const rad = subGaugeAngleRad(t.v, side);
+    // Draw tick line across the ring itself (from just outside rInner to just inside rOuter)
+    const rTickIn  = rInner + 2;
+    const rTickOut = rInner + (t.major ? 14 : 8);
+    const p1x = cx + rTickIn  * Math.cos(rad);
+    const p1y = cy - rTickIn  * Math.sin(rad);
+    const p2x = cx + rTickOut * Math.cos(rad);
+    const p2y = cy - rTickOut * Math.sin(rad);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', p1x); line.setAttribute('y1', p1y);
+    line.setAttribute('x2', p2x); line.setAttribute('y2', p2y);
+    line.setAttribute('stroke', 'rgba(255,255,255,0.7)');
+    line.setAttribute('stroke-width', t.major ? 2 : 1.25);
+    line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+    // Label just OUTSIDE the ring on the arc side (radius rOuter + 14). Fits safely
+    // inside a viewBox that extends 20+px beyond rOuter.
+    if (t.label) {
+      const lx = cx + (rOuter + 16) * Math.cos(rad);
+      const ly = cy - (rOuter + 16) * Math.sin(rad);
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', lx); txt.setAttribute('y', ly);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('dominant-baseline', 'middle');
+      txt.setAttribute('fill', '#8b95a8');
+      txt.setAttribute('font-family', "'JetBrains Mono', ui-monospace, monospace");
+      txt.setAttribute('font-size', '13');
+      txt.setAttribute('font-weight', '600');
+      txt.textContent = t.label;
+      svg.appendChild(txt);
+    }
+  });
+
+  // BIG score number INSIDE the arc bulge — visually anchored inside the curve.
+  // Position ~60% into the bulge (so it's clearly inside the arc, not floating at edge).
+  const numX = cx + (side === 'left' ? -75 : 75);
+  const numY = cy - 4;
+  const num = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  num.setAttribute('id', svgId + '_num');
+  num.setAttribute('x', numX); num.setAttribute('y', numY);
+  num.setAttribute('text-anchor', 'middle');
+  num.setAttribute('dominant-baseline', 'middle');
+  num.setAttribute('fill', palette === 'red' ? '#f87171' : '#4ade80');
+  num.setAttribute('font-family', "'JetBrains Mono', ui-monospace, monospace");
+  num.setAttribute('font-size', '52');
+  num.setAttribute('font-weight', '700');
+  num.textContent = '—';
+  svg.appendChild(num);
+
+  // Needle — starts pointing to score 50 (midpoint of arc, outermost). Rotates via CSS transform.
   const needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   needle.setAttribute('id', svgId + '_needle');
+  const startRad = subGaugeAngleRad(50, side);
   needle.setAttribute('x1', cx);
   needle.setAttribute('y1', cy);
-  needle.setAttribute('x2', cx);
-  needle.setAttribute('y2', cy - rOuter + 4);
-  needle.setAttribute('stroke', '#e6edf6');
-  needle.setAttribute('stroke-width', '2.5');
+  needle.setAttribute('x2', cx + (rOuter - 8) * Math.cos(startRad));
+  needle.setAttribute('y2', cy - (rOuter - 8) * Math.sin(startRad));
+  needle.setAttribute('stroke', '#ffffff');
+  needle.setAttribute('stroke-width', '3.5');
   needle.setAttribute('stroke-linecap', 'round');
   needle.style.transformOrigin = `${cx}px ${cy}px`;
   needle.style.transition = 'transform 1s cubic-bezier(.22,1,.36,1)';
   svg.appendChild(needle);
 
-  // Pivot circle.
+  // Pivot cap.
   const pivot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   pivot.setAttribute('cx', cx);
   pivot.setAttribute('cy', cy);
-  pivot.setAttribute('r', '7');
+  pivot.setAttribute('r', '10');
   pivot.setAttribute('fill', '#0a0e1a');
-  pivot.setAttribute('stroke', '#e6edf6');
-  pivot.setAttribute('stroke-width', '2');
+  pivot.setAttribute('stroke', '#ffffff');
+  pivot.setAttribute('stroke-width', '2.5');
   svg.appendChild(pivot);
 }
 
-function subGaugeArcPath(cx, cy, rOuter, rInner, startDeg, endDeg) {
-  const toXY = (r, deg) => {
-    const rad = (deg * Math.PI) / 180;
-    return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
-  };
-  const p1 = toXY(rOuter, startDeg);
-  const p2 = toXY(rOuter, endDeg);
-  const p3 = toXY(rInner, endDeg);
-  const p4 = toXY(rInner, startDeg);
+// Return the math-angle (radians) that a given score maps to on this side's arc.
+// For LEFT (arc bulges left): score 0 = bottom (270°/-90°), 50 = left (180°), 100 = top (90°).
+// For RIGHT (arc bulges right): score 0 = bottom (-90°), 50 = right (0°), 100 = top (90°).
+function subGaugeAngleRad(score, side) {
+  const s = Math.max(0, Math.min(100, score));
+  const t = s / 100;   // 0..1
+  const startDeg = -90;   // bottom
+  const endDeg   = 90;    // top
+  // LEFT sweeps counter-clockwise (via 180°): angle grows from -90 through -180 to -270 (== 90°)
+  // RIGHT sweeps clockwise (via 0°): angle grows from -90 through 0 to 90
+  const deg = side === 'left'
+    ? startDeg - t * 180    // -90 → -270 (== +90, via left)
+    : startDeg + t * 180;   // -90 → +90 (via right)
+  return (deg * Math.PI) / 180;
+}
+
+// Build the fill/track arc path from score 0 to `score`, honoring the side's sweep direction.
+function subGaugeArcPath(cx, cy, rOuter, rInner, side, score) {
+  const s = Math.max(0, Math.min(100, score));
+  const startRad = subGaugeAngleRad(0, side);
+  const endRad   = subGaugeAngleRad(s, side);
+  const toXY = (r, rad) => ({ x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) });
+  const p1 = toXY(rOuter, startRad);
+  const p2 = toXY(rOuter, endRad);
+  const p3 = toXY(rInner, endRad);
+  const p4 = toXY(rInner, startRad);
+  const largeArc = 0;   // never more than 180° sweep for the fill
+  // sweep-flag: 1 for LEFT (counter-clockwise in SVG-flipped y), 0 for RIGHT.
+  const sweepOuter = side === 'left' ? 1 : 0;
+  const sweepInner = side === 'left' ? 0 : 1;
   return [
     `M ${p1.x} ${p1.y}`,
-    `A ${rOuter} ${rOuter} 0 0 0 ${p2.x} ${p2.y}`,
+    `A ${rOuter} ${rOuter} 0 ${largeArc} ${sweepOuter} ${p2.x} ${p2.y}`,
     `L ${p3.x} ${p3.y}`,
-    `A ${rInner} ${rInner} 0 0 1 ${p4.x} ${p4.y}`,
+    `A ${rInner} ${rInner} 0 ${largeArc} ${sweepInner} ${p4.x} ${p4.y}`,
     'Z',
   ].join(' ');
 }
 
-function setSubGauge(svgId, subScore, valueElId, stateElId, palette) {
+function setSubGauge(svgId, subScore, valueElId, stateElId, palette, side) {
   const valueEl = document.getElementById(valueElId);
   const stateEl = document.getElementById(stateElId);
+  const numEl   = document.getElementById(svgId + '_num');
   if (!subScore) {
     if (valueEl) valueEl.textContent = '—';
     if (stateEl) stateEl.textContent = 'No data';
+    if (numEl)   numEl.textContent = '—';
     return;
   }
   const s = Math.max(0, Math.min(100, subScore.score));
-  const endDeg = 180 - (s / 100) * 180;
 
-  const cx = 100, cy = 100, rOuter = 80, rInner = 55;
+  const rOuter = 140, rInner = 100;
+  const cy = 180;
+  const cx = side === 'left' ? 198 : 2;
+
   const fill = document.getElementById(svgId + '_fill');
-  if (fill) fill.setAttribute('d', subGaugeArcPath(cx, cy, rOuter, rInner, 180, endDeg));
+  if (fill) fill.setAttribute('d', subGaugeArcPath(cx, cy, rOuter, rInner, side, s));
 
+  // Needle: default (in SVG) points to score=50 (outermost). Rotate so it points to `s`.
+  // Angle at score s minus angle at score 50, both in radians, converted back to degrees.
+  const targetRad = subGaugeAngleRad(s, side);
+  const baseRad   = subGaugeAngleRad(50, side);
+  const rotateBy  = (baseRad - targetRad) * 180 / Math.PI;
   const needle = document.getElementById(svgId + '_needle');
-  if (needle) {
-    // Needle rotation: score 0 = pointing left (0°), score 100 = pointing right (180° math).
-    // The default needle points UP (90° math). Rotate CW by (90 - targetMathAngle).
-    const rotateBy = 90 - endDeg;
-    needle.style.transform = `rotate(${rotateBy}deg)`;
-  }
+  // Note: SVG y is flipped, so a CCW math rotation is CW in SVG. Use negative sign.
+  if (needle) needle.style.transform = `rotate(${-rotateBy}deg)`;
+
   if (valueEl) valueEl.textContent = Math.round(s);
   if (stateEl) stateEl.textContent = subScore.state;
+  if (numEl)   numEl.textContent = Math.round(s);
 }
 
 // ============================================================
@@ -1992,8 +2090,8 @@ async function init() {
   if (isMainPage) {
     buildLegend();
     buildGauge();
-    buildSubGauge('upsideTrendGauge', 'green');
-    buildSubGauge('pivotTopGauge', 'red');
+    buildSubGauge('upsideTrendGauge', 'green', 'left');
+    buildSubGauge('pivotTopGauge',    'red',   'right');
   }
 
   // Try to load real market values from the CSVs; fall back to the demo
@@ -2021,8 +2119,8 @@ async function init() {
     // Sub-gauges: computed from the live snapshot's component scores.
     const upside = currentSnapshot ? computeUpsideTrend(currentSnapshot) : null;
     const pivot  = currentSnapshot ? computePivotTop(currentSnapshot)   : null;
-    setSubGauge('upsideTrendGauge', upside, 'upsideTrendValue', 'upsideTrendState', 'green');
-    setSubGauge('pivotTopGauge',    pivot,  'pivotTopValue',    'pivotTopState',    'red');
+    setSubGauge('upsideTrendGauge', upside, 'upsideTrendValue', 'upsideTrendState', 'green', 'left');
+    setSubGauge('pivotTopGauge',    pivot,  'pivotTopValue',    'pivotTopState',    'red',   'right');
   }
 
   if (isIndicatorPage) {
