@@ -2458,7 +2458,9 @@
           '5Y':'weekly5y','All':'monthly',
         };
         const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const fmtN = v => v == null || !isFinite(v) ? '—' : v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+        // Always render prices with exactly 2 decimals — financial convention.
+        // "222" → "222.00", "222.4" → "222.40", "222.456" → "222.46".
+        const fmtN = v => v == null || !isFinite(v) ? '—' : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const fmt  = (v, d=2) => v == null || !isFinite(v) ? '—' : v.toFixed(d);
 
         // --- Indicator helpers ---
