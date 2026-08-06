@@ -323,7 +323,7 @@
           <div class="sub-gauge-title">Pivot Top</div>
           <svg viewBox="0 0 200 360" class="sub-gauge-svg" id="pivotTopGauge" aria-label="Pivot Top sub-gauge"></svg>
           <div class="sub-gauge-state" id="pivotTopState">Loading…</div>
-          <div class="sub-gauge-desc">Blends 4 overheated readings — RSI, NAAIM, VIX, dist above 50 MA. <em>Higher = more top risk.</em></div>
+          <div class="sub-gauge-desc">Blends 4 overheated readings. <em>Higher = more top risk.</em></div>
           <span class="sub-gauge-value visually-hidden" id="pivotTopValue">—</span>
         </div>
       </div>
@@ -439,6 +439,61 @@
     </section>
 
     <!-- ABOUT -->
+    <!-- Sub-gauge explanations — Upside Trend + Pivot Top companions.
+         Details for the two smaller dials flanking the main BATS gauge.
+         Kept short in the hero (only "Blends 8 signals — higher = healthier"
+         style), full breakdown lives here. -->
+    <section class="subgauges-explained" id="subgauges">
+      <div class="section-head">
+        <h2>The two sub-gauges</h2>
+        <p>Companion dials flanking the main BATS gauge — designed to answer two different questions in one glance.</p>
+      </div>
+      <div class="subgauges-grid">
+        <div class="subgauge-card">
+          <h3>
+            <span class="sg-dot sg-dot-green"></span>
+            Upside Trend
+            <span class="sg-tag">Higher = trend healthier</span>
+          </h3>
+          <p>
+            Answers: <strong>&ldquo;Is the current uptrend broad and healthy?&rdquo;</strong>
+            Blends 8 trend and participation indicators across multiple timeframes.
+            Reads high when the market is trending up with wide participation across sectors and both fast and slow moving averages agree.
+          </p>
+          <ul>
+            <li>S&amp;P 500 vs 200-day MA <span class="sg-hint">(long-term trend)</span></li>
+            <li>S&amp;P 500 vs 50-day MA <span class="sg-hint">(short-term trend)</span></li>
+            <li>% of Stocks Above 200 MA <span class="sg-hint">(long-term breadth)</span></li>
+            <li>% of Stocks Above 50 MA <span class="sg-hint">(short-term breadth)</span></li>
+            <li>Sector Rotation Regime <span class="sg-hint">(cyclicals vs defensives)</span></li>
+            <li>Junk Bond Demand <span class="sg-hint">(credit risk-on)</span></li>
+            <li>Sector Oscillator <span class="sg-hint">(day-to-day participation)</span></li>
+            <li>S&amp;P 500 5-day ROC <span class="sg-hint">(short-term momentum)</span></li>
+          </ul>
+        </div>
+        <div class="subgauge-card">
+          <h3>
+            <span class="sg-dot sg-dot-red"></span>
+            Pivot Top
+            <span class="sg-tag sg-tag-red">Higher = more top risk</span>
+          </h3>
+          <p>
+            Answers: <strong>&ldquo;Is the market overheated and vulnerable to a short-term top?&rdquo;</strong>
+            Fires when multiple indicators show extreme optimism or overextension at the same time. Reads LOW during calm uptrends and HIGH when the tape gets frothy.
+          </p>
+          <ul>
+            <li>RSI overbought <span class="sg-hint">(momentum stretched, fires above 60)</span></li>
+            <li>NAAIM extreme leverage <span class="sg-hint">(managers all-in, fires above 75)</span></li>
+            <li>SPX overextended above 50 MA <span class="sg-hint">(price stretched, fires above +2%)</span></li>
+            <li>VIX complacency <span class="sg-hint">(fear too low, fires below 14)</span></li>
+          </ul>
+          <p class="sg-note">
+            <strong>Note:</strong> Pivot Top is designed to be silent during healthy trends and only speak up when several signals fire together. A low reading is not a "safety" signal — it just means no active top-formation warning right now.
+          </p>
+        </div>
+      </div>
+    </section>
+
     <section class="about" id="about">
       <div class="section-head">
         <h2>About the BATS</h2>
