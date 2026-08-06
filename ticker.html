@@ -5834,11 +5834,13 @@
         valid.forEach((r, i) => {
           const svg = document.getElementById(`epsRevSvg${i}`);
           if (!svg) return;
+          // Left→right is past→present, matching the EPS Trend chart above:
+          // Up 30d (older window) then Up 7d (recent), same for Down.
           const bars = [
-            { label: 'Up 7d',   value: Number.isFinite(r.up7)    ? r.up7    : 0 },
             { label: 'Up 30d',  value: Number.isFinite(r.up30)   ? r.up30   : 0 },
-            { label: 'Dn 7d',   value: Number.isFinite(r.down7)  ? r.down7  : 0 },
+            { label: 'Up 7d',   value: Number.isFinite(r.up7)    ? r.up7    : 0 },
             { label: 'Dn 30d',  value: Number.isFinite(r.down30) ? r.down30 : 0 },
+            { label: 'Dn 7d',   value: Number.isFinite(r.down7)  ? r.down7  : 0 },
           ];
           const colors = ['#22d39a', '#22d39a', '#ff5374', '#ff5374'];
           drawEpsMiniChart(svg, bars, {
