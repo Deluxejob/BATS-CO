@@ -1623,6 +1623,25 @@
     .tk-chart-change-label {
       font-size: 0.75rem; color: var(--term-dim); font-weight: 500;
     }
+    /* Today's Open / High / Low — same visual language as the YTD/52W chips
+       but no color coding (neutral values). Sits in the MIDDLE of the price
+       row (before the ext pre/after-market strip), so when ext appears it
+       just slots in to the right without shoving OHL out of place. Hidden
+       until we have the day's bar to populate from. */
+    .tk-chart-ohl {
+      display: none;
+      align-items: baseline;
+      gap: 0.9rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .tk-chart-ohl.visible { display: inline-flex; }
+    .tk-chart-ohl .ohl-item { display: inline-flex; gap: 0.3rem; align-items: baseline; }
+    .tk-chart-ohl .ohl-label {
+      font-size: 0.7rem; letter-spacing: 0.08em;
+      color: var(--term-dim); text-transform: uppercase; font-weight: 600;
+    }
+    .tk-chart-ohl .ohl-value { font-size: 0.95rem; font-weight: 700; color: var(--term-text); }
     /* YTD + 52W performance chips — right-justified inside the price row.
        margin-left:auto pushes them to the far right regardless of whether
        the ext strip is visible. Wraps to the next line on narrow screens
@@ -2358,6 +2377,7 @@
               <span class="tk-chart-price" data-role="price">&ndash;</span>
               <span class="tk-chart-change" data-role="change"></span>
               <span class="tk-chart-change-label" data-role="changeLabel"></span>
+              <span class="tk-chart-ohl" data-role="ohl"></span>
               <span class="tk-chart-ext" data-role="ext"></span>
               <span class="tk-chart-perf" data-role="perf"></span>
             </div>
@@ -2984,6 +3004,7 @@
         const priceEl   = mount.querySelector('[data-role="price"]');
         const changeEl  = mount.querySelector('[data-role="change"]');
         const changeLbl = mount.querySelector('[data-role="changeLabel"]');
+        const ohlEl     = mount.querySelector('[data-role="ohl"]');
         const extEl     = mount.querySelector('[data-role="ext"]');
         const perfEl    = mount.querySelector('[data-role="perf"]');
         const titleEl   = mount.querySelector('[data-role="chartTitle"]');
@@ -3287,6 +3308,34 @@
           footerL.textContent = sym;
           footerR.textContent = 'as of ' + new Date(last[0] * 1000).toLocaleDateString('en-US');
           renderPerf();
+          renderOhl();
+        }
+
+        // Today's Open / High / Low chip trio — read from the last daily bar
+        // (index 1 = open, 2 = high, 3 = low). During market hours this
+        // reflects Yahoo's live intraday extremes; overnight/pre-open it
+        // shows the previous session's OHL. refreshQuote() also updates
+        // these values from the live quote endpoint when the market is open.
+        function renderOhl() {
+          if (!ohlEl) return;
+          const bars = cache.daily1y || cache.intra5d;
+          if (!bars || !bars.length) { ohlEl.className = 'tk-chart-ohl'; ohlEl.innerHTML = ''; return; }
+          const bar = bars[bars.length - 1];
+          const o = bar[1], h = bar[2], l = bar[3];
+          if (o == null || h == null || l == null || !isFinite(o) || !isFinite(h) || !isFinite(l)) {
+            ohlEl.className = 'tk-chart-ohl'; ohlEl.innerHTML = ''; return;
+          }
+          paintOhl(o, h, l);
+        }
+
+        function paintOhl(o, h, l) {
+          if (!ohlEl) return;
+          if (o == null || h == null || l == null) { ohlEl.className = 'tk-chart-ohl'; ohlEl.innerHTML = ''; return; }
+          ohlEl.className = 'tk-chart-ohl visible';
+          ohlEl.innerHTML =
+            '<span class="ohl-item"><span class="ohl-label">O</span><span class="ohl-value">' + fmtN(o) + '</span></span>' +
+            '<span class="ohl-item"><span class="ohl-label">H</span><span class="ohl-value">' + fmtN(h) + '</span></span>' +
+            '<span class="ohl-item"><span class="ohl-label">L</span><span class="ohl-value">' + fmtN(l) + '</span></span>';
         }
 
         // YTD % and 52W % painted at the right side of the price row.
@@ -3334,6 +3383,13 @@
             const j = await r.json();
             const q = j && j.quotes && j.quotes[sym];
             if (!q) return;
+            // Overwrite the daily-bar OHL with the live quote's values whenever
+            // available — they're the authoritative intraday extremes and
+            // beat the possibly-stale last daily bar (which only updates when
+            // /api/history is re-fetched).
+            if (q.regularMarketOpen != null || q.regularMarketDayHigh != null || q.regularMarketDayLow != null) {
+              paintOhl(q.regularMarketOpen, q.regularMarketDayHigh, q.regularMarketDayLow);
+            }
             const state = String(q.marketState || '').toUpperCase();
             let tier = null;
             if (state === 'PRE' || state === 'PREPRE') {
