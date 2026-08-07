@@ -1106,21 +1106,28 @@ function computePivotTop(current) {
   // Each contribution is 0-100 = "how much pivot risk does this indicator add?"
   // Higher final score = more risk of a short-term top forming.
   const contribs = [];
-  // RSI overbought — 0 at RSI 60, 100 at RSI 80
+  // RSI overbought — piecewise ramp: gradual 60→70 (linear to 50), then a
+  // steep bonus above 70 (linear from 50→100 by RSI 75). Rewards early
+  // over-70 readings much more heavily than the 60-70 warm-up zone —
+  // matches "RSI > 70 = actually overbought" convention.
   if (current.rsiVal != null) {
-    contribs.push({ w: 30, s: Math.max(0, Math.min(100, (current.rsiVal - 60) * 5)) });
+    let r;
+    if      (current.rsiVal <= 60) r = 0;
+    else if (current.rsiVal <= 70) r = (current.rsiVal - 60) * 5;   // 60→0, 70→50
+    else                           r = Math.min(100, 50 + (current.rsiVal - 70) * 10);   // 70→50, 75→100
+    contribs.push({ w: 40, s: r });
   }
   // NAAIM extreme leverage — 0 at NAAIM 75, 100 at NAAIM 100
   if (current.naaimValue != null) {
-    contribs.push({ w: 25, s: Math.max(0, Math.min(100, (current.naaimValue - 75) * 4)) });
+    contribs.push({ w: 20, s: Math.max(0, Math.min(100, (current.naaimValue - 75) * 4)) });
   }
   // SPX overextended above 50MA — 0 at +2%, 100 at +7%
   if (current.ma50Dist != null) {
-    contribs.push({ w: 30, s: Math.max(0, Math.min(100, (current.ma50Dist - 2) * 20)) });
+    contribs.push({ w: 25, s: Math.max(0, Math.min(100, (current.ma50Dist - 2) * 20)) });
   }
-  // VIX complacency (very low VIX = tail risk mispriced) — 0 at 14, 100 at 9
+  // VIX complacency (very low VIX = tail risk mispriced) — 0 at 15, 100 at 10
   if (current.vix != null) {
-    contribs.push({ w: 15, s: Math.max(0, Math.min(100, (14 - current.vix) * 20)) });
+    contribs.push({ w: 15, s: Math.max(0, Math.min(100, (15 - current.vix) * 20)) });
   }
   let sum = 0, wsum = 0;
   for (const c of contribs) { sum += c.s * c.w; wsum += c.w; }
