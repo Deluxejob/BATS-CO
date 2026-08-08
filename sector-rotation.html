@@ -427,7 +427,7 @@
     </section>
 
     <section class="sr-section" id="regimeDriversSection">
-      <h2>What's driving the reading? <span style="color:var(--text-dim);font-weight:normal;font-size:0.9rem;">&mdash; each sector's 3M return</span></h2>
+      <h2>What's driving the reading? <span style="color:var(--text-dim);font-weight:normal;font-size:0.9rem;">&mdash; each sector's 1-week return</span></h2>
       <div class="sr-drivers">
         <div class="sr-drivers-group">
           <h3>Cyclicals <span class="group-avg" id="cycGroupAvg">&mdash;</span></h3>
@@ -973,20 +973,24 @@
         svg.innerHTML = s;
       })();
 
-      // ---- "What's driving the reading?" — per-sector 3M return bars ----
-      // Grouped by cyc/def so a reader can see WHICH sectors are carrying
-      // the reading. Bars centered on zero, sorted within each camp,
-      // shared magnitude scale so cyc and def visually compare 1:1.
+      // ---- "What's driving the reading?" — per-sector 1-WEEK return bars ----
+      // Grouped by cyc/def so a reader can see WHICH sectors are pushing
+      // the regime spread THIS WEEK. We deliberately show 1W (not 3M) here
+      // because the regime spread swings meaningfully day-to-day and 3M
+      // returns barely move — so 3M bars felt like a static snapshot next
+      // to a live-moving reading. 1W bars answer the intuitive question:
+      // "what's causing today's move in the reading?" — even though the
+      // reading itself is computed on a 3M lookback.
       (function renderRegimeDrivers() {
-        const cycRows = rows.filter(r => r.sector.group === 'cyc' && r.r['3m'] != null)
-                            .sort((a,b) => b.r['3m'] - a.r['3m']);
-        const defRows = rows.filter(r => r.sector.group === 'def' && r.r['3m'] != null)
-                            .sort((a,b) => b.r['3m'] - a.r['3m']);
+        const cycRows = rows.filter(r => r.sector.group === 'cyc' && r.r['1w'] != null)
+                            .sort((a,b) => b.r['1w'] - a.r['1w']);
+        const defRows = rows.filter(r => r.sector.group === 'def' && r.r['1w'] != null)
+                            .sort((a,b) => b.r['1w'] - a.r['1w']);
         if (!cycRows.length || !defRows.length) return;
 
-        const maxMag = Math.max(1, ...cycRows.concat(defRows).map(r => Math.abs(r.r['3m'])));
+        const maxMag = Math.max(1, ...cycRows.concat(defRows).map(r => Math.abs(r.r['1w'])));
         const rowHtml = (r) => {
-          const v = r.r['3m'];
+          const v = r.r['1w'];
           const cls = v >= 0 ? 'pos' : 'neg';
           const w = (Math.abs(v) / maxMag) * 50;   // 50% = half-track (center to edge)
           return `
@@ -999,19 +1003,24 @@
         document.getElementById('cycBars').innerHTML = cycRows.map(rowHtml).join('');
         document.getElementById('defBars').innerHTML = defRows.map(rowHtml).join('');
 
+        const cyc1w = avg(cycRows.map(r => r.r['1w']));
+        const def1w = avg(defRows.map(r => r.r['1w']));
+        const spread1w = cyc1w - def1w;
         const cycAvgEl = document.getElementById('cycGroupAvg');
         const defAvgEl = document.getElementById('defGroupAvg');
-        cycAvgEl.textContent = 'avg ' + fmtPct(cyc3);
-        cycAvgEl.className = 'group-avg ' + (cyc3 >= 0 ? 'pos' : 'neg');
-        defAvgEl.textContent = 'avg ' + fmtPct(def3);
-        defAvgEl.className = 'group-avg ' + (def3 >= 0 ? 'pos' : 'neg');
+        cycAvgEl.textContent = 'avg ' + fmtPct(cyc1w);
+        cycAvgEl.className = 'group-avg ' + (cyc1w >= 0 ? 'pos' : 'neg');
+        defAvgEl.textContent = 'avg ' + fmtPct(def1w);
+        defAvgEl.className = 'group-avg ' + (def1w >= 0 ? 'pos' : 'neg');
 
         document.getElementById('driversNote').innerHTML =
-          'Both camp averages feed straight into the Regime Spread above: ' +
-          '<strong>avg cyclical ' + fmtPct(cyc3) + ' &minus; avg defensive ' + fmtPct(def3) +
-          ' = ' + fmtPct(spread) + '</strong>. ' +
-          'A single outlier on either side can carry (or drag) an entire camp &mdash; ' +
-          'when one bar dwarfs the others, the regime reading is more fragile than the label suggests.';
+          'These are <strong>1-week returns</strong>, so they show what pushed the reading <em>this week</em> ' +
+          '&mdash; not the 3-month math that sets its level. In today\'s tape, ' +
+          'sector leadership rotates by the day, so 1-week bars are more informative than 3-month bars for ' +
+          '"why did the reading move?" ' +
+          'Cyclicals avg ' + fmtPct(cyc1w) + ' &minus; defensives avg ' + fmtPct(def1w) +
+          ' = <strong>' + fmtPct(spread1w) + ' 1-week spread</strong> ' +
+          '(vs the 3-month regime spread of ' + fmtPct(spread) + ' shown in the chart above).';
       })();
 
       // ---- leaders / laggards (3M) ----
