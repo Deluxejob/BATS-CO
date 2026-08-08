@@ -284,6 +284,39 @@
     .wl-tile.nq     { background: #374151; color: var(--term-dim); }
     .wl-tile.nq .wl-tile-chg { opacity: 0.6; }
 
+    /* Legend under the tiles — shows what each color band means so a
+       first-time visitor doesn't have to guess. Compact enough to sit
+       inline with the heatmap without adding another visual block. */
+    .wl-heatmap-legend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--term-dim);
+      flex-wrap: wrap;
+    }
+    .wl-heatmap-legend .legend-label {
+      color: var(--term-dim);
+      padding: 0 0.35rem;
+      letter-spacing: 0.06em;
+    }
+    .wl-heatmap-legend .legend-swatch {
+      display: inline-block;
+      width: 22px;
+      height: 12px;
+      border-radius: 3px;
+    }
+    .wl-heatmap-legend .legend-swatch.neg-3 { background: #7f1d1d; }
+    .wl-heatmap-legend .legend-swatch.neg-2 { background: #b91c1c; }
+    .wl-heatmap-legend .legend-swatch.neg-1 { background: #ef4444; }
+    .wl-heatmap-legend .legend-swatch.neu   { background: #4b5563; }
+    .wl-heatmap-legend .legend-swatch.pos-1 { background: #22c55e; }
+    .wl-heatmap-legend .legend-swatch.pos-2 { background: #16a34a; }
+    .wl-heatmap-legend .legend-swatch.pos-3 { background: #14532d; }
+
     /* Empty state */
     .wl-empty {
       padding: 3rem 1.5rem;
@@ -670,6 +703,18 @@
             <span class="wl-heatmap-sub">Colored by 1-day % change · sorted best to worst · click a tile to open the ticker</span>
           </div>
           <div class="wl-heatmap">${tiles}</div>
+          <div class="wl-heatmap-legend" aria-label="Color scale">
+            <span class="legend-label">&le;-3%</span>
+            <span class="legend-swatch neg-3"></span>
+            <span class="legend-swatch neg-2"></span>
+            <span class="legend-swatch neg-1"></span>
+            <span class="legend-swatch neu"></span>
+            <span class="legend-swatch pos-1"></span>
+            <span class="legend-swatch pos-2"></span>
+            <span class="legend-swatch pos-3"></span>
+            <span class="legend-label">&ge;+3%</span>
+            <span class="legend-label" style="margin-left:0.75rem;opacity:0.75">gray = &plusmn;1% (flat)</span>
+          </div>
         </div>
         <div style="overflow-x:auto">
           <table class="wl-table">
