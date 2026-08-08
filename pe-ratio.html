@@ -168,6 +168,18 @@
       <a href="pe.html">Private Equity</a>
       <a href="pelosi.html">Pelosi</a>
     </nav>
+    <script>
+      (function(){
+        const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+        const isHome = here === 'index.html';
+        document.querySelectorAll('.site-nav a').forEach(a => {
+          const raw = (a.getAttribute('href') || '').toLowerCase();
+          const target = raw.split('/').pop().split('#')[0];
+          if (isHome && raw.startsWith('#'))       a.classList.add('active');
+          else if (target && target === here)       a.classList.add('active');
+        });
+      })();
+    </script>
   </header>
 
   <main class="explainer">

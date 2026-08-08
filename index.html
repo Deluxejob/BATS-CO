@@ -289,6 +289,22 @@
       <a href="pe.html">Private Equity</a>
       <a href="pelosi.html">Pelosi</a>
     </nav>
+    <script>
+      // Highlight the nav link for the page we're on. Same on every page —
+      // pathname-based so no per-page hardcoding needed. On index.html the
+      // Score link is a raw "#gauge" anchor; other pages point at
+      // "index.html#gauge" — the home-page special case handles both.
+      (function(){
+        const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+        const isHome = here === 'index.html';
+        document.querySelectorAll('.site-nav a').forEach(a => {
+          const raw = (a.getAttribute('href') || '').toLowerCase();
+          const target = raw.split('/').pop().split('#')[0];
+          if (isHome && raw.startsWith('#'))       a.classList.add('active');
+          else if (target && target === here)       a.classList.add('active');
+        });
+      })();
+    </script>
   </header>
 
   <main>

@@ -128,6 +128,14 @@ h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); }
   border-color: var(--accent);
   text-decoration: none;
 }
+/* "You are here" marker — matches the hover state but permanent, so the
+   viewer can tell at a glance which page they're on. Wired up by a tiny
+   inline script that runs right after the nav block on every page. */
+.site-nav a.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+}
 
 main {
   max-width: 1280px;
