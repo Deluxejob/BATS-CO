@@ -1298,9 +1298,17 @@ function computePivotTop(current) {
   let sum = 0, wsum = 0;
   for (const c of contribs) { sum += c.s * c.w; wsum += c.w; }
   if (wsum === 0) return null;
-  const score = sum / wsum;
+  const raw = sum / wsum;
+  // Scale transform: the raw weighted average tops out around 85 historically
+  // (22-year backtest max = 85.7 on 2018-01-26). That leaves the top ~15 pts
+  // of the 0-100 space dead and no way to communicate "actually extreme."
+  // Piecewise stretch: readings <= 30 pass through unchanged (a calm tape
+  // still reads calm), readings > 30 stretch by 1.2 so old 80 -> new 90 and
+  // the Feb-2018-style max (85.7) reaches ~97. Cap at 100.
+  const score = raw <= 30 ? raw : Math.min(100, 30 + (raw - 30) * 1.2);
   let state, sentence;
-  if      (score >= 70) { state = 'Top forming'; sentence = 'Multiple overheated signals firing — high risk of a short-term top.'; }
+  if      (score >= 90) { state = 'Extreme top'; sentence = 'All signals pinned near extremes — historically rare and preceded major short-term reversals (Feb 2018, Aug-Sep 2020, July 2024).'; }
+  else if (score >= 70) { state = 'Top forming'; sentence = 'Multiple overheated signals firing — high risk of a short-term top.'; }
   else if (score >= 50) { state = 'Watch top';   sentence = 'Some overheated readings — pivot risk elevated.'; }
   else if (score >= 30) { state = 'Warming';     sentence = 'Mild overextension in a few components.'; }
   else                  { state = 'Clean tape';  sentence = 'No significant overheated signals — no top warning.'; }
