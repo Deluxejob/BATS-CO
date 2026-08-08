@@ -1272,6 +1272,29 @@ function computePivotTop(current) {
   if (current.vix != null) {
     contribs.push({ w: 15, s: Math.max(0, Math.min(100, (15 - current.vix) * 20)) });
   }
+  // Bollinger %B — SAME raw input as Upside Trend, but scored with OPPOSITE
+  // framing here. In Upside Trend, %B > 1 means "trend continues, healthy."
+  // In Pivot Top, %B > 1 means "price above upper band = classic overbought
+  // pierce-and-reverse warning." Steep ramp past 0.9 so the score really
+  // moves when SPX pokes above the upper band (which historically has
+  // preceded short-term tops).
+  //   %B < 0.5    -> 0
+  //   0.5 - 0.7   -> 0-15
+  //   0.7 - 0.9   -> 15-45
+  //   0.9 - 1.0   -> 45-75  (at the band)
+  //   1.0 - 1.1   -> 75-95  (above the band — real warning)
+  //   > 1.1       -> 98
+  if (current.bbVal != null) {
+    const b = current.bbVal;
+    let bs;
+    if      (b < 0.5) bs = 0;
+    else if (b < 0.7) bs = (b - 0.5) * (15  / 0.2);
+    else if (b < 0.9) bs = 15 + (b - 0.7) * ((45 - 15) / 0.2);
+    else if (b < 1.0) bs = 45 + (b - 0.9) * ((75 - 45) / 0.1);
+    else if (b < 1.1) bs = 75 + (b - 1.0) * ((95 - 75) / 0.1);
+    else              bs = 98;
+    contribs.push({ w: 25, s: Math.max(0, Math.min(100, bs)) });
+  }
   let sum = 0, wsum = 0;
   for (const c of contribs) { sum += c.s * c.w; wsum += c.w; }
   if (wsum === 0) return null;
