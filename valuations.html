@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PE Ratio — S&P 500 — BATS.CO</title>
+  <title>Valuations — S&P 500 — BATS.CO</title>
   <meta name="description" content="The S&P 500 price-to-earnings ratio since 1871 — historical chart, long-term average, and what forward returns have looked like at extreme highs and lows." />
   <!-- BATS SEO block -->
-  <link rel="canonical" href="https://bats.co/pe-ratio.html">
+  <link rel="canonical" href="https://bats.co/valuations.html">
   <meta property="og:site_name" content="BATS.CO">
-  <meta property="og:title" content="PE Ratio — S&amp;P 500 — BATS.CO">
+  <meta property="og:title" content="Valuations — S&amp;P 500 — BATS.CO">
   <meta property="og:description" content="The S&amp;P 500 price-to-earnings ratio since 1871 — historical chart, long-term average, and what forward returns have looked like at extreme highs and lows.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://bats.co/pe-ratio.html">
+  <meta property="og:url" content="https://bats.co/valuations.html">
   <meta property="og:image" content="https://bats.co/og-card.png">
   <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="PE Ratio — S&amp;P 500 — BATS.CO">
+  <meta name="twitter:title" content="Valuations — S&amp;P 500 — BATS.CO">
   <meta name="twitter:description" content="The S&amp;P 500 price-to-earnings ratio since 1871 — historical chart, long-term average, and what forward returns have looked like at extreme highs and lows.">
   <meta name="twitter:image" content="https://bats.co/og-card.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -163,7 +163,7 @@
       <a href="sector-rotation.html">Sector Rotation</a>
       <a href="concentration.html">Concentration</a>
       <a href="market-ratios.html">Market Ratios</a>
-      <a href="pe-ratio.html">PE Ratio</a>
+      <a href="valuations.html">Valuations</a>
       <a href="consumer.html">Consumer</a>
       <a href="pe.html">Private Equity</a>
       <a href="pelosi.html">Pelosi</a>
@@ -185,13 +185,15 @@
   <main class="explainer">
 
     <section class="explainer-hero">
-      <p class="eyebrow">S&P 500 PRICE-TO-EARNINGS RATIO</p>
-      <h1>How expensive is the stock market right now?</h1>
+      <p class="eyebrow">HOW EXPENSIVE IS THE MARKET?</p>
+      <h1>Three ways to answer the same question.</h1>
       <p class="lede">
-        The PE ratio &mdash; the S&P 500's price divided by its trailing 12-month
-        earnings &mdash; is the simplest, oldest yardstick for whether stocks are
-        cheap or expensive. Below is <strong>155 years</strong> of monthly readings,
-        pulled from the classic Robert Shiller dataset.
+        No single number captures "market valuation" perfectly. This page shows
+        the <strong>three most-cited long-horizon measures</strong> side by side:
+        the classic <strong>trailing PE</strong>, Robert Shiller's cyclically-adjusted
+        <strong>CAPE</strong>, and the market-cap-to-GDP <strong>Buffett Indicator</strong>.
+        Each looks at a different denominator; together they triangulate.
+        All three currently read <em>historically expensive</em>.
       </p>
     </section>
 
@@ -227,7 +229,7 @@
 
     <section id="chart">
       <div class="section-head">
-        <h2>PE ratio &mdash; 1871 through today</h2>
+        <h2>1. Trailing PE &mdash; 1871 through today</h2>
         <p>
           Monthly readings, connected. The dashed cyan line is the long-term
           average. The green band below the average marks the "cheap" zone; the
@@ -273,6 +275,108 @@
         <table id="peBucketTable" class="backtest-table"></table>
       </div>
       <p class="backtest-meta" id="peBucketMeta">Loading&hellip;</p>
+    </section>
+
+    <section id="cape">
+      <div class="section-head">
+        <h2>2. Shiller CAPE &mdash; cyclically-adjusted PE</h2>
+        <p>
+          Divides today's price by the <strong>10-year average of real (inflation-adjusted)
+          earnings</strong>. Smoothing over a full business cycle removes the noise that
+          makes trailing PE spike during earnings collapses (2009) or crash during
+          earnings booms. Historically CAPE tops out near <strong>44 (Dec 1999 dot-com peak)</strong>
+          and bottoms near <strong>5 (1921)</strong>. Robert Shiller's canonical
+          long-run valuation measure.
+        </p>
+      </div>
+      <div class="per-hero-stats">
+        <div class="per-hero-stat current">
+          <span class="num" id="capeCurrent">&ndash;</span>
+          <span class="label">Current CAPE</span>
+        </div>
+        <div class="per-hero-stat avg">
+          <span class="num" id="capeAvg">&ndash;</span>
+          <span class="label">Long-term average (since 1871)</span>
+        </div>
+        <div class="per-hero-stat pct">
+          <span class="num" id="capePct">&ndash;</span>
+          <span class="label">Historical percentile</span>
+        </div>
+        <div class="per-hero-stat max">
+          <span class="num" id="capeMax">&ndash;</span>
+          <span class="label">All-time high (Dec 1999)</span>
+        </div>
+      </div>
+      <p class="backtest-meta" id="capeMeta">Loading&hellip;</p>
+      <div class="per-chart-wrap">
+        <div class="chart-periods" id="capePeriods" role="tablist" aria-label="CAPE chart time period">
+          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn active" data-period="20"  role="tab">20Y</button>
+          <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="capeChart" class="per-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="Historical Shiller CAPE chart"></svg>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:var(--s5)"></span> Shiller CAPE (monthly)</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> Long-term average</span>
+          <span><span class="swatch" style="background:var(--s6)"></span> Today</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="buffett">
+      <div class="section-head">
+        <h2>3. Buffett Indicator &mdash; US market cap / GDP</h2>
+        <p>
+          Warren Buffett called this "probably the best single measure of where
+          valuations stand at any given moment" (Fortune, 2001). It's total US
+          corporate equity divided by GDP &mdash; a rough answer to "how big are
+          stocks vs. the actual economy?" Modern readings run structurally
+          higher than in Buffett's era (different interest-rate, tax, and
+          globalization regime) but the <em>shape</em> still shows extremes clearly.
+        </p>
+      </div>
+      <div class="per-hero-stats">
+        <div class="per-hero-stat current">
+          <span class="num" id="buffettCurrent">&ndash;</span>
+          <span class="label" id="buffettCurrentLabel">Current ratio</span>
+        </div>
+        <div class="per-hero-stat avg">
+          <span class="num" id="buffettAvg">&ndash;</span>
+          <span class="label">Long-term average (since 1947)</span>
+        </div>
+        <div class="per-hero-stat pct">
+          <span class="num" id="buffettPct">&ndash;</span>
+          <span class="label">Historical percentile</span>
+        </div>
+        <div class="per-hero-stat max">
+          <span class="num" id="buffettMax">&ndash;</span>
+          <span class="label" id="buffettMaxLabel">All-time high</span>
+        </div>
+      </div>
+      <p class="backtest-meta" id="buffettMeta">Loading&hellip;</p>
+      <div class="per-chart-wrap">
+        <div class="chart-periods" id="buffettPeriods" role="tablist" aria-label="Buffett Indicator chart time period">
+          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn active" data-period="20"  role="tab">20Y</button>
+          <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="buffettChart" class="per-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="Historical Buffett Indicator chart"></svg>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:var(--s5)"></span> Market cap / GDP (%)</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> Long-term average</span>
+          <span><span class="swatch" style="background:var(--s6)"></span> Today</span>
+        </div>
+        <p class="chart-cap-note" style="display:block">
+          Buffett's original bands (2001): <strong>&lt;70%</strong> cheap &middot;
+          <strong>70&ndash;90%</strong> attractive &middot; <strong>90&ndash;115%</strong> reasonable &middot;
+          <strong>115&ndash;135%</strong> expensive &middot; <strong>135%+</strong> danger zone.
+          Post-2013 readings have lived above 135% almost continuously.
+        </p>
+      </div>
     </section>
 
     <section id="findings">
@@ -359,12 +463,32 @@
           series that only extends as Shiller publishes new numbers (typically once
           a year).
         </p>
-        <p style="margin:0;">
+        <p style="margin:0 0 0.75rem;">
           <strong>The 2009 anomaly:</strong> the trailing PE hit ~124 in mid-2009 not
           because stocks were bubblicious but because reported earnings crashed to
           nearly zero during the financial crisis. The <em>ratio</em> spiked; the
           <em>expensiveness</em> did not. This is a well-known artifact and why some
           analysts prefer CAPE.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Shiller CAPE series:</strong> same Robert Shiller dataset,
+          refreshed monthly via
+          <a href="https://www.multpl.com/shiller-pe/table/by-month" style="color:#64d3ff">multpl.com</a>.
+          CAPE = current real price / 10-year average of real earnings.
+        </p>
+        <p style="margin:0;">
+          <strong>Buffett Indicator series:</strong> computed from two FRED series &mdash;
+          <a href="https://fred.stlouisfed.org/series/NCBEILQ027S" style="color:#64d3ff">NCBEILQ027S</a>
+          (Fed Z.1 Nonfinancial Corporate Business, Corporate Equities as a Liability, in
+          millions of USD) divided by
+          <a href="https://fred.stlouisfed.org/series/GDP" style="color:#64d3ff">GDP</a>
+          (nominal, seasonally adjusted, in billions of USD), expressed as a percentage.
+          The classic version used the Wilshire 5000 Total Market Full Cap Index as the
+          numerator; FRED retired that series when Nasdaq took over the Wilshire index,
+          so we use the Fed Z.1 nonfinancial-corporate-equity figure that current Buffett
+          Indicator dashboards (longtermtrends, gurufocus post-2023) also use. Slightly
+          narrower scope than the original (excludes financials), but the shape of the
+          series and its interpretation are the same.
         </p>
       </div>
       <p class="disclaimer" style="margin-top:1.25rem">
@@ -736,6 +860,191 @@
       `Backtest covers ${totalObs.toLocaleString()} monthly observations from 1871 through ${rows[rows.length - 61]?.date || 'the last month with 5-year forward data'}. ` +
       `Returns are real (inflation-adjusted) total returns using Shiller's series.`;
   })();
+
+  // ============================================================
+  // Generic valuation-metric chart renderer.
+  // Loads a two-column CSV (Date, Value), computes stats, renders the
+  // SVG line chart with period buttons, and fills a set of dashboard
+  // tiles. Called once each for Shiller CAPE and the Buffett Indicator
+  // so both live-load from their own data files without duplicating
+  // 100 lines of SVG code per chart.
+  // ============================================================
+  async function renderValuationChart(cfg) {
+    const $ = (id) => document.getElementById(id);
+    let txt;
+    try {
+      const r = await fetch(cfg.csvUrl, { cache: 'no-store' });
+      txt = await r.text();
+    } catch (e) {
+      $(cfg.metaId).textContent = `Failed to load ${cfg.label} data.`;
+      return;
+    }
+
+    const rows = [];
+    for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+      const [date, valStr] = ln.split(',');
+      const v = parseFloat(valStr);
+      if (!isFinite(v)) continue;
+      rows.push({ date, v });
+    }
+    if (rows.length === 0) { $(cfg.metaId).textContent = 'No data.'; return; }
+
+    const values = rows.map(r => r.v);
+    const mean = values.reduce((s, v) => s + v, 0) / values.length;
+    const sorted = [...values].sort((a, b) => a - b);
+    const max = Math.max(...values);
+    const maxRow = rows[values.indexOf(max)];
+    const latest = rows[rows.length - 1];
+    const pct = (sorted.filter(v => v <= latest.v).length / sorted.length) * 100;
+
+    $(cfg.currentId).textContent = cfg.fmt(latest.v);
+    $(cfg.avgId).textContent     = cfg.fmt(mean);
+    $(cfg.pctId).textContent     = `${pct.toFixed(0)}th`;
+    $(cfg.maxId).textContent     = cfg.fmt(max);
+    if (cfg.currentLabelId) $(cfg.currentLabelId).textContent = `Current ratio (${latest.date})`;
+    if (cfg.maxLabelId)     $(cfg.maxLabelId).textContent     = `All-time high (${maxRow.date})`;
+    $(cfg.metaId).innerHTML =
+      `<strong>Data range:</strong> ${rows[0].date} to ${latest.date}` +
+      ` &nbsp;&middot;&nbsp; <strong>${rows.length.toLocaleString()}</strong> ${cfg.cadence} readings` +
+      ` &nbsp;&middot;&nbsp; median: <strong>${cfg.fmt(sorted[Math.floor(sorted.length / 2)])}</strong>` +
+      ` &nbsp;&middot;&nbsp; today's reading is higher than <strong>${pct.toFixed(0)}%</strong> of history`;
+
+    // Attach year-fraction for x-axis math
+    const yearFrac = (d) => {
+      const [y, m] = d.split('-').map(Number);
+      return y + (m - 1) / 12;
+    };
+    rows.forEach(r => { r.yf = yearFrac(r.date); });
+
+    const chart = $(cfg.chartId);
+    const W = 1200, H = 460;
+    const M = { top: 20, right: 60, bottom: 40, left: 55 };
+    const plotW = W - M.left - M.right;
+    const plotH = H - M.top - M.bottom;
+
+    function render(period) {
+      const latestYf = rows[rows.length - 1].yf;
+      let slice;
+      if (period === 'all') slice = rows;
+      else {
+        const yrs = parseFloat(period);
+        slice = rows.filter(r => r.yf >= latestYf - yrs);
+      }
+      if (slice.length < 2) slice = rows.slice(-24);
+
+      const first = slice[0], last = slice[slice.length - 1];
+      const xForYear = (yr) => M.left + ((yr - first.yf) / (last.yf - first.yf || 1)) * plotW;
+      const maxIn = Math.max(...slice.map(r => r.v));
+      const minIn = Math.min(...slice.map(r => r.v));
+      const yTop  = Math.ceil((maxIn + (maxIn * 0.05)) / cfg.yStep) * cfg.yStep;
+      const yBot  = Math.max(0, Math.floor(Math.min(minIn * 0.95, cfg.yBottomHint) / cfg.yStep) * cfg.yStep);
+      const yFor  = (v) => M.top + plotH - ((v - yBot) / (yTop - yBot || 1)) * plotH;
+
+      let svg = '';
+
+      // Background band above mean = "expensive"; below = "cheap"
+      const yMean = yFor(mean);
+      if (mean > yBot && mean < yTop) {
+        svg += `<rect class="band-cheap" x="${M.left}" y="${yMean}" width="${plotW}" height="${(M.top + plotH) - yMean}"/>`;
+        svg += `<rect class="band-expensive" x="${M.left}" y="${M.top}" width="${plotW}" height="${yMean - M.top}"/>`;
+      }
+
+      // Y-axis grid + labels
+      const range = yTop - yBot;
+      const step  = range <= 30 ? cfg.yStep : range <= 80 ? cfg.yStep * 2 : cfg.yStep * 4;
+      for (let p = Math.ceil(yBot / step) * step; p <= yTop; p += step) {
+        const y = yFor(p);
+        svg += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        svg += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${cfg.fmt(p)}</text>`;
+      }
+
+      // X-axis year labels
+      const span = last.yf - first.yf;
+      const tickStep = span <= 6 ? 1 : span <= 15 ? 2 : span <= 30 ? 5 : span <= 75 ? 10 : 20;
+      const tickStart = Math.ceil(first.yf / tickStep) * tickStep;
+      for (let yr = tickStart; yr <= last.yf; yr += tickStep) {
+        if (yr < first.yf) continue;
+        const x = xForYear(yr);
+        svg += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        svg += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${Math.round(yr)}</text>`;
+      }
+
+      // Axes
+      svg += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      svg += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+      // Long-term average line
+      if (mean >= yBot && mean <= yTop) {
+        svg += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${yMean}" y2="${yMean}"/>`;
+        svg += `<text class="axis-label" x="${W - M.right + 3}" y="${yMean + 4}" style="fill:#64d3ff">avg ${cfg.fmt(mean)}</text>`;
+      }
+
+      // Data line
+      let path = '';
+      for (let i = 0; i < slice.length; i++) {
+        path += (i === 0 ? 'M' : 'L') + xForYear(slice[i].yf).toFixed(1) + ',' + yFor(slice[i].v).toFixed(1) + ' ';
+      }
+      svg += `<path class="pe-line" d="${path}"/>`;
+
+      // Today dot + label
+      const xCur = xForYear(last.yf), yCur = yFor(last.v);
+      svg += `<circle class="current-dot" cx="${xCur}" cy="${yCur}" r="5"/>`;
+      svg += `<text class="annotation" x="${xCur - 8}" y="${yCur - 8}" text-anchor="end" style="fill:var(--s6);font-weight:600;font-size:12px;">${cfg.fmt(last.v)}</text>`;
+
+      // Y-axis title
+      svg += `<text class="axis-label" x="${M.left - 40}" y="${M.top - 6}" text-anchor="start">${cfg.yLabel}</text>`;
+
+      chart.innerHTML = svg;
+    }
+
+    // Wire up period buttons
+    const bar = $(cfg.periodsId);
+    bar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.chart-period-btn');
+      if (!btn) return;
+      bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+      render(btn.dataset.period);
+    });
+    // Initial render matches whichever button starts with .active
+    const startBtn = bar.querySelector('.chart-period-btn.active');
+    render(startBtn ? startBtn.dataset.period : '20');
+  }
+
+  // Fire off the two new metric charts once the page has settled.
+  renderValuationChart({
+    label:          'Shiller CAPE',
+    csvUrl:         'data/spx_cape.csv',
+    cadence:        'monthly',
+    yLabel:         'CAPE',
+    yStep:          5,
+    yBottomHint:    5,
+    fmt:            (v) => v.toFixed(2),
+    chartId:        'capeChart',
+    periodsId:      'capePeriods',
+    currentId:      'capeCurrent',
+    avgId:          'capeAvg',
+    pctId:          'capePct',
+    maxId:          'capeMax',
+    metaId:         'capeMeta',
+  });
+  renderValuationChart({
+    label:          'Buffett Indicator',
+    csvUrl:         'data/buffett_indicator.csv',
+    cadence:        'quarterly',
+    yLabel:         '%',
+    yStep:          25,
+    yBottomHint:    30,
+    fmt:            (v) => v.toFixed(1) + '%',
+    chartId:        'buffettChart',
+    periodsId:      'buffettPeriods',
+    currentId:      'buffettCurrent',
+    avgId:          'buffettAvg',
+    pctId:          'buffettPct',
+    maxId:          'buffettMax',
+    metaId:         'buffettMeta',
+    currentLabelId: 'buffettCurrentLabel',
+    maxLabelId:     'buffettMaxLabel',
+  });
   </script>
   <script src="ticker-search.js" defer></script>
 </body>

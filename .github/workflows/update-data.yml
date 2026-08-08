@@ -48,6 +48,12 @@ jobs:
       - name: Refresh S&P 500 PE ratio (monthly — tolerant of no-new-data)
         run: python scripts/update-pe-ratio.py
 
+      - name: Refresh Shiller CAPE (monthly — tolerant of no-new-data)
+        run: python scripts/update-shiller-cape.py
+
+      - name: Refresh Buffett Indicator (quarterly — tolerant of no-new-data)
+        run: python scripts/update-buffett-indicator.py
+
       - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)
         run: python scripts/update-umcsent.py
 
