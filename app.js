@@ -441,6 +441,143 @@ function computeSmaSeries(closes, period = 200) {
   return sma;
 }
 
+// ---- Bollinger %B on the index (20-day, 2 std dev) ----
+//
+// Bollinger Bands are a 20-day SMA plus/minus 2 standard deviations of the
+// same 20-day close window. %B is the normalized position of price BETWEEN
+// the bands:
+//     %B = (close - lower band) / (upper band - lower band)
+// Values: 0.0 = at lower band, 0.5 = at SMA, 1.0 = at upper band,
+//         >1.0 = above upper band ("walking the bands" — strong trend),
+//         <0.0 = below lower band (deep oversold).
+//
+// Classical (contrarian) reading treats >1 as overbought, but Bollinger
+// himself noted sustained %B > 1 is TREND CONTINUATION, not reversal. That's
+// exactly the flavor Upside Trend wants: reward the "SPX making highs faster
+// than volatility can catch up" state.
+//
+// Score mapping — high %B rewarded, low %B punished, but keep the middle
+// zone linear so day-to-day moves register:
+//     %B <= 0     -> 5     (below lower band, weakness)
+//     0.0 to 0.3  -> 5-25  (bottom third)
+//     0.3 to 0.5  -> 25-50 (recovering to mid)
+//     0.5 to 0.7  -> 50-70 (upper-middle, healthy)
+//     0.7 to 1.0  -> 70-90 (approaching upper band, strong)
+//     %B > 1      -> 95    (walking the upper band, very strong trend)
+function computeBollingerBSeries(closes, period = 20, sigmas = 2) {
+  const out = new Array(closes.length).fill(null);
+  if (closes.length < period) return out;
+  // Rolling sum + sum-of-squares so std dev is O(1) per step, not O(period).
+  let sum = 0, sumSq = 0;
+  for (let i = 0; i < period; i++) { sum += closes[i]; sumSq += closes[i] * closes[i]; }
+  const compute = (i) => {
+    const mean = sum / period;
+    const variance = Math.max(0, sumSq / period - mean * mean);
+    const sd = Math.sqrt(variance);
+    if (sd === 0) return 0.5;
+    const upper = mean + sigmas * sd;
+    const lower = mean - sigmas * sd;
+    return (closes[i] - lower) / (upper - lower);
+  };
+  out[period - 1] = compute(period - 1);
+  for (let i = period; i < closes.length; i++) {
+    const drop = closes[i - period];
+    const add = closes[i];
+    sum += add - drop;
+    sumSq += add * add - drop * drop;
+    out[i] = compute(i);
+  }
+  return out;
+}
+
+function scoreBollingerB(pctB) {
+  if (pctB == null || isNaN(pctB)) return null;
+  let s;
+  if      (pctB <= 0)   s = 5;
+  else if (pctB <= 0.3) s = 5  + (pctB - 0)   * (25 - 5)  / 0.3;
+  else if (pctB <= 0.5) s = 25 + (pctB - 0.3) * (50 - 25) / 0.2;
+  else if (pctB <= 0.7) s = 50 + (pctB - 0.5) * (70 - 50) / 0.2;
+  else if (pctB <= 1.0) s = 70 + (pctB - 0.7) * (90 - 70) / 0.3;
+  else                  s = 95;
+  return Math.max(2, Math.min(98, s));
+}
+
+// ---- MACD histogram on the index (12/26 EMA - 9 EMA signal) ----
+//
+// Classic Gerald Appel MACD. Two things get reported:
+//   MACD line = EMA(closes, 12) - EMA(closes, 26)
+//   Signal    = EMA(MACD line, 9)
+//   Histogram = MACD line - Signal
+// Positive & rising histogram = trend accelerating up. Negative & falling =
+// accelerating down. Widely used as a momentum confirmation.
+//
+// We normalize histogram as a PERCENT of the closing price so the same
+// scoring thresholds work whether SPX is 3000 or 8000. On a healthy trending
+// day the normalized histogram is roughly 0.05% to 0.30%; extreme readings
+// can hit +/-0.5%. Score mapping steep near zero to catch inflections early.
+function computeEMASeries(values, period) {
+  const out = new Array(values.length).fill(null);
+  if (values.length < period) return out;
+  const k = 2 / (period + 1);
+  // Seed with SMA of the first `period` values, then apply EMA formula.
+  let seed = 0;
+  for (let i = 0; i < period; i++) seed += values[i];
+  out[period - 1] = seed / period;
+  for (let i = period; i < values.length; i++) {
+    out[i] = values[i] * k + out[i - 1] * (1 - k);
+  }
+  return out;
+}
+function computeMACDHistSeries(closes, fast = 12, slow = 26, signal = 9) {
+  const emaFast = computeEMASeries(closes, fast);
+  const emaSlow = computeEMASeries(closes, slow);
+  const macdLine = closes.map((_, i) =>
+    (emaFast[i] != null && emaSlow[i] != null) ? (emaFast[i] - emaSlow[i]) : null
+  );
+  // Signal EMA only after we have `signal` consecutive non-null MACD values,
+  // which starts at index `slow - 1`.
+  const macdFromStart = macdLine.slice(slow - 1);
+  const signalFromStart = computeEMASeries(macdFromStart, signal);
+  const signalLine = new Array(closes.length).fill(null);
+  for (let i = 0; i < signalFromStart.length; i++) {
+    signalLine[slow - 1 + i] = signalFromStart[i];
+  }
+  const hist = closes.map((c, i) =>
+    (macdLine[i] != null && signalLine[i] != null && c != null && c !== 0)
+      ? ((macdLine[i] - signalLine[i]) / c) * 100   // percent of price
+      : null
+  );
+  return hist;
+}
+
+function scoreMACDHist(histPct) {
+  if (histPct == null || isNaN(histPct)) return null;
+  // histPct is (MACD - Signal) as percent of price.
+  // Steep mapping near zero — cross of zero is the important event.
+  //   <= -0.3% -> 5     (strongly bearish acceleration)
+  //   -0.3..0  -> 5-50  (bearish weakening / turning up)
+  //   0..+0.3  -> 50-90 (bullish accelerating)
+  //   >= +0.3% -> 95    (strongly bullish acceleration)
+  let s;
+  if      (histPct <= -0.3) s = 5;
+  else if (histPct <=  0)   s = 5  + (histPct + 0.3) * (50 - 5)  / 0.3;
+  else if (histPct <=  0.3) s = 50 + (histPct)       * (90 - 50) / 0.3;
+  else                      s = 95;
+  return Math.max(2, Math.min(98, s));
+}
+
+// ---- 10-day rate of change on the index (bigger-picture cousin of ROC-5) ----
+// Simple: (close_today / close_10_days_ago - 1) * 100.
+// Clamped +/-8% (10 days at ~0.8% per day daily; extreme moves +/-8% cover
+// the vast majority of history). Linear map from -8..+8 -> score 5..95.
+function scoreROC10(roc) {
+  if (roc == null || isNaN(roc)) return null;
+  const CLAMP = 8.0;
+  const c = Math.max(-CLAMP, Math.min(CLAMP, roc));
+  const s = 50 + (c / CLAMP) * 45;
+  return Math.max(5, Math.min(95, s));
+}
+
 // ---- 10Y-2Y Treasury Yield Spread ----
 //
 // The single most-watched recession indicator on Wall Street. It's the
@@ -1074,15 +1211,21 @@ function setGauge(value) {
 function computeUpsideTrend(current) {
   if (!current) return null;
   // Weighted average of trend-oriented component scores (all 0-100).
+  // Weights concentrate on short-term momentum family (ROC-5, ROC-10, MACD,
+  // Bollinger %B together = ~35%) so the gauge responds to day-to-day SPX
+  // action rather than sitting still while slow structural signals drift.
   const items = [
-    { w: 15, s: current.ms   },   // MA200
-    { w: 10, s: current.ms50 },   // MA50 (faster)
-    { w: 20, s: current.ps   },   // % Above 200 MA
-    { w: 10, s: current.ps50 },   // % Above 50 MA (faster)
-    { w: 15, s: current.srs  },   // Sector Regime
-    { w: 10, s: current.js   },   // Junk Bond Demand
-    { w: 10, s: current.sos  },   // Sector Oscillator
-    { w: 10, s: current.roc  },   // ROC-5
+    { w: 10, s: current.ms     },   // MA200
+    { w:  8, s: current.ms50   },   // MA50 (faster)
+    { w: 15, s: current.ps     },   // % Above 200 MA
+    { w:  8, s: current.ps50   },   // % Above 50 MA (faster)
+    { w: 10, s: current.srs    },   // Sector Regime
+    { w:  7, s: current.js     },   // Junk Bond Demand
+    { w:  7, s: current.sos    },   // Sector Oscillator
+    { w:  8, s: current.roc    },   // ROC-5   (short-term momentum)
+    { w:  7, s: current.roc10s },   // ROC-10  (short-term momentum, longer horizon)
+    { w: 10, s: current.macds  },   // MACD histogram (momentum inflection)
+    { w: 10, s: current.bbs    },   // Bollinger %B  (volatility-adjusted position)
   ];
   let sum = 0, wsum = 0;
   for (const it of items) {
@@ -1628,6 +1771,11 @@ async function loadLiveData() {
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
   const sma200 = computeSmaSeries(spx.map(r => r.close), 200); // 200-day MA of index (SPX or NDX)
   const sma50  = computeSmaSeries(spx.map(r => r.close), 50);  // 50-day MA of same index
+  // Bollinger %B (20-day, 2sd) and MACD histogram (12/26/9, normalized as %
+  // of price) — both feed the Upside Trend sub-gauge for faster short-term
+  // response. Precomputed once so batsAt() lookups are O(1).
+  const bbSeries   = computeBollingerBSeries(spx.map(r => r.close), 20, 2);
+  const macdSeries = computeMACDHistSeries(spx.map(r => r.close), 12, 26, 9);
 
   const vixByDate = new Map(); vix.forEach((r, i) => vixByDate.set(r.date, i));
   const spyByDate = new Map(); spy.forEach((r, i) => spyByDate.set(r.date, i));
@@ -1701,7 +1849,12 @@ async function loadLiveData() {
     const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
     const ma50Dist  = (spx[xi].close / sma50[xi]  - 1) * 100;
     // ROC-5: needs at least 5 prior daily closes on the same index series.
-    const roc5Val = (xi >= 5) ? ((spx[xi].close / spx[xi - 5].close - 1) * 100) : null;
+    const roc5Val  = (xi >= 5)  ? ((spx[xi].close / spx[xi - 5].close  - 1) * 100) : null;
+    // ROC-10: same, longer horizon — feeds Upside Trend, not the main BATS composite.
+    const roc10Val = (xi >= 10) ? ((spx[xi].close / spx[xi - 10].close - 1) * 100) : null;
+    // Bollinger %B + MACD histogram (as % of price) — precomputed series lookups.
+    const bbVal   = bbSeries[xi];
+    const macdVal = macdSeries[xi];
     const vs = scoreVIX(vix[vi].close);
     const bs = scoreBreadth(spread);
     const rs = scoreRSI(rsi[si]);
@@ -1715,6 +1868,11 @@ async function loadLiveData() {
     const sos = scoreSectorOsc(sectorOscVal);
     const roc = scoreROC5(roc5Val);
     const srs = scoreSectorRegime(secRegRec.spread);
+    // New Upside-Trend-only scores. Null-safe — they can be null in early
+    // history without breaking the main BATS blend.
+    const bbs   = scoreBollingerB(bbVal);
+    const macds = scoreMACDHist(macdVal);
+    const roc10 = scoreROC10(roc10Val);
     if (vs == null || bs == null || rs == null || js == null || ms == null || ms50 == null || ps == null || ps50 == null || ns == null || yss == null || sos == null || roc == null || srs == null || wTotal <= 0) return null;
     return {
       date: d,
@@ -1737,9 +1895,13 @@ async function loadLiveData() {
       sectorOsc: sectorOscVal,
       sectorOscDate: sectorRec.date,
       roc5: roc5Val,
+      roc10: roc10Val,
+      bbVal,           // raw Bollinger %B
+      macdVal,         // raw MACD histogram (percent of price)
       sectorRegimeSpread: secRegRec.spread,
       sectorRegimeDate: secRegRec.date,
       vs, bs, rs, js, ms, ms50, ps, ps50, ns, yss, sos, roc, srs,
+      bbs, macds, roc10s: roc10,     // Upside-Trend-only scores
       blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ms50 * wMA50 + ps * wPct + ps50 * wPct50 + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5 + srs * wSecRegime) / wTotal,
     };
   }
