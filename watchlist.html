@@ -219,6 +219,71 @@
       display: block;
     }
 
+    /* ==== Watchlist heatmap ==== */
+    /* Grid of colored tiles above the table — quick visual of "how is my
+       watchlist doing today?" Auto-fits between 120 and 200 px so 5-tile
+       and 30-tile watchlists both look right on the same screen. */
+    .wl-heatmap-wrap {
+      border-bottom: 1px solid var(--term-border);
+      padding: 1rem 1rem 1.25rem;
+    }
+    .wl-heatmap-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .wl-heatmap-head > span:first-child {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--term-dim);
+      text-transform: uppercase;
+    }
+    .wl-heatmap-sub {
+      font-size: 0.68rem;
+      color: var(--term-dim);
+    }
+    .wl-heatmap {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 6px;
+    }
+    @media (max-width: 640px) {
+      .wl-heatmap { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    }
+    .wl-tile {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      aspect-ratio: 1 / 1;
+      max-width: 200px;
+      padding: 0.35rem;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #fff;
+      background: #374151;
+      transition: transform 0.1s;
+      overflow: hidden;
+    }
+    .wl-tile:hover  { transform: scale(1.04); text-decoration: none; }
+    .wl-tile-sym    { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+    .wl-tile-chg    { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; margin-top: 0.15rem; opacity: 0.95; }
+    /* 7-step green/red palette. Text stays white so it reads on any shade. */
+    .wl-tile.pos-3  { background: #14532d; }
+    .wl-tile.pos-2  { background: #16a34a; }
+    .wl-tile.pos-1  { background: #22c55e; }
+    .wl-tile.neu    { background: #4b5563; }
+    .wl-tile.neg-1  { background: #ef4444; }
+    .wl-tile.neg-2  { background: #b91c1c; }
+    .wl-tile.neg-3  { background: #7f1d1d; }
+    .wl-tile.nq     { background: #374151; color: var(--term-dim); }
+    .wl-tile.nq .wl-tile-chg { opacity: 0.6; }
+
     /* Empty state */
     .wl-empty {
       padding: 3rem 1.5rem;
@@ -508,8 +573,21 @@
         return null;
       }
 
-      // Build each row using the fetched data
-      const rows = list.map(sym => {
+      // Heatmap tile color from today's % change. Same 7-shade palette as CSS.
+      function tileClass(pct) {
+        if (!Number.isFinite(pct)) return 'nq';
+        if (pct >=  3) return 'pos-3';
+        if (pct >=  2) return 'pos-2';
+        if (pct >=  1) return 'pos-1';
+        if (pct >  -1) return 'neu';
+        if (pct >  -2) return 'neg-1';
+        if (pct >  -3) return 'neg-2';
+        return 'neg-3';
+      }
+
+      // Build both a heatmap tile and a table row per ticker in one pass so
+      // the two views stay in sync from the same fetched data.
+      const items = list.map(sym => {
         const raw = series[sym] || [];
         const q = quotes[sym] || null;
 
@@ -551,7 +629,7 @@
           ? (dayAbs >= 0 ? '+' : '-') + '$' + Math.abs(dayAbs).toFixed(2)
           : '—';
 
-        return `
+        const rowHtml = `
           <tr>
             <td><button class="wl-remove" data-sym="${sym}" title="Remove from watchlist" aria-label="Remove ${sym}">&times;</button></td>
             <td class="sym"><a href="ticker.html?sym=${encodeURIComponent(sym)}">${sym}</a></td>
@@ -563,9 +641,36 @@
             <td>${spark}</td>
           </tr>
         `;
-      }).join('');
+        const chgLabel = Number.isFinite(dayPct)
+          ? (dayPct >= 0 ? '+' : '') + dayPct.toFixed(2) + '%'
+          : '—';
+        const tileHtml = `
+          <a class="wl-tile ${tileClass(dayPct)}" href="ticker.html?sym=${encodeURIComponent(sym)}" title="${sym}: ${chgLabel} today">
+            <div class="wl-tile-sym">${sym}</div>
+            <div class="wl-tile-chg">${chgLabel}</div>
+          </a>
+        `;
+        return { sym, dayPct, rowHtml, tileHtml };
+      });
+      // Sort tiles by dayPct descending so the biggest movers (green) sit at
+      // the top-left and the worst (red) at the bottom-right — same intuition
+      // as the reference S&P heatmap. Missing-quote tiles fall to the end.
+      const tilesSorted = items.slice().sort((a, b) => {
+        const av = Number.isFinite(a.dayPct) ? a.dayPct : -Infinity;
+        const bv = Number.isFinite(b.dayPct) ? b.dayPct : -Infinity;
+        return bv - av;
+      });
+      const tiles = tilesSorted.map(x => x.tileHtml).join('');
+      const rows  = items.map(x => x.rowHtml).join('');
 
       mount.innerHTML = `
+        <div class="wl-heatmap-wrap">
+          <div class="wl-heatmap-head">
+            <span>TODAY'S HEATMAP</span>
+            <span class="wl-heatmap-sub">Colored by 1-day % change · sorted best to worst · click a tile to open the ticker</span>
+          </div>
+          <div class="wl-heatmap">${tiles}</div>
+        </div>
         <div style="overflow-x:auto">
           <table class="wl-table">
             <thead>
@@ -598,6 +703,34 @@
     }
 
     renderWatchlist();
+
+    // Live refresh: re-render every 60 seconds while the tab is visible and
+    // US markets are open (incl. pre- and post-market so the tiles keep
+    // moving from 04:00-20:00 ET). Skip when the tab is hidden — no point
+    // burning quota when nobody's looking.
+    (function () {
+      function marketWindowET() {
+        // Get the current hour/day in America/New_York without pulling a lib.
+        try {
+          const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            weekday: 'short', hour: 'numeric', hour12: false,
+          }).formatToParts(new Date());
+          const day  = parts.find(p => p.type === 'weekday').value;
+          const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+          if (day === 'Sat' || day === 'Sun') return false;
+          return hour >= 4 && hour < 20;   // extended-hours window in ET
+        } catch (e) {
+          return true;   // if Intl fails somehow, just poll
+        }
+      }
+      setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        if (loadWatchlist().length === 0) return;
+        if (!marketWindowET()) return;
+        renderWatchlist();
+      }, 60_000);
+    })();
 
     // Type-anywhere: same UX as ticker.html — type from anywhere and the
     // character lands in the search input, focus + scroll follow.
