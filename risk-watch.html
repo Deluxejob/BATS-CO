@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Risk Watch — Credit Spreads, Yield Curve &amp; Employment — BATS.CO</title>
+  <meta name="description" content="Live traffic-light dashboard of the market's late-cycle warning signs: HY and IG credit spreads, the 10Y-2Y and 10Y-3M yield curves with recession shading, and employment trends." />
+  <link rel="canonical" href="https://bats.co/risk-watch.html">
+  <meta property="og:site_name" content="BATS.CO">
+  <meta property="og:title" content="Risk Watch — Credit Spreads, Yield Curve &amp; Employment — BATS.CO">
+  <meta property="og:description" content="Live traffic-light dashboard of the market's late-cycle warning signs: HY and IG credit spreads, the 10Y-2Y and 10Y-3M yield curves with recession shading, and employment trends.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bats.co/risk-watch.html">
+  <meta property="og:image" content="https://bats.co/og-card.png">
+  <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Risk Watch — Credit Spreads, Yield Curve &amp; Employment — BATS.CO">
+  <meta name="twitter:description" content="Live traffic-light dashboard of the market's late-cycle warning signs: HY and IG credit spreads, the 10Y-2Y and 10Y-3M yield curves with recession shading, and employment trends.">
+  <meta name="twitter:image" content="https://bats.co/og-card.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* --- Traffic-light hero strip --- */
+    /* Compact row of signal cards, each colored by current status so a
+       visitor gets the answer in one glance without reading the sections
+       below. Green = calm, yellow = warm, orange = elevated, red = danger. */
+    .rw-hero-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .rw-signal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left-width: 4px;
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .rw-signal .rw-sig-label {
+      font-size: 0.7rem;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+    .rw-signal .rw-sig-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .rw-signal .rw-sig-status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+    .rw-signal.g   { border-left-color: #22c55e; }
+    .rw-signal.g   .rw-sig-status,
+    .rw-signal.g   .rw-sig-value  { color: #22c55e; }
+    .rw-signal.y   { border-left-color: #eab308; }
+    .rw-signal.y   .rw-sig-status,
+    .rw-signal.y   .rw-sig-value  { color: #eab308; }
+    .rw-signal.o   { border-left-color: #f97316; }
+    .rw-signal.o   .rw-sig-status,
+    .rw-signal.o   .rw-sig-value  { color: #f97316; }
+    .rw-signal.r   { border-left-color: #ef4444; }
+    .rw-signal.r   .rw-sig-status,
+    .rw-signal.r   .rw-sig-value  { color: #ef4444; }
+    .rw-signal.nq  { border-left-color: var(--border); }
+    .rw-signal.nq  .rw-sig-value  { color: var(--dim); }
+
+    /* --- Chart wrapper (matches valuations page style) --- */
+    .rw-chart-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .rw-chart {
+      width: 100%;
+      max-width: 100%;
+      display: block;
+      font-family: 'Inter', sans-serif;
+    }
+    .rw-chart .axis-label  { fill: var(--dim); font-size: 11px; }
+    .rw-chart .axis-line   { stroke: var(--border); stroke-width: 1; }
+    .rw-chart .grid-line   { stroke: var(--border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
+    .rw-chart .rw-line-1   { fill: none; stroke: var(--s5); stroke-width: 1.4; }
+    .rw-chart .rw-line-2   { fill: none; stroke: #64d3ff; stroke-width: 1.4; opacity: 0.85; }
+    .rw-chart .rw-line-3   { fill: none; stroke: #f97316; stroke-width: 1.4; opacity: 0.85; }
+    .rw-chart .zero-line   { stroke: #f87171; stroke-width: 1; stroke-dasharray: 4 3; opacity: 0.7; }
+    .rw-chart .avg-line    { stroke: #64d3ff; stroke-width: 1.2; stroke-dasharray: 5 3; opacity: 0.7; }
+    .rw-chart .current-dot { fill: var(--s6); stroke: #fff; stroke-width: 1.5; }
+    .rw-chart .annotation  { fill: var(--dim); font-size: 10px; }
+    /* NBER recession shading — subtle red rectangles behind the chart series */
+    .rw-chart .recession-band { fill: #ef4444; opacity: 0.10; }
+
+    .rw-legend {
+      display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
+      margin-top: 0.75rem; font-size: 0.85rem; color: var(--dim);
+    }
+    .rw-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .rw-legend .swatch { width: 20px; height: 3px; border-radius: 2px; display: inline-block; }
+    .rw-legend .swatch.recession { height: 12px; background: #ef4444; opacity: 0.45; }
+
+    /* Period buttons (reused from valuations style) */
+    .chart-periods {
+      display: flex; gap: 0.35rem; flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .chart-period-btn {
+      font: inherit; background: transparent; color: var(--dim);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.35rem 0.75rem; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .chart-period-btn:hover  { color: var(--text); border-color: var(--dim); }
+    .chart-period-btn.active {
+      background: #64d3ff; color: #0a1218; border-color: #64d3ff;
+    }
+
+    /* Interpretation callout under each chart */
+    .rw-callout {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid #64d3ff;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .rw-callout strong { color: var(--text); }
+
+    .bucket-name { font-weight: 600; }
+    .num-neg { color: var(--s0); }
+    .num-pos { color: var(--s5); }
+    .num-neu { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="quotes.html">Quotes</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="markets.html">Dashboard</a>
+      <a href="sector-rotation.html">Sector Rotation</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="risk-watch.html">Risk Watch</a>
+      <a href="market-ratios.html">Market Ratios</a>
+      <a href="valuations.html">Valuations</a>
+      <a href="consumer.html">Consumer</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="pelosi.html">Pelosi</a>
+    </nav>
+    <script>
+      (function(){
+        const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+        const isHome = here === 'index.html';
+        document.querySelectorAll('.site-nav a').forEach(a => {
+          const raw = (a.getAttribute('href') || '').toLowerCase();
+          const target = raw.split('/').pop().split('#')[0];
+          if (isHome && raw.startsWith('#'))       a.classList.add('active');
+          else if (target && target === here)       a.classList.add('active');
+        });
+      })();
+    </script>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">LATE-CYCLE WARNING SIGNS</p>
+      <h1>Where the market usually cracks first.</h1>
+      <p class="lede">
+        Equity indexes are late to tell you something is wrong. Credit markets,
+        the yield curve, and the labor market are early. This page tracks the
+        five signals that historically move <em>before</em> the S&amp;P does,
+        with recession shading so you can see the pattern.
+      </p>
+    </section>
+
+    <section id="hero-strip">
+      <div class="section-head">
+        <h2>Signal dashboard &mdash; right now</h2>
+        <p>Each card is colored by its current status. Click any signal below for the chart and interpretation.</p>
+      </div>
+      <div class="rw-hero-strip" id="rwHeroStrip">
+        <!-- Populated by JS on load -->
+      </div>
+    </section>
+
+    <!-- ================== CREDIT SPREADS ================== -->
+    <section id="credit">
+      <div class="section-head">
+        <h2>1. Credit spreads &mdash; the canary in the coal mine</h2>
+        <p>
+          The extra yield corporate bonds pay over Treasuries. When this
+          "risk premium" is tight, credit markets are complacent. When it
+          widens fast, they're pricing in defaults &mdash; and equities
+          usually follow within weeks. High-yield (junk) spreads are the
+          more sensitive signal; investment-grade is the second wave.
+        </p>
+      </div>
+      <div class="rw-chart-wrap">
+        <div class="chart-periods" id="creditPeriods" role="tablist" aria-label="Credit spreads chart time period">
+          <button type="button" class="chart-period-btn" data-period="1"   role="tab">1Y</button>
+          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn active" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn" data-period="25"  role="tab">25Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="creditChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="US high-yield and investment-grade credit spreads"></svg>
+        <div class="rw-legend">
+          <span><span class="swatch" style="background:var(--s5)"></span> HY OAS (%)</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> IG OAS (%)</span>
+          <span><span class="swatch recession"></span> NBER recession</span>
+        </div>
+      </div>
+      <div class="rw-callout" id="creditCallout">Loading interpretation&hellip;</div>
+    </section>
+
+    <!-- ================== YIELD CURVE ================== -->
+    <section id="curve">
+      <div class="section-head">
+        <h2>2. Yield curve &mdash; the recession clock</h2>
+        <p>
+          Long-term Treasuries normally pay more than short-term ones. When
+          the curve <em>inverts</em> (long yields fall below short yields),
+          it's the market saying "the Fed will have to cut soon."
+          <strong>Every US recession since 1970 was preceded by a 10Y-3M
+          inversion.</strong> The lag from inversion to recession is
+          usually 6-18 months; the un-inversion sometimes marks the trough.
+        </p>
+      </div>
+      <div class="rw-chart-wrap">
+        <div class="chart-periods" id="curvePeriods" role="tablist" aria-label="Yield curve chart time period">
+          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn active" data-period="25"  role="tab">25Y</button>
+          <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="curveChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="10Y-2Y and 10Y-3M Treasury spreads"></svg>
+        <div class="rw-legend">
+          <span><span class="swatch" style="background:var(--s5)"></span> 10Y &minus; 2Y (%)</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> 10Y &minus; 3M (%)</span>
+          <span><span class="swatch recession"></span> NBER recession</span>
+          <span><span class="swatch" style="background:#f87171"></span> Zero line (inversion)</span>
+        </div>
+      </div>
+      <div class="rw-callout" id="curveCallout">Loading interpretation&hellip;</div>
+    </section>
+
+    <!-- ================== EMPLOYMENT ================== -->
+    <section id="employment">
+      <div class="section-head">
+        <h2>3. Employment &mdash; the last shoe to drop</h2>
+        <p>
+          Jobs are the slowest signal here &mdash; unemployment usually
+          starts rising <em>after</em> the recession has begun. But two
+          patterns fire early: <strong>initial jobless claims turning
+          up before the peak</strong>, and the <strong>Sahm rule</strong>
+          (unemployment up 0.5% from its recent low), which has fired at
+          the start of every US recession since 1970.
+        </p>
+      </div>
+      <div class="rw-chart-wrap">
+        <div class="chart-periods" id="empPeriods" role="tablist" aria-label="Employment chart time period">
+          <button type="button" class="chart-period-btn" data-period="5"   role="tab">5Y</button>
+          <button type="button" class="chart-period-btn active" data-period="10"  role="tab">10Y</button>
+          <button type="button" class="chart-period-btn" data-period="25"  role="tab">25Y</button>
+          <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
+          <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="empChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="Initial jobless claims and unemployment rate"></svg>
+        <div class="rw-legend">
+          <span><span class="swatch" style="background:var(--s5)"></span> Initial jobless claims (k, left axis)</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> Unemployment rate (%, right axis)</span>
+          <span><span class="swatch recession"></span> NBER recession</span>
+        </div>
+      </div>
+      <div class="rw-callout" id="empCallout">Loading interpretation&hellip;</div>
+    </section>
+
+    <!-- ================== METHODOLOGY ================== -->
+    <section id="method">
+      <h2>Data sources &amp; methodology</h2>
+      <div class="card" style="padding:1.25rem 1.5rem; border-left:3px solid var(--s2);">
+        <p style="margin:0 0 0.75rem;">
+          <strong>Credit spreads:</strong>
+          <a href="https://fred.stlouisfed.org/series/BAMLH0A0HYM2" style="color:#64d3ff">BAMLH0A0HYM2</a>
+          (ICE BofA US High Yield Index Option-Adjusted Spread) and
+          <a href="https://fred.stlouisfed.org/series/BAMLC0A0CM" style="color:#64d3ff">BAMLC0A0CM</a>
+          (ICE BofA US Corporate Index Option-Adjusted Spread). OAS is the
+          extra yield over duration-matched Treasuries. Daily since 1996.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Yield curve:</strong>
+          <a href="https://fred.stlouisfed.org/series/T10Y2Y" style="color:#64d3ff">T10Y2Y</a>
+          (10-Year minus 2-Year) and
+          <a href="https://fred.stlouisfed.org/series/T10Y3M" style="color:#64d3ff">T10Y3M</a>
+          (10-Year minus 3-Month). Both are daily constant-maturity Treasury
+          series computed by the Federal Reserve. The 10Y-3M is the Fed's
+          preferred recession signal; the 10Y-2Y is the more-cited market
+          version.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Employment:</strong>
+          <a href="https://fred.stlouisfed.org/series/ICSA" style="color:#64d3ff">ICSA</a>
+          (initial jobless claims, weekly) and
+          <a href="https://fred.stlouisfed.org/series/UNRATE" style="color:#64d3ff">UNRATE</a>
+          (civilian unemployment rate, monthly). Both seasonally adjusted.
+        </p>
+        <p style="margin:0;">
+          <strong>Recession shading:</strong>
+          <a href="https://fred.stlouisfed.org/series/USREC" style="color:#64d3ff">USREC</a>
+          (NBER US recession indicator, monthly, 0/1). The National Bureau
+          of Economic Research dates US business cycles &mdash; they're
+          the official arbiter of when a recession started and ended.
+          Shaded regions on every chart mark those recessions.
+        </p>
+      </div>
+      <p class="disclaimer" style="margin-top:1.25rem">
+        <strong>Reminder:</strong> None of these signals predict recessions with
+        certainty. The yield curve stayed inverted for two years (2022-2024) and
+        no recession materialized. Credit spreads can stay tight for years while
+        the market keeps rising. Use these as <em>context</em>, not as buy/sell
+        triggers. Always do your own research or talk to a financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the BATS</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+  (async function () {
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+    // ============================================================
+    // Load every FRED CSV we depend on in parallel.
+    // Every series is: Date, value. Recession is: Date, 0-or-1.
+    // ============================================================
+    async function loadCsv(url) {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error(url + ' -> ' + r.status);
+      const text = await r.text();
+      const rows = [];
+      for (const ln of text.trim().split(/\r?\n/).slice(1)) {
+        const [date, valStr] = ln.split(',');
+        const v = parseFloat(valStr);
+        if (!isFinite(v)) continue;
+        rows.push({ date, yf: yearFrac(date), v });
+      }
+      return rows;
+    }
+    function yearFrac(d) {
+      const [y, m, day] = d.split('-').map(Number);
+      const daysInMo = new Date(y, m, 0).getDate();
+      return y + (m - 1) / 12 + ((day - 1) / daysInMo) / 12;
+    }
+
+    let hy = [], ig = [], t10y2y = [], t10y3m = [], claims = [], unrate = [], usrec = [];
+    try {
+      [hy, ig, t10y2y, t10y3m, claims, unrate, usrec] = await Promise.all([
+        loadCsv('data/hy_oas.csv'),
+        loadCsv('data/ig_oas.csv'),
+        loadCsv('data/t10y2y.csv'),
+        loadCsv('data/t10y3m.csv'),
+        loadCsv('data/jobless_claims.csv'),
+        loadCsv('data/unrate.csv'),
+        loadCsv('data/nber_recession.csv'),
+      ]);
+    } catch (e) {
+      console.error('Risk Watch: failed to load one or more CSVs', e);
+      document.getElementById('rwHeroStrip').innerHTML =
+        '<div class="rw-signal nq"><span class="rw-sig-label">Data</span>' +
+        '<span class="rw-sig-value">—</span>' +
+        '<span class="rw-sig-status">Load failed</span></div>';
+      return;
+    }
+
+    // ============================================================
+    // Convert USREC monthly 0/1 -> [ {start_yf, end_yf}, ... ] so we can
+    // paint each recession as a single rectangle behind chart series.
+    // ============================================================
+    const recessionBands = [];
+    let inRec = false, startYf = null;
+    for (const row of usrec) {
+      if (row.v > 0.5 && !inRec) { inRec = true; startYf = row.yf; }
+      else if (row.v < 0.5 && inRec) { inRec = false; recessionBands.push({ start: startYf, end: row.yf }); }
+    }
+    if (inRec) recessionBands.push({ start: startYf, end: usrec[usrec.length - 1].yf });
+
+    // ============================================================
+    // Hero strip — bucket each signal into a traffic-light color class.
+    // ============================================================
+    function bucket(rules, v) {
+      if (!isFinite(v)) return { cls: 'nq', label: '—' };
+      for (const [threshold, cls, label] of rules) {
+        if (v <= threshold) return { cls, label };
+      }
+      return rules[rules.length - 1].slice(1).reduce((_, __, i, a) => ({ cls: a[0], label: a[1] }), {});
+    }
+    const signals = [
+      {
+        label: 'HY credit spread',
+        latest: hy[hy.length - 1],
+        fmt: (v) => v.toFixed(2) + '%',
+        rules: [
+          [3.00, 'g', 'Tight'],
+          [5.00, 'y', 'Warm'],
+          [8.00, 'o', 'Elevated'],
+          [Infinity, 'r', 'Crisis-era'],
+        ],
+      },
+      {
+        label: 'IG credit spread',
+        latest: ig[ig.length - 1],
+        fmt: (v) => v.toFixed(2) + '%',
+        rules: [
+          [1.00, 'g', 'Tight'],
+          [1.50, 'y', 'Warm'],
+          [2.50, 'o', 'Elevated'],
+          [Infinity, 'r', 'Crisis-era'],
+        ],
+      },
+      {
+        label: '10Y − 2Y curve',
+        latest: t10y2y[t10y2y.length - 1],
+        fmt: (v) => (v >= 0 ? '+' : '') + v.toFixed(2) + '%',
+        // Note the ordering: for spread, lower = more inverted = worse.
+        // So we invert the bucket logic — negative = red.
+        pick: (v) => {
+          if (!isFinite(v)) return { cls: 'nq', label: '—' };
+          if (v < -0.3) return { cls: 'r', label: 'Deeply inverted' };
+          if (v <  0.0) return { cls: 'o', label: 'Inverted' };
+          if (v <  0.5) return { cls: 'y', label: 'Flat' };
+          return { cls: 'g', label: 'Normal' };
+        },
+      },
+      {
+        label: '10Y − 3M curve',
+        latest: t10y3m[t10y3m.length - 1],
+        fmt: (v) => (v >= 0 ? '+' : '') + v.toFixed(2) + '%',
+        pick: (v) => {
+          if (!isFinite(v)) return { cls: 'nq', label: '—' };
+          if (v < -0.3) return { cls: 'r', label: 'Deeply inverted' };
+          if (v <  0.0) return { cls: 'o', label: 'Inverted' };
+          if (v <  0.5) return { cls: 'y', label: 'Flat' };
+          return { cls: 'g', label: 'Normal' };
+        },
+      },
+      {
+        label: 'Jobless claims',
+        latest: claims[claims.length - 1],
+        // FRED ICSA is reported as raw number (e.g. 199000). Show in thousands.
+        fmt: (v) => (v / 1000).toFixed(0) + 'k',
+        pick: (v) => {
+          if (!isFinite(v)) return { cls: 'nq', label: '—' };
+          if (v > 450000) return { cls: 'r', label: 'Recession-era' };
+          if (v > 350000) return { cls: 'o', label: 'Elevated' };
+          if (v > 250000) return { cls: 'y', label: 'Warm' };
+          return { cls: 'g', label: 'Tight labor mkt' };
+        },
+      },
+      {
+        label: 'Unemployment',
+        latest: unrate[unrate.length - 1],
+        fmt: (v) => v.toFixed(1) + '%',
+        pick: (v) => {
+          if (!isFinite(v)) return { cls: 'nq', label: '—' };
+          if (v > 6.0)  return { cls: 'r', label: 'Elevated' };
+          if (v > 5.0)  return { cls: 'y', label: 'Rising' };
+          return { cls: 'g', label: 'Low' };
+        },
+      },
+    ];
+    document.getElementById('rwHeroStrip').innerHTML = signals.map(s => {
+      const v = s.latest ? s.latest.v : NaN;
+      const status = s.pick ? s.pick(v) : bucket(s.rules, v);
+      const valStr = isFinite(v) ? s.fmt(v) : '—';
+      return `
+        <div class="rw-signal ${status.cls}">
+          <span class="rw-sig-label">${s.label}</span>
+          <span class="rw-sig-value">${valStr}</span>
+          <span class="rw-sig-status">${status.label}</span>
+        </div>
+      `;
+    }).join('');
+
+    // ============================================================
+    // Generic line-chart renderer. Given a list of series (each an array
+    // of {date, yf, v}), draws them all on one SVG with:
+    //   - Recession-shaded backgrounds
+    //   - Optional zero-line for spreads
+    //   - Optional secondary y-axis
+    //   - Period-button-controlled x-window
+    // ============================================================
+    function makeChart(cfg) {
+      const svg  = document.getElementById(cfg.svgId);
+      const bar  = document.getElementById(cfg.periodsId);
+      const W = 1200, H = 460;
+      const M = { top: 24, right: cfg.rightAxis ? 55 : 55, bottom: 40, left: 60 };
+      const plotW = W - M.left - M.right;
+      const plotH = H - M.top - M.bottom;
+
+      function render(period) {
+        // Compute the x-window from period. Use the LATEST yf across ALL series
+        // so a chart that mixes weekly + monthly + daily lines shares one range.
+        const allLatest = cfg.series.map(s => s.data.length ? s.data[s.data.length - 1].yf : 0);
+        const latestYf = Math.max(...allLatest);
+        const firstYf  = period === 'all'
+          ? Math.min(...cfg.series.map(s => s.data.length ? s.data[0].yf : Infinity))
+          : latestYf - parseFloat(period);
+
+        const sliced = cfg.series.map(s => ({
+          ...s,
+          slice: s.data.filter(r => r.yf >= firstYf),
+        }));
+        const anyData = sliced.some(s => s.slice.length > 1);
+        if (!anyData) return;
+
+        const first = firstYf, last = latestYf;
+        const xForYear = (yr) => M.left + ((yr - first) / (last - first || 1)) * plotW;
+
+        // Left y-axis: primary series' range
+        const primary = sliced[0].slice.map(r => r.v);
+        const p1min = Math.min(...primary, cfg.leftMinFloor ?? Infinity);
+        const p1max = Math.max(...primary, cfg.leftMaxFloor ?? -Infinity);
+        const yPad  = (p1max - p1min) * 0.1 || 1;
+        // If additional PRIMARY-axis series (same units) exist, include them
+        const extraPrimary = sliced.slice(1).filter(s => !s.right).map(s => s.slice.map(r => r.v)).flat();
+        const y1Min = Math.min(p1min - yPad, ...extraPrimary);
+        const y1Max = Math.max(p1max + yPad, ...extraPrimary);
+        const yFor1 = (v) => M.top + plotH - ((v - y1Min) / (y1Max - y1Min || 1)) * plotH;
+
+        // Right y-axis (optional): mapped from its own series
+        let yFor2 = null, y2Min = 0, y2Max = 0;
+        if (cfg.rightAxis) {
+          const right = sliced.filter(s => s.right).map(s => s.slice.map(r => r.v)).flat();
+          if (right.length) {
+            y2Min = Math.min(...right);
+            y2Max = Math.max(...right);
+            const pad2 = (y2Max - y2Min) * 0.1 || 1;
+            y2Min -= pad2; y2Max += pad2;
+            yFor2 = (v) => M.top + plotH - ((v - y2Min) / (y2Max - y2Min || 1)) * plotH;
+          }
+        }
+
+        let svgHtml = '';
+
+        // ---- Recession shading (behind everything) ----
+        for (const band of recessionBands) {
+          const bs = Math.max(band.start, first);
+          const be = Math.min(band.end,   last);
+          if (be <= bs) continue;
+          const x1 = xForYear(bs), x2 = xForYear(be);
+          svgHtml += `<rect class="recession-band" x="${x1}" y="${M.top}" width="${x2 - x1}" height="${plotH}"/>`;
+        }
+
+        // ---- Zero line (for inversion charts) ----
+        if (cfg.showZero && y1Min < 0 && y1Max > 0) {
+          const yZero = yFor1(0);
+          svgHtml += `<line class="zero-line" x1="${M.left}" x2="${W - M.right}" y1="${yZero}" y2="${yZero}"/>`;
+        }
+
+        // ---- Left y-axis grid + labels ----
+        const range1 = y1Max - y1Min;
+        const step1  = niceStep(range1);
+        for (let p = Math.ceil(y1Min / step1) * step1; p <= y1Max; p += step1) {
+          const y = yFor1(p);
+          svgHtml += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+          svgHtml += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${cfg.leftFmt(p)}</text>`;
+        }
+
+        // ---- Right y-axis labels (if applicable) ----
+        if (yFor2) {
+          const range2 = y2Max - y2Min;
+          const step2  = niceStep(range2);
+          for (let p = Math.ceil(y2Min / step2) * step2; p <= y2Max; p += step2) {
+            const y = yFor2(p);
+            svgHtml += `<text class="axis-label" x="${W - M.right + 8}" y="${y + 3}" text-anchor="start" style="fill:#64d3ff">${cfg.rightFmt(p)}</text>`;
+          }
+        }
+
+        // ---- X-axis year labels ----
+        const span = last - first;
+        const tickStep = span <= 3 ? 0.5 : span <= 6 ? 1 : span <= 15 ? 2 : span <= 30 ? 5 : span <= 75 ? 10 : 20;
+        const tickStart = Math.ceil(first / tickStep) * tickStep;
+        for (let yr = tickStart; yr <= last; yr += tickStep) {
+          if (yr < first) continue;
+          const x = xForYear(yr);
+          svgHtml += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+          const label = tickStep >= 1 ? String(Math.round(yr)) : formatYearMonth(yr);
+          svgHtml += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${label}</text>`;
+        }
+
+        // ---- Axis lines ----
+        svgHtml += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+        svgHtml += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        if (yFor2) svgHtml += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+        // ---- Series lines ----
+        sliced.forEach((s, i) => {
+          if (s.slice.length < 2) return;
+          const yFn = (s.right && yFor2) ? yFor2 : yFor1;
+          let path = '';
+          for (let j = 0; j < s.slice.length; j++) {
+            path += (j === 0 ? 'M' : 'L') + xForYear(s.slice[j].yf).toFixed(1) + ',' + yFn(s.slice[j].v).toFixed(1) + ' ';
+          }
+          const cls = s.right ? 'rw-line-2' : (i === 0 ? 'rw-line-1' : 'rw-line-2');
+          svgHtml += `<path class="${cls}" d="${path}"/>`;
+        });
+
+        // ---- Current dot on the primary series ----
+        const last1 = sliced[0].slice[sliced[0].slice.length - 1];
+        if (last1) {
+          const xc = xForYear(last1.yf), yc = yFor1(last1.v);
+          svgHtml += `<circle class="current-dot" cx="${xc}" cy="${yc}" r="4.5"/>`;
+          svgHtml += `<text class="annotation" x="${xc - 8}" y="${yc - 8}" text-anchor="end" style="fill:var(--s6);font-weight:600;font-size:11px;">${cfg.leftFmt(last1.v)}</text>`;
+        }
+
+        // ---- Axis titles ----
+        svgHtml += `<text class="axis-label" x="${M.left - 40}" y="${M.top - 8}" text-anchor="start">${cfg.leftTitle}</text>`;
+        if (cfg.rightTitle && yFor2) {
+          svgHtml += `<text class="axis-label" x="${W - M.right + 8}" y="${M.top - 8}" text-anchor="start" style="fill:#64d3ff">${cfg.rightTitle}</text>`;
+        }
+
+        svg.innerHTML = svgHtml;
+      }
+
+      function niceStep(range) {
+        // Choose a "nice" gridline step given a numeric range
+        if (range <= 1)   return 0.1;
+        if (range <= 3)   return 0.25;
+        if (range <= 8)   return 1;
+        if (range <= 25)  return 2;
+        if (range <= 60)  return 5;
+        if (range <= 150) return 20;
+        return 50;
+      }
+      function formatYearMonth(yf) {
+        const yr = Math.floor(yf);
+        const mo = Math.round((yf - yr) * 12) + 1;
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return `${monthNames[Math.min(mo - 1, 11)]} '${String(yr).slice(-2)}`;
+      }
+
+      bar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chart-period-btn');
+        if (!btn) return;
+        bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+        render(btn.dataset.period);
+      });
+      const startBtn = bar.querySelector('.chart-period-btn.active');
+      render(startBtn ? startBtn.dataset.period : '10');
+    }
+
+    // ---- Credit spreads chart (HY + IG on same left axis, both in %) ----
+    makeChart({
+      svgId:     'creditChart',
+      periodsId: 'creditPeriods',
+      series: [
+        { data: hy, right: false },
+        { data: ig, right: false },
+      ],
+      leftTitle: 'OAS (%)',
+      leftFmt:   (v) => v.toFixed(1) + '%',
+      leftMinFloor: 0,
+    });
+
+    // ---- Yield curve chart (10Y-2Y + 10Y-3M on same left axis, with zero line) ----
+    makeChart({
+      svgId:     'curveChart',
+      periodsId: 'curvePeriods',
+      series: [
+        { data: t10y2y, right: false },
+        { data: t10y3m, right: false },
+      ],
+      leftTitle: 'Spread (%)',
+      leftFmt:   (v) => (v > 0 ? '+' : '') + v.toFixed(1),
+      showZero:  true,
+    });
+
+    // ---- Employment chart (claims on left in k, unrate on right in %) ----
+    makeChart({
+      svgId:     'empChart',
+      periodsId: 'empPeriods',
+      series: [
+        { data: claims, right: false },
+        { data: unrate, right: true },
+      ],
+      leftTitle:  'Claims (k)',
+      rightTitle: 'Unrate (%)',
+      leftFmt:    (v) => (v / 1000).toFixed(0) + 'k',
+      rightFmt:   (v) => v.toFixed(1) + '%',
+      rightAxis:  true,
+      leftMinFloor: 0,
+    });
+
+    // ============================================================
+    // Human-friendly interpretation strings per section.
+    // ============================================================
+    function creditInterp() {
+      const latest = hy[hy.length - 1];
+      if (!latest) return 'No credit data available.';
+      const v = latest.v;
+      let stance, elab;
+      if (v < 3.0) {
+        stance = '<strong>Complacent.</strong>';
+        elab = 'Junk-rated companies are paying almost nothing extra over Treasuries — credit markets see zero stress.';
+      } else if (v < 5.0) {
+        stance = '<strong>Warming.</strong>';
+        elab = 'Above the long-run average but still non-alarming. Watch the direction: rising = tightening credit; falling = expansionary.';
+      } else if (v < 8.0) {
+        stance = '<strong>Elevated.</strong>';
+        elab = 'This zone captures late-2015, late-2018, and Q4 2022. Not full crisis, but usually precedes an equity-market wobble.';
+      } else {
+        stance = '<strong>Crisis-era.</strong>';
+        elab = 'HY OAS above 800bps has only happened in 2001-2002, 2008-2009, and briefly in March 2020. Historically preceded major equity declines but also marked buying opportunities within 6-18 months.';
+      }
+      return stance + ' HY OAS is <strong>' + v.toFixed(2) + '%</strong> (' + (v * 100).toFixed(0) + ' bps). ' + elab +
+        ' <em>Long-run average is roughly 5%; peaks: 22% in 2008, 11% in March 2020, 6% in Oct 2022.</em>';
+    }
+    function curveInterp() {
+      const l2 = t10y2y[t10y2y.length - 1];
+      const l3 = t10y3m[t10y3m.length - 1];
+      if (!l2 || !l3) return 'No yield-curve data available.';
+      const bothInverted = l2.v < 0 && l3.v < 0;
+      const bothNormal   = l2.v > 0 && l3.v > 0;
+      let stance;
+      if (bothInverted) {
+        stance = '<strong>Both inverted &mdash; classic recession signal.</strong> The last time both were this deep for this long, a recession followed within 6-18 months.';
+      } else if (bothNormal) {
+        stance = '<strong>Both non-inverted.</strong> The immediate recession clock is off &mdash; but note that recessions historically start <em>after</em> the curve <em>un</em>-inverts (steepens back through zero), not while it\'s inverted.';
+      } else {
+        stance = '<strong>Mixed.</strong> One measure is inverted, one is not. Ambiguous; watch which way both move over the next few months.';
+      }
+      return stance + ' Right now: 10Y &minus; 2Y = <strong>' + (l2.v >= 0 ? '+' : '') + l2.v.toFixed(2) + '%</strong>, ' +
+        '10Y &minus; 3M = <strong>' + (l3.v >= 0 ? '+' : '') + l3.v.toFixed(2) + '%</strong>.';
+    }
+    function empInterp() {
+      const lc = claims[claims.length - 1];
+      const lu = unrate[unrate.length - 1];
+      if (!lc || !lu) return 'No employment data available.';
+      // Sahm rule: is the 3-month avg of UNRATE 0.5+ above its 12-month low?
+      const last3 = unrate.slice(-3).map(r => r.v);
+      const avg3  = last3.reduce((s, v) => s + v, 0) / last3.length;
+      const last12 = unrate.slice(-12).map(r => r.v);
+      const min12  = Math.min(...last12);
+      const sahm   = avg3 - min12;
+      const sahmFired = sahm >= 0.5;
+      let sahmLine;
+      if (sahmFired) {
+        sahmLine = '<strong>The Sahm rule has fired</strong> (3-month unrate avg is ' + sahm.toFixed(2) + '% above the recent low). Historically, this signal has coincided with the start of every US recession since 1970.';
+      } else {
+        sahmLine = 'The Sahm rule has <strong>NOT</strong> fired (3-month unrate avg is only ' + sahm.toFixed(2) + '% above the recent low; trigger is 0.5%).';
+      }
+      return 'Latest claims: <strong>' + (lc.v / 1000).toFixed(0) + 'k</strong>, unemployment: <strong>' + lu.v.toFixed(1) + '%</strong>. ' + sahmLine;
+    }
+    document.getElementById('creditCallout').innerHTML = creditInterp();
+    document.getElementById('curveCallout').innerHTML = curveInterp();
+    document.getElementById('empCallout').innerHTML = empInterp();
+  })();
+  </script>
+  <script src="ticker-search.js" defer></script>
+</body>
+</html>

@@ -54,6 +54,9 @@ jobs:
       - name: Refresh Buffett Indicator (quarterly — tolerant of no-new-data)
         run: python scripts/update-buffett-indicator.py
 
+      - name: Refresh Risk Watch data (credit spreads, yield curve, employment, NBER recession)
+        run: python scripts/update-risk-watch.py
+
       - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)
         run: python scripts/update-umcsent.py
 
