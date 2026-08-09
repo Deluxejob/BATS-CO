@@ -343,6 +343,10 @@ section { margin: 2.5rem 0; }
   text-align: center;
   padding: 0 0.5rem;
   margin-top: 0.25rem;
+  /* Reserve two lines' worth of space so a 1-line desc on one card and a
+     2-line desc on the other don't produce mismatched card heights.
+     line-height 1.4 * 2 lines = 2.8em, so that's the floor. */
+  min-height: 2.8em;
 }
 .sub-gauge-desc em {
   color: var(--text);
