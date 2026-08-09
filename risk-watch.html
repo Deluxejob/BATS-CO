@@ -148,6 +148,50 @@
     .num-neg { color: var(--s0); }
     .num-pos { color: var(--s5); }
     .num-neu { color: var(--text); }
+
+    /* Compact "today vs. historical peaks" comparison strip.
+       Sits below the credit callout so a visitor can immediately see
+       how today's reading stacks up against the two big historical
+       stress events (2008 GFC + 2020 COVID) and the long-run average. */
+    .rw-peaks {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+    }
+    .rw-peak {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      text-align: center;
+    }
+    .rw-peak .rw-peak-label {
+      font-size: 0.68rem;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+    .rw-peak .rw-peak-value {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-top: 0.2rem;
+    }
+    .rw-peak .rw-peak-date {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--dim);
+      margin-top: 0.15rem;
+    }
+    .rw-peak.today .rw-peak-value { color: var(--s6); }
+    .rw-peak.gfc   .rw-peak-value { color: #ef4444; }
+    .rw-peak.covid .rw-peak-value { color: #f97316; }
+    .rw-peak.avg   .rw-peak-value { color: #64d3ff; }
   </style>
 </head>
 <body>
@@ -241,6 +285,28 @@
         </div>
       </div>
       <div class="rw-callout" id="creditCallout">Loading interpretation&hellip;</div>
+      <div class="rw-peaks" id="creditPeaks">
+        <div class="rw-peak today">
+          <span class="rw-peak-label">Today</span>
+          <span class="rw-peak-value" id="peakToday">&ndash;</span>
+          <span class="rw-peak-date" id="peakTodayDate">&nbsp;</span>
+        </div>
+        <div class="rw-peak gfc">
+          <span class="rw-peak-label">2008 GFC peak</span>
+          <span class="rw-peak-value" id="peakGfc">&ndash;</span>
+          <span class="rw-peak-date" id="peakGfcDate">&nbsp;</span>
+        </div>
+        <div class="rw-peak covid">
+          <span class="rw-peak-label">2020 COVID peak</span>
+          <span class="rw-peak-value" id="peakCovid">&ndash;</span>
+          <span class="rw-peak-date" id="peakCovidDate">&nbsp;</span>
+        </div>
+        <div class="rw-peak avg">
+          <span class="rw-peak-label">Long-run avg</span>
+          <span class="rw-peak-value" id="peakAvg">&ndash;</span>
+          <span class="rw-peak-date" id="peakAvgSpan">&nbsp;</span>
+        </div>
+      </div>
     </section>
 
     <!-- ================== YIELD CURVE ================== -->
@@ -790,6 +856,42 @@
       return 'Latest claims: <strong>' + (lc.v / 1000).toFixed(0) + 'k</strong>, unemployment: <strong>' + lu.v.toFixed(1) + '%</strong>. ' + sahmLine;
     }
     document.getElementById('creditCallout').innerHTML = creditInterp();
+
+    // ============================================================
+    // Populate the peak-comparison strip under the credit callout.
+    // We compute the 2008 and 2020 peaks from the actual data (not
+    // hard-coded) so the numbers stay honest if a future stress event
+    // reprints these values.
+    // ============================================================
+    (function populateCreditPeaks() {
+      const latest = hy[hy.length - 1];
+      if (!latest) return;
+      const inRange = (fromYf, toYf) => hy.filter(r => r.yf >= fromYf && r.yf < toYf);
+      const peakIn  = (rows) => rows.length ? rows.reduce((a, b) => b.v > a.v ? b : a) : null;
+      const gfc     = peakIn(inRange(2008, 2010));   // Jan 2008 - Dec 2009
+      const covid   = peakIn(inRange(2020, 2020.5)); // Q1-Q2 2020
+      const avg     = hy.reduce((s, r) => s + r.v, 0) / hy.length;
+      const first   = hy[0];
+      const fmtDate = (d) => {
+        // Convert YYYY-MM-DD to "Mon YYYY"
+        const [y, m] = d.split('-');
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return `${months[parseInt(m, 10) - 1]} ${y}`;
+      };
+      const $ = (id) => document.getElementById(id);
+      $('peakToday').textContent      = latest.v.toFixed(2) + '%';
+      $('peakTodayDate').textContent  = fmtDate(latest.date);
+      if (gfc) {
+        $('peakGfc').textContent      = gfc.v.toFixed(2) + '%';
+        $('peakGfcDate').textContent  = fmtDate(gfc.date);
+      }
+      if (covid) {
+        $('peakCovid').textContent    = covid.v.toFixed(2) + '%';
+        $('peakCovidDate').textContent= fmtDate(covid.date);
+      }
+      $('peakAvg').textContent        = avg.toFixed(2) + '%';
+      $('peakAvgSpan').textContent    = `since ${fmtDate(first.date)}`;
+    })();
     document.getElementById('curveCallout').innerHTML = curveInterp();
     document.getElementById('empCallout').innerHTML = empInterp();
   })();

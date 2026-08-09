@@ -60,12 +60,26 @@ def warn(msg: str) -> None:
 
 
 def fetch_via_api(series_id: str) -> list[tuple[str, str]]:
-    """Fetch full history via the authenticated FRED API. Empty on failure."""
+    """Fetch full history via the authenticated FRED API. Empty on failure.
+
+    Explicitly sets every "start of time" param so nothing about our request
+    is what's limiting the returned range:
+      - observation_start: earliest observation to include
+      - realtime_start:    earliest data-vintage to consider (FRED tracks
+                           revisions; without this, defaults to today which
+                           for some series clips historical data)
+      - limit:             max rows returned per call (FRED cap = 100000,
+                           safely above ~30 years of daily data)
+    Also logs the payload's `count` so we can see what FRED is actually
+    willing to send us for series we suspect are truncated.
+    """
     params = {
         "series_id":            series_id,
         "api_key":              FRED_API_KEY,
         "file_type":            "json",
-        "observation_start":    "1900-01-01",
+        "observation_start":    "1776-07-04",
+        "realtime_start":       "1776-07-04",
+        "limit":                "100000",
     }
     url = FRED_API_URL + "?" + urllib.parse.urlencode(params)
     try:
@@ -76,7 +90,11 @@ def fetch_via_api(series_id: str) -> list[tuple[str, str]]:
         warn(f"FRED API {series_id} fetch failed: {exc}")
         return []
     obs = payload.get("observations") or []
+    count = payload.get("count", "?")
+    obs_start = payload.get("observation_start", "?")
+    print(f"  {series_id}: FRED API returned count={count}, obs_start={obs_start}, len(observations)={len(obs)}")
     rows: list[tuple[str, str]] = []
+    seen_dates: set[str] = set()
     for o in obs:
         date = (o.get("date") or "").strip()
         val  = (o.get("value") or "").strip()
@@ -86,9 +104,19 @@ def fetch_via_api(series_id: str) -> list[tuple[str, str]]:
             float(val)
         except ValueError:
             continue
+        # realtime_start=1776 pulls all revision vintages, which duplicates
+        # dates. Keep only the LAST value we see for each date (which will be
+        # the most recent revision after our ascending sort by date).
         rows.append((date, val))
+    # Sort ascending by date; then dedupe keeping the last (most recent revision)
     rows.sort(key=lambda x: x[0])
-    return rows
+    deduped: list[tuple[str, str]] = []
+    for date, val in rows:
+        if deduped and deduped[-1][0] == date:
+            deduped[-1] = (date, val)
+        else:
+            deduped.append((date, val))
+    return deduped
 
 
 def fetch_via_csv(series_id: str) -> list[tuple[str, str]]:
