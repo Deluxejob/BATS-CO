@@ -55,6 +55,11 @@ jobs:
         run: python scripts/update-buffett-indicator.py
 
       - name: Refresh Risk Watch data (credit spreads, yield curve, employment, NBER recession)
+        env:
+          # Authenticated FRED API — unlocks full history for the BofA credit
+          # spread series (BAMLH0A0HYM2, BAMLC0A0CM), which anonymous requests
+          # cap at ~3 years. Register at fredaccount.stlouisfed.org/apikeys.
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/update-risk-watch.py
 
       - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)

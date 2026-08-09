@@ -19,8 +19,10 @@ indicator fetch — FRED silently rejects browser-style Mozilla UAs.
 
 from __future__ import annotations
 import csv
+import json
 import os
 import sys
+import urllib.parse
 import urllib.request
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -37,38 +39,49 @@ SERIES = [
     ("USREC",        "nber_recession.csv", "IsRecession"),
 ]
 
-FRED_URL_FMT = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}"
+# Two fetch paths depending on whether we have a FRED API key:
+#
+# 1) If FRED_API_KEY env var is set (set as a GitHub Actions secret on the
+#    workflow), use api.stlouisfed.org — the real FRED API. Full history for
+#    every series, no anonymous rate caps. Preferred.
+#
+# 2) Otherwise, fall back to fredgraph.csv. That works for everything BUT
+#    the BofA-branded credit-spread series (BAMLH0A0HYM2, BAMLC0A0CM),
+#    which FRED restricts to the last ~3 years for anonymous callers. The
+#    non-BofA series (T10Y2Y, T10Y3M, ICSA, UNRATE, USREC) come through
+#    with full history on either path.
+FRED_API_KEY = os.environ.get("FRED_API_KEY", "").strip()
+FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
+FRED_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}&cosd=1900-01-01"
 
 
 def warn(msg: str) -> None:
     print(f"::warning::{msg}")
 
 
-def fetch_fred_series(series_id: str) -> list[tuple[str, str]]:
-    """Return [(YYYY-MM-DD, value_str)] sorted by date. Empty on failure."""
-    url = FRED_URL_FMT.format(series_id)
+def fetch_via_api(series_id: str) -> list[tuple[str, str]]:
+    """Fetch full history via the authenticated FRED API. Empty on failure."""
+    params = {
+        "series_id":            series_id,
+        "api_key":              FRED_API_KEY,
+        "file_type":            "json",
+        "observation_start":    "1900-01-01",
+    }
+    url = FRED_API_URL + "?" + urllib.parse.urlencode(params)
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "curl/8.0"})
-        with urllib.request.urlopen(req, timeout=45) as r:
-            text = r.read().decode("utf-8", errors="ignore")
+        with urllib.request.urlopen(req, timeout=60) as r:
+            payload = json.loads(r.read().decode("utf-8", errors="ignore"))
     except Exception as exc:
-        warn(f"FRED {series_id} fetch failed: {exc}")
+        warn(f"FRED API {series_id} fetch failed: {exc}")
         return []
-
+    obs = payload.get("observations") or []
     rows: list[tuple[str, str]] = []
-    lines = text.strip().splitlines()
-    if not lines:
-        warn(f"FRED {series_id}: empty response")
-        return []
-    for line in lines[1:]:   # skip header
-        parts = line.split(",")
-        if len(parts) < 2:
+    for o in obs:
+        date = (o.get("date") or "").strip()
+        val  = (o.get("value") or "").strip()
+        if not date or val in ("", ".", "NA"):
             continue
-        date, val = parts[0].strip(), parts[1].strip()
-        if val in ("", ".", "NA"):
-            continue
-        # Sanity-check the value parses as float, but keep the original
-        # string so we don't drift precision on repeated round-trips.
         try:
             float(val)
         except ValueError:
@@ -76,6 +89,46 @@ def fetch_fred_series(series_id: str) -> list[tuple[str, str]]:
         rows.append((date, val))
     rows.sort(key=lambda x: x[0])
     return rows
+
+
+def fetch_via_csv(series_id: str) -> list[tuple[str, str]]:
+    """Anonymous fredgraph.csv fallback — full history on most series but
+    truncated to ~3 years for the BofA credit-spread series."""
+    url = FRED_CSV_URL.format(series_id)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "curl/8.0"})
+        with urllib.request.urlopen(req, timeout=45) as r:
+            text = r.read().decode("utf-8", errors="ignore")
+    except Exception as exc:
+        warn(f"FRED CSV {series_id} fetch failed: {exc}")
+        return []
+    rows: list[tuple[str, str]] = []
+    lines = text.strip().splitlines()
+    if not lines:
+        warn(f"FRED CSV {series_id}: empty response")
+        return []
+    for line in lines[1:]:
+        parts = line.split(",")
+        if len(parts) < 2:
+            continue
+        date, val = parts[0].strip(), parts[1].strip()
+        if val in ("", ".", "NA"):
+            continue
+        try:
+            float(val)
+        except ValueError:
+            continue
+        rows.append((date, val))
+    rows.sort(key=lambda x: x[0])
+    return rows
+
+
+def fetch_fred_series(series_id: str) -> list[tuple[str, str]]:
+    """Return [(YYYY-MM-DD, value_str)] sorted by date. Empty on failure.
+    Prefers the API path when a key is available; falls back to CSV."""
+    if FRED_API_KEY:
+        return fetch_via_api(series_id)
+    return fetch_via_csv(series_id)
 
 
 def write_series(rows: list[tuple[str, str]], filename: str, value_col: str) -> None:
@@ -88,6 +141,7 @@ def write_series(rows: list[tuple[str, str]], filename: str, value_col: str) -> 
 
 
 def main() -> int:
+    print(f"Risk Watch: fetch path = {'FRED API (authenticated)' if FRED_API_KEY else 'fredgraph.csv (anonymous, ~3yr cap on BofA series)'}")
     ok_count = 0
     for series_id, filename, value_col in SERIES:
         rows = fetch_fred_series(series_id)
