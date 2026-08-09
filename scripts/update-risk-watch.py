@@ -77,8 +77,7 @@ def fetch_via_api(series_id: str) -> list[tuple[str, str]]:
         "series_id":            series_id,
         "api_key":              FRED_API_KEY,
         "file_type":            "json",
-        "observation_start":    "1776-07-04",
-        "realtime_start":       "1776-07-04",
+        "observation_start":    "1900-01-01",
         "limit":                "100000",
     }
     url = FRED_API_URL + "?" + urllib.parse.urlencode(params)
@@ -94,7 +93,6 @@ def fetch_via_api(series_id: str) -> list[tuple[str, str]]:
     obs_start = payload.get("observation_start", "?")
     print(f"  {series_id}: FRED API returned count={count}, obs_start={obs_start}, len(observations)={len(obs)}")
     rows: list[tuple[str, str]] = []
-    seen_dates: set[str] = set()
     for o in obs:
         date = (o.get("date") or "").strip()
         val  = (o.get("value") or "").strip()
@@ -104,19 +102,9 @@ def fetch_via_api(series_id: str) -> list[tuple[str, str]]:
             float(val)
         except ValueError:
             continue
-        # realtime_start=1776 pulls all revision vintages, which duplicates
-        # dates. Keep only the LAST value we see for each date (which will be
-        # the most recent revision after our ascending sort by date).
         rows.append((date, val))
-    # Sort ascending by date; then dedupe keeping the last (most recent revision)
     rows.sort(key=lambda x: x[0])
-    deduped: list[tuple[str, str]] = []
-    for date, val in rows:
-        if deduped and deduped[-1][0] == date:
-            deduped[-1] = (date, val)
-        else:
-            deduped.append((date, val))
-    return deduped
+    return rows
 
 
 def fetch_via_csv(series_id: str) -> list[tuple[str, str]]:
