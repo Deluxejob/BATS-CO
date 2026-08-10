@@ -1298,6 +1298,157 @@
       text-align: center;
     }
 
+    /* ---------- Price Overlay (dual y-axis price comparison) ---------- */
+    /* Same control-strip pattern as the compare section so a reader who
+       already used the compare tool feels at home, plus a tiny CURRENT
+       chip that echoes what's currently overlaid + a ✕ to clear it. */
+    .overlay-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem 0.85rem;
+      padding: 0.55rem 0.65rem;
+      margin-bottom: 0.6rem;
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-radius: 6px;
+    }
+    .overlay-controls-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--term-dim);
+      text-transform: uppercase;
+    }
+    .overlay-add { display: inline-flex; gap: 0.35rem; align-items: center; }
+    .overlay-add input {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: var(--term-bg);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      color: var(--term-text);
+      padding: 0.32rem 0.6rem;
+      width: 130px;
+      text-transform: uppercase;
+    }
+    .overlay-add input::placeholder { color: var(--term-dim); font-weight: 500; text-transform: none; }
+    .overlay-add input:focus { outline: none; border-color: var(--term-cyan); }
+    .overlay-add button {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      background: var(--term-cyan);
+      color: #0a1218;
+      border: 0;
+      border-radius: 4px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+    }
+    .overlay-add button:hover { filter: brightness(1.1); }
+    .overlay-current {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--term-text);
+    }
+    .overlay-current .sym-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(110, 231, 255, 0.12);
+      border: 1px solid rgba(110, 231, 255, 0.4);
+      color: var(--term-cyan);
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .overlay-current .clear-btn {
+      cursor: pointer;
+      background: transparent;
+      border: 0;
+      color: var(--term-cyan);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0 0 0 0.2rem;
+    }
+    .overlay-current .clear-btn:hover { color: var(--term-red); }
+    .overlay-ranges { display: inline-flex; gap: 0.25rem; margin-left: auto; }
+    .overlay-ranges button {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: transparent;
+      color: var(--term-dim);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0.32rem 0.6rem;
+      cursor: pointer;
+    }
+    .overlay-ranges button:hover { color: var(--term-cyan); }
+    .overlay-ranges button.active {
+      background: var(--term-cyan);
+      color: #0a1218;
+      border-color: var(--term-cyan);
+    }
+    .overlay-chart-wrap {
+      position: relative;
+      width: 100%;
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-radius: 8px;
+      padding: 0.5rem;
+      min-height: 260px;
+    }
+    .overlay-chart { width: 100%; height: 320px; display: block; }
+    .overlay-chart .axis-label {
+      fill: var(--term-dim); font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .overlay-chart .axis-line { stroke: var(--term-border); stroke-width: 1; }
+    .overlay-chart .grid-line { stroke: var(--term-border); stroke-width: 1; opacity: 0.3; stroke-dasharray: 2 3; }
+    .overlay-chart .line-primary  { fill: none; stroke: #6ee7ff; stroke-width: 1.6; }
+    .overlay-chart .line-overlay  { fill: none; stroke: #ffb842; stroke-width: 1.6; }
+    .overlay-empty {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--term-dim);
+      font-size: 0.85rem;
+      text-align: center;
+      pointer-events: none;
+    }
+    .overlay-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.2rem;
+      margin-top: 0.6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+    }
+    .overlay-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .overlay-legend-swatch {
+      display: inline-block;
+      width: 14px; height: 3px;
+      border-radius: 2px;
+    }
+    .overlay-legend-sym { color: var(--term-text); font-weight: 700; }
+    .overlay-legend-price { color: var(--term-dim); }
+    .overlay-note {
+      color: var(--term-dim);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      margin-top: 0.5rem;
+    }
+
     /* ---------- Valuation History (forward P/E chart) ---------- */
     /* Sized so total card height ≈ Earnings Growth Estimates card
        sitting beside it. Compact header strip is inline (not stacked
@@ -2138,6 +2289,38 @@
           </div>
           <div class="compare-legend" id="compareLegend"></div>
           <div class="compare-note">All series normalized to 0% at the start of the selected range. Compare up to 4 peers.</div>
+        </div>
+      </section>
+
+      <!-- Price Overlay — dual-axis price comparison. Reader enters a second
+           symbol; both stocks' actual prices plot on the same time axis with
+           the primary on the left y-axis and the overlay on the right. Not a
+           % change chart; the whole point is to see the two price streams
+           side by side. -->
+      <section class="term-section" id="overlaySection">
+        <div class="term-section-label">PRICE OVERLAY <span class="sub">— compare two stocks' actual prices, dual y-axis</span></div>
+        <div class="term-panel">
+          <div class="overlay-controls">
+            <span class="overlay-controls-label">OVERLAY WITH:</span>
+            <form class="overlay-add" id="overlayAddForm" autocomplete="off">
+              <input type="text" id="overlayAddInput" placeholder="Ticker (e.g. MSFT)" maxlength="10" aria-label="Enter symbol to overlay" />
+              <button type="submit">Overlay &rarr;</button>
+            </form>
+            <span class="overlay-current" id="overlayCurrent"></span>
+            <div class="overlay-ranges" id="overlayRanges" role="tablist" aria-label="Chart range">
+              <button type="button" data-range="1mo">1M</button>
+              <button type="button" data-range="3mo">3M</button>
+              <button type="button" data-range="6mo" class="active">6M</button>
+              <button type="button" data-range="1y">1Y</button>
+              <button type="button" data-range="5y">5Y</button>
+            </div>
+          </div>
+          <div class="overlay-chart-wrap">
+            <svg id="overlayChart" class="overlay-chart" xmlns="http://www.w3.org/2000/svg" aria-label="Two-symbol price overlay"></svg>
+            <div class="overlay-empty" id="overlayEmpty">Enter a second ticker above to overlay its price on this one.</div>
+          </div>
+          <div class="overlay-legend" id="overlayLegend"></div>
+          <div class="overlay-note">Primary stock's price on the left y-axis, overlay stock on the right y-axis. Two independent scales so both series fit legibly regardless of price magnitude.</div>
         </div>
       </section>
 
@@ -3857,6 +4040,241 @@
       }
 
       // -----------------------------------------------------------------
+      // PRICE OVERLAY — dual y-axis chart, two symbols laid over each
+      // other with independent price scales. Not a % change chart; the
+      // whole value proposition is being able to see actual prices side
+      // by side when comparing (e.g. AAPL ~$230 vs MSFT ~$425 both fit
+      // legibly because each has its own axis).
+      //
+      // Reader enters a symbol -> we fetch both series from /api/history
+      // for the selected range, align them by date, and draw two line
+      // series. Chart re-renders on range change or window resize.
+      // -----------------------------------------------------------------
+      function initPriceOverlay(primarySym) {
+        const section     = document.getElementById('overlaySection');
+        if (!section) return;
+        const svg         = section.querySelector('#overlayChart');
+        const emptyMsg    = section.querySelector('#overlayEmpty');
+        const form        = section.querySelector('#overlayAddForm');
+        const input       = section.querySelector('#overlayAddInput');
+        const currentEl   = section.querySelector('#overlayCurrent');
+        const legendEl    = section.querySelector('#overlayLegend');
+        const rangesEl    = section.querySelector('#overlayRanges');
+
+        const state = {
+          overlaySym: null,   // e.g. 'MSFT'
+          range:      '6mo',
+          cache:      {},     // "sym|range" -> [[ts, close], ...]
+          pending:    0,      // request generation so stale fetches don't paint
+        };
+
+        async function fetchHistory(sym) {
+          const key = sym + '|' + state.range;
+          if (state.cache[key]) return state.cache[key];
+          try {
+            const r = await fetch(
+              '/api/history?syms=' + encodeURIComponent(sym) + '&range=' + encodeURIComponent(state.range),
+              { cache: 'no-store' }
+            );
+            if (!r.ok) return null;
+            const j = await r.json();
+            const bars = j && j.series && j.series[sym];
+            if (!Array.isArray(bars) || bars.length < 2) return null;
+            state.cache[key] = bars;
+            return bars;
+          } catch (e) { return null; }
+        }
+
+        function showEmptyState() {
+          svg.innerHTML = '';
+          emptyMsg.style.display = '';
+          legendEl.innerHTML = '';
+          currentEl.innerHTML = '';
+        }
+
+        function renderCurrentChip() {
+          if (!state.overlaySym) { currentEl.innerHTML = ''; return; }
+          currentEl.innerHTML =
+            `<span class="sym-chip">${state.overlaySym}` +
+            `<button type="button" class="clear-btn" data-role="clearOverlay" aria-label="Clear overlay">&times;</button></span>`;
+          const btn = currentEl.querySelector('[data-role="clearOverlay"]');
+          if (btn) btn.addEventListener('click', () => {
+            state.overlaySym = null;
+            showEmptyState();
+          });
+        }
+
+        async function render() {
+          if (!state.overlaySym) { showEmptyState(); return; }
+          emptyMsg.style.display = 'none';
+          const gen = ++state.pending;
+          const [aBars, bBars] = await Promise.all([
+            fetchHistory(primarySym),
+            fetchHistory(state.overlaySym),
+          ]);
+          if (gen !== state.pending) return;   // stale
+          if (!aBars || !bBars) {
+            svg.innerHTML = '';
+            emptyMsg.style.display = '';
+            emptyMsg.textContent = 'Could not fetch data for ' + state.overlaySym + '. Try another symbol.';
+            return;
+          }
+
+          // Align by day: build a lookup by YYYY-MM-DD so a stray ts drift
+          // between two symbols doesn't drop bars silently.
+          const dayKey = (ts) => {
+            const d = new Date(ts * 1000);
+            return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+          };
+          const aMap = new Map(aBars.map(b => [dayKey(b[0]), { ts: b[0], v: b[1] }]));
+          const paired = [];
+          for (const b of bBars) {
+            const a = aMap.get(dayKey(b[0]));
+            if (!a || !Number.isFinite(a.v) || !Number.isFinite(b[1])) continue;
+            paired.push({ ts: b[0], a: a.v, b: b[1] });
+          }
+          if (paired.length < 2) {
+            svg.innerHTML = '';
+            emptyMsg.style.display = '';
+            emptyMsg.textContent = 'No overlapping trading days between ' + primarySym + ' and ' + state.overlaySym + '.';
+            return;
+          }
+
+          // Dynamic viewBox width so the chart fills the container without
+          // scaling artifacts (same pattern used by the Monthly Relative
+          // Performance chart earlier on this page).
+          const W = Math.max(600, Math.round(svg.clientWidth || 1200));
+          const H = 320;
+          const M = { top: 18, right: 60, bottom: 28, left: 60 };
+          svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+          const plotW = W - M.left - M.right;
+          const plotH = H - M.top - M.bottom;
+
+          const tFirst = paired[0].ts, tLast = paired[paired.length - 1].ts;
+          const tSpan = (tLast - tFirst) || 1;
+          const xFor = (t) => M.left + ((t - tFirst) / tSpan) * plotW;
+
+          const aVals = paired.map(p => p.a);
+          const bVals = paired.map(p => p.b);
+          const aMin = Math.min(...aVals), aMax = Math.max(...aVals);
+          const bMin = Math.min(...bVals), bMax = Math.max(...bVals);
+          const aPad = (aMax - aMin) * 0.08 || Math.max(aMin * 0.02, 0.5);
+          const bPad = (bMax - bMin) * 0.08 || Math.max(bMin * 0.02, 0.5);
+          const aLo = aMin - aPad, aHi = aMax + aPad;
+          const bLo = bMin - bPad, bHi = bMax + bPad;
+          const yLeft  = (v) => M.top + plotH - ((v - aLo) / (aHi - aLo)) * plotH;
+          const yRight = (v) => M.top + plotH - ((v - bLo) / (bHi - bLo)) * plotH;
+
+          // Nice y-tick spacing — pick a step that yields 4-7 gridlines
+          function niceStep(range) {
+            const rough = range / 5;
+            const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+            const norm = rough / mag;
+            const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+            return nice * mag;
+          }
+          const stepA = niceStep(aHi - aLo);
+          const stepB = niceStep(bHi - bLo);
+          const fmtA = (v) => v >= 1000 ? '$' + v.toFixed(0) : '$' + v.toFixed(2);
+          const fmtB = fmtA;
+
+          let s = '';
+
+          // Left y-axis grid + labels (primary)
+          for (let v = Math.ceil(aLo / stepA) * stepA; v <= aHi; v += stepA) {
+            const y = yLeft(v);
+            s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+            s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmtA(v)}</text>`;
+          }
+          // Right y-axis labels only (share gridlines with left)
+          for (let v = Math.ceil(bLo / stepB) * stepB; v <= bHi; v += stepB) {
+            const y = yRight(v);
+            s += `<text class="axis-label" x="${(W - M.right + 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="start" style="fill:#ffb842">${fmtB(v)}</text>`;
+          }
+
+          // X-axis tick labels (dates)
+          const dayMs = 86400;
+          const spanDays = tSpan / dayMs;
+          let tickStep, fmtTick;
+          if (spanDays < 45)        { tickStep = 7 * dayMs;  fmtTick = (t) => { const d = new Date(t * 1000); const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]; return `${mo} ${d.getUTCDate()}`; }; }
+          else if (spanDays < 120)  { tickStep = 30 * dayMs; fmtTick = (t) => { const d = new Date(t * 1000); const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]; return `${mo} ${d.getUTCDate()}`; }; }
+          else if (spanDays < 400)  { tickStep = 60 * dayMs; fmtTick = (t) => { const d = new Date(t * 1000); const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]; return `${mo} '${String(d.getUTCFullYear()).slice(2)}`; }; }
+          else                       { tickStep = 365 * dayMs; fmtTick = (t) => `'${String(new Date(t * 1000).getUTCFullYear()).slice(2)}`; }
+          for (let t = tFirst; t <= tLast; t += tickStep) {
+            const x = xFor(t);
+            s += `<text class="axis-label" x="${x.toFixed(1)}" y="${(M.top + plotH + 16).toFixed(1)}" text-anchor="middle">${fmtTick(t)}</text>`;
+          }
+
+          // Axis lines
+          s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+          s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+          s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+
+          // Primary + overlay line paths
+          let aPath = '';
+          for (let i = 0; i < paired.length; i++) {
+            aPath += (i === 0 ? 'M' : 'L') + xFor(paired[i].ts).toFixed(1) + ',' + yLeft(paired[i].a).toFixed(1) + ' ';
+          }
+          s += `<path class="line-primary" d="${aPath}"/>`;
+          let bPath = '';
+          for (let i = 0; i < paired.length; i++) {
+            bPath += (i === 0 ? 'M' : 'L') + xFor(paired[i].ts).toFixed(1) + ',' + yRight(paired[i].b).toFixed(1) + ' ';
+          }
+          s += `<path class="line-overlay" d="${bPath}"/>`;
+
+          // Axis titles (small labels above each axis)
+          s += `<text class="axis-label" x="${(M.left - 10).toFixed(1)}" y="${(M.top - 5).toFixed(1)}" text-anchor="start">${primarySym}</text>`;
+          s += `<text class="axis-label" x="${(W - M.right + 4).toFixed(1)}" y="${(M.top - 5).toFixed(1)}" text-anchor="start" style="fill:#ffb842">${state.overlaySym}</text>`;
+
+          svg.innerHTML = s;
+
+          // Legend with last prices
+          const aLast = paired[paired.length - 1].a;
+          const bLast = paired[paired.length - 1].b;
+          legendEl.innerHTML =
+            `<span class="overlay-legend-item"><span class="overlay-legend-swatch" style="background:#6ee7ff"></span>` +
+            `<span class="overlay-legend-sym">${primarySym}</span>` +
+            `<span class="overlay-legend-price">last ${fmtA(aLast)} (left axis)</span></span>` +
+            `<span class="overlay-legend-item"><span class="overlay-legend-swatch" style="background:#ffb842"></span>` +
+            `<span class="overlay-legend-sym">${state.overlaySym}</span>` +
+            `<span class="overlay-legend-price">last ${fmtB(bLast)} (right axis)</span></span>`;
+        }
+
+        // Wire form submit → set overlaySym → render
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const raw = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, '');
+          if (!raw) return;
+          if (raw === primarySym) return;   // no self-overlay
+          state.overlaySym = raw;
+          input.value = '';
+          renderCurrentChip();
+          render();
+        });
+
+        // Range buttons
+        rangesEl.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-range]');
+          if (!btn) return;
+          rangesEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+          state.range = btn.dataset.range;
+          render();
+        });
+
+        // Debounced resize -> re-render at new width
+        let rz = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(rz);
+          rz = setTimeout(() => { if (state.overlaySym) render(); }, 150);
+        });
+        if (typeof ResizeObserver !== 'undefined') {
+          new ResizeObserver(() => { if (state.overlaySym) render(); }).observe(svg);
+        }
+
+        showEmptyState();
+      }
+
+      // -----------------------------------------------------------------
       // TradingView widget factory
       // Builds the widget via DOM API so the injected script's closing
       // tag doesn't prematurely end this outer inline block.
@@ -3890,6 +4308,7 @@
       // 1b) Monthly relative performance vs SPY / QQQ. Same shape as
       //     CNBC's "AAPL vs NDX; monthly % perf" chart, with a toggle.
       initRelPerf(sym);
+      initPriceOverlay(sym);
 
       // 2) Key statistics (Symbol Info widget — market cap, PE, EPS, sector, description)
       mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
