@@ -56,11 +56,16 @@ jobs:
 
       - name: Refresh Risk Watch data (credit spreads, yield curve, employment, NBER recession)
         env:
-          # Authenticated FRED API — unlocks full history for the BofA credit
-          # spread series (BAMLH0A0HYM2, BAMLC0A0CM), which anonymous requests
-          # cap at ~3 years. Register at fredaccount.stlouisfed.org/apikeys.
+          # Authenticated FRED API — unlocks full history for most series.
+          # BofA credit-spread series (BAMLH0A0HYM2, BAMLC0A0CM) are still
+          # capped to ~3 years even authenticated (ICE licensing). The
+          # build-hy-oas-proxy.py step below back-fills pre-2023 history
+          # from HYG/TLT to work around that.
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/update-risk-watch.py
+
+      - name: Build stitched HY OAS series (FRED + HYG/TLT proxy back to 2007)
+        run: python scripts/build-hy-oas-proxy.py
 
       - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)
         run: python scripts/update-umcsent.py

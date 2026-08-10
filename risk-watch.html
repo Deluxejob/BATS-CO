@@ -377,12 +377,31 @@
       <h2>Data sources &amp; methodology</h2>
       <div class="card" style="padding:1.25rem 1.5rem; border-left:3px solid var(--s2);">
         <p style="margin:0 0 0.75rem;">
-          <strong>Credit spreads:</strong>
+          <strong>Credit spreads (HY):</strong> the most recent ~3 years are the
+          real
           <a href="https://fred.stlouisfed.org/series/BAMLH0A0HYM2" style="color:#64d3ff">BAMLH0A0HYM2</a>
-          (ICE BofA US High Yield Index Option-Adjusted Spread) and
+          (ICE BofA US High Yield Index Option-Adjusted Spread) via the
+          authenticated FRED API. FRED restricts the full history of ICE BofA data
+          to paid ICE licensees, so the pre-2023 portion is a <em>proxy</em>
+          computed from Yahoo's TLT (20+yr Treasury) and HYG (high-yield ETF)
+          daily closes: <code>log(OAS) = a · (TLT ÷ HYG) + b</code> where
+          <code>(a, b)</code> are fit by OLS to the recent overlap so proxy
+          numbers visually match the real ones where they meet.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <em>Proxy caveat:</em> the SHAPE (every major stress event since 2007)
+          is captured correctly, but pre-2011 magnitudes are compressed because
+          Treasuries didn't rally proportionally to HY's crash in 2008. Real
+          2008 peak was ~22%; proxy shows ~7%. Real 2020 peak was ~11%; proxy
+          shows ~15%. Read the pre-2023 line as "how much worse than today,"
+          not as a literal OAS level.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Credit spreads (IG):</strong>
           <a href="https://fred.stlouisfed.org/series/BAMLC0A0CM" style="color:#64d3ff">BAMLC0A0CM</a>
-          (ICE BofA US Corporate Index Option-Adjusted Spread). OAS is the
-          extra yield over duration-matched Treasuries. Daily since 1996.
+          (ICE BofA US Corporate Index Option-Adjusted Spread), same FRED
+          restriction &mdash; last ~3 years of real data, no proxy back-fill
+          for now.
         </p>
         <p style="margin:0 0 0.75rem;">
           <strong>Yield curve:</strong>
@@ -458,8 +477,15 @@
 
     let hy = [], ig = [], t10y2y = [], t10y3m = [], claims = [], unrate = [], usrec = [];
     try {
+      // Prefer the stitched HY OAS series (FRED + TLT/HYG proxy back to 2007).
+      // Falls back to the raw FRED CSV if the stitched one isn't there yet.
+      let hyPath = 'data/hy_oas_full.csv';
+      try {
+        const probe = await fetch(hyPath, { method: 'HEAD', cache: 'no-store' });
+        if (!probe.ok) hyPath = 'data/hy_oas.csv';
+      } catch (e) { hyPath = 'data/hy_oas.csv'; }
       [hy, ig, t10y2y, t10y3m, claims, unrate, usrec] = await Promise.all([
-        loadCsv('data/hy_oas.csv'),
+        loadCsv(hyPath),
         loadCsv('data/ig_oas.csv'),
         loadCsv('data/t10y2y.csv'),
         loadCsv('data/t10y3m.csv'),
