@@ -108,6 +108,9 @@ const MARKET_CONFIG = {
     indexTicker: 'S&P 500',
     stockCsv: 'spy.csv',
     stockTicker: 'SPY',
+    // Yahoo symbols the /api/quote endpoint understands, keyed to the
+    // fields batsAt() looks for in its overrides object.
+    liveTickers: { vix: '^VIX', spy: 'SPY', rsp: 'RSP', spx: '^GSPC' },
   },
   nasdaq: {
     label: 'Nasdaq 100',
@@ -125,6 +128,10 @@ const MARKET_CONFIG = {
     indexTicker: 'Nasdaq 100',
     stockCsv: 'qqq.csv',
     stockTicker: 'QQQ',
+    // Yahoo symbols. Note: internal batsAt() variable names are still
+    // spy/rsp/spx (unified naming) — the map just tells the fetcher which
+    // Yahoo ticker's spot price fills each slot for this market.
+    liveTickers: { vix: '^VXN', spy: 'QQQ', rsp: 'QQEW', spx: '^NDX' },
   },
 };
 
@@ -1845,7 +1852,7 @@ async function loadLiveData() {
   const wSecRegime = (COMPONENTS.find(c => c.key === 'sector_regime')    || {}).weight || 0;
   const wTotal     = wVix + wBreadth + wRSI + wMA + wMA50 + wJunk + wPct + wPct50 + wNAAIM + wSpread + wSector + wROC5 + wSecRegime;
 
-  function batsAt(rspRowIdx) {
+  function batsAt(rspRowIdx, overrides) {
     if (rspRowIdx < 20) return null;
     const d = rsp[rspRowIdx].date;
     const si = spyByDate.get(d);
@@ -1869,26 +1876,59 @@ async function loadLiveData() {
     if (!yieldsRec) return null;
     const sectorRec = findSectorOscOnOrBefore(d);
     if (!sectorRec) return null;
-    const rspRet = (rsp[rspRowIdx].close / rsp[rspRowIdx - 20].close - 1) * 100;
-    const spyRet = (spy[si].close        / spy[si - 20].close        - 1) * 100;
+    // Live-quote overrides: if the caller passed spot prices for any of the
+    // fast tickers (VIX / SPY / RSP / HYG / LQD / index), swap them into the
+    // "latest close" slot before doing the math. Everything downstream then
+    // computes an intraday BATS reading using stored 200/50-day baselines
+    // + today's spot. Slow inputs (NAAIM, %above200, yields) stay at their
+    // daily-close values because they don't have a meaningful intraday tick.
+    const ov = overrides || {};
+    const spyClose = (typeof ov.spy === 'number' && ov.spy > 0) ? ov.spy : spy[si].close;
+    const rspClose = (typeof ov.rsp === 'number' && ov.rsp > 0) ? ov.rsp : rsp[rspRowIdx].close;
+    const hygClose = (typeof ov.hyg === 'number' && ov.hyg > 0) ? ov.hyg : hyg[hi].close;
+    const lqdClose = (typeof ov.lqd === 'number' && ov.lqd > 0) ? ov.lqd : lqd[li].close;
+    const spxClose = (typeof ov.spx === 'number' && ov.spx > 0) ? ov.spx : spx[xi].close;
+    const vixClose = (typeof ov.vix === 'number' && ov.vix > 0) ? ov.vix : vix[vi].close;
+    const rspRet = (rspClose / rsp[rspRowIdx - 20].close - 1) * 100;
+    const spyRet = (spyClose / spy[si - 20].close        - 1) * 100;
     const spread = rspRet - spyRet;
-    const hygRet = (hyg[hi].close        / hyg[hi - 20].close        - 1) * 100;
-    const lqdRet = (lqd[li].close        / lqd[li - 20].close        - 1) * 100;
+    const hygRet = (hygClose / hyg[hi - 20].close        - 1) * 100;
+    const lqdRet = (lqdClose / lqd[li - 20].close        - 1) * 100;
     const junkSpread = hygRet - lqdRet;
     const yieldSpread = yieldsRec.spread;
     const sectorOscVal = sectorRec.oscillator;
-    const ma200Dist = (spx[xi].close / sma200[xi] - 1) * 100;
-    const ma50Dist  = (spx[xi].close / sma50[xi]  - 1) * 100;
+    const ma200Dist = (spxClose / sma200[xi] - 1) * 100;
+    const ma50Dist  = (spxClose / sma50[xi]  - 1) * 100;
     // ROC-5: needs at least 5 prior daily closes on the same index series.
-    const roc5Val  = (xi >= 5)  ? ((spx[xi].close / spx[xi - 5].close  - 1) * 100) : null;
+    const roc5Val  = (xi >= 5)  ? ((spxClose / spx[xi - 5].close  - 1) * 100) : null;
     // ROC-10: same, longer horizon — feeds Upside Trend, not the main BATS composite.
-    const roc10Val = (xi >= 10) ? ((spx[xi].close / spx[xi - 10].close - 1) * 100) : null;
-    // Bollinger %B + MACD histogram (as % of price) — precomputed series lookups.
-    const bbVal   = bbSeries[xi];
-    const macdVal = macdSeries[xi];
-    const vs = scoreVIX(vix[vi].close);
+    const roc10Val = (xi >= 10) ? ((spxClose / spx[xi - 10].close - 1) * 100) : null;
+    // Bollinger %B + MACD histogram: overrides are applied by RECOMPUTING
+    // just today's slot using the spot price + the last 19/25 stored closes.
+    // For calm days this barely moves; on big-move days it lets the sub-gauges
+    // reflect current tape instead of yesterday's snapshot.
+    let bbVal   = bbSeries[xi];
+    let macdVal = macdSeries[xi];
+    if (typeof ov.spx === 'number' && ov.spx > 0 && xi >= 26) {
+      const closes = spx.slice(0, xi).map(r => r.close).concat([spxClose]);
+      const bbLive   = computeBollingerBSeries(closes, 20, 2);
+      const macdLive = computeMACDHistSeries(closes, 12, 26, 9);
+      bbVal   = bbLive[bbLive.length - 1];
+      macdVal = macdLive[macdLive.length - 1];
+    }
+    // RSI intraday recompute: same pattern as BB/MACD above — plug spot SPY
+    // in as the current close, recompute the Wilder RSI series, take the
+    // last value. Cheap enough (O(n) once per refresh over ~5000 rows).
+    let rsiVal = rsi[si];
+    if (typeof ov.spy === 'number' && ov.spy > 0 && si >= 14) {
+      const closes = spy.slice(0, si).map(r => r.close).concat([spyClose]);
+      const rsiLive = computeRsiSeriesLive(closes);
+      const lastLive = rsiLive[rsiLive.length - 1];
+      if (Number.isFinite(lastLive)) rsiVal = lastLive;
+    }
+    const vs = scoreVIX(vixClose);
     const bs = scoreBreadth(spread);
-    const rs = scoreRSI(rsi[si]);
+    const rs = scoreRSI(rsiVal);
     const js = scoreJunkDemand(junkSpread);
     const ms = scoreMA200(ma200Dist);
     const ms50 = scoreMA50(ma50Dist);
@@ -1907,9 +1947,9 @@ async function loadLiveData() {
     if (vs == null || bs == null || rs == null || js == null || ms == null || ms50 == null || ps == null || ps50 == null || ns == null || yss == null || sos == null || roc == null || srs == null || wTotal <= 0) return null;
     return {
       date: d,
-      vix: vix[vi].close,
+      vix: vixClose,
       spread,
-      rsiVal: rsi[si],
+      rsiVal,
       junkSpread,
       ma200Dist,
       ma50Dist,
@@ -1954,7 +1994,11 @@ async function loadLiveData() {
     history[key] = rec ? { score: rec.blended, date: rec.date, label } : null;
   }
 
-  return { current, history };
+  // Return batsAt + latestIdx too so the page can re-run the composite with
+  // live-quote overrides (client-side intraday BATS). Slow inputs (NAAIM,
+  // yields, %above200) stay at their daily-close values inside batsAt; only
+  // the ticker-driven fast ones react to spot prices.
+  return { current, history, batsAt, latestIdx };
 }
 
 function updateComponentsWithLatest(current) {
@@ -2311,11 +2355,13 @@ async function init() {
   // values already sitting in COMPONENTS if the fetch fails (file://, offline).
   let latestDate = null;
   let currentSnapshot = null;
+  let liveContext = null;   // { batsAt, latestIdx } for intraday refreshes
   try {
-    const { current, history } = await loadLiveData();
+    const { current, history, batsAt, latestIdx } = await loadLiveData();
     updateComponentsWithLatest(current);
     latestDate = current.date;
     currentSnapshot = current;
+    liveContext = { batsAt, latestIdx };
     if (isMainPage) renderHistoricalContext(history);
     const dateNote = document.getElementById('gaugeDateNote');
     if (dateNote) dateNote.textContent = `Latest close: ${current.date}`;
@@ -2334,6 +2380,67 @@ async function init() {
     const pivot  = currentSnapshot ? computePivotTop(currentSnapshot)   : null;
     setSubGauge('upsideTrendGauge', upside, 'upsideTrendValue', 'upsideTrendState', 'green', 'left');
     setSubGauge('pivotTopGauge',    pivot,  'pivotTopValue',    'pivotTopState',    'red',   'right');
+
+    // Intraday BATS: fetch spot quotes for the fast tickers, recompute the
+    // composite, and re-render the gauge + sub-gauges in place. Runs once
+    // on load, then every 5 minutes while the page is visible during US
+    // market hours (04:00-20:00 ET Mon-Fri, i.e. extended hours). Slow
+    // components (NAAIM, %above200, yields) stay at daily-close values;
+    // only ticker-driven fast ones react to spot prices.
+    if (liveContext) {
+      const applyIntraday = async () => {
+        try {
+          const ticks  = MC.liveTickers || {};
+          const symList = Object.values(ticks);
+          if (!symList.length) return;
+          const r = await fetch('/api/quote?syms=' + encodeURIComponent(symList.join(',')), { cache: 'no-store' });
+          if (!r.ok) return;
+          const data = await r.json();
+          const q = (data && data.quotes) || {};
+          const overrides = {};
+          for (const [slot, sym] of Object.entries(ticks)) {
+            const price = q[sym] && q[sym].price;
+            if (Number.isFinite(price) && price > 0) overrides[slot] = price;
+          }
+          if (!Object.keys(overrides).length) return;
+          const fresh = liveContext.batsAt(liveContext.latestIdx, overrides);
+          if (!fresh) return;
+          currentSnapshot = fresh;
+          updateComponentsWithLatest(fresh);
+          setGauge(computeBatsScore());
+          const upsideLive = computeUpsideTrend(fresh);
+          const pivotLive  = computePivotTop(fresh);
+          setSubGauge('upsideTrendGauge', upsideLive, 'upsideTrendValue', 'upsideTrendState', 'green', 'left');
+          setSubGauge('pivotTopGauge',    pivotLive,  'pivotTopValue',    'pivotTopState',    'red',   'right');
+          const dateNote = document.getElementById('gaugeDateNote');
+          if (dateNote) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', {
+              hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York',
+            });
+            dateNote.textContent = `Live: ${timeStr} ET (spot quotes) · daily close ${fresh.date}`;
+          }
+        } catch (e) { /* fetch or parse failed — keep daily-close render */ }
+      };
+      // Skip polling outside US extended-hours (04:00-20:00 ET, Mon-Fri).
+      function marketHoursET() {
+        try {
+          const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', hour12: false,
+          }).formatToParts(new Date());
+          const day  = parts.find(p => p.type === 'weekday').value;
+          const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+          if (day === 'Sat' || day === 'Sun') return false;
+          return hour >= 4 && hour < 20;
+        } catch (e) { return true; }
+      }
+      applyIntraday();
+      setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        if (!marketHoursET()) return;
+        applyIntraday();
+      }, 5 * 60 * 1000);   // 5 minutes
+    }
   }
 
   if (isIndicatorPage) {
