@@ -745,15 +745,23 @@
         }
 
         // ---- Left y-axis grid + labels ----
+        // When there's no separate right-axis series (Credit + Yield Curve),
+        // mirror the SAME left-axis numbers on the right so a reader can
+        // read values near either edge of the plot without eye-tracking
+        // all the way back to the left. Employment (which has a real
+        // right-axis unemployment scale) skips the mirror.
         const range1 = y1Max - y1Min;
         const step1  = niceStep(range1);
         for (let p = Math.ceil(y1Min / step1) * step1; p <= y1Max; p += step1) {
           const y = yFor1(p);
           svgHtml += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
           svgHtml += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${cfg.leftFmt(p)}</text>`;
+          if (!yFor2) {
+            svgHtml += `<text class="axis-label" x="${W - M.right + 8}" y="${y + 3}" text-anchor="start">${cfg.leftFmt(p)}</text>`;
+          }
         }
 
-        // ---- Right y-axis labels (if applicable) ----
+        // ---- Right y-axis labels (if applicable — different scale) ----
         if (yFor2) {
           const range2 = y2Max - y2Min;
           const step2  = niceStep(range2);
@@ -778,7 +786,9 @@
         // ---- Axis lines ----
         svgHtml += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
         svgHtml += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-        if (yFor2) svgHtml += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        // Always draw the right axis line so both mirror-scale charts and
+        // dual-scale charts read as a properly boxed plot area.
+        svgHtml += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
 
         // ---- Series lines ----
         sliced.forEach((s, i) => {
