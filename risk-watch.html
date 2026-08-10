@@ -627,43 +627,100 @@
       const plotW = W - M.left - M.right;
       const plotH = H - M.top - M.bottom;
 
+      // For-loop min/max — Math.min(...huge_array) is O(n) AND spreads a
+      // 12,000-point series into the argument list, which is slow to
+      // allocate and can hit call-stack limits on some browsers. Loops
+      // are safe at any size.
+      function arrMin(a, seed) {
+        let m = (seed === undefined) ? Infinity : seed;
+        for (let i = 0; i < a.length; i++) if (a[i] < m) m = a[i];
+        return m;
+      }
+      function arrMax(a, seed) {
+        let m = (seed === undefined) ? -Infinity : seed;
+        for (let i = 0; i < a.length; i++) if (a[i] > m) m = a[i];
+        return m;
+      }
+      // Downsample a sorted-by-yf slice to at most N points so we don't
+      // build 24,000-node SVG paths for chart widths where they'd overlap
+      // pixel-for-pixel anyway. Keeps first + last so the endpoints don't
+      // drift. Visually indistinguishable at ~1200px chart widths.
+      function downsample(slice, maxPoints) {
+        const n = slice.length;
+        if (n <= maxPoints) return slice;
+        const step = n / maxPoints;
+        const out = [];
+        for (let i = 0; i < n; i += step) out.push(slice[Math.floor(i)]);
+        if (out[out.length - 1] !== slice[n - 1]) out.push(slice[n - 1]);
+        return out;
+      }
+
       function render(period) {
         // Compute the x-window from period. Use the LATEST yf across ALL series
         // so a chart that mixes weekly + monthly + daily lines shares one range.
-        const allLatest = cfg.series.map(s => s.data.length ? s.data[s.data.length - 1].yf : 0);
-        const latestYf = Math.max(...allLatest);
-        const firstYf  = period === 'all'
-          ? Math.min(...cfg.series.map(s => s.data.length ? s.data[0].yf : Infinity))
-          : latestYf - parseFloat(period);
+        let latestYf = -Infinity;
+        for (const s of cfg.series) {
+          if (s.data.length) {
+            const t = s.data[s.data.length - 1].yf;
+            if (t > latestYf) latestYf = t;
+          }
+        }
+        let firstYf;
+        if (period === 'all') {
+          firstYf = Infinity;
+          for (const s of cfg.series) if (s.data.length && s.data[0].yf < firstYf) firstYf = s.data[0].yf;
+        } else {
+          firstYf = latestYf - parseFloat(period);
+        }
 
-        const sliced = cfg.series.map(s => ({
-          ...s,
-          slice: s.data.filter(r => r.yf >= firstYf),
-        }));
+        // Slice + downsample. Cap at 1500 points per series; SVG paths above
+        // that are almost entirely wasted work at typical chart widths.
+        const MAX_POINTS = 1500;
+        const sliced = cfg.series.map(s => {
+          const filtered = s.data.filter(r => r.yf >= firstYf);
+          return { ...s, slice: downsample(filtered, MAX_POINTS) };
+        });
         const anyData = sliced.some(s => s.slice.length > 1);
         if (!anyData) return;
 
         const first = firstYf, last = latestYf;
         const xForYear = (yr) => M.left + ((yr - first) / (last - first || 1)) * plotW;
 
-        // Left y-axis: primary series' range
+        // Left y-axis: primary series' range (for-loops, no spread)
         const primary = sliced[0].slice.map(r => r.v);
-        const p1min = Math.min(...primary, cfg.leftMinFloor ?? Infinity);
-        const p1max = Math.max(...primary, cfg.leftMaxFloor ?? -Infinity);
-        const yPad  = (p1max - p1min) * 0.1 || 1;
-        // If additional PRIMARY-axis series (same units) exist, include them
-        const extraPrimary = sliced.slice(1).filter(s => !s.right).map(s => s.slice.map(r => r.v)).flat();
-        const y1Min = Math.min(p1min - yPad, ...extraPrimary);
-        const y1Max = Math.max(p1max + yPad, ...extraPrimary);
+        let p1min = arrMin(primary);
+        let p1max = arrMax(primary);
+        // Additional PRIMARY-axis series (same units, e.g. HY + IG on the
+        // credit chart both left-axis) participate in the y-scale.
+        for (let i = 1; i < sliced.length; i++) {
+          const s = sliced[i];
+          if (s.right) continue;
+          for (let j = 0; j < s.slice.length; j++) {
+            const v = s.slice[j].v;
+            if (v < p1min) p1min = v;
+            if (v > p1max) p1max = v;
+          }
+        }
+        const yPad = (p1max - p1min) * 0.1 || 1;
+        let y1Min = p1min - yPad;
+        let y1Max = p1max + yPad;
+        // leftMinFloor / leftMaxCeil = HARD CLAMPS on the axis range — used
+        // e.g. by Employment (floor=0) so the y-axis doesn't waste space
+        // below zero when all data is positive.
+        if (typeof cfg.leftMinFloor === 'number' && y1Min < cfg.leftMinFloor) y1Min = cfg.leftMinFloor;
+        if (typeof cfg.leftMaxCeil  === 'number' && y1Max > cfg.leftMaxCeil)  y1Max = cfg.leftMaxCeil;
         const yFor1 = (v) => M.top + plotH - ((v - y1Min) / (y1Max - y1Min || 1)) * plotH;
 
         // Right y-axis (optional): mapped from its own series
         let yFor2 = null, y2Min = 0, y2Max = 0;
         if (cfg.rightAxis) {
-          const right = sliced.filter(s => s.right).map(s => s.slice.map(r => r.v)).flat();
-          if (right.length) {
-            y2Min = Math.min(...right);
-            y2Max = Math.max(...right);
+          y2Min = Infinity; y2Max = -Infinity;
+          for (const s of sliced) if (s.right) for (let j = 0; j < s.slice.length; j++) {
+            const v = s.slice[j].v;
+            if (v < y2Min) y2Min = v;
+            if (v > y2Max) y2Max = v;
+          }
+          if (Number.isFinite(y2Min) && Number.isFinite(y2Max)) {
             const pad2 = (y2Max - y2Min) * 0.1 || 1;
             y2Min -= pad2; y2Max += pad2;
             yFor2 = (v) => M.top + plotH - ((v - y2Min) / (y2Max - y2Min || 1)) * plotH;
@@ -753,14 +810,17 @@
       }
 
       function niceStep(range) {
-        // Choose a "nice" gridline step given a numeric range
-        if (range <= 1)   return 0.1;
-        if (range <= 3)   return 0.25;
-        if (range <= 8)   return 1;
-        if (range <= 25)  return 2;
-        if (range <= 60)  return 5;
-        if (range <= 150) return 20;
-        return 50;
+        // Log-scale "nice" gridline step targeting ~6 gridlines at any
+        // magnitude. Previous hardcoded ladder maxed at step=50, which meant
+        // for a raw jobless-claims range of ~700,000 the gridline loop tried
+        // to draw 14,000 lines + 14,000 labels — that's what was locking
+        // the tab when the Employment chart was on longer periods.
+        if (!isFinite(range) || range <= 0) return 1;
+        const rough = range / 6;
+        const mag   = Math.pow(10, Math.floor(Math.log10(rough)));
+        const norm  = rough / mag;
+        const nice  = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+        return nice * mag;
       }
       function formatYearMonth(yf) {
         const yr = Math.floor(yf);
