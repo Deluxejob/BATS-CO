@@ -2106,7 +2106,7 @@
             <div class="rp-latest" id="rpLatest"></div>
           </div>
           <div class="rp-chart-wrap">
-            <svg id="rpChart" class="rp-chart" viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" aria-label="Monthly relative performance vs benchmark"></svg>
+            <svg id="rpChart" class="rp-chart" xmlns="http://www.w3.org/2000/svg" aria-label="Monthly relative performance vs benchmark"></svg>
           </div>
           <div class="rp-note" id="rpNote">
             Each bar is one month's return minus the benchmark's return. Positive (green) = beat the benchmark that month; negative (red) = trailed it. Data goes back as far as the ticker has monthly closes.
@@ -3686,7 +3686,13 @@
         }
 
         function drawRp(perf, bench) {
-          const W = 900, H = 240, M = { top: 15, right: 62, bottom: 26, left: 44 };
+          // Size the viewBox to the SVG's actual pixel width so the chart
+          // fills the card at any container width instead of being scaled
+          // and centered inside a fixed viewBox aspect. Fallback to 1200
+          // if the SVG isn't laid out yet (very early render).
+          const W = Math.max(600, Math.round(chartEl.clientWidth || 1200));
+          const H = 240, M = { top: 15, right: 62, bottom: 26, left: 44 };
+          chartEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
           const plotW = W - M.left - M.right;
           const plotH = H - M.top - M.bottom;
 
@@ -3706,7 +3712,9 @@
 
           let s = '';
 
-          // Y grid + labels (special "zero-line" class at v=0)
+          // Y grid + labels (special "zero-line" class at v=0). Labels on
+          // BOTH sides so the reader can read values against the latest
+          // bar without eye-tracking all the way back to the left axis.
           for (let v = -yLim; v <= yLim; v += gridStep) {
             const y = yFor(v);
             const cls = v === 0 ? 'zero-line' : 'grid-line';
@@ -3715,6 +3723,8 @@
             const label = (v > 0 ? '+' : '') + v;
             s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" ` +
                  `text-anchor="end">${label}</text>`;
+            s += `<text class="axis-label" x="${(W - M.right + 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" ` +
+                 `text-anchor="start">${label}</text>`;
           }
 
           // X-axis year ticks
@@ -3831,6 +3841,17 @@
             render();
           });
         });
+
+        // Re-render on window resize AND on the SVG element being resized
+        // by CSS (which fires when it first becomes visible after being
+        // display:none, so the initial paint uses the real container width
+        // instead of the 1200-fallback). Debounced 150ms.
+        let rzTimer = null;
+        const rerender = () => { clearTimeout(rzTimer); rzTimer = setTimeout(render, 150); };
+        window.addEventListener('resize', rerender);
+        if (typeof ResizeObserver !== 'undefined') {
+          new ResizeObserver(rerender).observe(chartEl);
+        }
 
         render();
       }
