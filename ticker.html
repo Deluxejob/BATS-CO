@@ -4085,11 +4085,10 @@
           } catch (e) { return null; }
         }
 
-        function showEmptyState() {
-          svg.innerHTML = '';
-          emptyMsg.style.display = '';
-          legendEl.innerHTML = '';
+        function clearOverlayOnly() {
           currentEl.innerHTML = '';
+          state.overlaySym = null;
+          render();
         }
 
         function renderCurrentChip() {
@@ -4098,54 +4097,75 @@
             `<span class="sym-chip">${state.overlaySym}` +
             `<button type="button" class="clear-btn" data-role="clearOverlay" aria-label="Clear overlay">&times;</button></span>`;
           const btn = currentEl.querySelector('[data-role="clearOverlay"]');
-          if (btn) btn.addEventListener('click', () => {
-            state.overlaySym = null;
-            showEmptyState();
-          });
+          if (btn) btn.addEventListener('click', clearOverlayOnly);
         }
 
         async function render() {
-          if (!state.overlaySym) { showEmptyState(); return; }
           emptyMsg.style.display = 'none';
           const gen = ++state.pending;
+          // Always fetch primary. Only fetch overlay when a symbol is set.
           const [aBars, bBars] = await Promise.all([
             fetchHistory(primarySym),
-            fetchHistory(state.overlaySym),
+            state.overlaySym ? fetchHistory(state.overlaySym) : Promise.resolve(null),
           ]);
           if (gen !== state.pending) return;   // stale
-          if (!aBars || !bBars) {
+          if (!aBars) {
+            svg.innerHTML = '';
+            emptyMsg.style.display = '';
+            emptyMsg.textContent = 'Could not fetch data for ' + primarySym + '.';
+            return;
+          }
+          if (state.overlaySym && !bBars) {
             svg.innerHTML = '';
             emptyMsg.style.display = '';
             emptyMsg.textContent = 'Could not fetch data for ' + state.overlaySym + '. Try another symbol.';
             return;
           }
 
-          // Align by day: build a lookup by YYYY-MM-DD so a stray ts drift
-          // between two symbols doesn't drop bars silently.
+          const hasOverlay = !!(state.overlaySym && bBars);
+
+          // Build the paired series. When no overlay is active, "paired"
+          // just carries the primary's ts+price and leaves b=null; the
+          // renderer skips the overlay line + right-axis entirely.
           const dayKey = (ts) => {
             const d = new Date(ts * 1000);
             return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
           };
-          const aMap = new Map(aBars.map(b => [dayKey(b[0]), { ts: b[0], v: b[1] }]));
-          const paired = [];
-          for (const b of bBars) {
-            const a = aMap.get(dayKey(b[0]));
-            if (!a || !Number.isFinite(a.v) || !Number.isFinite(b[1])) continue;
-            paired.push({ ts: b[0], a: a.v, b: b[1] });
-          }
-          if (paired.length < 2) {
-            svg.innerHTML = '';
-            emptyMsg.style.display = '';
-            emptyMsg.textContent = 'No overlapping trading days between ' + primarySym + ' and ' + state.overlaySym + '.';
-            return;
+          let paired = [];
+          if (hasOverlay) {
+            const aMap = new Map(aBars.map(b => [dayKey(b[0]), { ts: b[0], v: b[1] }]));
+            for (const b of bBars) {
+              const a = aMap.get(dayKey(b[0]));
+              if (!a || !Number.isFinite(a.v) || !Number.isFinite(b[1])) continue;
+              paired.push({ ts: b[0], a: a.v, b: b[1] });
+            }
+            if (paired.length < 2) {
+              svg.innerHTML = '';
+              emptyMsg.style.display = '';
+              emptyMsg.textContent = 'No overlapping trading days between ' + primarySym + ' and ' + state.overlaySym + '.';
+              return;
+            }
+          } else {
+            paired = aBars
+              .filter(b => Number.isFinite(b[1]))
+              .map(b => ({ ts: b[0], a: b[1], b: null }));
+            if (paired.length < 2) {
+              svg.innerHTML = '';
+              emptyMsg.style.display = '';
+              emptyMsg.textContent = 'Not enough price history for ' + primarySym + '.';
+              return;
+            }
           }
 
           // Dynamic viewBox width so the chart fills the container without
           // scaling artifacts (same pattern used by the Monthly Relative
-          // Performance chart earlier on this page).
+          // Performance chart earlier on this page). Right margin shrinks
+          // when there's no overlay so the primary chart uses the full
+          // width instead of reserving space for a right-axis that isn't
+          // drawn.
           const W = Math.max(600, Math.round(svg.clientWidth || 1200));
           const H = 320;
-          const M = { top: 18, right: 60, bottom: 28, left: 60 };
+          const M = { top: 18, right: hasOverlay ? 60 : 16, bottom: 28, left: 60 };
           svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
           const plotW = W - M.left - M.right;
           const plotH = H - M.top - M.bottom;
@@ -4155,15 +4175,19 @@
           const xFor = (t) => M.left + ((t - tFirst) / tSpan) * plotW;
 
           const aVals = paired.map(p => p.a);
-          const bVals = paired.map(p => p.b);
           const aMin = Math.min(...aVals), aMax = Math.max(...aVals);
-          const bMin = Math.min(...bVals), bMax = Math.max(...bVals);
           const aPad = (aMax - aMin) * 0.08 || Math.max(aMin * 0.02, 0.5);
-          const bPad = (bMax - bMin) * 0.08 || Math.max(bMin * 0.02, 0.5);
           const aLo = aMin - aPad, aHi = aMax + aPad;
-          const bLo = bMin - bPad, bHi = bMax + bPad;
           const yLeft  = (v) => M.top + plotH - ((v - aLo) / (aHi - aLo)) * plotH;
-          const yRight = (v) => M.top + plotH - ((v - bLo) / (bHi - bLo)) * plotH;
+
+          let bLo, bHi, yRight;
+          if (hasOverlay) {
+            const bVals = paired.map(p => p.b);
+            const bMin = Math.min(...bVals), bMax = Math.max(...bVals);
+            const bPad = (bMax - bMin) * 0.08 || Math.max(bMin * 0.02, 0.5);
+            bLo = bMin - bPad; bHi = bMax + bPad;
+            yRight = (v) => M.top + plotH - ((v - bLo) / (bHi - bLo)) * plotH;
+          }
 
           // Nice y-tick spacing — pick a step that yields 4-7 gridlines
           function niceStep(range) {
@@ -4174,7 +4198,7 @@
             return nice * mag;
           }
           const stepA = niceStep(aHi - aLo);
-          const stepB = niceStep(bHi - bLo);
+          const stepB = hasOverlay ? niceStep(bHi - bLo) : null;
           const fmtA = (v) => v >= 1000 ? '$' + v.toFixed(0) : '$' + v.toFixed(2);
           const fmtB = fmtA;
 
@@ -4186,10 +4210,13 @@
             s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
             s += `<text class="axis-label" x="${M.left - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmtA(v)}</text>`;
           }
-          // Right y-axis labels only (share gridlines with left)
-          for (let v = Math.ceil(bLo / stepB) * stepB; v <= bHi; v += stepB) {
-            const y = yRight(v);
-            s += `<text class="axis-label" x="${(W - M.right + 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="start" style="fill:#ffb842">${fmtB(v)}</text>`;
+          // Right y-axis labels only (share gridlines with left) — only
+          // rendered when there's an overlay symbol to scale for.
+          if (hasOverlay) {
+            for (let v = Math.ceil(bLo / stepB) * stepB; v <= bHi; v += stepB) {
+              const y = yRight(v);
+              s += `<text class="axis-label" x="${(W - M.right + 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="start" style="fill:#ffb842">${fmtB(v)}</text>`;
+            }
           }
 
           // X-axis tick labels (dates)
@@ -4208,36 +4235,48 @@
           // Axis lines
           s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
           s += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
-          s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+          if (hasOverlay) {
+            s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+          }
 
-          // Primary + overlay line paths
+          // Primary line — always drawn
           let aPath = '';
           for (let i = 0; i < paired.length; i++) {
             aPath += (i === 0 ? 'M' : 'L') + xFor(paired[i].ts).toFixed(1) + ',' + yLeft(paired[i].a).toFixed(1) + ' ';
           }
           s += `<path class="line-primary" d="${aPath}"/>`;
-          let bPath = '';
-          for (let i = 0; i < paired.length; i++) {
-            bPath += (i === 0 ? 'M' : 'L') + xFor(paired[i].ts).toFixed(1) + ',' + yRight(paired[i].b).toFixed(1) + ' ';
+          // Overlay line — only when a second symbol is set
+          if (hasOverlay) {
+            let bPath = '';
+            for (let i = 0; i < paired.length; i++) {
+              bPath += (i === 0 ? 'M' : 'L') + xFor(paired[i].ts).toFixed(1) + ',' + yRight(paired[i].b).toFixed(1) + ' ';
+            }
+            s += `<path class="line-overlay" d="${bPath}"/>`;
           }
-          s += `<path class="line-overlay" d="${bPath}"/>`;
 
           // Axis titles (small labels above each axis)
           s += `<text class="axis-label" x="${(M.left - 10).toFixed(1)}" y="${(M.top - 5).toFixed(1)}" text-anchor="start">${primarySym}</text>`;
-          s += `<text class="axis-label" x="${(W - M.right + 4).toFixed(1)}" y="${(M.top - 5).toFixed(1)}" text-anchor="start" style="fill:#ffb842">${state.overlaySym}</text>`;
+          if (hasOverlay) {
+            s += `<text class="axis-label" x="${(W - M.right + 4).toFixed(1)}" y="${(M.top - 5).toFixed(1)}" text-anchor="start" style="fill:#ffb842">${state.overlaySym}</text>`;
+          }
 
           svg.innerHTML = s;
 
-          // Legend with last prices
+          // Legend with last prices — primary is always shown, overlay
+          // chip is appended when a second symbol is active.
           const aLast = paired[paired.length - 1].a;
-          const bLast = paired[paired.length - 1].b;
-          legendEl.innerHTML =
+          let legend =
             `<span class="overlay-legend-item"><span class="overlay-legend-swatch" style="background:#6ee7ff"></span>` +
             `<span class="overlay-legend-sym">${primarySym}</span>` +
-            `<span class="overlay-legend-price">last ${fmtA(aLast)} (left axis)</span></span>` +
-            `<span class="overlay-legend-item"><span class="overlay-legend-swatch" style="background:#ffb842"></span>` +
-            `<span class="overlay-legend-sym">${state.overlaySym}</span>` +
-            `<span class="overlay-legend-price">last ${fmtB(bLast)} (right axis)</span></span>`;
+            `<span class="overlay-legend-price">last ${fmtA(aLast)}${hasOverlay ? ' (left axis)' : ''}</span></span>`;
+          if (hasOverlay) {
+            const bLast = paired[paired.length - 1].b;
+            legend +=
+              `<span class="overlay-legend-item"><span class="overlay-legend-swatch" style="background:#ffb842"></span>` +
+              `<span class="overlay-legend-sym">${state.overlaySym}</span>` +
+              `<span class="overlay-legend-price">last ${fmtB(bLast)} (right axis)</span></span>`;
+          }
+          legendEl.innerHTML = legend;
         }
 
         // Wire form submit → set overlaySym → render
@@ -4261,17 +4300,21 @@
           render();
         });
 
-        // Debounced resize -> re-render at new width
+        // Debounced resize -> re-render at new width. Fires always now
+        // (not only when an overlay is set) because the primary line is
+        // drawn on load and needs to reflow on width changes too.
         let rz = null;
         window.addEventListener('resize', () => {
           clearTimeout(rz);
-          rz = setTimeout(() => { if (state.overlaySym) render(); }, 150);
+          rz = setTimeout(render, 150);
         });
         if (typeof ResizeObserver !== 'undefined') {
-          new ResizeObserver(() => { if (state.overlaySym) render(); }).observe(svg);
+          new ResizeObserver(() => render()).observe(svg);
         }
 
-        showEmptyState();
+        // Kick off the primary-only render immediately so the reader sees
+        // this ticker's price chart the moment the section becomes visible.
+        render();
       }
 
       // -----------------------------------------------------------------
