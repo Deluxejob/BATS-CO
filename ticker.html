@@ -1177,15 +1177,16 @@
       text-transform: uppercase;
       background: rgba(16, 24, 33, 0.6);
       color: var(--term-text);
-      border: 1px solid var(--term-border);
+      border: 1px solid var(--term-amber);
       border-radius: 3px;
       padding: 0.22rem 0.4rem;
       width: 5.5rem;
       outline: none;
+      box-shadow: 0 0 0 2px rgba(255, 182, 88, 0.15);
     }
     .compare-add input::placeholder { color: var(--term-dim); font-weight: 500; }
-    .compare-add input:focus { border-color: var(--term-cyan); }
-    .compare-add input.err { border-color: var(--term-red); }
+    .compare-add input:focus { border-color: var(--term-amber); box-shadow: 0 0 0 2px rgba(255, 182, 88, 0.35); }
+    .compare-add input.err { border-color: var(--term-red); box-shadow: 0 0 0 2px rgba(255, 83, 116, 0.25); }
     .compare-add button {
       font: inherit;
       font-family: 'JetBrains Mono', ui-monospace, monospace;
@@ -1194,13 +1195,13 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       background: transparent;
-      color: var(--term-cyan);
-      border: 1px solid var(--term-cyan);
+      color: var(--term-amber);
+      border: 1px solid var(--term-amber);
       border-radius: 3px;
       padding: 0.22rem 0.5rem;
       cursor: pointer;
     }
-    .compare-add button:hover { background: rgba(110, 231, 255, 0.15); }
+    .compare-add button:hover { background: rgba(255, 182, 88, 0.15); }
 
     /* Custom chip removal — the "×" sits inside the chip and only pops
        out on hover so the row stays visually calm at rest. */
