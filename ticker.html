@@ -1931,6 +1931,72 @@
       height: 300px; color: var(--term-dim);
       font-family: ui-monospace, monospace; font-size: 0.9rem;
     }
+
+    /* ---------- Key Statistics table (Financials & Earnings card) ----------
+       Two-column layout mirrors Yahoo's Key Statistics page. Each column is
+       a list of grouped subsections (Fiscal Year / Profitability / etc.)
+       with rows of label + right-aligned value. Collapses to one column on
+       narrow viewports. */
+    .ks-loading {
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.5rem 0;
+    }
+    .ks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 3rem;
+    }
+    @media (max-width: 900px) {
+      .ks-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    }
+    .ks-col-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--term-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin: 0 0 0.6rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--term-border);
+    }
+    .ks-group {
+      margin-top: 0.8rem;
+    }
+    .ks-group:first-of-type { margin-top: 0; }
+    .ks-group-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin: 0 0 0.35rem;
+    }
+    .ks-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.25rem 0;
+      border-bottom: 1px dashed var(--term-border-soft);
+      font-size: 0.87rem;
+    }
+    .ks-row:last-child { border-bottom: none; }
+    .ks-label {
+      color: var(--term-dim);
+      flex: 1 1 auto;
+      padding-right: 0.75rem;
+    }
+    .ks-val {
+      color: var(--term-text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .ks-val.pos { color: var(--term-green); }
+    .ks-val.neg { color: var(--term-red); }
+    .ks-val.dim { color: var(--term-dim); }
   </style>
 </head>
 <body>
@@ -2324,12 +2390,17 @@
         </div>
       </section>
 
-      <!-- Financials & Earnings — quick TradingView income snapshot at the very
-           bottom of the page. Compact height (400px) since our own EPS charts
-           and valuation history above already cover the primary story. -->
+      <!-- Financials & Earnings — Yahoo Finance Key Statistics laid out
+           in the same two-column shape Yahoo itself uses. Sourced from
+           /api/analyst.keyStatistics (financialData + defaultKeyStatistics
+           + summaryDetail + majorHoldersBreakdown modules of Yahoo's
+           quoteSummary). Renders as tables; hides itself for ETFs / index
+           funds / anything without company-level financials. -->
       <section class="term-section" id="financialsSection">
-        <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, estimates</span></div>
-        <div class="term-panel"><div id="financialsWidgetMount"></div></div>
+        <div class="term-section-label">FINANCIALS &amp; EARNINGS <span class="sub">— revenue, EPS, ratios via Yahoo Finance</span></div>
+        <div class="term-panel">
+          <div id="keyStatsContent" class="ks-loading">Loading financials&hellip;</div>
+        </div>
       </section>
 
       <!-- Share strip — wiring injected by share-strip.js. URL / title /
@@ -4367,20 +4438,11 @@
         isTransparent: true,
       });
 
-      // 3) Financials & Earnings (Financials widget — revenue, EPS, estimates)
-      // Fixed height so the iframe reliably fills the standalone panel below
-      // Wall Street Ratings. (autosize:true fought us here — TradingView
-      // omits the intermediate wrapper div and the 100% chain breaks.)
-      mountTvWidget('financialsWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-financials.js', {
-        symbol: tvSymbol,
-        width: '100%',
-        height: 400,
-        colorTheme: 'dark',
-        isTransparent: true,
-        displayMode: 'regular',
-        largeChartUrl: '',
-        locale: 'en',
-      });
+      // 3) Financials & Earnings — Yahoo-sourced Key Statistics table
+      // renders from /api/analyst.keyStatistics inside renderAnalyst().
+      // The TradingView Financials widget that used to mount here was
+      // replaced so all financial numbers on the page come from a
+      // single, page-consistent source.
 
       // 4) Technical Analysis (buy/sell gauge)
       mountTvWidget('techWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js', {
@@ -5427,6 +5489,167 @@
             btn.textContent = expanded ? 'SHOW LESS ↑' : 'SHOW FULL PROFILE ↓';
           });
         }
+      }
+
+      // ----- Key Statistics table renderer -----
+      // Renders the Financials & Earnings card at the bottom of the page
+      // as a two-column table (Financial Highlights + Trading Information),
+      // matching the layout of Yahoo Finance's Key Statistics page. All
+      // data comes from analystData.keyStatistics — see api/analyst.js
+      // for field origins (financialData / defaultKeyStatistics /
+      // summaryDetail / majorHoldersBreakdown Yahoo modules).
+      function renderKeyStatistics(ks) {
+        const el = document.getElementById('keyStatsContent');
+        if (!el) return;
+        // If Yahoo gave us essentially nothing (unknown ticker, ETF with
+        // no company financials) — hide the whole section so we don't
+        // show an empty card.
+        const anyValue = ks && [
+          ks.revenue, ks.profitMargin, ks.marketCap, ks.trailingPE,
+          ks.week52High, ks.sharesOutstanding, ks.beta,
+        ].some(v => Number.isFinite(v));
+        const section = document.getElementById('financialsSection');
+        if (!anyValue) {
+          if (section) section.style.display = 'none';
+          return;
+        }
+
+        // ---- Formatters ----
+        // Match Yahoo's presentation: big money → 2 decimals + suffix
+        // (2.49B, 508.80M, 1.02T), percentages → 2 decimals + %, ratios
+        // → 2 decimals, share counts → M/B suffix, dates → M/D/YYYY.
+        const fmtMoney = (v) => {
+          if (!Number.isFinite(v)) return '—';
+          const abs = Math.abs(v);
+          const sign = v < 0 ? '-' : '';
+          if (abs >= 1e12) return sign + (abs / 1e12).toFixed(2) + 'T';
+          if (abs >= 1e9)  return sign + (abs / 1e9).toFixed(2)  + 'B';
+          if (abs >= 1e6)  return sign + (abs / 1e6).toFixed(2)  + 'M';
+          if (abs >= 1e3)  return sign + (abs / 1e3).toFixed(2)  + 'K';
+          return sign + abs.toFixed(2);
+        };
+        const fmtShares = (v) => {
+          if (!Number.isFinite(v)) return '—';
+          const abs = Math.abs(v);
+          if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+          if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+          if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+          return String(Math.round(v));
+        };
+        const fmtPct = (v) => Number.isFinite(v) ? (v * 100).toFixed(2) + '%' : '—';
+        const fmtNum = (v, d = 2) => Number.isFinite(v) ? v.toFixed(d) : '—';
+        const fmtPrice = (v) => Number.isFinite(v) ? v.toFixed(2) : '—';
+        const fmtDate = (unixSec) => {
+          if (!Number.isFinite(unixSec) || unixSec <= 0) return '—';
+          const d = new Date(unixSec * 1000);
+          return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '/' + d.getUTCFullYear();
+        };
+        // Colored pct — positive green, negative red. Used for growth / return %.
+        const pctCls = (v) => Number.isFinite(v) ? (v > 0 ? 'pos' : v < 0 ? 'neg' : '') : 'dim';
+
+        // Build a row. Optional 3rd arg = value class ('pos'/'neg'/'dim').
+        const row = (label, valHtml, cls) =>
+          '<div class="ks-row"><span class="ks-label">' + label +
+          '</span><span class="ks-val' + (cls ? ' ' + cls : '') + '">' + valHtml + '</span></div>';
+
+        // Build a subsection with title and rows array (each row is [label, value, optClass]).
+        const group = (title, rows) => {
+          const filled = rows.filter(r => r[1] !== '—');
+          if (!filled.length) return '';
+          return '<div class="ks-group"><h4 class="ks-group-title">' + title + '</h4>' +
+            filled.map(r => row(r[0], r[1], r[2])).join('') + '</div>';
+        };
+
+        // ---- LEFT column: Financial Highlights ----
+        const leftHtml =
+          '<h3 class="ks-col-title">Financial Highlights</h3>' +
+          group('Fiscal Year', [
+            ['Fiscal Year Ends',       fmtDate(ks.fiscalYearEnd)],
+            ['Most Recent Quarter',    fmtDate(ks.mostRecentQuarter)],
+          ]) +
+          group('Profitability', [
+            ['Profit Margin',          fmtPct(ks.profitMargin)],
+            ['Operating Margin (ttm)', fmtPct(ks.operatingMargin)],
+            ['Gross Margin (ttm)',     fmtPct(ks.grossMargin)],
+          ]) +
+          group('Management Effectiveness', [
+            ['Return on Assets (ttm)', fmtPct(ks.returnOnAssets)],
+            ['Return on Equity (ttm)', fmtPct(ks.returnOnEquity)],
+          ]) +
+          group('Income Statement', [
+            ['Revenue (ttm)',                    fmtMoney(ks.revenue)],
+            ['Revenue Per Share (ttm)',          fmtNum(ks.revenuePerShare)],
+            ['Quarterly Revenue Growth (yoy)',   fmtPct(ks.revenueGrowth), pctCls(ks.revenueGrowth)],
+            ['Gross Profit (ttm)',               fmtMoney(ks.grossProfit)],
+            ['EBITDA',                           fmtMoney(ks.ebitda)],
+            ['Net Income Avi to Common (ttm)',   fmtMoney(ks.netIncome)],
+            ['Diluted EPS (ttm)',                fmtNum(ks.dilutedEps)],
+            ['Quarterly Earnings Growth (yoy)',  fmtPct(ks.earningsGrowth), pctCls(ks.earningsGrowth)],
+          ]) +
+          group('Balance Sheet', [
+            ['Total Cash (mrq)',             fmtMoney(ks.totalCash)],
+            ['Total Cash Per Share (mrq)',   fmtNum(ks.totalCashPerShare)],
+            ['Total Debt (mrq)',             fmtMoney(ks.totalDebt)],
+            ['Total Debt/Equity (mrq)',      fmtNum(ks.debtToEquity)],
+            ['Current Ratio (mrq)',          fmtNum(ks.currentRatio)],
+            ['Book Value Per Share (mrq)',   fmtNum(ks.bookValuePerShare)],
+          ]) +
+          group('Cash Flow Statement', [
+            ['Operating Cash Flow (ttm)',   fmtMoney(ks.operatingCashflow)],
+            ['Levered Free Cash Flow (ttm)', fmtMoney(ks.freeCashflow)],
+          ]);
+
+        // ---- RIGHT column: Trading Information ----
+        const rightHtml =
+          '<h3 class="ks-col-title">Trading Information</h3>' +
+          group('Valuation Measures', [
+            ['Market Cap',              fmtMoney(ks.marketCap)],
+            ['Enterprise Value',        fmtMoney(ks.enterpriseValue)],
+            ['Trailing P/E',            fmtNum(ks.trailingPE)],
+            ['Forward P/E',             fmtNum(ks.forwardPE)],
+            ['PEG Ratio (5yr expected)', fmtNum(ks.pegRatio)],
+            ['Price/Sales (ttm)',       fmtNum(ks.priceToSales)],
+            ['Price/Book (mrq)',        fmtNum(ks.priceToBook)],
+            ['Enterprise Value/Revenue', fmtNum(ks.evToRevenue)],
+            ['Enterprise Value/EBITDA', fmtNum(ks.evToEbitda)],
+          ]) +
+          group('Stock Price History', [
+            ['Beta (5Y Monthly)',           fmtNum(ks.beta)],
+            ['52 Week Change',              fmtPct(ks.change52Week), pctCls(ks.change52Week)],
+            ['S&P 500 52-Week Change',      fmtPct(ks.sp500Change52Week), pctCls(ks.sp500Change52Week)],
+            ['52 Week High',                fmtPrice(ks.week52High)],
+            ['52 Week Low',                 fmtPrice(ks.week52Low)],
+            ['50-Day Moving Average',       fmtPrice(ks.day50Avg)],
+            ['200-Day Moving Average',      fmtPrice(ks.day200Avg)],
+          ]) +
+          group('Share Statistics', [
+            ['Avg Vol (3 month)',           fmtShares(ks.avgVol3Month)],
+            ['Avg Vol (10 day)',            fmtShares(ks.avgVol10Day)],
+            ['Shares Outstanding',          fmtShares(ks.sharesOutstanding)],
+            ['Implied Shares Outstanding',  fmtShares(ks.impliedShares)],
+            ['Float',                       fmtShares(ks.floatShares)],
+            ['% Held by Insiders',          fmtPct(ks.insidersPct)],
+            ['% Held by Institutions',      fmtPct(ks.institutionsPct)],
+          ]) +
+          group('Dividends & Splits', [
+            ['Forward Annual Dividend Rate',    fmtNum(ks.forwardDivRate)],
+            ['Forward Annual Dividend Yield',   fmtPct(ks.forwardDivYield)],
+            ['Trailing Annual Dividend Rate',   fmtNum(ks.trailingDivRate)],
+            ['Trailing Annual Dividend Yield',  fmtPct(ks.trailingDivYield)],
+            ['5 Year Average Dividend Yield',   Number.isFinite(ks.fiveYrAvgDivYield) ? ks.fiveYrAvgDivYield.toFixed(2) + '%' : '—'],
+            ['Payout Ratio',                    fmtPct(ks.payoutRatio)],
+            ['Dividend Date',                   fmtDate(ks.dividendDate)],
+            ['Ex-Dividend Date',                fmtDate(ks.exDividendDate)],
+            ['Last Split Factor',               ks.lastSplitFactor || '—'],
+            ['Last Split Date',                 fmtDate(ks.lastSplitDate)],
+          ]);
+
+        el.className = '';
+        el.innerHTML =
+          '<div class="ks-grid">' +
+            '<div>' + leftHtml + '</div>' +
+            '<div>' + rightHtml + '</div>' +
+          '</div>';
       }
 
       // ----- Earnings bar-chart renderer -----
@@ -6516,7 +6739,9 @@
           }
           // Hide the earnings + trend + revisions + growth + peers sections
           // when the API fails — nothing sensible to show without live data.
-          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection', 'insidersSection', 'institutionsSection', 'valuationSection'].forEach(id => {
+          // financialsSection is included because it now sources from the
+          // same /api/analyst payload (keyStatistics field).
+          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection', 'insidersSection', 'institutionsSection', 'valuationSection', 'financialsSection'].forEach(id => {
             const s = document.getElementById(id);
             if (s) s.style.display = 'none';
           });
@@ -6529,6 +6754,16 @@
         renderOverview(data && data.overview);
         // Same for the Company Profile panel.
         renderProfile(data && data.profile);
+        // Key Statistics table (Financials & Earnings card at page bottom).
+        // Handles ETFs / non-covered tickers by hiding itself when Yahoo
+        // returns essentially no financials.
+        try {
+          renderKeyStatistics(data && data.keyStatistics);
+        } catch (e) {
+          console.warn('renderKeyStatistics failed:', e);
+          const fs = document.getElementById('financialsSection');
+          if (fs) fs.style.display = 'none';
+        }
 
         // ETFs / indices / anything without company-level data: hide every
         // section that depends on per-company financials, insider filings,

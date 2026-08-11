@@ -456,6 +456,81 @@ export default async function handler(req, res) {
       pctChange:  toNum(o && o.pctChange),
     })).filter(x => x.name);
 
+    // Key Statistics — the full Yahoo Key Statistics page data, sourced
+    // from the same quoteSummary modules we already pull for the analyst
+    // and ownership sections. Feeds the "Financials & Earnings" card at
+    // the bottom of ticker.html (replaces the old TradingView iframe).
+    // All money values are raw dollars, percentages are decimals
+    // (0.1768 = 17.68%), dates are unix seconds.
+    const keyStatistics = {
+      // Fiscal calendar
+      fiscalYearEnd:      toNum(ks.lastFiscalYearEnd),
+      mostRecentQuarter:  toNum(ks.mostRecentQuarter),
+      // Profitability
+      profitMargin:       toNum(fd.profitMargins),
+      operatingMargin:    toNum(fd.operatingMargins),
+      grossMargin:        toNum(fd.grossMargins),
+      // Management effectiveness
+      returnOnAssets:     toNum(fd.returnOnAssets),
+      returnOnEquity:     toNum(fd.returnOnEquity),
+      // Income statement (ttm)
+      revenue:            toNum(fd.totalRevenue),
+      revenuePerShare:    toNum(fd.revenuePerShare),
+      revenueGrowth:      toNum(fd.revenueGrowth),
+      grossProfit:        toNum(fd.grossProfits),
+      ebitda:             toNum(fd.ebitda),
+      netIncome:          toNum(ks.netIncomeToCommon),
+      dilutedEps:         toNum(ks.trailingEps),
+      earningsGrowth:     toNum(ks.earningsQuarterlyGrowth),
+      // Balance sheet (mrq)
+      totalCash:          toNum(fd.totalCash),
+      totalCashPerShare:  toNum(fd.totalCashPerShare),
+      totalDebt:          toNum(fd.totalDebt),
+      debtToEquity:       toNum(fd.debtToEquity),
+      currentRatio:       toNum(fd.currentRatio),
+      bookValuePerShare:  toNum(ks.bookValue),
+      // Cash flow
+      operatingCashflow:  toNum(fd.operatingCashflow),
+      freeCashflow:       toNum(fd.freeCashflow),
+      // Trading — Stock Price History
+      beta:               toNum(ks.beta) || toNum(sdet.beta),
+      change52Week:       toNum(ks['52WeekChange']),
+      sp500Change52Week:  toNum(ks.SandP52WeekChange),
+      week52High:         toNum(sdet.fiftyTwoWeekHigh),
+      week52Low:          toNum(sdet.fiftyTwoWeekLow),
+      day50Avg:           toNum(sdet.fiftyDayAverage),
+      day200Avg:          toNum(sdet.twoHundredDayAverage),
+      // Share statistics
+      avgVol3Month:       toNum(sdet.averageVolume),
+      avgVol10Day:        toNum(sdet.averageVolume10days),
+      sharesOutstanding:  toNum(ks.sharesOutstanding),
+      impliedShares:      toNum(ks.impliedSharesOutstanding),
+      floatShares:        toNum(ks.floatShares),
+      insidersPct:        toNum(mhb.insidersPercentHeld),
+      institutionsPct:    toNum(mhb.institutionsPercentHeld),
+      // Dividends & Splits
+      forwardDivRate:     toNum(sdet.dividendRate),
+      forwardDivYield:    toNum(sdet.dividendYield),
+      trailingDivRate:    toNum(sdet.trailingAnnualDividendRate),
+      trailingDivYield:   toNum(sdet.trailingAnnualDividendYield),
+      fiveYrAvgDivYield:  toNum(sdet.fiveYearAvgDividendYield),
+      payoutRatio:        toNum(sdet.payoutRatio),
+      dividendDate:       toNum(sdet.dividendDate),
+      exDividendDate:     toNum(cev.exDividendDate) || toNum(sdet.exDividendDate),
+      lastSplitFactor:    String((ks.lastSplitFactor) || '').trim(),
+      lastSplitDate:      toNum(ks.lastSplitDate),
+      // Valuation
+      marketCap:          toNum(sdet.marketCap),
+      enterpriseValue:    toNum(ks.enterpriseValue),
+      trailingPE:         toNum(sdet.trailingPE),
+      forwardPE:          toNum(ks.forwardPE) || toNum(sdet.forwardPE),
+      pegRatio:           toNum(ks.pegRatio),
+      priceToSales:       toNum(sdet.priceToSalesTrailing12Months),
+      priceToBook:        toNum(ks.priceToBook),
+      evToRevenue:        toNum(ks.enterpriseToRevenue),
+      evToEbitda:         toNum(ks.enterpriseToEbitda),
+    };
+
     const payload = {
       symbol: raw,
       hasAnalysts: (Number(fd.numberOfAnalystOpinions && fd.numberOfAnalystOpinions.raw) || totalRatings) > 0,
@@ -481,6 +556,8 @@ export default async function handler(req, res) {
       insiders,
       // Top institutional holders (Vanguard, BlackRock, etc.).
       institutions,
+      // Full Yahoo Key Statistics — feeds the Financials & Earnings card.
+      keyStatistics,
     };
 
     res.setHeader('Access-Control-Allow-Origin', '*');
