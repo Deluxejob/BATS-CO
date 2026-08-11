@@ -67,6 +67,9 @@ jobs:
       - name: Build stitched HY OAS series (FRED + HYG/TLT proxy back to 2007)
         run: python scripts/build-hy-oas-proxy.py
 
+      - name: Refresh CNN Fear & Greed history (whit3rabbit mirror, CNN live fallback)
+        run: python scripts/update-fear-greed.py
+
       - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)
         run: python scripts/update-umcsent.py
 
@@ -102,6 +105,9 @@ jobs:
 
       - name: Regenerate BATS daily history — Nasdaq 100
         run: python scripts/build-bats-history.py --market=nasdaq
+
+      - name: Regenerate Signal Testing backtest (CNN F&G + BATS strategies)
+        run: python scripts/backtest-signals.py
 
       - name: Commit and push if anything changed
         run: |

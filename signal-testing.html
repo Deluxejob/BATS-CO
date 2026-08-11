@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Testing — BATS.CO</title>
+  <meta name="description" content="Head-to-head backtest of CNN Fear &amp; Greed vs BATS over 15 years of S&amp;P 500 daily data. Which sentiment signals actually beat buy-and-hold?" />
+  <link rel="canonical" href="https://bats.co/signal-testing.html">
+  <meta property="og:site_name" content="BATS.CO">
+  <meta property="og:title" content="Signal Testing — BATS.CO">
+  <meta property="og:description" content="Head-to-head backtest of CNN Fear &amp; Greed vs BATS over 15 years. Which sentiment signals actually beat buy-and-hold?">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bats.co/signal-testing.html">
+  <meta property="og:image" content="https://bats.co/og-card.png">
+  <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Signal Testing — BATS.CO">
+  <meta name="twitter:description" content="Head-to-head backtest of CNN Fear &amp; Greed vs BATS over 15 years. Which sentiment signals actually beat buy-and-hold?">
+  <meta name="twitter:image" content="https://bats.co/og-card.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ---------- Assumptions callout ---------- */
+    .st-assume {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--amber);
+      border-radius: 6px;
+      padding: 0.9rem 1.1rem;
+      margin: 1rem 0 2rem;
+    }
+    .st-assume h3 {
+      margin: 0 0 0.5rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--amber);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .st-assume ul { margin: 0; padding-left: 1.2rem; }
+    .st-assume li { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; margin: 0.15rem 0; }
+
+    /* ---------- Strategy comparison table ---------- */
+    .st-table-wrap { overflow-x: auto; margin: 0.5rem 0 1.5rem; }
+    .st-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      min-width: 780px;
+    }
+    .st-table th, .st-table td {
+      padding: 0.55rem 0.7rem;
+      text-align: right;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .st-table th:first-child, .st-table td:first-child {
+      text-align: left;
+      max-width: 260px;
+      white-space: normal;
+    }
+    .st-table th {
+      background: var(--bg-card);
+      color: var(--text-dim);
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      position: sticky; top: 0;
+    }
+    .st-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .st-strat-name { color: var(--fg); font-weight: 700; }
+    .st-strat-desc {
+      display: block;
+      color: var(--text-dim);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 400;
+      margin-top: 0.15rem;
+      line-height: 1.4;
+    }
+    .st-val.pos { color: var(--green, #22d39a); }
+    .st-val.neg { color: var(--red,   #ff5374); }
+    .st-val.dim { color: var(--text-dim); }
+    .st-row-baseline td { background: rgba(255, 182, 88, 0.06); }
+    .st-row-baseline .st-strat-name { color: var(--amber); }
+    .st-badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-left: 0.5rem;
+    }
+    .st-badge.beat { background: rgba(34, 211, 154, 0.15); color: var(--green, #22d39a); border: 1px solid rgba(34, 211, 154, 0.4); }
+    .st-badge.miss { background: rgba(255, 83, 116, 0.12); color: var(--red, #ff5374); border: 1px solid rgba(255, 83, 116, 0.35); }
+    .st-badge.def  { background: rgba(110, 231, 255, 0.12); color: var(--cyan, #6ee7ff); border: 1px solid rgba(110, 231, 255, 0.35); }
+
+    /* ---------- Equity curves chart ---------- */
+    .st-equity-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin: 0.5rem 0 1rem;
+    }
+    .st-equity-chart { width: 100%; height: 380px; display: block; }
+    .st-equity-chart .grid-line { stroke: var(--border); stroke-width: 1; opacity: 0.4; stroke-dasharray: 2 3; }
+    .st-equity-chart .axis-label { fill: var(--text-dim); font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+    .st-legend {
+      display: flex; flex-wrap: wrap; gap: 0.5rem 1.3rem;
+      margin-top: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+    }
+    .st-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none; }
+    .st-legend-item.hidden { opacity: 0.35; }
+    .st-legend-swatch { width: 16px; height: 3px; border-radius: 2px; }
+
+    /* ---------- Forward-returns tables ---------- */
+    .st-fwd-wrap { overflow-x: auto; margin: 0.4rem 0 1.5rem; }
+    .st-fwd {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      min-width: 640px;
+    }
+    .st-fwd th, .st-fwd td {
+      padding: 0.5rem 0.7rem;
+      text-align: right;
+      border-bottom: 1px solid var(--border);
+    }
+    .st-fwd th:first-child, .st-fwd td:first-child { text-align: left; }
+    .st-fwd th {
+      background: var(--bg-card);
+      color: var(--text-dim);
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .st-fwd .cell-days { color: var(--text-dim); }
+    .st-fwd .cell-ret.pos { color: var(--green, #22d39a); }
+    .st-fwd .cell-ret.neg { color: var(--red,   #ff5374); }
+    .st-fwd .cell-hit { color: var(--text-dim); font-size: 0.72rem; margin-left: 0.25rem; }
+
+    /* ---------- Takeaways block ---------- */
+    .st-takeaway {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .st-takeaway h3 {
+      margin: 0 0 0.6rem;
+      color: var(--cyan, #6ee7ff);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .st-takeaway p { margin: 0.5rem 0; line-height: 1.55; color: var(--fg); }
+    .st-takeaway strong { color: var(--amber); }
+
+    /* ---------- Combined-low card ---------- */
+    .st-combo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .st-combo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .st-combo-card.hero { border-color: var(--amber); border-width: 2px; }
+    .st-combo-card h4 {
+      margin: 0 0 0.25rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .st-combo-card.hero h4 { color: var(--amber); }
+    .st-combo-days {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin: 0 0 0.75rem;
+    }
+    .st-combo-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.35rem 0;
+      border-bottom: 1px dashed var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    .st-combo-row:last-child { border-bottom: none; }
+    .st-combo-row .lbl { color: var(--text-dim); }
+    .st-combo-row .val.pos { color: var(--green, #22d39a); font-weight: 700; }
+    .st-combo-row .val.neg { color: var(--red,   #ff5374); font-weight: 700; }
+    .st-combo-row .hit { color: var(--text-dim); font-size: 0.72rem; margin-left: 0.4rem; }
+
+    .st-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="quotes.html">Quotes</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="markets.html">Dashboard</a>
+      <a href="sector-rotation.html">Sector Rotation</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="risk-watch.html">Risk Watch</a>
+      <a href="market-ratios.html">Market Ratios</a>
+      <a href="valuations.html">Valuations</a>
+      <a href="consumer.html">Consumer</a>
+      <a href="signal-testing.html">Signal Testing</a>
+      <a href="pe.html">Private Equity</a>
+      <a href="pelosi.html">Pelosi</a>
+    </nav>
+    <script>
+      (function(){
+        const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+        const isHome = here === 'index.html';
+        document.querySelectorAll('.site-nav a').forEach(a => {
+          const raw = (a.getAttribute('href') || '').toLowerCase();
+          const target = raw.split('/').pop().split('#')[0];
+          if (isHome && raw.startsWith('#'))       a.classList.add('active');
+          else if (target && target === here)       a.classList.add('active');
+        });
+      })();
+    </script>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">SIGNAL TESTING</p>
+      <h1>Does buying fear actually work?</h1>
+      <p class="lede">
+        We tested ten different market-timing strategies against 15+ years of daily
+        S&amp;P 500 data using CNN&rsquo;s Fear &amp; Greed Index and our own BATS
+        score. Some of the intuitive rules people quote (&ldquo;buy when everyone is
+        fearful&rdquo;) don&rsquo;t actually beat plain buy-and-hold on their own.
+        A few combinations do. Nothing here is cherry-picked &mdash; every strategy
+        we ran is in the table below, including the losers.
+      </p>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>How to read this page</h2>
+        <p>The Strategy Comparison table shows what each rule would have done over the full test window. Below it, the equity curves let you see when each strategy diverged from buy-and-hold. Then we drill into forward returns after every reading of each index &mdash; that&rsquo;s the honest test of whether extreme sentiment predicts anything.</p>
+      </div>
+      <div class="st-assume">
+        <h3>Ground rules</h3>
+        <ul id="stAssumeList"></ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Strategy comparison</h2>
+        <p>Every strategy runs on the same trading days from January 2011 to today. <strong>Buy &amp; Hold is the benchmark</strong> &mdash; anything below it on CAGR is a loser on total return, though some make the trade-off worthwhile by cutting drawdown or time in market. The green &ldquo;BEATS BASELINE&rdquo; badge marks strategies whose CAGR came in above buy-and-hold.</p>
+      </div>
+      <div class="st-table-wrap">
+        <table class="st-table" id="stTable">
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>CAGR</th>
+              <th>Total return</th>
+              <th>Max drawdown</th>
+              <th>Sharpe</th>
+              <th>Days in market</th>
+              <th>Entries</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Equity curves</h2>
+        <p>Starting with $1 on day one, what would each strategy have grown to? Click a legend swatch to hide or show that curve.</p>
+      </div>
+      <div class="st-equity-wrap">
+        <svg id="stEquityChart" class="st-equity-chart" viewBox="0 0 1000 380" preserveAspectRatio="none"></svg>
+        <div class="st-legend" id="stEquityLegend"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>The money finding &mdash; combined extremes</h2>
+        <p>
+          Individual strategies mostly fail to beat buy-and-hold. But look what happens
+          when we don&rsquo;t <em>time</em> the market and instead just ask &ldquo;what
+          did SPX do in the days AFTER a signal fired?&rdquo; When
+          <strong>both</strong> indicators were at extreme fear at the same time
+          (CNN&nbsp;&le;&nbsp;25 AND BATS&nbsp;&le;&nbsp;30), the market&rsquo;s
+          forward returns were far above average. Not every dip is a buying
+          opportunity &mdash; but when both fear gauges agree, history says it usually is.
+        </p>
+      </div>
+      <div class="st-combo-grid" id="stComboGrid"></div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Forward returns by CNN F&amp;G bucket</h2>
+        <p>For every day CNN was in the given bucket, what did SPX do 1 week / 1 month / 3 months / 6 months later on average? The small percentage after each return is the hit rate &mdash; how often that horizon was positive.</p>
+      </div>
+      <div class="st-fwd-wrap">
+        <table class="st-fwd" id="stCnnFwd">
+          <thead>
+            <tr>
+              <th>Bucket</th>
+              <th>Days</th>
+              <th>1W</th><th>1M</th><th>3M</th><th>6M</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Forward returns by BATS bucket</h2>
+        <p>Same test, using BATS scores. Note BATS Extreme Fear (below 20) is rare &mdash; it only happened about 32 times in 15 years &mdash; so the small sample deserves caution, but the forward returns are strikingly consistent.</p>
+      </div>
+      <div class="st-fwd-wrap">
+        <table class="st-fwd" id="stBatsFwd">
+          <thead>
+            <tr>
+              <th>Bucket</th>
+              <th>Days</th>
+              <th>1W</th><th>1M</th><th>3M</th><th>6M</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="st-takeaway">
+        <h3>What we actually learned</h3>
+        <p><strong>1. Buy-and-hold is very hard to beat.</strong> None of the pure &ldquo;buy fear&rdquo; strategies matched the S&amp;P 500&rsquo;s total return, because sitting on cash while the market grinds higher costs a lot.</p>
+        <p><strong>2. A simple trend filter is the best risk-adjusted strategy.</strong> Just being invested when SPX is above its 200-day moving average produced most of the return with a much smaller drawdown &mdash; and it doesn&rsquo;t need any sentiment input at all.</p>
+        <p><strong>3. Extreme readings DO predict better forward returns.</strong> The forward-returns tables show clearly that days of extreme fear were followed by above-average returns on every horizon. That&rsquo;s a real signal.</p>
+        <p><strong>4. The best use of both indicators isn&rsquo;t timing &mdash; it&rsquo;s conviction.</strong> When both CNN and BATS agreed on extreme fear (~116 days out of 3,899), the 12-month forward return averaged nearly 28%, with a 97% hit rate. That&rsquo;s not a signal to sit on cash waiting for it; it&rsquo;s a signal to add more when it happens.</p>
+        <p><strong>5. Extreme greed is harder to fade.</strong> CNN Extreme Greed still had positive forward returns most of the time &mdash; markets can stay greedy for a long time. Selling on greed alone was a losing move over this period.</p>
+      </div>
+    </section>
+
+    <p class="st-meta" id="stMeta"></p>
+
+    <div data-share-strip></div>
+
+  </main>
+
+  <footer class="site-footer"></footer>
+  <script src="footer.js"></script>
+  <script src="share-strip.js"></script>
+
+  <script>
+    // ---- Formatters ----
+    const fmtPct  = (v, d=2) => (v == null || !Number.isFinite(v)) ? '—' : (v > 0 ? '+' : '') + (v * 100).toFixed(d) + '%';
+    const fmtNum  = (v, d=2) => (v == null || !Number.isFinite(v)) ? '—' : v.toFixed(d);
+    const fmtInt  = (v)      => (v == null || !Number.isFinite(v)) ? '—' : Math.round(v).toLocaleString();
+    const clsSign = (v) => v == null ? 'dim' : v > 0 ? 'pos' : v < 0 ? 'neg' : 'dim';
+
+    // Distinct color palette for equity curves — amber first (baseline),
+    // then a diverging set so each line stays readable when many overlap.
+    const COLORS = ['#ffb658', '#6ee7ff', '#22d39a', '#c78bff', '#ff9f66', '#4bd1ff', '#ffd166', '#ff5374', '#8ce88c', '#a97fff'];
+
+    (async function loadSignalBacktest() {
+      let d;
+      try {
+        const r = await fetch('data/signal_backtest.json?nc=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        d = await r.json();
+      } catch (e) {
+        document.getElementById('stTable').querySelector('tbody').innerHTML =
+          '<tr><td colspan="7" style="color:var(--text-dim);text-align:center;padding:1.5rem">Failed to load backtest data: ' + (e.message || e) + '</td></tr>';
+        return;
+      }
+
+      // ---- Assumptions ----
+      const ul = document.getElementById('stAssumeList');
+      ul.innerHTML = (d.assumptions || []).map(a => '<li>' + a + '</li>').join('');
+
+      // ---- Strategy table ----
+      const baseline = d.strategies.find(s => s.name === 'Buy_and_Hold');
+      const baseCagr = baseline ? baseline.cagr : 0;
+      const tbody = document.getElementById('stTable').querySelector('tbody');
+      const rowsHtml = d.strategies.map((s) => {
+        const isBase = s.name === 'Buy_and_Hold';
+        const beats = !isBase && s.cagr > baseCagr;
+        let badge = '';
+        if (isBase) badge = '<span class="st-badge def">BASELINE</span>';
+        else if (beats) badge = '<span class="st-badge beat">BEATS BASELINE</span>';
+        else if (s.name === 'Trend_Only') badge = '<span class="st-badge def">DEFENSIVE</span>';
+        return '<tr class="' + (isBase ? 'st-row-baseline' : '') + '">' +
+          '<td><span class="st-strat-name">' + prettyName(s.name) + '</span>' + badge +
+            '<span class="st-strat-desc">' + s.description + '</span></td>' +
+          '<td class="st-val ' + clsSign(s.cagr) + '">' + fmtPct(s.cagr) + '</td>' +
+          '<td class="st-val ' + clsSign(s.totalReturn) + '">' + fmtPct(s.totalReturn, 1) + '</td>' +
+          '<td class="st-val neg">' + fmtPct(s.maxDrawdown, 1) + '</td>' +
+          '<td class="st-val ' + (s.sharpe > 0.5 ? 'pos' : 'dim') + '">' + fmtNum(s.sharpe) + '</td>' +
+          '<td class="st-val dim">' + fmtPct(s.pctInMarket, 0) + '</td>' +
+          '<td class="st-val dim">' + fmtInt(s.entries) + '</td>' +
+        '</tr>';
+      }).join('');
+      tbody.innerHTML = rowsHtml;
+
+      // ---- Equity curve chart ----
+      drawEquityChart(d.strategies);
+
+      // ---- Combined-low money finding ----
+      const combo = d.combinedLowForward;
+      const comboCards = [
+        {label: 'Both extreme (CNN ≤ 25 AND BATS ≤ 30)', data: combo.both_low,     hero: true},
+        {label: 'CNN low only (CNN ≤ 25, BATS > 30)',    data: combo.cnn_low_only, hero: false},
+        {label: 'BATS low only (BATS ≤ 30, CNN > 25)',   data: combo.bats_low_only, hero: false},
+      ];
+      const comboGrid = document.getElementById('stComboGrid');
+      comboGrid.innerHTML = comboCards.map(c => {
+        const rows = ['1w', '1m', '3m', '6m', '12m'].map(h => {
+          const v = c.data[h], hit = c.data[h + '_hit'];
+          return '<div class="st-combo-row">' +
+            '<span class="lbl">' + h.toUpperCase() + ' forward SPX</span>' +
+            '<span class="val ' + clsSign(v) + '">' + fmtPct(v) +
+              '<span class="hit">' + (hit != null ? Math.round(hit * 100) + '% hit' : '') + '</span>' +
+            '</span></div>';
+        }).join('');
+        return '<div class="st-combo-card ' + (c.hero ? 'hero' : '') + '">' +
+          '<h4>' + c.label + '</h4>' +
+          '<p class="st-combo-days">' + c.data.days + ' matching days over the test window</p>' +
+          rows + '</div>';
+      }).join('');
+
+      // ---- Forward returns tables ----
+      renderFwdTable('stCnnFwd', d.forwardReturnsCNN);
+      renderFwdTable('stBatsFwd', d.forwardReturnsBATS);
+
+      // ---- Meta line ----
+      const dt = new Date((d.generatedAt || 0) * 1000);
+      document.getElementById('stMeta').textContent =
+        'Test window ' + d.windowStart + ' → ' + d.windowEnd +
+        ' · ' + d.tradingDays.toLocaleString() + ' trading days' +
+        ' · Backtest regenerated ' + dt.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    })();
+
+    function prettyName(k) {
+      return k.replace(/_/g, ' ').replace(/\bplus\b/gi, '+').replace(/\band\b/gi, 'AND').replace(/\bor\b/gi, 'OR');
+    }
+
+    function renderFwdTable(id, rows) {
+      const tbody = document.getElementById(id).querySelector('tbody');
+      tbody.innerHTML = rows.map(r => {
+        const cell = (v, hit) => v == null
+          ? '<td class="cell-days">—</td>'
+          : '<td class="cell-ret ' + clsSign(v) + '">' + fmtPct(v) +
+            (hit != null ? '<span class="cell-hit">' + Math.round(hit * 100) + '%</span>' : '') + '</td>';
+        return '<tr>' +
+          '<td>' + r.bucket + '</td>' +
+          '<td class="cell-days">' + r.days + '</td>' +
+          cell(r['1w'], r['1w_hit']) +
+          cell(r['1m'], r['1m_hit']) +
+          cell(r['3m'], r['3m_hit']) +
+          cell(r['6m'], r['6m_hit']) +
+        '</tr>';
+      }).join('');
+    }
+
+    function drawEquityChart(strategies) {
+      const svg = document.getElementById('stEquityChart');
+      const legend = document.getElementById('stEquityLegend');
+      const W = 1000, H = 380;
+      const PAD_L = 46, PAD_R = 12, PAD_T = 12, PAD_B = 26;
+      const plotW = W - PAD_L - PAD_R;
+      const plotH = H - PAD_T - PAD_B;
+
+      // Aligned x-axis: all curves share the same date range, use the
+      // baseline curve to compute x positions.
+      const base = strategies.find(s => s.name === 'Buy_and_Hold') || strategies[0];
+      const t0 = Date.parse(base.equityCurve[0].d);
+      const t1 = Date.parse(base.equityCurve[base.equityCurve.length - 1].d);
+      // Global y-range across visible strategies (log scale — equity
+      // multiplies over 15 years so linear collapses the early years).
+      const allVals = strategies.flatMap(s => s.equityCurve.map(p => p.e)).filter(v => v > 0);
+      const yMin = Math.min(...allVals);
+      const yMax = Math.max(...allVals);
+      const yLo = Math.max(0.6, Math.floor(yMin * 10) / 10);
+      const yHi = Math.ceil(yMax);
+
+      const xFor = (t) => PAD_L + ((t - t0) / (t1 - t0)) * plotW;
+      const yFor = (v) => {
+        const lo = Math.log(yLo), hi = Math.log(yHi);
+        return PAD_T + (1 - (Math.log(Math.max(v, yLo)) - lo) / (hi - lo)) * plotH;
+      };
+
+      // Gridlines at 1x, 2x, 3x, 5x, 10x
+      const yTicks = [1, 2, 3, 5, 8, 10, 15].filter(v => v >= yLo && v <= yHi);
+      let grid = '';
+      for (const v of yTicks) {
+        const y = yFor(v);
+        grid += '<line class="grid-line" x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + y + '" y2="' + y + '"/>';
+        grid += '<text class="axis-label" x="' + (PAD_L - 6) + '" y="' + (y + 3) + '" text-anchor="end">$' + v + '</text>';
+      }
+      // X axis year labels
+      const startYear = new Date(t0).getUTCFullYear();
+      const endYear   = new Date(t1).getUTCFullYear();
+      let xTicks = '';
+      for (let yr = startYear; yr <= endYear; yr += 2) {
+        const ts = Date.UTC(yr, 0, 1);
+        if (ts < t0 || ts > t1) continue;
+        const x = xFor(ts);
+        xTicks += '<line class="grid-line" x1="' + x + '" x2="' + x + '" y1="' + PAD_T + '" y2="' + (H - PAD_B) + '" opacity="0.15"/>';
+        xTicks += '<text class="axis-label" x="' + x + '" y="' + (H - 8) + '" text-anchor="middle">' + yr + '</text>';
+      }
+
+      // Draw one path per strategy
+      let paths = '';
+      strategies.forEach((s, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        let d = '';
+        s.equityCurve.forEach((p, i) => {
+          const x = xFor(Date.parse(p.d));
+          const y = yFor(p.e);
+          d += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ' ' + y.toFixed(2) + ' ';
+        });
+        paths += '<path data-strat="' + s.name + '" d="' + d + '" fill="none" stroke="' + color +
+          '" stroke-width="' + (s.name === 'Buy_and_Hold' ? 2.4 : 1.4) + '" stroke-linejoin="round" stroke-linecap="round" opacity="0.92"/>';
+      });
+
+      svg.innerHTML = grid + xTicks + paths;
+
+      // Legend — clickable to hide/show
+      legend.innerHTML = strategies.map((s, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        return '<span class="st-legend-item" data-strat="' + s.name + '">' +
+          '<span class="st-legend-swatch" style="background:' + color + '"></span>' +
+          prettyName(s.name) + ' ($' + s.equityFinal + ')' +
+          '</span>';
+      }).join('');
+      legend.querySelectorAll('.st-legend-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const strat = item.getAttribute('data-strat');
+          const path = svg.querySelector('[data-strat="' + strat + '"]');
+          if (!path) return;
+          const hidden = item.classList.toggle('hidden');
+          path.style.display = hidden ? 'none' : '';
+        });
+      });
+    }
+  </script>
+</body>
+</html>
