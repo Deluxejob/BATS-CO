@@ -4933,44 +4933,82 @@
           return;
         }
 
-        // --- Compute historical forward-hindsight P/E (weekly) ---
+        // --- Compute historical TRAILING P/E (weekly) ---
+        // Solid line = price at time T divided by the sum of the four most
+        // recent quarterly actuals AT OR BEFORE T (i.e. what a real reader
+        // could have known that day). Runs all the way up to today because
+        // we don't need any future data.
+        //
+        // Previously this was a "hindsight forward PE" (price / next 4
+        // quarters of actual EPS), which ended ~1 year ago because 4 future
+        // quarters had to exist. That opened a huge time gap between the
+        // solid endpoint and the dashed forward dot — any price move during
+        // that year could dominate and make the dashed line go UP even for
+        // stocks with growing EPS. Trailing PE removes the gap and matches
+        // the standard "how does forward P/E compare to today's trailing P/E?"
+        // reading readers expect.
         const quarterlyMs = quarterly.map(q => ({ ms: Date.parse(q.end), eps: q.eps }));
         const historical = [];
         // Sample ~weekly by skipping 5 daily points at a time
         for (let i = 0; i < priceSeries.length; i += 5) {
           const [ts, close] = priceSeries[i];
           const T = ts * 1000;
-          const future = [];
-          for (const q of quarterlyMs) {
-            if (q.ms > T) {
-              future.push(q);
-              if (future.length === 4) break;
+          // Walk backwards through quarterlyMs to find the 4 most recent
+          // quarters with q.ms <= T. quarterlyMs is chronological
+          // (oldest→newest) as returned by /api/eps-history.
+          const past = [];
+          for (let j = quarterlyMs.length - 1; j >= 0; j--) {
+            if (quarterlyMs[j].ms <= T) {
+              past.push(quarterlyMs[j]);
+              if (past.length === 4) break;
             }
           }
-          if (future.length < 4) continue;  // no 4 subsequent quarters — stop
-          const fwdEps = future.reduce((s, q) => s + q.eps, 0);
-          if (fwdEps <= 0.01) continue;
-          historical.push({ ts, pe: close / fwdEps });
+          if (past.length < 4) continue;   // no 4 prior quarters yet — early in history
+          const ttmEps = past.reduce((s, q) => s + q.eps, 0);
+          if (ttmEps <= 0.01) continue;
+          historical.push({ ts, pe: close / ttmEps });
         }
 
         // --- Current-forward analyst estimate ---
-        // Prefer sum of next 4 quarterly consensus (Nasdaq forecast). Fall
-        // back to Yahoo's +1y annual estimate. Fall back further to +1q ×
-        // 4 if that's all we've got. Null if nothing usable.
+        // PREFER Yahoo's +1y next-fiscal-year consensus. It's a single
+        // well-anchored full-year number and matches the standard
+        // "forward P/E" reported everywhere else on the web.
+        //
+        // Fall back to the sum of next 4 quarterly consensus values ONLY
+        // if we can sanity-check that the sum is close to Yahoo's annual
+        // (or if we have no annual at all). Nasdaq's per-quarter consensus
+        // often has holes — some quarters return 0 or null — which makes
+        // a raw sum wildly under-count and produces a forward P/E that
+        // looks like the stock is trading at 70×+ when it isn't.
         let currentFwdEps = null;
         let fwdSourceLabel = '';
         const fc = analystData && analystData.earnings && analystData.earnings.forecast;
         const yQ = analystData && analystData.earnings && analystData.earnings.annual;
+        let yahooPlus1y = null;
+        if (Array.isArray(yQ)) {
+          const plus1y = yQ.find(y => y && y.period === '+1y');
+          if (plus1y && Number.isFinite(Number(plus1y.eps))) yahooPlus1y = Number(plus1y.eps);
+        }
+        if (yahooPlus1y != null && yahooPlus1y > 0.01) {
+          currentFwdEps = yahooPlus1y;
+          fwdSourceLabel = 'Yahoo +1y consensus';
+        }
+        // Nasdaq quarterly sum as an override ONLY when it's within 20%
+        // of the Yahoo annual (proving it's a complete 4-quarter set).
         if (fc && Array.isArray(fc.quarterly) && fc.quarterly.length >= 4) {
           const nextFour = fc.quarterly.slice(0, 4);
           const sum = nextFour.reduce((s, q) => s + (Number(q.eps) || 0), 0);
-          if (sum > 0.01) { currentFwdEps = sum; fwdSourceLabel = 'Nasdaq consensus'; }
-        }
-        if (currentFwdEps == null && Array.isArray(yQ)) {
-          const plus1y = yQ.find(y => y && y.period === '+1y');
-          if (plus1y && Number.isFinite(Number(plus1y.eps))) {
-            currentFwdEps = Number(plus1y.eps);
-            fwdSourceLabel = 'Yahoo +1y consensus';
+          if (sum > 0.01) {
+            if (currentFwdEps == null) {
+              currentFwdEps = sum;
+              fwdSourceLabel = 'Nasdaq consensus';
+            } else if (Math.abs(sum - yahooPlus1y) / yahooPlus1y < 0.20) {
+              // Nasdaq sum agrees with Yahoo annual — prefer the more
+              // granular per-quarter number.
+              currentFwdEps = sum;
+              fwdSourceLabel = 'Nasdaq consensus';
+            }
+            // Otherwise keep Yahoo annual — Nasdaq quarterly likely has holes
           }
         }
         const currentPrice = priceSeries[priceSeries.length - 1][1];
