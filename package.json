@@ -1,0 +1,17 @@
+{
+  "name": "bats-co",
+  "version": "1.0.0",
+  "description": "BATS — Benchmark Asset and Trend Scenarios",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build needed'"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^1.4.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18"
+  }
+}
