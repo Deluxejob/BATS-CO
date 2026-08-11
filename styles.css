@@ -114,11 +114,12 @@ h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); }
   font-size: .95rem;
 }
 .brand .breadcrumb { flex-basis: 100%; margin: .35rem 0 0; }
-.site-nav { display: flex; gap: 1.25rem; }
+.site-nav { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; align-items: center; }
 .site-nav a {
   color: var(--text-dim);
   font-size: .95rem;
   font-weight: 500;
+  white-space: nowrap;
   padding: .35rem .15rem;
   border-bottom: 2px solid transparent;
   transition: color .15s, border-color .15s;
