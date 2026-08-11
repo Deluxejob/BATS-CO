@@ -1349,3 +1349,49 @@ a.ticker-chip:hover {
   margin-top: .5rem;
   text-align: right;
 }
+
+/* ==== Share strip ====================================================
+   Reusable share-buttons component. Any page can drop
+   <div data-share-strip></div> and share-strip.js will inject the
+   markup + wire clicks. Styles below apply everywhere that class
+   lands so the component looks the same on index/ticker/valuations/
+   risk-watch/markets without per-page CSS duplication. */
+.share-strip {
+  margin: 1rem auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.share-label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.share-btns { display: flex; gap: 0.5rem; }
+.share-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+  text-decoration: none;
+}
+.share-btn svg { width: 16px; height: 16px; display: block; }
+.share-btn:hover { transform: translateY(-1px); color: var(--text); }
+.share-btn.x:hover        { background: rgba(255,255,255,0.10); border-color: #ffffff; }
+.share-btn.linkedin:hover { background: rgba(10,102,194,0.15); border-color: #0a66c2; color: #4a9fea; }
+.share-btn.reddit:hover   { background: rgba(255,69,0,0.15);   border-color: #ff4500; color: #ff7a3d; }
+.share-btn.email:hover    { background: rgba(255,182,88,0.15); border-color: var(--warn); color: var(--warn); }
+.share-btn.copy:hover     { background: rgba(110,231,255,0.15); border-color: var(--accent); color: var(--accent); }
+.share-btn.copy.copied    { background: rgba(68,194,129,0.20); border-color: #44c281; color: #44c281; }
+@media (max-width: 480px) {
+  .share-strip { gap: 0.6rem; padding: 0.75rem 1rem; }
+  .share-label { font-size: 0.8rem; }
+}

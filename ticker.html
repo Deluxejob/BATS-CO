@@ -2332,6 +2332,11 @@
         <div class="term-panel"><div id="financialsWidgetMount"></div></div>
       </section>
 
+      <!-- Share strip — wiring injected by share-strip.js. URL / title /
+           description are auto-detected from the page, so the shared link
+           carries the ?sym=X query and the title includes the ticker. -->
+      <div data-share-strip></div>
+
     </div>
 
   </main>
@@ -6771,5 +6776,6 @@
     })();
   </script>
   <script src="ticker-search.js" defer></script>
+  <script src="share-strip.js" defer></script>
 </body>
 </html>
