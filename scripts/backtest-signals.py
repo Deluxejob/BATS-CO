@@ -311,14 +311,29 @@ def run_strategy(name: str, description: str, rule, s: Series) -> dict:
 
 def forward_returns_by_bucket(s: Series, feed_key: str) -> list[dict]:
     """For each bucket of the given signal (fng or bats), compute mean
-    forward return at 1w / 1m / 3m / 6m / 12m."""
-    buckets = [
-        ("Extreme Fear (0-20)",   0,   20),
-        ("Fear (20-40)",          20,  40),
-        ("Neutral (40-60)",       40,  60),
-        ("Greed (60-80)",         60,  80),
-        ("Extreme Greed (80+)",   80, 101),
-    ]
+    forward return at 1w / 1m / 3m / 6m / 12m.
+
+    Bucket labels differ by series because they measure different things:
+    CNN F&G measures crowd emotion (Fear/Greed), BATS measures market
+    condition (Oversold/Bullish). Applying F&G's Fear/Greed vocabulary
+    to BATS would misrepresent what BATS actually reads.
+    """
+    if feed_key == "fng":
+        buckets = [
+            ("Extreme Fear (0-20)",   0,   20),
+            ("Fear (20-40)",          20,  40),
+            ("Neutral (40-60)",       40,  60),
+            ("Greed (60-80)",         60,  80),
+            ("Extreme Greed (80+)",   80, 101),
+        ]
+    else:  # bats — use our own condition-based taxonomy from app.js
+        buckets = [
+            ("Very Oversold (0-20)",  0,   20),
+            ("Oversold (20-40)",      20,  40),
+            ("Neutral (40-60)",       40,  60),
+            ("Bullish (60-80)",       60,  80),
+            ("Very Bullish (80+)",    80, 101),
+        ]
     horizons = [("1w", 5), ("1m", 21), ("3m", 63), ("6m", 126), ("12m", 252)]
     feed = s.fng if feed_key == "fng" else s.bats
     n = len(s.dates)
