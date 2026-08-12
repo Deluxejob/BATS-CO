@@ -38,6 +38,87 @@
     /* .share-strip styles moved to styles.css so every page picks them
        up without inline duplication. */
 
+    /* Small amber pill under the main gauge readout — a subtle "this
+       number has been backtested against CNN Fear & Greed" cue that
+       links to the Signal Testing page without competing with the
+       gauge itself. */
+    .gauge-cta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.6rem;
+      padding: 0.32rem 0.75rem;
+      background: rgba(255, 182, 88, 0.10);
+      border: 1px solid rgba(255, 182, 88, 0.45);
+      color: #ffb658;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .gauge-cta-pill:hover {
+      background: rgba(255, 182, 88, 0.18);
+      border-color: #ffb658;
+      text-decoration: none;
+    }
+
+    /* ---------- This Week's Read ----------
+       A curated, human-written paragraph tying the current gauge
+       reading + trend + risk into a plain-English take. Sourced from
+       data/this_week.md (owner-edited weekly), rendered client-side
+       with a tiny markdown parser. Freshness stamp is prominent, and
+       an "update pending" hint appears if the file goes stale so the
+       reader can trust what they see or know it's outdated. */
+    .weekly-read {
+      max-width: 900px;
+      margin: 2rem auto 2.5rem;
+      padding: 1.5rem 1.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 10px;
+    }
+    .weekly-read .wr-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+    }
+    .weekly-read .wr-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin: 0 0 1rem;
+    }
+    .weekly-read .wr-body p {
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.6;
+      margin: 0 0 0.85rem;
+    }
+    .weekly-read .wr-body p:last-child { margin-bottom: 0; }
+    .weekly-read .wr-body strong { color: var(--text); }
+    .weekly-read .wr-body em     { color: var(--text-dim); font-style: italic; }
+    .weekly-read .wr-body a      { color: var(--accent); border-bottom: 1px dotted var(--accent); }
+    .weekly-read .wr-body a:hover { border-bottom-style: solid; text-decoration: none; }
+    .weekly-read .wr-stale {
+      display: block;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed var(--border);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-style: italic;
+    }
+
     /* ---------- Signal Testing CTA ----------
        Sits at the tail of the "Does BATS work?" section as the natural
        next question a reader has just earned the right to ask. Amber
@@ -351,6 +432,7 @@
             <div class="reading-value"><span id="readingValue">50</span><span class="reading-suffix">/100</span></div>
             <div class="reading-subtitle" id="readingSubtitle"></div>
             <div class="updated" id="gaugeDateNote">Loading latest close…</div>
+            <a class="gauge-cta-pill" href="signal-testing.html" title="Head-to-head backtest vs CNN Fear &amp; Greed">Backtested vs CNN F&amp;G <span aria-hidden="true">&rarr;</span></a>
           </div>
         </div>
         <div class="sub-gauge sub-gauge-pivot">
@@ -380,6 +462,17 @@
     </section>
 
     <!-- Ticker lookup — quick jump to any US stock or ETF's detail page -->
+    <!-- This Week's Read — hand-written paragraph tying the current
+         gauge, trend, and risk into plain-English guidance. Sourced from
+         data/this_week.md; renderer below fetches it, parses tiny markdown,
+         and stamps freshness. Placed right after the hero so a reader sees
+         the interpretation before diving deeper. -->
+    <section class="weekly-read" id="weeklyRead" hidden>
+      <p class="wr-eyebrow">This week&rsquo;s read</p>
+      <p class="wr-date" id="weeklyReadDate"></p>
+      <div class="wr-body" id="weeklyReadBody"></div>
+    </section>
+
     <section class="ticker-lookup">
       <form id="homeTickerSearchForm" class="lookup-form">
         <label for="homeTickerSearchInput" class="lookup-label">Look up any stock or ETF &rarr;</label>
@@ -564,6 +657,79 @@
   <script>
     window.BATS_DATA_BASE = 'data/';
     window.BATS_BACKTEST_KIND = 'blended';
+
+    // ---------- This Week's Read loader ----------
+    // Fetches data/this_week.md, parses tiny markdown (paragraphs + **bold**
+    // + *italic* + [text](url) links), stamps the date, and shows a quiet
+    // "update pending" hint when the file is more than 10 days old. Hides
+    // the whole section on fetch failure so a broken deploy never leaves
+    // an empty card. All parsing is HTML-escape-safe before markdown
+    // transforms are applied.
+    (async function loadWeeklyRead() {
+      const section = document.getElementById('weeklyRead');
+      if (!section) return;
+      let text;
+      try {
+        const r = await fetch('data/this_week.md?nc=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        text = (await r.text()).trim();
+      } catch (e) {
+        // Silent fail — nothing worse than a broken editorial card.
+        return;
+      }
+      if (!text) return;
+
+      // Extract date from the first line matching "date: YYYY-MM-DD".
+      let isoDate = null;
+      const lines = text.split(/\r?\n/);
+      if (lines.length && /^date:\s*\d{4}-\d{2}-\d{2}\s*$/.test(lines[0])) {
+        isoDate = lines[0].split(':')[1].trim();
+        lines.shift();
+      }
+      const body = lines.join('\n').trim();
+      if (!body) return;
+
+      // Escape then apply inline markdown.
+      const esc = (s) => s.replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+      // Links: [text](url) — supports absolute (https://…) and relative
+      // (page.html, /section) URLs. External links get target=_blank; local
+      // links stay in-tab so navigation feels native.
+      const inline = (s) => esc(s)
+        .replace(/\[([^\]]+)\]\(([^\s)]+)\)/g, (_m, text, url) => {
+          const external = /^https?:\/\//i.test(url);
+          const attrs = external
+            ? ' target="_blank" rel="noopener"'
+            : '';
+          return '<a href="' + url + '"' + attrs + '>' + text + '</a>';
+        })
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+      // Paragraphs split on blank lines.
+      const paras = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+      const html = paras.map(p => '<p>' + inline(p) + '</p>').join('');
+      document.getElementById('weeklyReadBody').innerHTML = html;
+
+      // Freshness stamp + stale hint.
+      const dateEl = document.getElementById('weeklyReadDate');
+      if (isoDate) {
+        const d = new Date(isoDate + 'T12:00:00Z');
+        const fmt = d.toLocaleDateString(undefined,
+          { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+        dateEl.textContent = 'As of ' + fmt;
+        const daysOld = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+        if (daysOld > 10) {
+          const note = document.createElement('span');
+          note.className = 'wr-stale';
+          note.textContent = 'Weekly update pending — this read is ' + daysOld + ' days old.';
+          document.getElementById('weeklyReadBody').appendChild(note);
+        }
+      } else {
+        dateEl.textContent = '';
+      }
+      section.hidden = false;
+    })();
 
     // Ticker lookup — navigate to ticker.html?sym=XXX on submit.
     (function () {
