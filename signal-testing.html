@@ -331,7 +331,7 @@
           when we don&rsquo;t <em>time</em> the market and instead just ask &ldquo;what
           did SPX do in the days AFTER a signal fired?&rdquo; When
           <strong>both</strong> indicators bottomed out at the same time
-          (CNN Extreme Fear&nbsp;&le;&nbsp;25 AND BATS Very Oversold&nbsp;&le;&nbsp;30),
+          (CNN Extreme Fear&nbsp;&le;&nbsp;25 AND BATS in the Oversold zone&nbsp;&le;&nbsp;30),
           the market&rsquo;s forward returns were far above average. Not every dip is
           a buying opportunity &mdash; but when the crowd&rsquo;s emotion (CNN) and the
           market&rsquo;s condition (BATS) both flash the extreme at once, history says
@@ -363,7 +363,7 @@
     <section>
       <div class="section-head">
         <h2>Forward returns by BATS bucket</h2>
-        <p>Same test, using BATS scores. BATS uses market-condition language rather than sentiment language &mdash; it measures whether the trend is healthy or breaking down, not what the crowd is feeling. Very Oversold (below 20) is rare, only about 32 times in 15 years, so the small sample deserves caution &mdash; but the forward returns are strikingly consistent.</p>
+        <p>Same test, using BATS scores &mdash; but with our own 8-bucket taxonomy from the main gauge (Extremely Oversold through Extended), not CNN&rsquo;s 5-bucket shape. BATS uses market-condition language rather than sentiment language: it measures whether the trend is healthy or breaking down, not what the crowd is feeling. The tail buckets (Extremely Oversold and Very Oversold) are rare, so the small sample sizes deserve caution &mdash; but the forward returns are strikingly consistent.</p>
       </div>
       <div class="st-fwd-wrap">
         <table class="st-fwd" id="stBatsFwd">
@@ -384,8 +384,8 @@
         <h3>What we actually learned</h3>
         <p><strong>1. Buy-and-hold is very hard to beat.</strong> None of the pure &ldquo;buy fear&rdquo; strategies matched the S&amp;P 500&rsquo;s total return, because sitting on cash while the market grinds higher costs a lot.</p>
         <p><strong>2. A simple trend filter is the best risk-adjusted strategy.</strong> Just being invested when SPX is above its 200-day moving average produced most of the return with a much smaller drawdown &mdash; and it doesn&rsquo;t need any sentiment input at all.</p>
-        <p><strong>3. Extreme readings DO predict better forward returns.</strong> The bucket tables show clearly that days of CNN Extreme Fear or BATS Very Oversold were followed by above-average returns on every horizon. That&rsquo;s a real signal.</p>
-        <p><strong>4. The best use of both indicators isn&rsquo;t timing &mdash; it&rsquo;s conviction.</strong> When CNN read Extreme Fear AND BATS read Very Oversold at the same time (~116 days out of 3,899), the 12-month forward return averaged nearly 28% with a 97% hit rate. That&rsquo;s not a signal to sit on cash waiting for it; it&rsquo;s a signal to add more when it happens.</p>
+        <p><strong>3. Extreme readings DO predict better forward returns.</strong> The bucket tables show clearly that days of CNN Extreme Fear or BATS in the Oversold zone (Extremely / Very / Oversold) were followed by above-average returns on every horizon. That&rsquo;s a real signal.</p>
+        <p><strong>4. The best use of both indicators isn&rsquo;t timing &mdash; it&rsquo;s conviction.</strong> When CNN read Extreme Fear AND BATS sat in the Oversold zone at the same time (~116 days out of 3,899), the 12-month forward return averaged nearly 28% with a 97% hit rate. That&rsquo;s not a signal to sit on cash waiting for it; it&rsquo;s a signal to add more when it happens.</p>
         <p><strong>5. The upside extreme is harder to fade.</strong> CNN Extreme Greed and the BATS Bullish end of the scale still had positive forward returns most of the time &mdash; markets can stay hot for a long time. Selling on either alone was a losing move over this period.</p>
       </div>
     </section>
@@ -459,9 +459,9 @@
       // ---- Combined-low money finding ----
       const combo = d.combinedLowForward;
       const comboCards = [
-        {label: 'Both extreme (CNN Extreme Fear ≤ 25 AND BATS Very Oversold ≤ 30)', data: combo.both_low,     hero: true},
+        {label: 'Both extreme (CNN Extreme Fear ≤ 25 AND BATS Oversold zone ≤ 30)', data: combo.both_low,     hero: true},
         {label: 'CNN Extreme Fear only (CNN ≤ 25, BATS > 30)',                       data: combo.cnn_low_only, hero: false},
-        {label: 'BATS Very Oversold only (BATS ≤ 30, CNN > 25)',                     data: combo.bats_low_only, hero: false},
+        {label: 'BATS Oversold zone only (BATS ≤ 30, CNN > 25)',                     data: combo.bats_low_only, hero: false},
       ];
       const comboGrid = document.getElementById('stComboGrid');
       comboGrid.innerHTML = comboCards.map(c => {
