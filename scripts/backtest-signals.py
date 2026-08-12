@@ -360,6 +360,27 @@ def forward_returns_by_bucket(s: Series, feed_key: str) -> list[dict]:
                 row[hlabel] = None
                 row[hlabel + "_hit"] = None
         out.append(row)
+
+    # Append a "Baseline (any day)" row — the average forward return across
+    # every trading day in the shared window, ignoring bucket. Gives the
+    # reader a fixed reference for judging whether a bucket's numbers are
+    # genuinely above average. Same treatment backtest.js uses on the home
+    # page's bucket table.
+    baseline = {"bucket": "Baseline (any day)", "days": n, "isBaseline": True}
+    for hlabel, hn in horizons:
+        fwd = []
+        for i in range(n):
+            j = i + hn
+            if j >= n:
+                continue
+            fwd.append((s.spx[j] / s.spx[i]) - 1.0)
+        if fwd:
+            baseline[hlabel] = round(sum(fwd) / len(fwd), 4)
+            baseline[hlabel + "_hit"] = round(sum(1 for r in fwd if r > 0) / len(fwd), 3)
+        else:
+            baseline[hlabel] = None
+            baseline[hlabel + "_hit"] = None
+    out.append(baseline)
     return out
 
 

@@ -150,6 +150,21 @@
     .st-fwd .cell-ret.pos { color: var(--green, #22d39a); }
     .st-fwd .cell-ret.neg { color: var(--red,   #ff5374); }
     .st-fwd .cell-hit { color: var(--text-dim); font-size: 0.72rem; margin-left: 0.25rem; }
+    /* Baseline row — italicized, faded, and separated by a slightly heavier
+       top border so the reader can see it's a reference row, not a bucket. */
+    .st-fwd tr.baseline-row td {
+      color: var(--text-dim);
+      font-style: italic;
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,0.015);
+    }
+    .st-fwd tr.baseline-row .cell-ret { color: var(--text-dim); font-style: italic; }
+    .st-fwd-note {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      margin: 0.4rem 0 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
 
     /* ---------- Takeaways block ---------- */
     .st-takeaway {
@@ -377,6 +392,7 @@
           <tbody></tbody>
         </table>
       </div>
+      <p class="st-fwd-note">Note: bucket day counts are lower than on the home page&rsquo;s backtest table because this test is limited to the 2011&ndash;today window where CNN Fear &amp; Greed data exists. BATS&rsquo;s own history goes back to 2007, so the home-page counts are larger.</p>
     </section>
 
     <section>
@@ -502,9 +518,10 @@
           ? '<td class="cell-days">—</td>'
           : '<td class="cell-ret ' + clsSign(v) + '">' + fmtPct(v) +
             (hit != null ? '<span class="cell-hit">' + Math.round(hit * 100) + '%</span>' : '') + '</td>';
-        return '<tr>' +
-          '<td>' + r.bucket + '</td>' +
-          '<td class="cell-days">' + r.days + '</td>' +
+        const label = r.isBaseline ? '<em>' + r.bucket + '</em>' : r.bucket;
+        return '<tr' + (r.isBaseline ? ' class="baseline-row"' : '') + '>' +
+          '<td>' + label + '</td>' +
+          '<td class="cell-days">' + r.days.toLocaleString() + '</td>' +
           cell(r['1w'], r['1w_hit']) +
           cell(r['1m'], r['1m_hit']) +
           cell(r['3m'], r['3m_hit']) +
