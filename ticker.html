@@ -3478,16 +3478,66 @@
             tooltip.style.top  = topPx + 'px';
           }
 
-          svg.addEventListener('mousemove',  function (e) { updateCrosshair(e.clientX, e.clientY); });
-          svg.addEventListener('mouseleave', hideCrosshair);
-          svg.addEventListener('touchstart', function (e) {
-            if (e.touches[0]) updateCrosshair(e.touches[0].clientX, e.touches[0].clientY);
-          }, { passive: true });
-          svg.addEventListener('touchmove', function (e) {
-            if (e.touches[0]) { e.preventDefault(); updateCrosshair(e.touches[0].clientX, e.touches[0].clientY); }
-          }, { passive: false });
-          svg.addEventListener('touchend',    hideCrosshair);
-          svg.addEventListener('touchcancel', hideCrosshair);
+          // Click-and-drag activation (not plain hover) — reader has to
+          // press the mouse and drag to summon the crosshair. Keeps the
+          // chart clean under a passive hover and, more importantly, gets
+          // completely out of the way when the trend-line draw tool is
+          // active or when an existing trend-endpoint is being dragged.
+          let dragging = false;
+          function onWindowMove(e) {
+            if (!dragging) return;
+            updateCrosshair(e.clientX, e.clientY);
+          }
+          function endDrag() {
+            if (!dragging) return;
+            dragging = false;
+            hideCrosshair();
+            window.removeEventListener('mousemove', onWindowMove);
+            window.removeEventListener('mouseup',   endDrag);
+          }
+          svg.addEventListener('mousedown', function (e) {
+            // Defer to draw-line tool: skip crosshair when in DRAW mode
+            // or when a trend-line endpoint drag is starting.
+            if (state.drawMode || state.dragging) return;
+            if (e.button !== undefined && e.button !== 0) return;   // left button only
+            dragging = true;
+            updateCrosshair(e.clientX, e.clientY);
+            window.addEventListener('mousemove', onWindowMove);
+            window.addEventListener('mouseup',   endDrag);
+          });
+          // If the pointer leaves the SVG mid-drag we keep tracking via
+          // the window listener until mouseup — endDrag hides on release.
+          svg.addEventListener('mouseleave', function () {
+            // Do NOT hide mid-drag — the window mousemove still updates
+            // while the reader drags off-chart. hide happens on mouseup.
+            if (dragging) return;
+            hideCrosshair();
+          });
+
+          // Touch: touchstart begins the drag, touchmove updates while
+          // pressed, touchend/cancel ends it. Same "skip when drawing"
+          // guard as the mouse path.
+          let touching = false;
+          function onSvgTouchStart(e) {
+            if (state.drawMode || state.dragging) return;
+            if (!e.touches[0]) return;
+            touching = true;
+            updateCrosshair(e.touches[0].clientX, e.touches[0].clientY);
+          }
+          function onSvgTouchMove(e) {
+            if (!touching || !e.touches[0]) return;
+            e.preventDefault();
+            updateCrosshair(e.touches[0].clientX, e.touches[0].clientY);
+          }
+          function onSvgTouchEnd() {
+            if (!touching) return;
+            touching = false;
+            hideCrosshair();
+          }
+          svg.addEventListener('touchstart',  onSvgTouchStart, { passive: true });
+          svg.addEventListener('touchmove',   onSvgTouchMove,  { passive: false });
+          svg.addEventListener('touchend',    onSvgTouchEnd);
+          svg.addEventListener('touchcancel', onSvgTouchEnd);
         }
 
         async function fetchSlice(apiRange, apiInterval) {
