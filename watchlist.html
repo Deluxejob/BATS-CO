@@ -247,13 +247,53 @@
       font-size: 0.68rem;
       color: var(--term-dim);
     }
+    /* Sector-grouped heatmap. Each visible sector renders as one card
+       with a small label bar + a tight grid of ~80x80 tiles inside.
+       Sectors without any watchlist ticker are skipped entirely so a
+       short watchlist doesn't have 11 empty rows. */
+    .wl-sectors {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    .wl-sector-group {
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border-soft);
+      border-radius: 6px;
+      padding: 0.55rem 0.7rem 0.65rem;
+    }
+    .wl-sector-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin: 0 0 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--term-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+    }
+    .wl-sector-head .wl-sector-count {
+      color: var(--term-dim);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+    }
+    .wl-sector-head .wl-sector-avg {
+      color: var(--term-dim);
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .wl-sector-head .wl-sector-avg.pos { color: var(--term-green); }
+    .wl-sector-head .wl-sector-avg.neg { color: var(--term-red); }
     .wl-heatmap {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 4px;
     }
     @media (max-width: 640px) {
-      .wl-heatmap { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      .wl-heatmap { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 3px; }
     }
     .wl-tile {
       display: flex;
@@ -261,18 +301,18 @@
       justify-content: center;
       align-items: center;
       aspect-ratio: 1 / 1;
-      max-width: 200px;
-      padding: 0.35rem;
-      border-radius: 6px;
+      max-width: 120px;
+      padding: 0.25rem;
+      border-radius: 4px;
       text-decoration: none;
       color: #fff;
       background: #374151;
       transition: transform 0.1s;
       overflow: hidden;
     }
-    .wl-tile:hover  { transform: scale(1.04); text-decoration: none; }
-    .wl-tile-sym    { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
-    .wl-tile-chg    { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; margin-top: 0.15rem; opacity: 0.95; }
+    .wl-tile:hover  { transform: scale(1.08); text-decoration: none; }
+    .wl-tile-sym    { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.02em; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+    .wl-tile-chg    { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; margin-top: 0.1rem; opacity: 0.95; }
     /* 7-step green/red palette. Text stays white so it reads on any shade. */
     .wl-tile.pos-3  { background: #14532d; }
     .wl-tile.pos-2  { background: #16a34a; }
@@ -584,7 +624,11 @@
       })();
       const quotePromise = (async () => {
         try {
-          const r = await fetch(`/api/quote?syms=${encodeURIComponent(list.join(','))}`);
+          // sector=1 → server augments each quote with GICS sector name
+          // so the heatmap can group tiles into "Technology / Financials /
+          // …" bands. ETFs + indices without a sector come back null and
+          // get bucketed under "Funds & Other".
+          const r = await fetch(`/api/quote?syms=${encodeURIComponent(list.join(','))}&sector=1`);
           if (!r.ok) return {};
           const data = await r.json();
           return (data && data.quotes) || {};
@@ -683,26 +727,86 @@
             <div class="wl-tile-chg">${chgLabel}</div>
           </a>
         `;
-        return { sym, dayPct, rowHtml, tileHtml };
+        // Yahoo's `sector` field uses its own vocabulary (Technology,
+        // Financial Services, Healthcare, Consumer Cyclical, Consumer
+        // Defensive, Basic Materials, …). Null for ETFs/indices → we
+        // bucket them under "Funds & Other" at render time.
+        const sector = (q && typeof q.sector === 'string' && q.sector.trim()) ? q.sector.trim() : null;
+        return { sym, dayPct, rowHtml, tileHtml, sector };
       });
-      // Sort tiles by dayPct descending so the biggest movers (green) sit at
-      // the top-left and the worst (red) at the bottom-right — same intuition
-      // as the reference S&P heatmap. Missing-quote tiles fall to the end.
-      const tilesSorted = items.slice().sort((a, b) => {
-        const av = Number.isFinite(a.dayPct) ? a.dayPct : -Infinity;
-        const bv = Number.isFinite(b.dayPct) ? b.dayPct : -Infinity;
-        return bv - av;
-      });
-      const tiles = tilesSorted.map(x => x.tileHtml).join('');
-      const rows  = items.map(x => x.rowHtml).join('');
+
+      // ---- Sector grouping ----
+      // Order sectors by rough S&P 500 weight so the biggest slices of
+      // the market (Tech / Financials / Health Care / …) sit at the top
+      // where readers scan first. "Funds & Other" holds ETFs / indices
+      // / ADRs Yahoo doesn't classify.
+      const SECTOR_ORDER = [
+        'Technology',
+        'Financial Services',
+        'Healthcare',
+        'Consumer Cyclical',
+        'Communication Services',
+        'Industrials',
+        'Consumer Defensive',
+        'Energy',
+        'Utilities',
+        'Real Estate',
+        'Basic Materials',
+      ];
+      const OTHER_LABEL = 'Funds & Other';
+      const bySector = new Map();
+      for (const it of items) {
+        const key = it.sector || OTHER_LABEL;
+        if (!bySector.has(key)) bySector.set(key, []);
+        bySector.get(key).push(it);
+      }
+      // Emit sectors in the fixed weight order; then anything not in the
+      // list (unusual sector spellings, "Funds & Other") appended after.
+      const orderedKeys = SECTOR_ORDER.filter(k => bySector.has(k));
+      for (const k of bySector.keys()) {
+        if (!orderedKeys.includes(k) && k !== OTHER_LABEL) orderedKeys.push(k);
+      }
+      if (bySector.has(OTHER_LABEL)) orderedKeys.push(OTHER_LABEL);
+
+      const groupsHtml = orderedKeys.map(sectorKey => {
+        const bucket = bySector.get(sectorKey);
+        // Sort within the sector: best % change first.
+        const sorted = bucket.slice().sort((a, b) => {
+          const av = Number.isFinite(a.dayPct) ? a.dayPct : -Infinity;
+          const bv = Number.isFinite(b.dayPct) ? b.dayPct : -Infinity;
+          return bv - av;
+        });
+        // Sector-level average change — quick "is this whole sector
+        // green or red today?" glance to the right of the label.
+        const withNums = sorted.filter(x => Number.isFinite(x.dayPct));
+        const avg = withNums.length
+          ? withNums.reduce((s, x) => s + x.dayPct, 0) / withNums.length
+          : null;
+        const avgCls = avg == null ? '' : (avg > 0 ? 'pos' : avg < 0 ? 'neg' : '');
+        const avgStr = avg == null ? '' : (avg >= 0 ? '+' : '') + avg.toFixed(2) + '%';
+        return `
+          <div class="wl-sector-group">
+            <div class="wl-sector-head">
+              <span>${sectorKey}</span>
+              <span>
+                <span class="wl-sector-count">${bucket.length} ticker${bucket.length === 1 ? '' : 's'}</span>
+                ${avg != null ? ` &middot; <span class="wl-sector-avg ${avgCls}">${avgStr} avg</span>` : ''}
+              </span>
+            </div>
+            <div class="wl-heatmap">${sorted.map(x => x.tileHtml).join('')}</div>
+          </div>
+        `;
+      }).join('');
+
+      const rows = items.map(x => x.rowHtml).join('');
 
       mount.innerHTML = `
         <div class="wl-heatmap-wrap">
           <div class="wl-heatmap-head">
             <span>TODAY'S HEATMAP</span>
-            <span class="wl-heatmap-sub">Colored by 1-day % change · sorted best to worst · click a tile to open the ticker</span>
+            <span class="wl-heatmap-sub">Grouped by S&amp;P 500 sector · sorted best to worst within each sector · click a tile to open the ticker</span>
           </div>
-          <div class="wl-heatmap">${tiles}</div>
+          <div class="wl-sectors">${groupsHtml}</div>
           <div class="wl-heatmap-legend" aria-label="Color scale">
             <span class="legend-label">&le;-3%</span>
             <span class="legend-swatch neg-3"></span>

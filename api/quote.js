@@ -115,6 +115,36 @@ export default async function handler(req, res) {
       if (c && c.symbol) quotes[c.symbol] = c;
     }
 
+    // Optional sector augmentation. Callers that need sector data
+    // (watchlist heatmap grouping) pass `?sector=1`; the endpoint then
+    // fires one quoteSummary?modules=assetProfile call per symbol in
+    // parallel and merges the sector name onto each quote. ETFs /
+    // indices / anything without a GICS classification get sector=null.
+    // Skipped by default so the fast-path (major-index refresh, ticker
+    // intraday BATS updates) stays a single network round-trip.
+    if (req.query.sector === '1' && syms.length) {
+      const sectorPairs = await Promise.all(syms.map(async (s) => {
+        try {
+          const url = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/'
+            + encodeURIComponent(s)
+            + '?modules=assetProfile'
+            + '&crumb=' + encodeURIComponent(crumb);
+          const r = await fetch(url, { headers: { 'User-Agent': YAHOO_UA, 'Cookie': cookieHeader } });
+          if (!r.ok) return [s, null];
+          const j = await r.json();
+          const rslt = j && j.quoteSummary && j.quoteSummary.result;
+          const ap = Array.isArray(rslt) && rslt[0] && rslt[0].assetProfile;
+          const sector = ap && typeof ap.sector === 'string' ? ap.sector.trim() : '';
+          return [s, sector || null];
+        } catch (e) {
+          return [s, null];
+        }
+      }));
+      for (const [s, sector] of sectorPairs) {
+        if (quotes[s]) quotes[s].sector = sector;
+      }
+    }
+
     // Cache 30 s at the edge with a short 15 s stale-while-revalidate window
     // (max total staleness 45 s vs the old 120 s). Tight enough that the
     // major-index cards on markets.html and quotes.html stay within seconds
