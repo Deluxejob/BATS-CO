@@ -1922,6 +1922,72 @@
     .tk-chart-svg .axis-line { stroke: var(--term-border); stroke-width: 1; }
     .tk-chart-svg .axis-label { fill: #c9d3e0; font-size: 11px; font-family: ui-monospace, monospace; }
 
+    /* Crosshair + OHLC tooltip — hover interaction on the hero chart.
+       The tooltip is HTML (not SVG) so date/OHLC text stays crisp at any
+       zoom and can flip sides via inline `left` swap when it would clip
+       the right edge. The crosshair vertical line + close-price dot are
+       drawn inside the SVG by drawChart's mousemove handler. */
+    .tk-chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(13, 21, 32, 0.94);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      padding: 0.5rem 0.7rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: var(--term-text);
+      min-width: 148px;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      transition: opacity 0.1s;
+    }
+    .tk-chart-tooltip[hidden] { display: block !important; opacity: 0; pointer-events: none; }
+    .tk-chart-tooltip .tt-date {
+      color: var(--term-cyan);
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.35rem;
+      border-bottom: 1px solid var(--term-border-soft);
+    }
+    .tk-chart-tooltip .tt-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1.2rem;
+      padding: 0.1rem 0;
+    }
+    .tk-chart-tooltip .tt-lbl { color: var(--term-dim); }
+    .tk-chart-tooltip .tt-val { color: var(--term-text); font-weight: 700; }
+    .tk-chart-tooltip .tt-val.pos { color: var(--term-green); }
+    .tk-chart-tooltip .tt-val.neg { color: var(--term-red); }
+    .tk-chart-tooltip .tt-chg {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid var(--term-border-soft);
+      display: flex;
+      justify-content: space-between;
+      gap: 1.2rem;
+    }
+    /* Vertical crosshair drawn inside the SVG — white on request. Line
+       is subtle-thin, dot at the close price sits on top of the candle. */
+    .tk-chart-svg .tk-crosshair-line {
+      stroke: #ffffff;
+      stroke-width: 1;
+      opacity: 0.55;
+      pointer-events: none;
+      stroke-dasharray: 3 3;
+    }
+    .tk-chart-svg .tk-crosshair-dot {
+      fill: #ffffff;
+      stroke: #0a1218;
+      stroke-width: 1.2;
+      pointer-events: none;
+    }
+
     .tk-chart-footer {
       display: flex; justify-content: space-between; align-items: center;
       margin-top: 0.5rem;
@@ -2687,6 +2753,10 @@
                 <button type="button" data-draw="clear" data-role="clearBtn" hidden>CLEAR</button>
               </div>
               <svg class="tk-chart-svg" data-role="chart" viewBox="0 0 900 320" preserveAspectRatio="none" aria-label="${sym} chart"></svg>
+              <!-- Crosshair OHLC tooltip — floats over the SVG, positioned
+                   dynamically by drawChart's mousemove/touchmove handler.
+                   Stays hidden until the pointer enters the plot region. -->
+              <div class="tk-chart-tooltip" data-role="chartTooltip" hidden></div>
             </div>
             <div class="tk-chart-footer">
               <span data-role="footerLeft">Loading&hellip;</span>
@@ -3260,6 +3330,164 @@
           };
 
           svg.innerHTML = s;
+
+          // ---- Crosshair + OHLC tooltip ----
+          // Cache everything the pointer handler needs on the SVG so the
+          // handlers can stay persistent (attached once, read fresh state
+          // on every render). Bars are ordinal / equally spaced, so the
+          // inverse mapping is a plain (x - leftMargin) / plotW * (nBars-1)
+          // rounded to nearest — no binary search needed.
+          svg._crosshair = {
+            pts: pts,
+            xForIdx: xForIdx,
+            yFor: yFor,
+            priceTop: priceTop,
+            priceBottom: priceBottom,
+            mLeft: M.left,
+            mRight: W - M.right,
+            plotW: plotW,
+            nBars: nBars,
+            W: W,
+            H: H,
+            isIntraday: labelFmt === 'hour',
+          };
+          if (!svg._crosshairInit) installCrosshairHandlers(svg);
+        }
+
+        // Persistent crosshair handlers. Attached once per SVG element;
+        // read the current chart context from `svg._crosshair` set by
+        // drawChart. Coexists with the existing draw-line handlers on the
+        // same SVG because both use addEventListener (independent chains).
+        function installCrosshairHandlers(svg) {
+          svg._crosshairInit = true;
+          const wrap = svg.parentElement;
+          const tooltip = wrap && wrap.querySelector('[data-role="chartTooltip"]');
+          if (!tooltip) return;
+
+          const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          function fmtDate(t, intraday) {
+            const d = new Date(t * 1000);
+            const dn  = DAY_NAMES[d.getUTCDay()];
+            const mon = MONTH_NAMES[d.getUTCMonth()];
+            const day = d.getUTCDate();
+            const yr  = d.getUTCFullYear();
+            if (intraday) {
+              const hh = String(d.getUTCHours()).padStart(2, '0');
+              const mm = String(d.getUTCMinutes()).padStart(2, '0');
+              return mon + ' ' + day + ', ' + yr + ' · ' + hh + ':' + mm + ' UTC';
+            }
+            return dn + ', ' + mon + ' ' + day + ', ' + yr;
+          }
+          function fmtP(v) {
+            if (v == null || !isFinite(v)) return '—';
+            return '$' + v.toFixed(2);
+          }
+          function fmtV(v) {
+            if (v == null || !isFinite(v)) return '—';
+            if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+            if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+            if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+            return String(Math.round(v));
+          }
+
+          function hideCrosshair() {
+            tooltip.hidden = true;
+            const layer = svg.querySelector('#tkCrosshairLayer');
+            if (layer) layer.innerHTML = '';
+          }
+
+          function updateCrosshair(clientX, clientY) {
+            const ctx = svg._crosshair;
+            if (!ctx || !ctx.pts || !ctx.pts.length) return;
+            const rect = svg.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            // Convert client coords → viewBox coords. SVG uses
+            // preserveAspectRatio="none" so the mapping is a straight
+            // linear scale on each axis.
+            const vx = (clientX - rect.left) / rect.width  * ctx.W;
+            const vy = (clientY - rect.top)  / rect.height * ctx.H;
+            // Bail out unless the pointer is inside the price plot region
+            // (with a few px of slack so edge bars still catch).
+            if (vy < ctx.priceTop - 4 || vy > ctx.priceBottom + 4 ||
+                vx < ctx.mLeft - 4    || vx > ctx.mRight + 4) {
+              hideCrosshair();
+              return;
+            }
+            const frac = ctx.plotW > 0 ? (vx - ctx.mLeft) / ctx.plotW : 0;
+            const rawIdx = Math.round(frac * (ctx.nBars - 1));
+            const idx = Math.max(0, Math.min(ctx.nBars - 1, rawIdx));
+            const p = ctx.pts[idx];
+            if (!p) { hideCrosshair(); return; }
+            const t = p[0], o = p[1], h = p[2], l = p[3], c = p[4];
+            const vol = (p.length > 5) ? p[5] : null;
+            const barX = ctx.xForIdx(idx);
+            const dotY = ctx.yFor(c);
+
+            // Redraw the crosshair layer at the end of the SVG so it
+            // sits above candles + trend lines.
+            let layer = svg.querySelector('#tkCrosshairLayer');
+            if (!layer) {
+              layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+              layer.setAttribute('id', 'tkCrosshairLayer');
+            }
+            svg.appendChild(layer);
+            layer.innerHTML =
+              '<line class="tk-crosshair-line" x1="' + barX.toFixed(1) + '" x2="' + barX.toFixed(1) +
+              '" y1="' + ctx.priceTop + '" y2="' + ctx.priceBottom + '"/>' +
+              '<circle class="tk-crosshair-dot" cx="' + barX.toFixed(1) + '" cy="' + dotY.toFixed(1) + '" r="3.5"/>';
+
+            // Tooltip content
+            const chg = c - o;
+            const chgPct = o !== 0 ? (chg / o) * 100 : 0;
+            const chgCls = chg > 0 ? 'pos' : chg < 0 ? 'neg' : '';
+            const chgSign = chg > 0 ? '+' : (chg < 0 ? '-' : '');
+            const volRow = (vol != null)
+              ? '<div class="tt-row"><span class="tt-lbl">Vol</span><span class="tt-val">' + fmtV(vol) + '</span></div>'
+              : '';
+            tooltip.innerHTML =
+              '<div class="tt-date">' + fmtDate(t, ctx.isIntraday) + '</div>' +
+              '<div class="tt-row"><span class="tt-lbl">O</span><span class="tt-val">' + fmtP(o) + '</span></div>' +
+              '<div class="tt-row"><span class="tt-lbl">H</span><span class="tt-val">' + fmtP(h) + '</span></div>' +
+              '<div class="tt-row"><span class="tt-lbl">L</span><span class="tt-val">' + fmtP(l) + '</span></div>' +
+              '<div class="tt-row"><span class="tt-lbl">C</span><span class="tt-val">' + fmtP(c) + '</span></div>' +
+              volRow +
+              '<div class="tt-chg"><span class="tt-lbl">Chg</span><span class="tt-val ' + chgCls + '">' +
+                chgSign + Math.abs(chg).toFixed(2) + ' (' + chgSign + Math.abs(chgPct).toFixed(2) + '%)' +
+              '</span></div>';
+            tooltip.hidden = false;
+
+            // Position the HTML tooltip in wrap-relative coords, flipping
+            // to the left of the crosshair if we would clip the right
+            // edge. Vertical: prefer above cursor, drop below if it would
+            // clip the top.
+            const wrapRect = wrap.getBoundingClientRect();
+            const clientBarX = rect.left + (barX / ctx.W) * rect.width;
+            const relX = clientBarX - wrapRect.left;
+            const relY = clientY - wrapRect.top;
+            const ttW = tooltip.offsetWidth;
+            const ttH = tooltip.offsetHeight;
+            const OFFSET = 12;
+            let leftPx = relX + OFFSET;
+            if (leftPx + ttW > wrapRect.width - 4) leftPx = relX - OFFSET - ttW;
+            if (leftPx < 4) leftPx = 4;
+            let topPx = relY - ttH - OFFSET;
+            if (topPx < 4) topPx = relY + OFFSET;
+            if (topPx + ttH > wrapRect.height - 4) topPx = wrapRect.height - ttH - 4;
+            if (topPx < 4) topPx = 4;
+            tooltip.style.left = leftPx + 'px';
+            tooltip.style.top  = topPx + 'px';
+          }
+
+          svg.addEventListener('mousemove',  function (e) { updateCrosshair(e.clientX, e.clientY); });
+          svg.addEventListener('mouseleave', hideCrosshair);
+          svg.addEventListener('touchstart', function (e) {
+            if (e.touches[0]) updateCrosshair(e.touches[0].clientX, e.touches[0].clientY);
+          }, { passive: true });
+          svg.addEventListener('touchmove', function (e) {
+            if (e.touches[0]) { e.preventDefault(); updateCrosshair(e.touches[0].clientX, e.touches[0].clientY); }
+          }, { passive: false });
+          svg.addEventListener('touchend',    hideCrosshair);
+          svg.addEventListener('touchcancel', hideCrosshair);
         }
 
         async function fetchSlice(apiRange, apiInterval) {
