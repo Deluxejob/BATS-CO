@@ -665,9 +665,9 @@
         <svg id="scChart" class="rd-svg" viewBox="0 0 1200 360" preserveAspectRatio="none" aria-label="SPY with small-cap-confirmed and divergent extremes"></svg>
         <div class="sc-legend">
           <span><span class="dot" style="background:#22d39a"></span>Confirmed low &mdash; small caps capitulating (bullish)</span>
-          <span><span class="dot" style="background:#eab308"></span>Divergent low &mdash; small caps holding (weaker bounce)</span>
-          <span><span class="dot" style="background:#f97316"></span>Divergent high &mdash; small caps already rolling (bearish)</span>
-          <span><span class="dot" style="background:#ff9db3"></span>Confirmed high &mdash; small caps in agreement</span>
+          <span><span class="dot" style="background:#06b6d4"></span>Divergent low &mdash; small caps holding (weaker bounce)</span>
+          <span><span class="dot" style="background:#f97316"></span>Confirmed high &mdash; small caps in agreement</span>
+          <span><span class="dot" style="background:#dc2626"></span>Divergent high &mdash; small caps already rolling (bearish)</span>
         </div>
         <p class="rd-note" id="scNote">Loading small-cap confirmation&hellip;</p>
         <details class="ratio-explainer">
@@ -681,10 +681,11 @@
             is in agreement or not.
           </p>
           <ul>
-            <li><strong>Confirmed high</strong> (pink dot): SPY at a short-term high, IWM/SPY ratio rising. Broad participation. Neutral signal &mdash; the market may keep going.</li>
-            <li><strong>Divergent high</strong> (orange dot): SPY at a short-term high, IWM/SPY ratio falling. Small caps rolling first &mdash; classic bearish divergence.</li>
+            <li><strong>Confirmed high</strong> (orange dot): SPY at a short-term high, IWM/SPY ratio rising. Broad participation. Neutral signal &mdash; the market may keep going.</li>
+            <li><strong>Divergent high</strong> (red dot): SPY at a short-term high, IWM/SPY ratio falling. Small caps rolling first &mdash; classic bearish divergence.</li>
             <li><strong>Confirmed low</strong> (green dot): SPY at a short-term low, IWM/SPY ratio falling. Small caps capitulating &mdash; a washout, historically the setup for the biggest bounces.</li>
-            <li><strong>Divergent low</strong> (yellow dot): SPY at a short-term low, IWM/SPY ratio rising. Small caps holding &mdash; weaker bounce than the washout case.</li>
+            <li><strong>Divergent low</strong> (cyan dot): SPY at a short-term low, IWM/SPY ratio rising. Small caps holding &mdash; weaker bounce than the washout case.</li>
+            <li class="sc-pending-note"><strong>Shaded band at the right edge of the chart</strong>: the last 15 trading days can&rsquo;t be classified yet &mdash; every confirmed extremum needs 15 days of forward data to prove no higher/lower point came along. That&rsquo;s why the rightmost dot is often 3+ weeks old, not today.</li>
           </ul>
           <p class="ratio-history">
             <strong>Historical forward returns</strong> (2003&ndash;present, over 220 short-term extrema):
@@ -2506,19 +2507,19 @@
       return rows.slice(-n);
     }
 
-    // Traffic-light-style palette so the four states read at a glance:
-    //   green   = confirmed low  (bullish washout)
-    //   yellow  = divergent low  (caution — weaker bounce)
-    //   orange  = divergent high (bearish warning)
-    //   pink    = confirmed high (near-neutral — mild pullback ahead)
-    // Yellow + orange are visually distinct from the green/pink pair;
-    // previous shades were too close (pale green vs bright green,
-    // bright red vs pale pink) to distinguish quickly.
+    // Four visually-distinct dot colors so the reader can tell states
+    // apart at a glance, even on low-contrast laptop displays. Colors
+    // chosen for maximum separation on the color wheel AND to match
+    // signal severity — the loudest color goes to the strongest signal:
+    //   green  (#22d39a) = confirmed low   (bullish washout — strong buy)
+    //   cyan   (#06b6d4) = divergent low   (weaker bounce — caution)
+    //   orange (#f97316) = confirmed high  (mild pullback — softer warning)
+    //   red    (#dc2626) = divergent high  (bearish divergence — strongest warning)
     const COLOR = {
-      confirmed_high: '#ff9db3',
-      divergent_high: '#f97316',
+      confirmed_high: '#f97316',
+      divergent_high: '#dc2626',
       confirmed_low:  '#22d39a',
-      divergent_low:  '#eab308',
+      divergent_low:  '#06b6d4',
     };
 
     function drawChart(visible) {
@@ -2572,6 +2573,35 @@
         (i === 0 ? 'M' : 'L') + xFor(r.t).toFixed(1) + ',' + yFor(r.spy).toFixed(1)
       ).join(' ');
       s += `<path fill="none" stroke="#ffb658" stroke-width="1.6" d="${path}"/>`;
+
+      // Pending window — the last LOOKBACK trading days of the full
+      // dataset can never be classified as confirmed extrema yet
+      // (need forward data to prove no higher/lower point came along).
+      // Shade the band so the reader can see "no dot here" doesn't mean
+      // "no signal" — it means "we don't know yet, come back in 15
+      // trading days." Only drawn when the pending window is inside the
+      // visible slice; on longer views it may not intersect at all.
+      if (rows.length > LOOKBACK) {
+        const pendT = rows[rows.length - LOOKBACK].t;
+        if (pendT >= first.t && pendT <= lastR.t) {
+          const pendX  = xFor(pendT);
+          const rightX = W - M.right;
+          if (rightX > pendX + 2) {
+            const bandW = rightX - pendX;
+            s += `<rect x="${pendX.toFixed(1)}" y="${M.top}" width="${bandW.toFixed(1)}" height="${plotH}" fill="rgba(148, 163, 184, 0.10)" stroke="none"/>`;
+            s += `<line x1="${pendX.toFixed(1)}" x2="${pendX.toFixed(1)}" y1="${M.top}" y2="${M.top + plotH}" stroke="rgba(148, 163, 184, 0.45)" stroke-width="1" stroke-dasharray="3 3"/>`;
+            // Label — "PENDING" always fits at 8pt mono if the band is
+            // at least ~35px; add the "15 trading days" subtitle only
+            // when the band has room to spell it out (longer views).
+            if (bandW > 34) {
+              s += `<text x="${(pendX + rightX) / 2}" y="${M.top + 12}" text-anchor="middle" fill="#94a3b8" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="8.5" font-weight="700" letter-spacing="0.12em">PENDING</text>`;
+            }
+            if (bandW > 90) {
+              s += `<text x="${(pendX + rightX) / 2}" y="${M.top + 24}" text-anchor="middle" fill="#94a3b8" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="7.5" font-weight="500" letter-spacing="0.08em">${LOOKBACK} TRADING DAYS</text>`;
+            }
+          }
+        }
+      }
 
       // Extremum dots (only those in the visible slice)
       const firstT = first.t, lastT = lastR.t;
