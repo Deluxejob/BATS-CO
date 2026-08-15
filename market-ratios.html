@@ -665,8 +665,8 @@
         <svg id="scChart" class="rd-svg" viewBox="0 0 1200 360" preserveAspectRatio="none" aria-label="SPY with small-cap-confirmed and divergent extremes"></svg>
         <div class="sc-legend">
           <span><span class="dot" style="background:#22d39a"></span>Confirmed low &mdash; small caps capitulating (bullish)</span>
-          <span><span class="dot" style="background:#8be0be"></span>Divergent low &mdash; small caps holding (weaker bounce)</span>
-          <span><span class="dot" style="background:#ff5374"></span>Divergent high &mdash; small caps already rolling (bearish)</span>
+          <span><span class="dot" style="background:#eab308"></span>Divergent low &mdash; small caps holding (weaker bounce)</span>
+          <span><span class="dot" style="background:#f97316"></span>Divergent high &mdash; small caps already rolling (bearish)</span>
           <span><span class="dot" style="background:#ff9db3"></span>Confirmed high &mdash; small caps in agreement</span>
         </div>
         <p class="rd-note" id="scNote">Loading small-cap confirmation&hellip;</p>
@@ -682,9 +682,9 @@
           </p>
           <ul>
             <li><strong>Confirmed high</strong> (pink dot): SPY at a short-term high, IWM/SPY ratio rising. Broad participation. Neutral signal &mdash; the market may keep going.</li>
-            <li><strong>Divergent high</strong> (bright red dot): SPY at a short-term high, IWM/SPY ratio falling. Small caps rolling first &mdash; classic bearish divergence.</li>
-            <li><strong>Confirmed low</strong> (bright green dot): SPY at a short-term low, IWM/SPY ratio falling. Small caps capitulating &mdash; a washout, historically the setup for the biggest bounces.</li>
-            <li><strong>Divergent low</strong> (pale green dot): SPY at a short-term low, IWM/SPY ratio rising. Small caps holding &mdash; weaker bounce than the washout case.</li>
+            <li><strong>Divergent high</strong> (orange dot): SPY at a short-term high, IWM/SPY ratio falling. Small caps rolling first &mdash; classic bearish divergence.</li>
+            <li><strong>Confirmed low</strong> (green dot): SPY at a short-term low, IWM/SPY ratio falling. Small caps capitulating &mdash; a washout, historically the setup for the biggest bounces.</li>
+            <li><strong>Divergent low</strong> (yellow dot): SPY at a short-term low, IWM/SPY ratio rising. Small caps holding &mdash; weaker bounce than the washout case.</li>
           </ul>
           <p class="ratio-history">
             <strong>Historical forward returns</strong> (2003&ndash;present, over 220 short-term extrema):
@@ -2506,11 +2506,19 @@
       return rows.slice(-n);
     }
 
+    // Traffic-light-style palette so the four states read at a glance:
+    //   green   = confirmed low  (bullish washout)
+    //   yellow  = divergent low  (caution — weaker bounce)
+    //   orange  = divergent high (bearish warning)
+    //   pink    = confirmed high (near-neutral — mild pullback ahead)
+    // Yellow + orange are visually distinct from the green/pink pair;
+    // previous shades were too close (pale green vs bright green,
+    // bright red vs pale pink) to distinguish quickly.
     const COLOR = {
       confirmed_high: '#ff9db3',
-      divergent_high: '#ff5374',
+      divergent_high: '#f97316',
       confirmed_low:  '#22d39a',
-      divergent_low:  '#8be0be',
+      divergent_low:  '#eab308',
     };
 
     function drawChart(visible) {
