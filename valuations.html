@@ -57,11 +57,6 @@
     .per-hero-stat.avg     .num  { color: #64d3ff; }
     .per-hero-stat.pct     .num  { color: var(--s5); }
     .per-hero-stat.max     .num  { color: var(--s0); }
-    /* Components callout — colored by sign / direction. Green = a
-       positive outcome for the reader (price up, earnings up, or
-       multiple compression = "cheaper"); red = the opposite. */
-    .per-hero-stat.pos     .num  { color: var(--s6); }
-    .per-hero-stat.neg     .num  { color: var(--s0); }
     /* Small extra note below the "Forward PE" tile with the implied
        one-year earnings-growth expectation. Kept subtle so it doesn't
        fight the main number. */
@@ -230,45 +225,6 @@
         </div>
       </div>
       <p class="backtest-meta" id="statMeta">Loading&hellip;</p>
-    </section>
-
-    <!-- Price vs earnings decomposition — tells the "which grew faster
-         over the last N years — price or earnings?" story that the
-         FactSet-style dual-axis chart delivers, but as three plain-English
-         stat tiles. When earnings grew faster than price → multiple
-         compressed → stocks cheaper. When price grew faster → multiple
-         expanded → stocks pricier on a per-dollar-of-earnings basis. -->
-    <section id="components">
-      <div class="section-head">
-        <h2>Price vs earnings &mdash; which grew faster?</h2>
-        <p>
-          Not every rally is created equal. When earnings grow faster than price, the market gets
-          <strong>cheaper</strong> even as it goes up (multiple compression). When price runs ahead of
-          earnings, it gets <strong>pricier</strong> per dollar of earnings (multiple expansion). Pick a
-          window below.
-        </p>
-      </div>
-      <div class="chart-periods" id="cmpPeriods" role="tablist" aria-label="Comparison window">
-        <button type="button" class="chart-period-btn active" data-period="1"  role="tab">1Y</button>
-        <button type="button" class="chart-period-btn"        data-period="3"  role="tab">3Y</button>
-        <button type="button" class="chart-period-btn"        data-period="5"  role="tab">5Y</button>
-        <button type="button" class="chart-period-btn"        data-period="10" role="tab">10Y</button>
-      </div>
-      <div class="per-hero-stats">
-        <div class="per-hero-stat" id="cmpSpxTile">
-          <span class="num" id="cmpSpx">&ndash;</span>
-          <span class="label">S&amp;P 500 price change</span>
-        </div>
-        <div class="per-hero-stat" id="cmpEpsTile">
-          <span class="num" id="cmpEps">&ndash;</span>
-          <span class="label">Trailing 12-mo EPS change</span>
-        </div>
-        <div class="per-hero-stat" id="cmpPeTile">
-          <span class="num" id="cmpPe">&ndash;</span>
-          <span class="label" id="cmpPeLabel">Multiple change</span>
-        </div>
-      </div>
-      <p class="backtest-meta" id="cmpNarrative">Loading&hellip;</p>
     </section>
 
     <section id="chart">
@@ -607,124 +563,6 @@
       &nbsp;·&nbsp; median PE: <strong>${median.toFixed(2)}</strong>
       &nbsp;·&nbsp; today's PE is higher than <strong>${percentile.toFixed(0)}%</strong> of historical readings
     `;
-
-    // ---- Price vs earnings decomposition ----
-    // Runs in parallel with the forward-PE block below. Fetches nominal
-    // SPX daily closes and derives trailing EPS % change from the SPX %
-    // change ÷ trailing-PE % change identity (avoids having to compute
-    // EPS explicitly and inherits Shiller's smoothed monthly PE cleanly).
-    (async () => {
-      const spxRows = await (async () => {
-        try {
-          const r = await fetch('data/spx.csv', { cache: 'no-store' });
-          if (!r.ok) return null;
-          const text = await r.text();
-          const out = [];
-          const lines = text.trim().split(/\r?\n/).slice(1);
-          for (const ln of lines) {
-            const [d, closeStr] = ln.split(',');
-            const c = parseFloat(closeStr);
-            if (!d || !isFinite(c)) continue;
-            out.push({ date: d, close: c });
-          }
-          return out;
-        } catch (e) { return null; }
-      })();
-
-      if (!spxRows || !spxRows.length || !rows.length) {
-        $('cmpNarrative').textContent = 'Comparison unavailable — could not load price series.';
-        return;
-      }
-
-      // Latest SPX close + latest trailing PE.
-      const latestSpx = spxRows[spxRows.length - 1];
-      const latestPeRow = rows[rows.length - 1];
-
-      // Locate SPX close and PE monthly reading nearest to a target date
-      // (linear scan; both series are small enough that this is cheap).
-      const parse = (d) => Date.parse(d + 'T00:00:00Z');
-      function nearestSpx(ts) {
-        let best = null, bestGap = Infinity;
-        for (const r of spxRows) {
-          const gap = Math.abs(parse(r.date) - ts);
-          if (gap < bestGap) { bestGap = gap; best = r; }
-        }
-        return best;
-      }
-      function nearestPe(ts) {
-        let best = null, bestGap = Infinity;
-        for (const r of rows) {
-          const gap = Math.abs(parse(r.date) - ts);
-          if (gap < bestGap) { bestGap = gap; best = r; }
-        }
-        return best;
-      }
-
-      function render(years) {
-        const nowTs = parse(latestSpx.date);
-        const thenTs = nowTs - years * 365.25 * 86400 * 1000;
-        const thenSpx = nearestSpx(thenTs);
-        const thenPe  = nearestPe(thenTs);
-        if (!thenSpx || !thenPe) {
-          $('cmpNarrative').textContent = 'Not enough history for this window.';
-          return;
-        }
-
-        const spxPct = ((latestSpx.close / thenSpx.close) - 1) * 100;
-        const pePct  = ((latestPeRow.pe / thenPe.pe)     - 1) * 100;
-        // EPS % change from the identity: SPX = PE × EPS
-        //   → (SPX_now/SPX_then) = (PE_now/PE_then) × (EPS_now/EPS_then)
-        //   → EPS_now/EPS_then = (SPX ratio) / (PE ratio)
-        const epsPct = (((1 + spxPct / 100) / (1 + pePct / 100)) - 1) * 100;
-
-        const sign = (v) => v > 0 ? '+' : '';
-        const cls  = (v) => v > 0.1 ? 'pos' : v < -0.1 ? 'neg' : '';
-        // For the multiple: compression (negative) is "good for the
-        // reader" (cheaper stocks) → green. Expansion is red. Inverted
-        // from the price/EPS convention above.
-        const peCls = pePct < -0.1 ? 'pos' : pePct > 0.1 ? 'neg' : '';
-        const peWord = pePct < -0.1 ? 'compression' : pePct > 0.1 ? 'expansion' : 'unchanged';
-
-        const spxEl = $('cmpSpx'), epsEl = $('cmpEps'), peEl = $('cmpPe');
-        spxEl.textContent = sign(spxPct) + spxPct.toFixed(1) + '%';
-        epsEl.textContent = sign(epsPct) + epsPct.toFixed(1) + '%';
-        peEl.textContent  = sign(pePct)  + pePct.toFixed(1)  + '%';
-        $('cmpSpxTile').className = 'per-hero-stat ' + cls(spxPct);
-        $('cmpEpsTile').className = 'per-hero-stat ' + cls(epsPct);
-        $('cmpPeTile').className  = 'per-hero-stat ' + peCls;
-        $('cmpPeLabel').textContent = 'P/E multiple change (' + peWord + ')';
-
-        // Narrative sentence — spell out the "which grew faster" story.
-        const spxAbs = Math.abs(spxPct);
-        const epsAbs = Math.abs(epsPct);
-        let story;
-        if (spxPct > 0 && epsPct > 0 && Math.abs(epsPct - spxPct) < 1) {
-          story = `SPX and trailing earnings grew roughly in sync over the last ${years} year${years === 1 ? '' : 's'} — the multiple barely moved.`;
-        } else if (spxPct > 0 && epsPct > spxPct) {
-          story = `Earnings grew faster than price — trailing EPS was up <strong>${epsAbs.toFixed(1)}%</strong> vs SPX up <strong>${spxAbs.toFixed(1)}%</strong>. That's <strong>${Math.abs(pePct).toFixed(1)}% multiple compression</strong>: stocks are cheaper per dollar of earnings than they were ${years} year${years === 1 ? '' : 's'} ago, even as the market rose.`;
-        } else if (spxPct > 0 && epsPct <= spxPct) {
-          story = `Price rose faster than earnings — SPX up <strong>${spxAbs.toFixed(1)}%</strong> vs trailing EPS ${epsPct >= 0 ? 'up' : 'down'} <strong>${epsAbs.toFixed(1)}%</strong>. That's <strong>${Math.abs(pePct).toFixed(1)}% multiple expansion</strong>: stocks are pricier per dollar of earnings than they were ${years} year${years === 1 ? '' : 's'} ago.`;
-        } else if (spxPct < 0 && epsPct > 0) {
-          story = `Price fell (<strong>${spxAbs.toFixed(1)}%</strong>) while trailing earnings held up (<strong>+${epsAbs.toFixed(1)}%</strong>) — the multiple compressed <strong>${Math.abs(pePct).toFixed(1)}%</strong>. Historically a setup for above-average forward returns.`;
-        } else if (spxPct < 0 && epsPct < 0 && epsPct < spxPct) {
-          story = `Both price and trailing earnings fell over the last ${years} year${years === 1 ? '' : 's'}, but earnings fell more — the multiple still expanded <strong>${Math.abs(pePct).toFixed(1)}%</strong>.`;
-        } else {
-          story = `Over the last ${years} year${years === 1 ? '' : 's'}: SPX ${sign(spxPct)}${spxPct.toFixed(1)}%, trailing EPS ${sign(epsPct)}${epsPct.toFixed(1)}%, multiple ${sign(pePct)}${pePct.toFixed(1)}%.`;
-        }
-        $('cmpNarrative').innerHTML =
-          story +
-          ` &nbsp;·&nbsp; <em>Trailing 12-mo earnings via Shiller, PE from multpl.com.</em>`;
-      }
-
-      const picker = document.getElementById('cmpPeriods');
-      picker.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-period]');
-        if (!btn) return;
-        picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
-        render(parseInt(btn.getAttribute('data-period'), 10));
-      });
-      render(1);
-    })();
 
     // ---- Forward PE (analyst consensus for next 12 months) --------------
     // Yahoo doesn't publish forwardPE for the S&P 500 index or its ETF
