@@ -2731,9 +2731,9 @@
                 <button type="button" data-range="5D">5D</button>
                 <button type="button" data-range="1M">1M</button>
                 <button type="button" data-range="3M">3M</button>
-                <button type="button" data-range="6M" class="active">6M</button>
+                <button type="button" data-range="6M">6M</button>
                 <button type="button" data-range="YTD">YTD</button>
-                <button type="button" data-range="1Y">1Y</button>
+                <button type="button" data-range="1Y" class="active">1Y</button>
                 <button type="button" data-range="5Y">5Y</button>
                 <button type="button" data-range="All">All</button>
               </div>
@@ -3629,7 +3629,7 @@
         const footerL   = mount.querySelector('[data-role="footerLeft"]');
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
-        const state = { range: '6M', show8ema: false, show20ema: false, show50: false, show100: false, show200: false, showRsi: false, showMacd: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
+        const state = { range: '1Y', show8ema: false, show20ema: false, show50: false, show100: false, show200: true, showRsi: false, showMacd: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
         const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
 
@@ -3645,12 +3645,21 @@
         const VALID_RANGES = ['1D','5D','1M','3M','6M','YTD','1Y','5Y','All'];
         const _shareRange = (params.get('range') || '').trim();
         if (_shareRange && VALID_RANGES.includes(_shareRange)) state.range = _shareRange;
-        const _shareMa = (params.get('ma') || '').split(',').map(s => s.trim()).filter(Boolean);
-        if (_shareMa.includes('8ema'))  state.show8ema  = true;
-        if (_shareMa.includes('20ema')) state.show20ema = true;
-        if (_shareMa.includes('50'))    state.show50    = true;
-        if (_shareMa.includes('100'))   state.show100   = true;
-        if (_shareMa.includes('200'))   state.show200   = true;
+        // MA hydrate is authoritative: if a `ma` param is present the
+        // sender is declaring their exact choice, so we reset the
+        // default 200-on state first, then enable only what they
+        // listed. `ma=none` is our marker for "sender wanted every
+        // MA off" — no toggle names match, all stay false.
+        const _maParam = params.get('ma');
+        if (_maParam !== null) {
+          state.show8ema = state.show20ema = state.show50 = state.show100 = state.show200 = false;
+          const _shareMa = _maParam.split(',').map(s => s.trim()).filter(Boolean);
+          if (_shareMa.includes('8ema'))  state.show8ema  = true;
+          if (_shareMa.includes('20ema')) state.show20ema = true;
+          if (_shareMa.includes('50'))    state.show50    = true;
+          if (_shareMa.includes('100'))   state.show100   = true;
+          if (_shareMa.includes('200'))   state.show200   = true;
+        }
         const _shareInd = (params.get('ind') || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
         if (_shareInd.includes('rsi'))  state.showRsi  = true;
         if (_shareInd.includes('macd')) state.showMacd = true;
@@ -4109,14 +4118,21 @@
           function buildShareUrl() {
             const url = new URL(window.location.origin + window.location.pathname);
             url.searchParams.set('sym', sym);
-            if (state.range && state.range !== '6M') url.searchParams.set('range', state.range);
+            // Only serialize non-default values so a "shared" URL stays
+            // short when the sender didn't change anything. Defaults:
+            // range = 1Y, 200 SMA on, everything else off.
+            if (state.range && state.range !== '1Y') url.searchParams.set('range', state.range);
             const mas = [];
             if (state.show8ema)  mas.push('8ema');
             if (state.show20ema) mas.push('20ema');
             if (state.show50)    mas.push('50');
             if (state.show100)   mas.push('100');
             if (state.show200)   mas.push('200');
+            // Emit an explicit "no MAs" marker only when the sender
+            // manually turned OFF the default 200 SMA — otherwise a
+            // link with no `ma=` param defaults to 200 SMA on load.
             if (mas.length) url.searchParams.set('ma', mas.join(','));
+            else            url.searchParams.set('ma', 'none');
             const inds = [];
             if (state.showRsi)  inds.push('rsi');
             if (state.showMacd) inds.push('macd');
