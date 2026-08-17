@@ -1839,14 +1839,20 @@
     .tk-range-picker button.active {
       background: var(--term-amber); color: #0a1218; border-color: var(--term-amber);
     }
+    .tk-ma-toggles button[data-ma="8ema"].active {
+      background: rgba(255, 255, 255, 0.10); color: #ffffff; border-color: #ffffff;
+    }
+    .tk-ma-toggles button[data-ma="20ema"].active {
+      background: rgba(255, 255, 255, 0.10); color: #ffffff; border-color: #ffffff;
+    }
     .tk-ma-toggles button[data-ma="50"].active {
-      background: rgba(110, 231, 255, 0.15); color: var(--term-cyan); border-color: var(--term-cyan);
+      background: rgba(234, 179, 8, 0.15); color: #eab308; border-color: #eab308;
     }
     .tk-ma-toggles button[data-ma="100"].active {
-      background: rgba(74, 222, 128, 0.15); color: #4ade80; border-color: #4ade80;
+      background: rgba(249, 115, 22, 0.15); color: #f97316; border-color: #f97316;
     }
     .tk-ma-toggles button[data-ma="200"].active {
-      background: rgba(192, 132, 252, 0.15); color: #c084fc; border-color: #c084fc;
+      background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: #ef4444;
     }
     .tk-ma-toggles button[data-ma="rsi"].active {
       background: rgba(255, 182, 88, 0.15); color: var(--term-amber); border-color: var(--term-amber);
@@ -2732,6 +2738,8 @@
                 <button type="button" data-range="All">All</button>
               </div>
               <div class="tk-ma-toggles" data-role="maToggles">
+                <button type="button" data-ma="8ema">8 EMA</button>
+                <button type="button" data-ma="20ema">20 EMA</button>
                 <button type="button" data-ma="50">50 SMA</button>
                 <button type="button" data-ma="100">100 SMA</button>
                 <button type="button" data-ma="200">200 SMA</button>
@@ -2806,6 +2814,25 @@
         const fmt  = (v, d=2) => v == null || !isFinite(v) ? '—' : v.toFixed(d);
 
         // --- Indicator helpers ---
+        // Exponential moving average of the close series. Uses the
+        // standard smoothing factor k = 2/(n+1) and seeds the first
+        // value with a plain SMA of the first n closes so the ramp-in
+        // matches how every charting package (TradingView, Yahoo, etc.)
+        // does it. Null-padded for the first n-1 bars.
+        function ema(pts, n) {
+          const out = new Array(pts.length).fill(null);
+          if (pts.length < n) return out;
+          const k = 2 / (n + 1);
+          let seed = 0;
+          for (let i = 0; i < n; i++) seed += pts[i][4];
+          let prev = seed / n;
+          out[n - 1] = prev;
+          for (let i = n; i < pts.length; i++) {
+            prev = pts[i][4] * k + prev * (1 - k);
+            out[i] = prev;
+          }
+          return out;
+        }
         function sma(pts, n) {
           // pts row is [ts, o, h, l, c] — index 4 is close.
           const out = new Array(pts.length).fill(null);
@@ -2961,9 +2988,11 @@
             return;
           }
 
-          const sma50   = opts.show50  ? sma(pts, 50)  : null;
-          const sma100  = opts.show100 ? sma(pts, 100) : null;
-          const sma200  = opts.show200 ? sma(pts, 200) : null;
+          const ema8    = opts.show8ema  ? ema(pts, 8)   : null;
+          const ema20   = opts.show20ema ? ema(pts, 20)  : null;
+          const sma50   = opts.show50    ? sma(pts, 50)  : null;
+          const sma100  = opts.show100   ? sma(pts, 100) : null;
+          const sma200  = opts.show200   ? sma(pts, 200) : null;
           const rsi14   = showRsi      ? rsi(pts, 14)  : null;
           const macdVal = showMacd     ? macd(pts, 12, 26, 9) : null;
           const wk52    = opts.wk52    || null;
@@ -2978,6 +3007,8 @@
           const highs = pts.map(p => p[2]);
           const lows  = pts.map(p => p[3]);
           const vals  = [...highs, ...lows];
+          if (ema8)   for (const v of ema8)   if (v != null) vals.push(v);
+          if (ema20)  for (const v of ema20)  if (v != null) vals.push(v);
           if (sma50)  for (const v of sma50)  if (v != null) vals.push(v);
           if (sma100) for (const v of sma100) if (v != null) vals.push(v);
           if (sma200) for (const v of sma200) if (v != null) vals.push(v);
@@ -3184,17 +3215,31 @@
             }
             return out;
           }
+          // Fast EMAs first (drawn under the SMAs). 8 EMA dashed white,
+          // 20 EMA solid white. Thinner than the SMAs so they read as
+          // fast/reactive vs slow/structural. smaPath handles any null
+          // gaps at the start where the moving average hasn't seeded yet.
+          if (ema8) {
+            const d = smaPath(ema8);
+            if (d) s += `<path fill="none" stroke="#ffffff" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.85" d="${d}"/>`;
+          }
+          if (ema20) {
+            const d = smaPath(ema20);
+            if (d) s += `<path fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.9" d="${d}"/>`;
+          }
+          // Slow SMAs — 50 yellow, 100 orange, 200 red (traffic-light
+          // spacing so a glance tells you which one you're looking at).
           if (sma50) {
             const d = smaPath(sma50);
-            if (d) s += `<path fill="none" stroke="#6ee7ff" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
+            if (d) s += `<path fill="none" stroke="#eab308" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
           }
           if (sma100) {
             const d = smaPath(sma100);
-            if (d) s += `<path fill="none" stroke="#4ade80" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
+            if (d) s += `<path fill="none" stroke="#f97316" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
           }
           if (sma200) {
             const d = smaPath(sma200);
-            if (d) s += `<path fill="none" stroke="#c084fc" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
+            if (d) s += `<path fill="none" stroke="#ef4444" stroke-width="1.1" opacity="0.9" d="${d}"/>`;
           }
 
           if (showRsi && rsi14 && rsi14.some(v => v != null)) {
@@ -3584,7 +3629,7 @@
         const footerL   = mount.querySelector('[data-role="footerLeft"]');
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
-        const state = { range: '6M', show50: false, show100: false, show200: false, showRsi: false, showMacd: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
+        const state = { range: '6M', show8ema: false, show20ema: false, show50: false, show100: false, show200: false, showRsi: false, showMacd: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
         const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
 
@@ -3601,9 +3646,11 @@
         const _shareRange = (params.get('range') || '').trim();
         if (_shareRange && VALID_RANGES.includes(_shareRange)) state.range = _shareRange;
         const _shareMa = (params.get('ma') || '').split(',').map(s => s.trim()).filter(Boolean);
-        if (_shareMa.includes('50'))  state.show50  = true;
-        if (_shareMa.includes('100')) state.show100 = true;
-        if (_shareMa.includes('200')) state.show200 = true;
+        if (_shareMa.includes('8ema'))  state.show8ema  = true;
+        if (_shareMa.includes('20ema')) state.show20ema = true;
+        if (_shareMa.includes('50'))    state.show50    = true;
+        if (_shareMa.includes('100'))   state.show100   = true;
+        if (_shareMa.includes('200'))   state.show200   = true;
         const _shareInd = (params.get('ind') || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
         if (_shareInd.includes('rsi'))  state.showRsi  = true;
         if (_shareInd.includes('macd')) state.showMacd = true;
@@ -3839,6 +3886,7 @@
 
         function redraw() {
           drawChart(svgEl, sliceForRange(state.range, cache), {
+            show8ema: state.show8ema, show20ema: state.show20ema,
             show50: state.show50, show100: state.show100, show200: state.show200,
             showRsi: state.showRsi, showMacd: state.showMacd, wk52,
             lines: state.lines, pending: state.pendingPoint, hover: state.hover,
@@ -4005,21 +4053,25 @@
           const btn = e.target.closest('button[data-ma]');
           if (!btn) return;
           btn.classList.toggle('active');
-          if (btn.dataset.ma === '50')   state.show50   = btn.classList.contains('active');
-          if (btn.dataset.ma === '100')  state.show100  = btn.classList.contains('active');
-          if (btn.dataset.ma === '200')  state.show200  = btn.classList.contains('active');
-          if (btn.dataset.ma === 'rsi')  state.showRsi  = btn.classList.contains('active');
-          if (btn.dataset.ma === 'macd') state.showMacd = btn.classList.contains('active');
+          if (btn.dataset.ma === '8ema')  state.show8ema  = btn.classList.contains('active');
+          if (btn.dataset.ma === '20ema') state.show20ema = btn.classList.contains('active');
+          if (btn.dataset.ma === '50')    state.show50    = btn.classList.contains('active');
+          if (btn.dataset.ma === '100')   state.show100   = btn.classList.contains('active');
+          if (btn.dataset.ma === '200')   state.show200   = btn.classList.contains('active');
+          if (btn.dataset.ma === 'rsi')   state.showRsi   = btn.classList.contains('active');
+          if (btn.dataset.ma === 'macd')  state.showMacd  = btn.classList.contains('active');
           redraw();
         });
 
         // Reflect any URL-hydrated MA / indicator state as active buttons
         // so the toggles visually match what the chart is drawing.
-        if (state.show50)   maEl.querySelector('[data-ma="50"]').classList.add('active');
-        if (state.show100)  maEl.querySelector('[data-ma="100"]').classList.add('active');
-        if (state.show200)  maEl.querySelector('[data-ma="200"]').classList.add('active');
-        if (state.showRsi)  maEl.querySelector('[data-ma="rsi"]').classList.add('active');
-        if (state.showMacd) maEl.querySelector('[data-ma="macd"]').classList.add('active');
+        if (state.show8ema)  maEl.querySelector('[data-ma="8ema"]').classList.add('active');
+        if (state.show20ema) maEl.querySelector('[data-ma="20ema"]').classList.add('active');
+        if (state.show50)    maEl.querySelector('[data-ma="50"]').classList.add('active');
+        if (state.show100)   maEl.querySelector('[data-ma="100"]').classList.add('active');
+        if (state.show200)   maEl.querySelector('[data-ma="200"]').classList.add('active');
+        if (state.showRsi)   maEl.querySelector('[data-ma="rsi"]').classList.add('active');
+        if (state.showMacd)  maEl.querySelector('[data-ma="macd"]').classList.add('active');
         updateClearBtn();
 
         // ---- Share bar wiring ----------------------------------------
@@ -4059,9 +4111,11 @@
             url.searchParams.set('sym', sym);
             if (state.range && state.range !== '6M') url.searchParams.set('range', state.range);
             const mas = [];
-            if (state.show50)  mas.push('50');
-            if (state.show100) mas.push('100');
-            if (state.show200) mas.push('200');
+            if (state.show8ema)  mas.push('8ema');
+            if (state.show20ema) mas.push('20ema');
+            if (state.show50)    mas.push('50');
+            if (state.show100)   mas.push('100');
+            if (state.show200)   mas.push('200');
             if (mas.length) url.searchParams.set('ma', mas.join(','));
             const inds = [];
             if (state.showRsi)  inds.push('rsi');
