@@ -2061,33 +2061,34 @@
     .ai-analysis-body {
       color: var(--term-text);
       font-size: 0.92rem;
-      line-height: 1.45;
-      white-space: pre-wrap;   /* preserves the model's line breaks + section spacing */
+      line-height: 1.5;
       word-wrap: break-word;
     }
-    /* Section headers detected by the client — Claude emits them as
-       plain uppercase lines (BUSINESS SNAPSHOT, FUNDAMENTALS, etc.).
-       Tight top margin + no bottom padding keeps the briefing dense. */
+    /* Paragraphs are proper block elements (renderer emits <p>) so
+       CSS margins own every gap. white-space: pre-wrap is kept ONLY
+       on paragraphs to preserve intra-block line breaks (bullet lists
+       inside bull/bear cases), NOT on the container — otherwise the
+       raw "\n" characters between blocks would create phantom gaps. */
+    .ai-analysis-body p {
+      margin: 0 0 0.55rem 0;
+      white-space: pre-wrap;
+    }
+    .ai-analysis-body p:last-child { margin-bottom: 0; }
+    /* Section headers — tight, no border, minimal margins. */
     .ai-analysis-body h4 {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 0.72rem;
       color: var(--term-amber);
       letter-spacing: 0.14em;
-      margin: 0.55rem 0 0.2rem;
+      margin: 0.75rem 0 0.15rem;
       padding: 0;
       border: 0;
       text-transform: uppercase;
     }
-    .ai-analysis-body h4:first-child { margin-top: 0.1rem; }
-    /* Collapse the empty lines Claude puts around headers so the raw
-       "\n\nSECTION\n\n" doesn't get double-spaced against our own
-       header margin. Both pseudo-strategies target the same fix. */
-    .ai-analysis-body h4 + br,
-    .ai-analysis-body br + h4 { display: none; }
+    .ai-analysis-body h4:first-child { margin-top: 0; }
     .ai-analysis-body strong { color: var(--term-cyan); font-weight: 700; }
     /* The trailing disclaimer line Claude appends — muted caption. */
-    .ai-analysis-body .disclaimer {
-      display: block;
+    .ai-analysis-body p.disclaimer {
       margin-top: 0.75rem;
       padding-top: 0.55rem;
       border-top: 1px dashed var(--term-border);
@@ -2096,6 +2097,7 @@
       font-size: 0.7rem;
       font-style: italic;
       letter-spacing: 0.02em;
+      white-space: normal;
     }
     .ai-analysis-footer {
       margin-top: 0.75rem;
@@ -4451,29 +4453,55 @@
           return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
-        // Take the running raw text and render it as HTML — promoting
-        // recognized headers to <h4>, boldening the "Bulls point to..."
-        // / "Bears worry..." cues, muting the trailing disclaimer.
+        // Take the running raw text and render it as HTML. Parses into
+        // block elements — <h4> for section headers, <p> for paragraphs,
+        // <p class="disclaimer"> for the footer line — so CSS margins
+        // own every gap and the raw "\n\n" between sections never turns
+        // into phantom whitespace under a pre-wrap container.
         function renderBody(raw, cursor) {
           const lines = raw.split(/\r?\n/);
-          let html = '';
+          const blocks = [];
+          let para = [];   // accumulator for the current paragraph
+
+          const flushPara = () => {
+            if (para.length) {
+              blocks.push({ type: 'para', text: para.join('\n') });
+              para = [];
+            }
+          };
+
           for (const line of lines) {
-            if (!line.trim()) { html += '\n'; continue; }
-            if (disclaimerRe.test(line.trim())) {
-              html += '<span class="disclaimer">' + esc(line.trim()) + '</span>';
+            const trimmed = line.trim();
+            if (!trimmed) { flushPara(); continue; }
+            if (disclaimerRe.test(trimmed)) {
+              flushPara();
+              blocks.push({ type: 'disclaimer', text: trimmed });
               continue;
             }
-            const m = line.match(headerRe);
+            const m = trimmed.match(headerRe);
             if (m) {
-              html += '<h4>' + esc(m[1].replace(/\s+/g, ' ').trim()) + '</h4>';
+              flushPara();
+              blocks.push({ type: 'header', text: m[1].replace(/\s+/g, ' ').trim() });
               continue;
             }
-            // Auto-bold the standard bull/bear/base labels inline
-            const bold = esc(line).replace(
-              /\b(Bulls point to|Bears worry about|Base case|Bull case|Bear case)\b/gi,
-              '<strong>$1</strong>'
-            );
-            html += bold + '\n';
+            para.push(line);
+          }
+          flushPara();
+
+          let html = '';
+          for (const b of blocks) {
+            if (b.type === 'header') {
+              html += '<h4>' + esc(b.text) + '</h4>';
+            } else if (b.type === 'disclaimer') {
+              html += '<p class="disclaimer">' + esc(b.text) + '</p>';
+            } else {
+              // Auto-bold the standard bull/bear/base labels inline
+              const bold = esc(b.text).replace(
+                /\b(Bulls point to|Bears worry about|Base case|Bull case|Bear case)\b/gi,
+                '<strong>$1</strong>'
+              );
+              html += '<p>' + bold + '</p>';
+            }
           }
           if (cursor) html += '<span class="ai-analysis-cursor"></span>';
           body.innerHTML = html;
