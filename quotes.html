@@ -493,6 +493,12 @@
       border: 1px solid var(--term-border);
       border-radius: 4px;
       padding: 0.7rem 0.85rem 0.8rem;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .brd-card:hover {
+      border-color: var(--term-amber);
+      transform: translateY(-1px);
     }
     .brd-card .brd-label {
       font-family: 'JetBrains Mono', monospace;
@@ -885,6 +891,127 @@
       min-height: 480px;
     }
 
+    /* Market-internals detail modal — same terminal aesthetic as sector
+       modal, but content is a 2-column list of the underlying sectors
+       that pass / fail whatever criterion the clicked card measures. */
+    .internals-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(4, 8, 18, 0.85);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .internals-modal-backdrop.open { display: flex; }
+    .internals-modal {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 6px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .internals-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0.85rem 1rem 0.75rem;
+      border-bottom: 1px solid var(--term-border);
+      gap: 0.75rem;
+    }
+    .internals-modal-head h3 {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--term-amber);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .internals-modal-head .sub {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-dim);
+      margin-top: 0.35rem;
+      letter-spacing: 0.02em;
+      text-transform: none;
+    }
+    .internals-modal-close {
+      background: transparent;
+      border: 1px solid var(--term-border);
+      color: var(--term-dim);
+      border-radius: 3px;
+      font: inherit;
+      font-size: 1.05rem;
+      line-height: 1;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .internals-modal-close:hover { color: var(--term-text); border-color: var(--term-amber); }
+    .internals-modal-body { padding: 0.85rem 1rem 1rem; overflow: auto; }
+    .internals-cols {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.15rem;
+    }
+    @media (min-width: 560px) {
+      .internals-cols { grid-template-columns: 1fr 1fr; }
+    }
+    .internals-col-header {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--term-border);
+      margin-bottom: 0.5rem;
+      color: var(--term-dim);
+    }
+    .internals-col-header .count {
+      color: var(--term-text);
+      font-weight: 700;
+      margin-right: 0.35rem;
+    }
+    .internals-col.pos .internals-col-header .count { color: var(--term-green); }
+    .internals-col.neg .internals-col-header .count { color: var(--term-red);   }
+    .internals-list { display: flex; flex-direction: column; gap: 0.15rem; }
+    .internals-row {
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      gap: 0.6rem;
+      align-items: baseline;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      padding: 0.35rem 0.4rem;
+      border-radius: 3px;
+    }
+    .internals-row:hover { background: var(--term-panel-2); }
+    .internals-row .sym {
+      font-weight: 700;
+      color: var(--term-text);
+      text-transform: uppercase;
+    }
+    .internals-row .name  { color: var(--term-text); font-size: 0.76rem; }
+    .internals-row .metric {
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--term-dim);
+    }
+    .internals-row.pos .metric { color: var(--term-green); }
+    .internals-row.neg .metric { color: var(--term-red);   }
+    .internals-empty {
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.5rem 0.4rem;
+      font-style: italic;
+    }
+
     /* ---- Earnings Calendar (upcoming week, Finnhub) ---- */
     .ec-tabs {
       display: flex;
@@ -1133,6 +1260,22 @@
           <button type="button" class="sector-modal-close" id="sectorModalClose" aria-label="Close">&times;</button>
         </div>
         <div class="sector-modal-body" id="sectorModalBody"></div>
+      </div>
+    </div>
+
+    <!-- Market-internals detail modal — opens when a breadth card is
+         clicked, shows the underlying per-sector detail (which sectors
+         pass / fail the criterion the card measures). -->
+    <div class="internals-modal-backdrop" id="internalsModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="internalsModalTitle">
+      <div class="internals-modal">
+        <div class="internals-modal-head">
+          <div>
+            <h3 id="internalsModalTitle">Market Internals</h3>
+            <span class="sub" id="internalsModalSub">Per-sector breakdown</span>
+          </div>
+          <button type="button" class="internals-modal-close" id="internalsModalClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="internals-modal-body" id="internalsModalBody"></div>
       </div>
     </div>
 
@@ -2449,6 +2592,25 @@
       const mount = document.getElementById('internalsGauges');
       if (!mount) return;
       const SECTORS = ['xlk','xlf','xle','xlv','xli','xly','xlp','xlu','xlb','xlre','xlc'];
+      // Human-readable names for the click-to-open modal. Kept local
+      // rather than pulled from the heatmap block below because these
+      // two IIFEs don't share scope.
+      const SECTOR_NAMES = {
+        xlk:  'Technology',
+        xlf:  'Financials',
+        xle:  'Energy',
+        xlv:  'Health Care',
+        xli:  'Industrials',
+        xly:  'Cons. Discretionary',
+        xlp:  'Cons. Staples',
+        xlu:  'Utilities',
+        xlb:  'Materials',
+        xlre: 'Real Estate',
+        xlc:  'Comm. Services',
+      };
+      // Latest computed stats — updated on every refresh(), read by
+      // the modal-open handler so the popup always shows fresh data.
+      let latestStats = null;
 
       async function loadCsv(sym) {
         try {
@@ -2512,15 +2674,26 @@
           const yr = closes.slice(-252);
           const yrHigh = Math.max(...yr);
           const yrLow  = Math.min(...yr);
+          const changePct = liveQ && Number.isFinite(liveQ.changePct) ? liveQ.changePct : null;
           return {
             sym: s.sym,
+            name: SECTOR_NAMES[s.sym] || s.sym.toUpperCase(),
+            price: current,
             above50:  current > ma50,
             above200: current > ma200,
             nearHigh: current >= yrHigh * 0.97,
             nearLow:  current <= yrLow  * 1.03,
-            up: liveQ && Number.isFinite(liveQ.changePct) ? liveQ.changePct > 0 : null,
+            up: changePct != null ? changePct > 0 : null,
+            // Detail metrics used only by the click-to-open modal:
+            distMa50Pct:  ma50  > 0 ? ((current - ma50)  / ma50)  * 100 : null,
+            distMa200Pct: ma200 > 0 ? ((current - ma200) / ma200) * 100 : null,
+            fromHighPct:  yrHigh > 0 ? ((current - yrHigh) / yrHigh) * 100 : null,   // negative = below high
+            fromLowPct:   yrLow  > 0 ? ((current - yrLow)  / yrLow)  * 100 : null,   // positive = above low
+            changePct,
           };
         });
+        // Save for the modal-open handler (see below).
+        latestStats = stats;
 
         const n = stats.length;
         const count = (pred) => stats.filter(pred).length;
@@ -2535,6 +2708,7 @@
 
         const cards = [
           {
+            metric: 'above50',
             label: 'Sectors above 50-day MA',
             value: `${pct50}<span class="unit">%</span>`,
             gaugePos: pct50,
@@ -2542,6 +2716,7 @@
             endsL: '0%', endsR: '100%',
           },
           {
+            metric: 'above200',
             label: 'Sectors above 200-day MA',
             value: `${pct200}<span class="unit">%</span>`,
             gaugePos: pct200,
@@ -2550,6 +2725,7 @@
           },
           (advPct == null)
             ? {
+                metric: 'advancing',
                 label: 'Advancing today',
                 value: '<span style="color:var(--term-dim); font-size:0.85rem">no live data</span>',
                 gaugePos: 50,
@@ -2557,6 +2733,7 @@
                 endsL: 'ALL RED', endsR: 'ALL GREEN',
               }
             : {
+                metric: 'advancing',
                 label: 'Advancing today',
                 value: `${upDown.up}<span class="unit">/${upDown.up + upDown.dn}</span>`,
                 gaugePos: advPct,
@@ -2571,6 +2748,7 @@
               ? '<span style="color:var(--term-dim); font-size:0.85rem">none</span>'
               : `${highs}<span class="unit">↑</span> &nbsp; ${lows}<span class="unit">↓</span>`;
             return {
+              metric: 'highslows',
               label: 'New 52-wk highs vs lows',
               value: val,
               gaugePos: pos,
@@ -2581,7 +2759,7 @@
         ];
 
         mount.innerHTML = cards.map(c => `
-          <div class="brd-card">
+          <div class="brd-card" data-metric="${c.metric}" role="button" tabindex="0" aria-label="${c.label} — click to see per-sector breakdown">
             <div class="brd-label">${c.label}</div>
             <div class="brd-value">${c.value}</div>
             <div class="brd-gauge" style="--pos: ${c.gaugePos.toFixed(1)}%"></div>
@@ -2590,6 +2768,140 @@
           </div>
         `).join('');
       } // end refresh()
+
+      // ---- Click-to-open per-sector breakdown modal --------------------
+      // Each card exposes a `data-metric` attribute; clicking (or Enter/Space
+      // when focused) opens the modal with a two-column list showing which
+      // sectors pass/fail the criterion the card measures. Modal closes on
+      // X, backdrop click, or ESC.
+      const modalBackdrop = document.getElementById('internalsModalBackdrop');
+      const modalTitle    = document.getElementById('internalsModalTitle');
+      const modalSub      = document.getElementById('internalsModalSub');
+      const modalBody     = document.getElementById('internalsModalBody');
+      const modalClose    = document.getElementById('internalsModalClose');
+
+      // Formatters kept small + shared across metrics.
+      const fmtPct = (v) => (v == null || !Number.isFinite(v)) ? '—'
+        : (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+
+      // Metric definitions: how to split stats into left/right columns
+      // and what number to show next to each sector.
+      const METRICS = {
+        above50: {
+          title: 'Sectors above 50-day MA',
+          leftLabel:  'ABOVE 50-DAY MA',
+          rightLabel: 'BELOW 50-DAY MA',
+          leftFilter:  (s) => s.above50,
+          rightFilter: (s) => !s.above50,
+          metric:      (s) => fmtPct(s.distMa50Pct),
+          sortKey:     (s) => s.distMa50Pct,   // desc for left, asc for right
+        },
+        above200: {
+          title: 'Sectors above 200-day MA',
+          leftLabel:  'ABOVE 200-DAY MA',
+          rightLabel: 'BELOW 200-DAY MA',
+          leftFilter:  (s) => s.above200,
+          rightFilter: (s) => !s.above200,
+          metric:      (s) => fmtPct(s.distMa200Pct),
+          sortKey:     (s) => s.distMa200Pct,
+        },
+        advancing: {
+          title: 'Advancing today',
+          leftLabel:  'UP',
+          rightLabel: 'DOWN',
+          leftFilter:  (s) => s.up === true,
+          rightFilter: (s) => s.up === false,
+          metric:      (s) => fmtPct(s.changePct),
+          sortKey:     (s) => s.changePct,
+          emptyNote:   'No live data — the intraday sector feed is quiet right now.',
+        },
+        highslows: {
+          title: 'New 52-wk highs vs lows',
+          leftLabel:  'NEAR 52-WK HIGH (within 3%)',
+          rightLabel: 'NEAR 52-WK LOW (within 3%)',
+          leftFilter:  (s) => s.nearHigh,
+          rightFilter: (s) => s.nearLow,
+          // For highs — show how far below the high (usually 0% to -3%)
+          // For lows  — show how far above the low
+          metric:      (s) => s.nearHigh
+            ? fmtPct(s.fromHighPct)
+            : fmtPct(s.fromLowPct),
+          sortKey:     (s) => s.nearHigh ? s.fromHighPct : -s.fromLowPct,
+        },
+      };
+
+      function renderList(items, side, cfg) {
+        if (!items.length) {
+          return `<div class="internals-empty">No sectors in this bucket right now.</div>`;
+        }
+        return `<div class="internals-list">` + items.map(s => `
+          <div class="internals-row ${side === 'left' ? 'pos' : 'neg'}">
+            <span class="sym">${s.sym.toUpperCase()}</span>
+            <span class="name">${s.name}</span>
+            <span class="metric">${cfg.metric(s)}</span>
+          </div>
+        `).join('') + `</div>`;
+      }
+
+      function openInternalsModal(metricKey) {
+        const cfg = METRICS[metricKey];
+        if (!cfg || !latestStats) return;
+        const left  = latestStats.filter(cfg.leftFilter);
+        const right = latestStats.filter(cfg.rightFilter);
+        // Left column sorts by metric descending (biggest positive first),
+        // right column sorts ascending (biggest negative first).
+        left.sort((a, b)  => (cfg.sortKey(b) ?? -Infinity) - (cfg.sortKey(a) ?? -Infinity));
+        right.sort((a, b) => (cfg.sortKey(a) ??  Infinity) - (cfg.sortKey(b) ??  Infinity));
+        modalTitle.textContent = cfg.title;
+        modalSub.textContent = `${left.length} of ${latestStats.length} sectors match the "${cfg.leftLabel.toLowerCase()}" side.`;
+        const bothEmpty = !left.length && !right.length;
+        if (bothEmpty && cfg.emptyNote) {
+          modalBody.innerHTML = `<div class="internals-empty">${cfg.emptyNote}</div>`;
+        } else {
+          modalBody.innerHTML = `
+            <div class="internals-cols">
+              <div class="internals-col pos">
+                <div class="internals-col-header"><span class="count">${left.length}</span>${cfg.leftLabel}</div>
+                ${renderList(left, 'left', cfg)}
+              </div>
+              <div class="internals-col neg">
+                <div class="internals-col-header"><span class="count">${right.length}</span>${cfg.rightLabel}</div>
+                ${renderList(right, 'right', cfg)}
+              </div>
+            </div>
+          `;
+        }
+        modalBackdrop.classList.add('open');
+      }
+      function closeInternalsModal() {
+        modalBackdrop.classList.remove('open');
+        modalBody.innerHTML = '';
+      }
+
+      // Delegate click on the whole grid so newly-rendered cards are
+      // always covered without re-binding after each refresh().
+      mount.addEventListener('click', (e) => {
+        const card = e.target.closest('.brd-card');
+        if (!card) return;
+        const metric = card.dataset.metric;
+        if (metric) openInternalsModal(metric);
+      });
+      // Keyboard: Enter or Space on a focused card opens the modal.
+      mount.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const card = e.target.closest('.brd-card');
+        if (!card) return;
+        e.preventDefault();
+        const metric = card.dataset.metric;
+        if (metric) openInternalsModal(metric);
+      });
+      if (modalClose) modalClose.addEventListener('click', closeInternalsModal);
+      if (modalBackdrop) modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) closeInternalsModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (modalBackdrop && e.key === 'Escape' && modalBackdrop.classList.contains('open')) closeInternalsModal();
+      });
 
       // Initial render
       await refresh();
