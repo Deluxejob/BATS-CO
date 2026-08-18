@@ -293,10 +293,20 @@ export default async function handler(req, res) {
       const t = findPeriod(p);
       if (!t) return null;
       const ee = t.earningsEstimate || {};
+      const et = t.epsTrend || {};
+      // Prefer epsTrend.current (what Yahoo Finance's public website
+      // displays) over earningsEstimate.avg. The two fields represent
+      // the same value in theory but Yahoo's `avg` occasionally returns
+      // garbage — e.g. LITE FY2026 came through as $8.23 while `low`
+      // was $19.05, `high` was $25.27, and `epsTrend.current` was
+      // $21.62. An average below its own low is impossible; the
+      // `current` field was internally consistent and correct.
+      const current = toNum(et.current);
+      const avg     = toNum(ee.avg);
       return {
         period:  p,
         endDate: String(t.endDate || ''),
-        eps:     toNum(ee.avg),
+        eps:     Number.isFinite(current) ? current : avg,
         low:     toNum(ee.low),
         high:    toNum(ee.high),
         numAnalysts: toNum(ee.numberOfAnalysts),
