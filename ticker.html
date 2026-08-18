@@ -2011,12 +2011,22 @@
        bordered card with a small × close button, streaming body copy,
        and a footer stamping the disclaimer + timing. */
     .ai-analysis-panel { padding: 1.25rem 1.5rem; position: relative; }
+    /* Pitch state = centered hero. Once the output opens the analysis
+       card is full-width and left-aligned (prose reads better that way);
+       only the pre-click blurb + button get the centered treatment. */
+    .ai-analysis-pitch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0.75rem 0;
+    }
     .ai-analysis-blurb {
-      margin: 0 0 1rem;
+      margin: 0 0 1.15rem;
       color: var(--term-text);
       font-size: 0.95rem;
       line-height: 1.55;
-      max-width: 60ch;
+      max-width: 62ch;
     }
     .ai-analysis-blurb strong { color: var(--term-cyan); font-weight: 700; }
     .ai-analysis-btn {
