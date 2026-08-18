@@ -2006,6 +2006,115 @@
       font-family: ui-monospace, monospace; font-size: 0.9rem;
     }
 
+    /* ---------- AI Analysis card ---------- */
+    /* Pitch state = just the blurb + amber button. Output state = a
+       bordered card with a small × close button, streaming body copy,
+       and a footer stamping the disclaimer + timing. */
+    .ai-analysis-panel { padding: 1.25rem 1.5rem; position: relative; }
+    .ai-analysis-blurb {
+      margin: 0 0 1rem;
+      color: var(--term-text);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      max-width: 60ch;
+    }
+    .ai-analysis-blurb strong { color: var(--term-cyan); font-weight: 700; }
+    .ai-analysis-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: var(--term-amber);
+      color: #0a1218;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.7rem 1.15rem;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255, 182, 88, 0.25);
+      transition: filter 0.12s, transform 0.12s;
+    }
+    .ai-analysis-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .ai-analysis-btn:disabled { cursor: wait; opacity: 0.75; box-shadow: none; transform: none; }
+    .ai-analysis-btn.loading { background: var(--term-panel-2); color: var(--term-amber); border: 1px solid var(--term-amber); box-shadow: none; }
+
+    .ai-analysis-output {
+      position: relative;
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-left: 3px solid var(--term-amber);
+      border-radius: 6px;
+      padding: 1.1rem 1.25rem 0.85rem;
+      margin-top: 0.5rem;
+    }
+    .ai-analysis-close {
+      position: absolute; top: 0.35rem; right: 0.55rem;
+      background: transparent; border: 0;
+      color: var(--term-dim); font-size: 1.35rem; line-height: 1;
+      cursor: pointer; padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+    }
+    .ai-analysis-close:hover { color: var(--term-red); background: rgba(255, 83, 116, 0.08); }
+    .ai-analysis-body {
+      color: var(--term-text);
+      font-size: 0.92rem;
+      line-height: 1.65;
+      white-space: pre-wrap;   /* preserves the model's line breaks + section spacing */
+      word-wrap: break-word;
+    }
+    /* Section headers detected by the client — Claude emits them as
+       plain uppercase lines (BUSINESS SNAPSHOT, FUNDAMENTALS, etc.).
+       We wrap those in <h4> as they stream in. */
+    .ai-analysis-body h4 {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.72rem;
+      color: var(--term-amber);
+      letter-spacing: 0.14em;
+      margin: 1.1rem 0 0.35rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--term-border);
+      text-transform: uppercase;
+    }
+    .ai-analysis-body h4:first-child { margin-top: 0.1rem; }
+    .ai-analysis-body strong { color: var(--term-cyan); font-weight: 700; }
+    /* The trailing disclaimer line Claude appends — gets muted so it
+       reads as a caption, not part of the analysis. */
+    .ai-analysis-body .disclaimer {
+      display: block;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed var(--term-border);
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.7rem;
+      font-style: italic;
+      letter-spacing: 0.02em;
+    }
+    .ai-analysis-footer {
+      margin-top: 0.75rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed var(--term-border-soft);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.68rem;
+      color: var(--term-dim);
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .ai-analysis-cursor {
+      display: inline-block;
+      width: 7px; height: 1.05em;
+      background: var(--term-amber);
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      animation: aiBlink 1s steps(2, start) infinite;
+    }
+    @keyframes aiBlink { 0% { opacity: 1; } 50% { opacity: 0; } }
+
     /* ---------- Key Statistics table (Financials & Earnings card) ----------
        Two-column layout mirrors Yahoo's Key Statistics page. Each column is
        a list of grouped subsections (Fiscal Year / Profitability / etc.)
@@ -2169,6 +2278,34 @@
       <section class="term-section term-section-chart">
         <div class="term-section-label">CHART <span class="sub">— range picker below the price</span></div>
         <div class="term-panel"><div id="chartWidgetMount"></div></div>
+      </section>
+
+      <!-- AI Analysis — Claude Haiku 4.5 writes a beginner-friendly research
+           briefing from the data we already publish on this page. Default
+           state: just the pitch + button. Click loads the analysis inline
+           below, streaming word-by-word. Same-ticker re-clicks within 24h
+           replay the cached response (no API cost). -->
+      <section class="term-section" id="aiAnalysisSection">
+        <div class="term-section-label">AI ANALYSIS <span class="sub">— powered by Claude Haiku 4.5</span></div>
+        <div class="term-panel ai-analysis-panel">
+          <div class="ai-analysis-pitch" data-role="aiPitch">
+            <p class="ai-analysis-blurb">
+              Get a beginner-friendly research briefing on <strong data-role="aiSym">this ticker</strong> &mdash;
+              business snapshot, fundamentals, valuation, technical setup, insider signal,
+              and bull/bear cases. Uses all the data on this page.
+            </p>
+            <button type="button" class="ai-analysis-btn" data-role="aiRunBtn">
+              <span aria-hidden="true">🎯</span>
+              <span data-role="aiRunBtnLabel">ANALYZE <span data-role="aiRunBtnSym">this ticker</span> WITH AI</span>
+              <span aria-hidden="true">&rarr;</span>
+            </button>
+          </div>
+          <div class="ai-analysis-output" data-role="aiOutput" hidden>
+            <button type="button" class="ai-analysis-close" data-role="aiCloseBtn" aria-label="Close AI analysis">&times;</button>
+            <div class="ai-analysis-body" data-role="aiBody"></div>
+            <div class="ai-analysis-footer" data-role="aiFooter"></div>
+          </div>
+        </div>
       </section>
 
       <!-- Key stats + Financials -->
@@ -4248,6 +4385,164 @@
         'BIIB','TTD','ILMN','WBA','SIRI','ARM','SMCI',
       ]);
 
+      // ----- AI Analysis (Claude Haiku 4.5) -----
+      // Streams a beginner-friendly research briefing on the current
+      // ticker from /api/analyze. Parses the SSE stream manually so we
+      // can render Claude's plain uppercase section headers as styled
+      // <h4> elements the moment each one lands.
+      function initAiAnalyzer(sym) {
+        const section = document.getElementById('aiAnalysisSection');
+        if (!section) return;
+        section.querySelectorAll('[data-role="aiSym"]').forEach(el => el.textContent = sym);
+        section.querySelectorAll('[data-role="aiRunBtnSym"]').forEach(el => el.textContent = sym);
+
+        const runBtn  = section.querySelector('[data-role="aiRunBtn"]');
+        const runLbl  = section.querySelector('[data-role="aiRunBtnLabel"]');
+        const output  = section.querySelector('[data-role="aiOutput"]');
+        const body    = section.querySelector('[data-role="aiBody"]');
+        const footer  = section.querySelector('[data-role="aiFooter"]');
+        const closeBtn = section.querySelector('[data-role="aiCloseBtn"]');
+
+        // Snapshot the original button label so we can restore it after a run.
+        const originalLabelHtml = runLbl.innerHTML;
+
+        // Known section headers Claude will emit — we look for a line
+        // that's ONLY one of these (case-insensitive, some punctuation
+        // tolerance) and promote it to an <h4>. Everything else stays
+        // as plain text and inherits the container's white-space:pre-wrap.
+        const HEADERS = [
+          'BUSINESS SNAPSHOT',
+          'RECENT PRICE ACTION',
+          'FUNDAMENTALS',
+          'VALUATION',
+          'WHAT THE STREET SEES',
+          'TECHNICAL SETUP',
+          'INSIDER SIGNAL',
+          'BULL / BASE / BEAR',
+          'BULL/BASE/BEAR',
+          'BOTTOM LINE',
+        ];
+        const headerRe = new RegExp(
+          '^(?:\\d+\\.\\s*)?(' + HEADERS.map(h => h.replace(/[/]/g, '\\/')).join('|') + ')\\.?:?\\s*$',
+          'im'
+        );
+        const disclaimerRe = /^AI-generated commentary based on public data\. Not investment advice\. Do your own research\.$/im;
+
+        function esc(s) {
+          return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        // Take the running raw text and render it as HTML — promoting
+        // recognized headers to <h4>, boldening the "Bulls point to..."
+        // / "Bears worry..." cues, muting the trailing disclaimer.
+        function renderBody(raw, cursor) {
+          const lines = raw.split(/\r?\n/);
+          let html = '';
+          for (const line of lines) {
+            if (!line.trim()) { html += '\n'; continue; }
+            if (disclaimerRe.test(line.trim())) {
+              html += '<span class="disclaimer">' + esc(line.trim()) + '</span>';
+              continue;
+            }
+            const m = line.match(headerRe);
+            if (m) {
+              html += '<h4>' + esc(m[1].replace(/\s+/g, ' ').trim()) + '</h4>';
+              continue;
+            }
+            // Auto-bold the standard bull/bear/base labels inline
+            const bold = esc(line).replace(
+              /\b(Bulls point to|Bears worry about|Base case|Bull case|Bear case)\b/gi,
+              '<strong>$1</strong>'
+            );
+            html += bold + '\n';
+          }
+          if (cursor) html += '<span class="ai-analysis-cursor"></span>';
+          body.innerHTML = html;
+        }
+
+        let inflight = null;   // AbortController for the current stream
+
+        async function runAnalysis() {
+          if (inflight) return;
+          runBtn.disabled = true;
+          runBtn.classList.add('loading');
+          runLbl.textContent = 'ANALYZING ' + sym + '…';
+          output.hidden = false;
+          body.innerHTML = '';
+          footer.textContent = '';
+          const startedAt = Date.now();
+
+          let raw = '';
+          let cached = false;
+          inflight = new AbortController();
+          try {
+            const r = await fetch('/api/analyze?sym=' + encodeURIComponent(sym), {
+              signal: inflight.signal,
+              headers: { 'Accept': 'text/event-stream' },
+            });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const reader = r.body.getReader();
+            const dec = new TextDecoder();
+            let buf = '';
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              buf += dec.decode(value, { stream: true });
+              // SSE events are separated by blank lines.
+              let sepIdx;
+              while ((sepIdx = buf.indexOf('\n\n')) !== -1) {
+                const chunk = buf.slice(0, sepIdx);
+                buf = buf.slice(sepIdx + 2);
+                for (const line of chunk.split(/\r?\n/)) {
+                  if (!line.startsWith('data:')) continue;
+                  const jsonStr = line.slice(5).trim();
+                  if (!jsonStr) continue;
+                  let evt;
+                  try { evt = JSON.parse(jsonStr); } catch (_) { continue; }
+                  if (evt.type === 'text' && typeof evt.text === 'string') {
+                    raw += evt.text;
+                    renderBody(raw, true);
+                    // Auto-scroll the card into view on first chunk only.
+                    if (raw.length < 200) output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  } else if (evt.type === 'source') {
+                    cached = !!evt.cached;
+                  } else if (evt.type === 'error') {
+                    raw += '\n\n[Error] ' + (evt.message || 'unknown');
+                    renderBody(raw, false);
+                  } else if (evt.type === 'done') {
+                    // fall through to loop exit
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            if (e.name === 'AbortError') {
+              raw += '\n\n[Cancelled]';
+            } else {
+              raw += '\n\n[Error] ' + (e.message || e);
+            }
+          } finally {
+            inflight = null;
+            renderBody(raw, false);
+            const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
+            footer.innerHTML =
+              '<span>' + (cached ? 'Loaded from 24-hour cache' : 'Generated in ' + secs + 's') + '</span>' +
+              '<span>Claude Haiku 4.5 · Not investment advice</span>';
+            runBtn.disabled = false;
+            runBtn.classList.remove('loading');
+            runLbl.innerHTML = originalLabelHtml;
+          }
+        }
+
+        runBtn.addEventListener('click', runAnalysis);
+        closeBtn.addEventListener('click', () => {
+          if (inflight) { inflight.abort(); inflight = null; }
+          output.hidden = true;
+          body.innerHTML = '';
+          footer.textContent = '';
+        });
+      }
+
       function initRelPerf(sym) {
         const section = document.getElementById('relPerfSection');
         if (!section) return;
@@ -4772,6 +5067,7 @@
       //    SMAs / RSI / drawdown ribbon / 52W lines / median line
       //    (none of which TradingView's free embed supports).
       initTickerMainChart(sym);
+      initAiAnalyzer(sym);
 
       // 1b) Monthly relative performance vs SPY / QQQ. Same shape as
       //     CNBC's "AAPL vs NDX; monthly % perf" chart, with a toggle.
