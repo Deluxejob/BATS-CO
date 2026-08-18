@@ -2061,31 +2061,35 @@
     .ai-analysis-body {
       color: var(--term-text);
       font-size: 0.92rem;
-      line-height: 1.65;
+      line-height: 1.45;
       white-space: pre-wrap;   /* preserves the model's line breaks + section spacing */
       word-wrap: break-word;
     }
     /* Section headers detected by the client — Claude emits them as
        plain uppercase lines (BUSINESS SNAPSHOT, FUNDAMENTALS, etc.).
-       We wrap those in <h4> as they stream in. */
+       Tight top margin + no bottom padding keeps the briefing dense. */
     .ai-analysis-body h4 {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 0.72rem;
       color: var(--term-amber);
       letter-spacing: 0.14em;
-      margin: 1.1rem 0 0.35rem;
-      padding-bottom: 0.25rem;
-      border-bottom: 1px solid var(--term-border);
+      margin: 0.55rem 0 0.2rem;
+      padding: 0;
+      border: 0;
       text-transform: uppercase;
     }
     .ai-analysis-body h4:first-child { margin-top: 0.1rem; }
+    /* Collapse the empty lines Claude puts around headers so the raw
+       "\n\nSECTION\n\n" doesn't get double-spaced against our own
+       header margin. Both pseudo-strategies target the same fix. */
+    .ai-analysis-body h4 + br,
+    .ai-analysis-body br + h4 { display: none; }
     .ai-analysis-body strong { color: var(--term-cyan); font-weight: 700; }
-    /* The trailing disclaimer line Claude appends — gets muted so it
-       reads as a caption, not part of the analysis. */
+    /* The trailing disclaimer line Claude appends — muted caption. */
     .ai-analysis-body .disclaimer {
       display: block;
-      margin-top: 1rem;
-      padding-top: 0.75rem;
+      margin-top: 0.75rem;
+      padding-top: 0.55rem;
       border-top: 1px dashed var(--term-border);
       color: var(--term-dim);
       font-family: 'JetBrains Mono', ui-monospace, monospace;
