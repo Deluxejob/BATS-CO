@@ -634,6 +634,56 @@
     .analyst-upgrades li .action.main { color: var(--term-dim); }
     .analyst-upgrades li .action.init { color: var(--term-cyan); }
 
+    /* ---------- Recent Rating Changes (full-width standalone card) ----- */
+    /* Horizontal scroll on narrow screens so the 4-column table never
+       forces the whole page to scroll sideways — matches the pattern
+       used by other wide tables on the site. */
+    .rating-changes-wrap { overflow-x: auto; }
+    .rating-changes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--term-text);
+      min-width: 640px;   /* below this, wrap scrolls horizontally */
+    }
+    .rating-changes-table thead th {
+      text-align: left;
+      padding: 0.4rem 0.75rem 0.5rem;
+      color: var(--term-dim);
+      font-weight: 500;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--term-border);
+    }
+    .rating-changes-table tbody td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px dashed var(--term-border-soft);
+      vertical-align: middle;
+    }
+    .rating-changes-table tbody tr:last-child td { border-bottom: 0; }
+    .rating-changes-table td.rc-date { color: var(--term-dim); width: 88px; white-space: nowrap; }
+    .rating-changes-table td.rc-firm { font-weight: 600; color: var(--term-text); }
+    .rating-changes-table td.rc-transition {
+      color: var(--term-text);
+      font-size: 0.72rem;
+    }
+    .rating-changes-table td.rc-transition .rc-arrow { color: var(--term-dim); margin: 0 0.35rem; }
+    .rating-changes-table td.rc-transition .rc-to { color: var(--term-cyan); font-weight: 600; }
+    .rating-changes-table td.rc-transition .rc-from { color: var(--term-dim); }
+    .rating-changes-table td.rc-action {
+      width: 130px;
+      text-align: right;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+      font-size: 0.68rem;
+    }
+    .rating-changes-table td.rc-action.up   { color: var(--term-green); }
+    .rating-changes-table td.rc-action.down { color: var(--term-red); }
+    .rating-changes-table td.rc-action.main { color: var(--term-dim); }
+    .rating-changes-table td.rc-action.init { color: var(--term-cyan); }
+
     /* ---------- Company Profile ---------- */
     /* Sector · industry · HQ · employees · website strip */
     .prof-meta {
@@ -2375,6 +2425,16 @@
               <div id="analystTargetContent" class="analyst-loading">Loading price targets&hellip;</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- Recent Rating Changes — full-width standalone card. Shows the
+           full transition (prior → new) plus the action, giving a proper
+           audit trail of who's changed their mind lately. -->
+      <section class="term-section" id="ratingChangesSection" style="display:none">
+        <div class="term-section-label">RECENT RATING CHANGES <span class="sub">— analyst upgrades, downgrades, initiations, and reiterations</span></div>
+        <div class="term-panel">
+          <div id="ratingChangesContent" class="analyst-loading">Loading rating changes&hellip;</div>
         </div>
       </section>
 
@@ -7446,7 +7506,7 @@
           // when the API fails — nothing sensible to show without live data.
           // financialsSection is included because it now sources from the
           // same /api/analyst payload (keyStatistics field).
-          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection', 'insidersSection', 'institutionsSection', 'valuationSection', 'financialsSection'].forEach(id => {
+          ['earningsSection', 'epsTrendSection', 'epsRevSection', 'growthSection', 'peersSection', 'compareSection', 'insidersSection', 'institutionsSection', 'valuationSection', 'financialsSection', 'ratingChangesSection'].forEach(id => {
             const s = document.getElementById(id);
             if (s) s.style.display = 'none';
           });
@@ -7480,6 +7540,7 @@
         if (!data || !data.hasAnalysts) {
           const companyOnly = [
             'analystSection',
+            'ratingChangesSection',
             'valuationSection',
             'earningsSection',
             'epsTrendSection',
@@ -7620,39 +7681,69 @@
           ${trackHtml}
         ` : '<div class="analyst-loading">No price target data available.</div>';
 
-        // ----- Recent rating changes -----
-        const upgrades = Array.isArray(data.upgrades) ? data.upgrades.slice(0, 5) : [];
-        const upgradeHtml = upgrades.length ? `
-          <p class="analyst-subhead">Recent Rating Changes</p>
-          <ul class="analyst-upgrades">
-            ${upgrades.map(u => {
-              const dt = u.date
-                ? new Date(u.date * 1000).toISOString().slice(5, 10).replace('-', '/')
-                : '—';
-              const actKey = String(u.action || '').toLowerCase();
-              const actLabel = actKey === 'up'   ? '↑ upgrade'
-                             : actKey === 'down' ? '↓ downgrade'
-                             : actKey === 'init' ? '+ initiate'
-                             : actKey === 'main' ? '∼ maintain'
-                             : actKey === 'reit' ? '∼ reiterate'
-                             : (u.action || '');
-              const actClass = actKey === 'up'   ? 'up'
-                             : actKey === 'down' ? 'down'
-                             : actKey === 'init' ? 'init'
-                             : 'main';
-              return `
-                <li>
-                  <span class="date">${dt}</span>
-                  <span>${esc(u.firm || '—')} → <strong>${esc(u.toGrade || '—')}</strong></span>
-                  <span class="action ${actClass}">${actLabel}</span>
-                </li>
-              `;
-            }).join('')}
-          </ul>
-        ` : '';
+        // ----- Recent rating changes → full-width table in its own card -----
+        // Shows the full transition (prior → new) so a "maintain" reads
+        // differently from a real upgrade. Up to 15 rows since the card
+        // now has full-width room; horizontal scroll on narrow screens.
+        const upgrades = Array.isArray(data.upgrades) ? data.upgrades.slice(0, 15) : [];
+        const ratingChangesEl = document.getElementById('ratingChangesContent');
+        const ratingChangesSection = document.getElementById('ratingChangesSection');
+        if (upgrades.length && ratingChangesEl && ratingChangesSection) {
+          const rowsHtml = upgrades.map(u => {
+            const dt = u.date
+              ? new Date(u.date * 1000).toISOString().slice(5, 10).replace('-', '/')
+              : '—';
+            const actKey = String(u.action || '').toLowerCase();
+            const actLabel = actKey === 'up'   ? '↑ upgrade'
+                           : actKey === 'down' ? '↓ downgrade'
+                           : actKey === 'init' ? '+ initiate'
+                           : actKey === 'main' ? '∼ maintain'
+                           : actKey === 'reit' ? '∼ reiterate'
+                           : (u.action || '');
+            const actClass = actKey === 'up'   ? 'up'
+                           : actKey === 'down' ? 'down'
+                           : actKey === 'init' ? 'init'
+                           : 'main';
+            const from = u.fromGrade && String(u.fromGrade).trim();
+            const to   = u.toGrade   && String(u.toGrade).trim();
+            // Initiations don't have a fromGrade — render em-dash so the
+            // column stays a consistent width instead of the row jumping.
+            const transitionHtml = from
+              ? `<span class="rc-from">${esc(from)}</span><span class="rc-arrow">→</span><span class="rc-to">${esc(to || '—')}</span>`
+              : `<span class="rc-from">&mdash;</span><span class="rc-arrow">→</span><span class="rc-to">${esc(to || '—')}</span>`;
+            return `
+              <tr>
+                <td class="rc-date">${dt}</td>
+                <td class="rc-firm">${esc(u.firm || '—')}</td>
+                <td class="rc-transition">${transitionHtml}</td>
+                <td class="rc-action ${actClass}">${actLabel}</td>
+              </tr>
+            `;
+          }).join('');
+          ratingChangesEl.className = '';
+          ratingChangesEl.innerHTML = `
+            <div class="rating-changes-wrap">
+              <table class="rating-changes-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Firm</th>
+                    <th>Prior &rarr; New Rating</th>
+                    <th style="text-align:right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+              </table>
+            </div>
+          `;
+          ratingChangesSection.style.display = '';
+        } else if (ratingChangesSection) {
+          // No history from Yahoo — leave the section hidden.
+          ratingChangesSection.style.display = 'none';
+        }
 
-        // Ratings card: consensus badge + breakdown bars + recent changes.
-        // Everything analyst-opinion-related stays together in one panel.
+        // Ratings card: consensus badge + breakdown bars only.
+        // Recent Rating Changes lives in its own full-width card below.
         ratingsEl.className = '';
         ratingsEl.innerHTML = `
           <div class="analyst-badge-row">
@@ -7661,7 +7752,6 @@
           </div>
           <p class="analyst-subhead">Ratings Breakdown</p>
           ${barsHtml}
-          ${upgradeHtml}
         `;
 
         // Price-target card: tiles + Now/Mean track. Independent panel so
