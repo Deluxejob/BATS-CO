@@ -14,6 +14,19 @@
 //   per-ticker results. Finnhub's /company-news IS a tag-based lookup
 //   and matches what Yahoo Finance shows on its own quote pages.
 //
+// Why we still need to filter Finnhub's output:
+//   Finnhub tags articles liberally — a "S&P 500 top movers" roundup
+//   might list 30+ related tickers, and every one of those tickers
+//   gets that article in its feed. To cut the noise, we compare the
+//   headline + Finnhub's `related` field against the requested ticker
+//   AND the company's short name (pulled from Finnhub's /profile2
+//   endpoint in parallel with the news call). An article passes the
+//   filter if the ticker OR the short name appears in the headline as
+//   a whole word, OR if the ticker is in the top 3 of the related
+//   field (a strong "primary subject" signal). If filtering leaves
+//   fewer than 5 items we fall back to the raw list so tiny tickers
+//   never end up with an empty card.
+//
 // The FINNHUB_API_KEY env var is set on Vercel (same key used by
 // api/analyst.js for the peers fetch). Free-tier limits are ~60 req/min
 // which is more than enough for our traffic — every reader load hits
@@ -26,8 +39,56 @@ const FINNHUB_UA = 'Mozilla/5.0 (BATS.CO news proxy)';
 // megacaps and a full month of context for smaller tickers.
 const WINDOW_DAYS = 30;
 
+// Minimum items to leave in the filtered response. If aggressive
+// filtering drops below this we return the raw list — tiny/OTC tickers
+// often have only sector-roundup coverage and an empty card is worse
+// than a noisy one.
+const MIN_FILTERED = 5;
+
+// How far into `related` a ticker can sit and still count as a
+// "primary subject" signal. Chosen conservatively — a real Lumentum
+// article usually has LITE at position 0 or 1; a sector roundup that
+// happens to mention LITE will bury it at position 15+ among dozens.
+const RELATED_TOP_N = 3;
+
 function ymd(d) {
   return d.toISOString().slice(0, 10);
+}
+
+// Extract the "core" identifying word(s) from a company name so we
+// can match it in headlines even when the article uses a short form.
+// "Lumentum Holdings, Inc." → "lumentum"
+// "The Coca-Cola Company"  → "coca-cola" (drops leading "The" + trailing "Company")
+// "JPMorgan Chase & Co."   → "jpmorgan"
+function shortNameTokens(fullName) {
+  if (!fullName) return [];
+  const cleaned = String(fullName)
+    .replace(/[.,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const stop = new Set([
+    'the', 'inc', 'corp', 'corporation', 'company', 'co',
+    'ltd', 'llc', 'plc', 'holdings', 'holding', 'group',
+    'international', 'global', 'systems', 'technologies',
+    'technology', 'industries', 'motors', 'and', '&',
+  ]);
+  const tokens = cleaned.toLowerCase().split(' ')
+    .filter(w => w && !stop.has(w));
+  // Keep the first 1-2 significant words. Most companies are known
+  // by their leading word (Lumentum, Apple, Nvidia, JPMorgan) and
+  // matching too aggressively (whole name) misses short-form usage.
+  return tokens.slice(0, 2);
+}
+
+// Build a case-insensitive whole-word matcher for a ticker or name.
+// Whole-word to avoid substring false positives (e.g. matching "LITE"
+// inside "SATELLITE" or "Lumentum" inside "Lumen").
+function wholeWordMatcher(term) {
+  const t = String(term || '').trim();
+  if (!t) return null;
+  // Escape regex specials; allow hyphens (Coca-Cola) as word chars.
+  const esc = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp('(^|[^\\w-])' + esc + '($|[^\\w-])', 'i');
 }
 
 export default async function handler(req, res) {
@@ -44,48 +105,101 @@ export default async function handler(req, res) {
 
   const now = new Date();
   const from = new Date(now.getTime() - WINDOW_DAYS * 86400 * 1000);
-  const url = 'https://finnhub.io/api/v1/company-news' +
+  const newsUrl = 'https://finnhub.io/api/v1/company-news' +
     '?symbol=' + encodeURIComponent(raw) +
     '&from=' + ymd(from) +
     '&to=' + ymd(now) +
     '&token=' + encodeURIComponent(key);
+  const profileUrl = 'https://finnhub.io/api/v1/stock/profile2' +
+    '?symbol=' + encodeURIComponent(raw) +
+    '&token=' + encodeURIComponent(key);
 
   try {
-    const r = await fetch(url, { headers: { 'User-Agent': FINNHUB_UA } });
-    if (!r.ok) {
+    // Fire both requests in parallel — profile2 is cheap and its
+    // result feeds our name-based headline filter.
+    const [newsRes, profRes] = await Promise.all([
+      fetch(newsUrl,    { headers: { 'User-Agent': FINNHUB_UA } }),
+      fetch(profileUrl, { headers: { 'User-Agent': FINNHUB_UA } }),
+    ]);
+
+    if (!newsRes.ok) {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      return res.status(502).json({ error: 'finnhub http ' + r.status });
+      return res.status(502).json({ error: 'finnhub news http ' + newsRes.status });
     }
-    const raw_items = await r.json();
+
+    const raw_items = await newsRes.json();
     const arr = Array.isArray(raw_items) ? raw_items : [];
 
-    // Map Finnhub's shape to the field names the frontend already reads.
-    // Dedup by URL (Finnhub occasionally lists the same article twice
-    // when syndicated to multiple sources).
+    // Profile is best-effort — if it fails, filter falls back to
+    // ticker-only matching, which still cuts most of the roundup noise.
+    let companyName = '';
+    if (profRes.ok) {
+      try {
+        const p = await profRes.json();
+        companyName = String(p && p.name || '');
+      } catch (_) { /* ignore */ }
+    }
+    const nameTokens = shortNameTokens(companyName);
+    const tickerRe   = wholeWordMatcher(raw);
+    const nameRes    = nameTokens.map(wholeWordMatcher).filter(Boolean);
+
+    // Score every article. Anything with score > 0 passes the filter.
+    // We don't sort by score — we want chronological ordering — but
+    // the scoring lets us reason about why an item was kept.
     const seen = new Set();
-    const items = [];
+    const scored = [];
     for (const it of arr) {
       const link = String(it.url || '');
       const title = String(it.headline || '');
       if (!link || !title) continue;
       if (seen.has(link)) continue;
       seen.add(link);
-      items.push({
+
+      const relatedArr = String(it.related || '').split(',')
+        .map(s => s.trim().toUpperCase()).filter(Boolean);
+      const relatedIdx = relatedArr.indexOf(raw);
+
+      let score = 0;
+      // 1) Ticker as whole word in headline — strong signal
+      if (tickerRe && tickerRe.test(title)) score += 3;
+      // 2) Any short-name token in headline — equally strong
+      if (nameRes.some(r => r.test(title))) score += 3;
+      // 3) Ticker sits in the top N of the related list — Finnhub's
+      //    hint that this article's primary subject is this ticker
+      if (relatedIdx >= 0 && relatedIdx < RELATED_TOP_N) score += 2;
+
+      scored.push({
         title,
         link,
         publisher:   String(it.source   || ''),
         publishedAt: Number(it.datetime) || 0,
+        _score:      score,
       });
     }
 
-    // Newest first, cap at 80 (matches the previous Yahoo cap so
-    // the frontend's SHOW MORE pagination behaves the same).
-    items.sort((a, b) => b.publishedAt - a.publishedAt);
-    const trimmed = items.slice(0, 80);
+    // Chronological newest-first, then split into kept vs dropped.
+    scored.sort((a, b) => b.publishedAt - a.publishedAt);
+    const filtered = scored.filter(x => x._score > 0);
+
+    // Fallback: if filtering was too aggressive (tiny/OTC ticker with
+    // only sector-roundup coverage) fall back to the unfiltered list
+    // so the news card is never blank.
+    const usedFallback = filtered.length < MIN_FILTERED;
+    const finalList = (usedFallback ? scored : filtered).slice(0, 80);
+
+    // Strip the internal _score before shipping.
+    const items = finalList.map(({ _score, ...rest }) => rest);
 
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    return res.status(200).json({ symbol: raw, count: trimmed.length, items: trimmed });
+    return res.status(200).json({
+      symbol: raw,
+      count: items.length,
+      companyName,
+      filtered: !usedFallback,
+      totalBeforeFilter: scored.length,
+      items,
+    });
   } catch (err) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(502).json({ error: String((err && err.message) || err) });
