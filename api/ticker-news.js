@@ -17,15 +17,18 @@
 // Why we still need to filter Finnhub's output:
 //   Finnhub tags articles liberally — a "S&P 500 top movers" roundup
 //   might list 30+ related tickers, and every one of those tickers
-//   gets that article in its feed. To cut the noise, we compare the
-//   headline + Finnhub's `related` field against the requested ticker
-//   AND the company's short name (pulled from Finnhub's /profile2
-//   endpoint in parallel with the news call). An article passes the
-//   filter if the ticker OR the short name appears in the headline as
-//   a whole word, OR if the ticker is in the top 3 of the related
-//   field (a strong "primary subject" signal). If filtering leaves
-//   fewer than 5 items we fall back to the raw list so tiny tickers
-//   never end up with an empty card.
+//   gets that article in its feed. To cut the noise, we require the
+//   ticker OR the company's short name (pulled from Finnhub's
+//   /profile2 endpoint) to appear as a whole word in the HEADLINE.
+//   This is the same bar Yahoo Finance's own site uses — an editor
+//   put the ticker/name in the headline because the article is
+//   primarily about that company. Anything that only mentions the
+//   ticker deep in a sector roundup gets dropped. We tried also
+//   using Finnhub's `related` field to signal primary subject, but
+//   Finnhub ranks related tickers alphabetically-ish, not by
+//   relevance, so it let all the roundup noise through. If filtering
+//   leaves fewer than 5 items we fall back to the raw list so tiny
+//   tickers never end up with an empty card.
 //
 // The FINNHUB_API_KEY env var is set on Vercel (same key used by
 // api/analyst.js for the peers fetch). Free-tier limits are ~60 req/min
@@ -44,12 +47,6 @@ const WINDOW_DAYS = 30;
 // often have only sector-roundup coverage and an empty card is worse
 // than a noisy one.
 const MIN_FILTERED = 5;
-
-// How far into `related` a ticker can sit and still count as a
-// "primary subject" signal. Chosen conservatively — a real Lumentum
-// article usually has LITE at position 0 or 1; a sector roundup that
-// happens to mention LITE will bury it at position 15+ among dozens.
-const RELATED_TOP_N = 3;
 
 function ymd(d) {
   return d.toISOString().slice(0, 10);
@@ -155,18 +152,11 @@ export default async function handler(req, res) {
       if (seen.has(link)) continue;
       seen.add(link);
 
-      const relatedArr = String(it.related || '').split(',')
-        .map(s => s.trim().toUpperCase()).filter(Boolean);
-      const relatedIdx = relatedArr.indexOf(raw);
-
       let score = 0;
-      // 1) Ticker as whole word in headline — strong signal
+      // Ticker as whole word in headline — strong "primary subject" signal
       if (tickerRe && tickerRe.test(title)) score += 3;
-      // 2) Any short-name token in headline — equally strong
+      // Any short-name token in headline — equally strong
       if (nameRes.some(r => r.test(title))) score += 3;
-      // 3) Ticker sits in the top N of the related list — Finnhub's
-      //    hint that this article's primary subject is this ticker
-      if (relatedIdx >= 0 && relatedIdx < RELATED_TOP_N) score += 2;
 
       scored.push({
         title,
