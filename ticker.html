@@ -4407,15 +4407,29 @@
         const footer  = section.querySelector('[data-role="aiFooter"]');
         const closeBtn = section.querySelector('[data-role="aiCloseBtn"]');
 
-        // Snapshot the original button label so we can restore it after a run.
+        // Prompt mode — "?ai=rich" in the URL flips the API to the
+        // richer prompt (allows Claude to use general knowledge about
+        // the business + competitors + industry). Default is strict.
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('ai') === 'rich' ? 'rich' : 'strict';
+        if (mode === 'rich') {
+          runLbl.textContent = 'ANALYZE ' + sym + ' WITH AI (RICH)';
+          section.setAttribute('data-ai-mode', 'rich');
+        }
+
+        // Snapshot the (possibly rich-overridden) label so we can
+        // restore it after a run without regressing to strict wording.
         const originalLabelHtml = runLbl.innerHTML;
 
         // Known section headers Claude will emit — we look for a line
         // that's ONLY one of these (case-insensitive, some punctuation
         // tolerance) and promote it to an <h4>. Everything else stays
         // as plain text and inherits the container's white-space:pre-wrap.
+        // Rich mode adds INDUSTRY & COMPETITION between snapshot and price.
         const HEADERS = [
           'BUSINESS SNAPSHOT',
+          'INDUSTRY & COMPETITION',
+          'INDUSTRY AND COMPETITION',
           'RECENT PRICE ACTION',
           'FUNDAMENTALS',
           'VALUATION',
@@ -4427,10 +4441,11 @@
           'BOTTOM LINE',
         ];
         const headerRe = new RegExp(
-          '^(?:\\d+\\.\\s*)?(' + HEADERS.map(h => h.replace(/[/]/g, '\\/')).join('|') + ')\\.?:?\\s*$',
+          '^(?:\\d+\\.\\s*)?(' + HEADERS.map(h => h.replace(/[/&]/g, m => '\\' + m)).join('|') + ')\\.?:?\\s*$',
           'im'
         );
-        const disclaimerRe = /^AI-generated commentary based on public data\. Not investment advice\. Do your own research\.$/im;
+        // Matches strict-mode and rich-mode disclaimer variants.
+        const disclaimerRe = /^AI-generated commentary (?:based on public data|drawing on public data and general market context)\. Not investment advice\. Do your own research\.$/im;
 
         function esc(s) {
           return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -4480,7 +4495,7 @@
           let cached = false;
           inflight = new AbortController();
           try {
-            const r = await fetch('/api/analyze?sym=' + encodeURIComponent(sym), {
+            const r = await fetch('/api/analyze?sym=' + encodeURIComponent(sym) + '&mode=' + mode, {
               signal: inflight.signal,
               headers: { 'Accept': 'text/event-stream' },
             });

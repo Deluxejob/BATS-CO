@@ -27,7 +27,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 const MODEL       = 'claude-haiku-4-5-20251001';
-const MAX_TOKENS  = 1200;        // ~900 words worst case, cap so cost is bounded
+const MAX_TOKENS_STRICT = 1200;  // strict prompt: ~900 words worst case
+const MAX_TOKENS_RICH   = 1800;  // rich prompt runs longer — more qualitative content
 const CACHE_TTL_MS = 24 * 3600 * 1000;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 const RATE_LIMIT   = 5;
@@ -211,7 +212,10 @@ ${instLines}
 `;
 }
 
-const SYSTEM_PROMPT = `You are a senior equity research analyst writing a beginner-friendly briefing on a stock for retail investors on BATS.CO.
+// STRICT MODE — uses ONLY the data we pass in. Never hallucinates
+// numbers, competitor names, or industry claims. Feels like a Bloomberg
+// data card in prose form. Cheaper, faster, safer.
+const SYSTEM_PROMPT_STRICT = `You are a senior equity research analyst writing a beginner-friendly briefing on a stock for retail investors on BATS.CO.
 
 Use ONLY the data provided in the user message. If you don't have data for a section, say "not available" rather than guessing.
 
@@ -231,6 +235,36 @@ Keep the total response under 700 words. Beginner-friendly means: no unexplained
 End with this exact disclaimer on its own line, no formatting:
 AI-generated commentary based on public data. Not investment advice. Do your own research.`;
 
+// RICH MODE — data still governs every NUMBER, but Claude is allowed to
+// use its general knowledge to describe what the company actually does,
+// who it competes with, industry dynamics, and management context.
+// Adds an INDUSTRY & COMPETITION section and lets bull/bear cases lean
+// on qualitative reasoning. Longer output, higher cost per call.
+const SYSTEM_PROMPT_RICH = `You are a senior equity research analyst writing a beginner-friendly briefing on a stock for retail investors on BATS.CO.
+
+TWO RULES ABOUT DATA:
+1. For any NUMBER, DATE, PERCENTAGE, PRICE, or FINANCIAL FIGURE — use ONLY what the user message provides. Never invent, estimate, extrapolate, or forecast numeric values. If a number isn't in the data, say "not disclosed" or omit it.
+2. For QUALITATIVE context — what the company actually does, main competitors, industry trends, competitive moat, management reputation, product cycle position, regulatory backdrop — you MAY use your general knowledge. If a claim depends on something that might have changed in the last 12 months (a specific product launch, executive change, lawsuit outcome), hedge with "as of the last available context" or "reportedly" rather than stating it as current fact.
+
+NEVER make price predictions or forecasts of any kind.
+
+Structure your response as these sections, in this order, each with a plain header (not markdown):
+1. BUSINESS SNAPSHOT — what the company does, main product lines, how it makes money. Be specific: name actual products, business segments, customer types. This is where you use your knowledge.
+2. INDUSTRY & COMPETITION — who else plays in this space, what the company's edge (or disadvantage) is, where the industry sits in its cycle. Name real competitors when you know them.
+3. RECENT PRICE ACTION — last 3-6 months of movement using the price data provided. If you know a plausible narrative reason (earnings beat, sector rotation, sympathy move), suggest it as "one interpretation."
+4. FUNDAMENTALS — margins, revenue growth, profitability trajectory. Contextualize: are these margins strong or weak for this industry?
+5. VALUATION — vs the company's history where the data supports it, plus context on what multiples typically look like for this kind of business.
+6. WHAT THE STREET SEES — analyst rating, price target, what analysts have been focused on lately if you have a sense of it.
+7. TECHNICAL SETUP — using the 50-day / 200-day MA context and 52-week range provided. Plain-English description of the trend.
+8. INSIDER SIGNAL — are officers and 10%+ owners buying or selling in the recent list? What's the typical pattern for this kind of company at this stage?
+9. BULL / BASE / BEAR — 2-3 sentences each. Frame as "bulls point to..." and "bears worry about..." Use both the numbers AND the qualitative dynamics. NOT price predictions.
+10. BOTTOM LINE — one paragraph tying it together. NO "buy" or "sell" language. "Watch for," "consider," "the setup suggests," "worth understanding before deciding" are fine.
+
+Keep the total response under 1000 words. Beginner-friendly means: no unexplained jargon. If you use "EBITDA" once, define it in parentheses the first time.
+
+End with this exact disclaimer on its own line, no formatting:
+AI-generated commentary drawing on public data and general market context. Not investment advice. Do your own research.`;
+
 function writeSSE(res, event) {
   res.write(`data: ${JSON.stringify(event)}\n\n`);
 }
@@ -242,6 +276,15 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Prompt mode: "strict" (default, data-only) or "rich" (allows
+  // qualitative knowledge). Cached under separate keys so a rich run
+  // never masks a strict one on the same ticker.
+  const modeRaw = String((req.query && req.query.mode) || 'strict').toLowerCase();
+  const mode = modeRaw === 'rich' ? 'rich' : 'strict';
+  const cacheKey = `${raw}:${mode}`;
+  const systemPrompt = mode === 'rich' ? SYSTEM_PROMPT_RICH : SYSTEM_PROMPT_STRICT;
+  const maxTokens = mode === 'rich' ? MAX_TOKENS_RICH : MAX_TOKENS_STRICT;
+
   // Set up SSE response early so any errors below can stream a
   // graceful failure event instead of leaving the browser hanging.
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -251,9 +294,9 @@ export default async function handler(req, res) {
   res.flushHeaders && res.flushHeaders();
 
   // 24h cache hit — replay the stored analysis in one chunk and done.
-  const cached = CACHE.get(raw);
+  const cached = CACHE.get(cacheKey);
   if (cached && (Date.now() - cached.storedAt) < CACHE_TTL_MS) {
-    writeSSE(res, { type: 'source', cached: true, ageMs: Date.now() - cached.storedAt });
+    writeSSE(res, { type: 'source', cached: true, mode, ageMs: Date.now() - cached.storedAt });
     writeSSE(res, { type: 'text', text: cached.analysis });
     writeSSE(res, { type: 'done', cached: true });
     res.end();
@@ -310,14 +353,14 @@ export default async function handler(req, res) {
   try {
     const stream = client.messages.stream({
       model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: SYSTEM_PROMPT,
+      max_tokens: maxTokens,
+      system: systemPrompt,
       messages: [
         { role: 'user', content: `Write the briefing on ${raw} using this data:\n\n${dataBlock}` },
       ],
     });
 
-    writeSSE(res, { type: 'source', cached: false });
+    writeSSE(res, { type: 'source', cached: false, mode });
     stream.on('text', (chunk) => {
       fullText += chunk;
       writeSSE(res, { type: 'text', text: chunk });
@@ -325,7 +368,8 @@ export default async function handler(req, res) {
     await stream.finalMessage();
 
     // Cache the full response for 24h so re-clicks are free.
-    CACHE.set(raw, { analysis: fullText, storedAt: Date.now() });
+    // Scoped by mode so a rich run never overwrites a strict one.
+    CACHE.set(cacheKey, { analysis: fullText, storedAt: Date.now() });
     writeSSE(res, { type: 'done', cached: false });
     res.end();
   } catch (e) {
