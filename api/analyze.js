@@ -40,13 +40,12 @@ const CACHE = new Map();            // sym → { analysis, storedAt }
 const RATE  = new Map();            // ip → [timestamp, ...]
 
 // Base URL for internal self-calls (api/analyst, api/quote, api/history).
-// Vercel sets VERCEL_URL to the deployment host without protocol.
+// Vercel's VERCEL_URL is the ephemeral deployment host and doesn't
+// self-fetch reliably from another serverless function, so we hit the
+// canonical production domain — which shares the same edge cache the
+// browser would hit anyway.
 function baseUrl(req) {
-  const host = process.env.VERCEL_URL
-    || (req.headers && req.headers.host)
-    || 'bats.co';
-  const proto = host.includes('localhost') ? 'http' : 'https';
-  return `${proto}://${host}`;
+  return 'https://bats.co';
 }
 
 function getClientIp(req) {
@@ -281,12 +280,27 @@ export default async function handler(req, res) {
 
   // Fetch the ticker's context from our own data endpoints. Any that
   // fail leave "n/a" in the built context — the analysis just skips.
-  let dataBlock;
+  let dataBlock, ctx;
   try {
-    const ctx = await gatherContext(raw, baseUrl(req));
+    ctx = await gatherContext(raw, baseUrl(req));
     dataBlock = buildDataContext(raw, ctx);
   } catch (e) {
     writeSSE(res, { type: 'error', message: 'Failed to gather ticker data: ' + (e.message || e) });
+    res.end();
+    return;
+  }
+
+  // Fast-fail: if we couldn't pull ANY useful data from our own APIs
+  // (unknown ticker, upstream Yahoo outage, etc.), don't waste an API
+  // call — Claude would just write "not available" for every section.
+  const q  = ctx.quote  && ctx.quote.quotes && ctx.quote.quotes[raw];
+  const ks = ctx.analyst && ctx.analyst.keyStatistics;
+  const hasAnyData = !!(q || ks || (ctx.history && ctx.history.series && ctx.history.series[raw]));
+  if (!hasAnyData) {
+    writeSSE(res, {
+      type: 'error',
+      message: `No data available for ${raw}. Check the ticker symbol, or try a well-covered name (e.g. AAPL, NVDA, SPY).`,
+    });
     res.end();
     return;
   }
