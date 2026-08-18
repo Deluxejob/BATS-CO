@@ -2357,11 +2357,24 @@
         </div>
       </section>
 
-      <!-- Wall Street ratings (analyst consensus via /api/analyst → Yahoo) -->
+      <!-- Wall Street ratings + 12-month price target — two separate cards
+           in a shared 2-col grid so they visually match the rest of the page
+           (each metric gets its own card, its own label, its own border)
+           instead of appearing merged under a single panel. -->
       <section class="term-section" id="analystSection">
-        <div class="term-section-label">WALL STREET RATINGS <span class="sub">— analyst consensus via Yahoo Finance</span></div>
-        <div class="term-panel">
-          <div id="analystContent" class="analyst-loading">Loading analyst data&hellip;</div>
+        <div class="grid-2col">
+          <div class="mkt-col">
+            <div class="term-section-label">WALL STREET RATINGS <span class="sub">— analyst consensus via Yahoo Finance</span></div>
+            <div class="term-panel">
+              <div id="analystRatingsContent" class="analyst-loading">Loading analyst data&hellip;</div>
+            </div>
+          </div>
+          <div class="mkt-col">
+            <div class="term-section-label">12-MONTH PRICE TARGET <span class="sub">— analyst forecasts</span></div>
+            <div class="term-panel">
+              <div id="analystTargetContent" class="analyst-loading">Loading price targets&hellip;</div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -7404,8 +7417,9 @@
 
       (async function renderAnalyst() {
         const section = document.getElementById('analystSection');
-        const content = document.getElementById('analystContent');
-        if (!content) return;
+        const ratingsEl = document.getElementById('analystRatingsContent');
+        const targetEl  = document.getElementById('analystTargetContent');
+        if (!ratingsEl || !targetEl) return;
 
         let data;
         try {
@@ -7583,8 +7597,9 @@
         }
 
         const anyTarget = (lo != null) || (hi != null) || (mean != null);
+        // No subhead here — the card's own section label ("12-MONTH PRICE
+        // TARGET") is the header now that this is a standalone panel.
         const targetHtml = anyTarget ? `
-          <p class="analyst-subhead">12-Month Price Target</p>
           <div class="analyst-target-summary">
             <div class="analyst-target-tile">
               <div class="tlabel">Low</div>
@@ -7603,7 +7618,7 @@
             </div>
           </div>
           ${trackHtml}
-        ` : '';
+        ` : '<div class="analyst-loading">No price target data available.</div>';
 
         // ----- Recent rating changes -----
         const upgrades = Array.isArray(data.upgrades) ? data.upgrades.slice(0, 5) : [];
@@ -7636,23 +7651,23 @@
           </ul>
         ` : '';
 
-        content.className = '';
-        content.innerHTML = `
+        // Ratings card: consensus badge + breakdown bars + recent changes.
+        // Everything analyst-opinion-related stays together in one panel.
+        ratingsEl.className = '';
+        ratingsEl.innerHTML = `
           <div class="analyst-badge-row">
             <span class="analyst-badge ${badgeClass}">${esc(recLabel)}</span>
             <span class="analyst-badge-sub">Mean rating ${meanTxt} / 5.00 &middot; ${nAnalysts} analyst${nAnalysts === 1 ? '' : 's'}</span>
           </div>
-          <div class="term-analyst-grid">
-            <div>
-              <p class="analyst-subhead">Ratings Breakdown</p>
-              ${barsHtml}
-            </div>
-            <div>
-              ${targetHtml}
-              ${upgradeHtml}
-            </div>
-          </div>
+          <p class="analyst-subhead">Ratings Breakdown</p>
+          ${barsHtml}
+          ${upgradeHtml}
         `;
+
+        // Price-target card: tiles + Now/Mean track. Independent panel so
+        // it lines up with the ratings card as a peer, not a sub-panel.
+        targetEl.className = '';
+        targetEl.innerHTML = targetHtml;
       })();
 
       // -----------------------------------------------------------------
