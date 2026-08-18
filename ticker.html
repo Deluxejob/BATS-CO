@@ -2296,9 +2296,10 @@
         <div class="term-panel ai-analysis-panel">
           <div class="ai-analysis-pitch" data-role="aiPitch">
             <p class="ai-analysis-blurb">
-              Get a beginner-friendly research briefing on <strong data-role="aiSym">this ticker</strong> &mdash;
-              business snapshot, fundamentals, valuation, technical setup, insider signal,
-              and bull/bear cases. Uses all the data on this page.
+              Research briefing on <strong data-role="aiSym">this ticker</strong> &mdash;
+              business snapshot, industry &amp; competition, fundamentals, valuation,
+              technical setup, insider signal, and bull/base/bear cases. Uses all the data
+              on this page.
             </p>
             <button type="button" class="ai-analysis-btn" data-role="aiRunBtn">
               <span aria-hidden="true">🎯</span>
@@ -4392,10 +4393,10 @@
       ]);
 
       // ----- AI Analysis (Claude Haiku 4.5) -----
-      // Streams a beginner-friendly research briefing on the current
-      // ticker from /api/analyze. Parses the SSE stream manually so we
-      // can render Claude's plain uppercase section headers as styled
-      // <h4> elements the moment each one lands.
+      // Streams a research briefing on the current ticker from
+      // /api/analyze. Parses the SSE stream manually so we can render
+      // Claude's plain uppercase section headers as styled <h4>
+      // elements the moment each one lands.
       function initAiAnalyzer(sym) {
         const section = document.getElementById('aiAnalysisSection');
         if (!section) return;
@@ -4409,18 +4410,7 @@
         const footer  = section.querySelector('[data-role="aiFooter"]');
         const closeBtn = section.querySelector('[data-role="aiCloseBtn"]');
 
-        // Prompt mode — "?ai=rich" in the URL flips the API to the
-        // richer prompt (allows Claude to use general knowledge about
-        // the business + competitors + industry). Default is strict.
-        const params = new URLSearchParams(window.location.search);
-        const mode = params.get('ai') === 'rich' ? 'rich' : 'strict';
-        if (mode === 'rich') {
-          runLbl.textContent = 'ANALYZE ' + sym + ' WITH AI (RICH)';
-          section.setAttribute('data-ai-mode', 'rich');
-        }
-
-        // Snapshot the (possibly rich-overridden) label so we can
-        // restore it after a run without regressing to strict wording.
+        // Snapshot the button label so we can restore it after a run.
         const originalLabelHtml = runLbl.innerHTML;
 
         // Known section headers Claude will emit — we look for a line
@@ -4446,8 +4436,7 @@
           '^(?:\\d+\\.\\s*)?(' + HEADERS.map(h => h.replace(/[/&]/g, m => '\\' + m)).join('|') + ')\\.?:?\\s*$',
           'im'
         );
-        // Matches strict-mode and rich-mode disclaimer variants.
-        const disclaimerRe = /^AI-generated commentary (?:based on public data|drawing on public data and general market context)\. Not investment advice\. Do your own research\.$/im;
+        const disclaimerRe = /^AI-generated commentary drawing on public data and general market context\. Not investment advice\. Do your own research\.$/im;
 
         function esc(s) {
           return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -4523,7 +4512,7 @@
           let cached = false;
           inflight = new AbortController();
           try {
-            const r = await fetch('/api/analyze?sym=' + encodeURIComponent(sym) + '&mode=' + mode, {
+            const r = await fetch('/api/analyze?sym=' + encodeURIComponent(sym), {
               signal: inflight.signal,
               headers: { 'Accept': 'text/event-stream' },
             });
