@@ -1703,16 +1703,18 @@
       const grid = document.getElementById('indexMinis');
       if (!grid) return;
       // Actual indices (matching markets.html), not their ETF trackers.
-      // ^GSPC = S&P 500 index, ^NDX = Nasdaq 100 index, ^DJI = Dow Jones
-      // Industrial Average, ^RUT = Russell 2000 index. Yahoo won't return
-      // pre/post-market fields for these `^`-prefixed symbols (indices
-      // don't trade), but the futures-companion logic in the ext-hours
-      // refresh below picks up the slack via ES=F / NQ=F / YM=F / RTY=F.
+      // ^GSPC = S&P 500 index, ^IXIC = Nasdaq Composite (all ~3,000 Nasdaq
+      // listings — broader than the 100-name Nasdaq 100 / ^NDX),
+      // ^DJI = Dow Jones Industrial Average, ^RUT = Russell 2000 index.
+      // Yahoo won't return pre/post-market fields for these `^`-prefixed
+      // symbols (indices don't trade), but the futures-companion logic in
+      // the ext-hours refresh below picks up the slack via
+      // ES=F / NQ=F / YM=F / RTY=F.
       const items = [
-        { title: 'S&P 500',      label: '^GSPC' },
-        { title: 'Nasdaq 100',   label: '^NDX'  },
-        { title: 'Dow 30',       label: '^DJI'  },
-        { title: 'Russell 2000', label: '^RUT'  },
+        { title: 'S&P 500',           label: '^GSPC' },
+        { title: 'Nasdaq Composite',  label: '^IXIC' },
+        { title: 'Dow 30',            label: '^DJI'  },
+        { title: 'Russell 2000',      label: '^RUT'  },
       ];
       for (const it of items) {
         const card = document.createElement('div');
@@ -2485,6 +2487,9 @@
       const FUTURES_COMPANION = {
         '^GSPC': 'ES=F',    // S&P 500 e-mini
         '^NDX':  'NQ=F',    // Nasdaq 100 e-mini
+        '^IXIC': 'NQ=F',    // Nasdaq Composite — NQ tracks the 100 not the
+                            //   composite, but the two are ~95% correlated
+                            //   day-to-day so it's a fine ext-hours proxy
         '^DJI':  'YM=F',    // Dow e-mini
         '^RUT':  'RTY=F',   // Russell 2000 e-mini
       };
