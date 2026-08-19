@@ -175,6 +175,193 @@
     .star-toggle:hover { color: var(--term-amber); transform: scale(1.08); }
     .star-toggle.starred { color: var(--term-amber); }
     .star-toggle[hidden] { display: none; }
+    /* Print button — sits next to the star, same header row.
+       Small terminal-styled pill. Opens the browser print dialog
+       (which in Chrome/Edge lets you save as PDF). */
+    .print-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: transparent;
+      border: 1px solid var(--term-border);
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      padding: 0.32rem 0.6rem 0.32rem 0.5rem;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 0.5rem;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .print-btn:hover { color: var(--term-amber); border-color: var(--term-amber); }
+    .print-btn[hidden] { display: none; }
+    .print-btn .print-icon { font-size: 0.95rem; line-height: 1; }
+
+    /* Print-only header block. Hidden on screen; shown in print output as
+       a small banner with report metadata. Populated by JS on beforeprint. */
+    .print-header {
+      display: none;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 9pt;
+      color: #444;
+      border-bottom: 1px solid #999;
+      padding: 0 0 6pt;
+      margin: 0 0 10pt;
+    }
+    .print-header .brand { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .print-header .meta  { float: right; }
+
+    /* ============================================================
+       PRINT MODE — activated by beforeprint (JS adds .print-mode to
+       body) AND by @media print for browsers that don't fire that
+       event. Everything below is designed for portrait 8.5"×11" at
+       ~0.5in margins with a light color palette (white paper).
+       ============================================================ */
+    body.print-mode,
+    body.print-mode * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body.print-mode {
+      /* Override the dark terminal palette so ink usage is reasonable
+         and text stays legible on white paper. Same tokens the rest of
+         the site already reads. */
+      --term-bg:          #ffffff;
+      --term-panel:       #ffffff;
+      --term-panel-2:     #f6f6f6;
+      --term-text:        #1a1a1a;
+      --term-dim:         #555;
+      --term-border:      #bbb;
+      --term-border-soft: #ddd;
+      --term-amber:       #8a6a10;
+      --term-cyan:        #005f7f;
+      --term-green:       #006400;
+      --term-red:         #9a1e1e;
+      background: #fff;
+      color: #1a1a1a;
+    }
+    body.print-mode .print-header { display: block; }
+
+    /* --- Hide site chrome + interactive controls + excluded sections --- */
+    body.print-mode .site-nav,
+    body.print-mode .site-footer,
+    body.print-mode #tickerSearchForm,
+    body.print-mode .star-toggle,
+    body.print-mode .star-hint,
+    body.print-mode .print-btn,
+    body.print-mode .tk-share-bar,
+    body.print-mode .tk-picker-row,
+    body.print-mode .tk-range-picker,
+    body.print-mode .tk-ma-toggles,
+    body.print-mode .ai-analysis-pitch,
+    body.print-mode .ai-analysis-close,
+    body.print-mode #peersSection,
+    body.print-mode #compareSection,
+    body.print-mode #relPerfSection,
+    body.print-mode #overlaySection,
+    body.print-mode #technicalsSection {
+      display: none !important;
+    }
+
+    /* Hide the News column and collapse its host grid to 1fr so the Key
+       Statistics column doesn't sit inside a phantom 2-col frame. */
+    body.print-mode .grid-2col:has(#tickerNewsList) {
+      grid-template-columns: 1fr !important;
+    }
+    body.print-mode .grid-2col:has(#tickerNewsList) .mkt-col:has(#tickerNewsList) {
+      display: none !important;
+    }
+
+    /* AI Analysis output only prints if it's currently open (i.e. the
+       reader clicked the button and Claude wrote something). When open,
+       we let it flow inline instead of forcing a page break — reader
+       decides whether it's worth the paper by choosing to open it. */
+    body.print-mode .ai-analysis-output[hidden] { display: none !important; }
+    body.print-mode .ai-analysis-output:not([hidden]) {
+      display: block !important;
+      border-left: 3px solid #8a6a10 !important;
+    }
+
+    /* --- Section spacing + page breaks --- */
+    body.print-mode {
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 9.5pt;
+      line-height: 1.35;
+    }
+    body.print-mode .term-container,
+    body.print-mode main {
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    body.print-mode .term-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      margin: 0 0 10pt !important;
+    }
+    body.print-mode .term-panel {
+      background: #fff !important;
+      border: 1px solid #ccc !important;
+      box-shadow: none !important;
+      padding: 8pt 10pt !important;
+    }
+    body.print-mode .term-section-label {
+      font-size: 8pt;
+      color: #8a6a10;
+      margin: 0 0 4pt;
+    }
+
+    /* Header block */
+    body.print-mode .term-header {
+      padding: 0 0 8pt !important;
+      margin: 0 0 8pt !important;
+      border-bottom: 1px solid #999;
+      background: transparent !important;
+    }
+    body.print-mode .term-ticker { font-size: 22pt !important; color: #1a1a1a; }
+    body.print-mode .term-ticker-sub { font-size: 10pt; color: #444; }
+
+    /* Hero chart — keep the SVG, drop the interactive scaffolding.
+       Give it a fixed height so it doesn't dominate the first page. */
+    body.print-mode .tk-chart-main { padding: 0 !important; }
+    body.print-mode .tk-chart-svg-wrap { max-height: 320pt; overflow: hidden; }
+    body.print-mode .tk-chart-svg-wrap svg { width: 100% !important; height: auto !important; }
+
+    /* Tables: prevent row splits across pages */
+    body.print-mode table { break-inside: auto; }
+    body.print-mode tr    { break-inside: avoid; }
+    body.print-mode thead { display: table-header-group; }
+
+    /* Text colors that were bright accents on dark bg — dim to
+       print-safe values so tiny "up +2.1%" chips don't look like
+       glowing highlighter marks on paper. */
+    body.print-mode .pos, body.print-mode .tk-chart-change.pos, body.print-mode .tdelta.pos { color: #006400 !important; }
+    body.print-mode .neg, body.print-mode .tk-chart-change.neg, body.print-mode .tdelta.neg { color: #9a1e1e !important; }
+
+    /* @page setup — portrait, tight-but-safe margins. */
+    @page { size: portrait; margin: 0.45in 0.5in; }
+
+    /* Fallback for browsers that don't fire beforeprint reliably —
+       replicate the print-mode selectors under @media print so at
+       least the hides/color-shifts kick in even without the JS class.
+       (Selector list is condensed but covers the essentials.) */
+    @media print {
+      body { background: #fff; color: #1a1a1a; padding: 0; margin: 0; }
+      .site-nav, .site-footer, #tickerSearchForm,
+      .star-toggle, .star-hint, .print-btn, .tk-share-bar,
+      .tk-picker-row, .tk-range-picker, .tk-ma-toggles,
+      .ai-analysis-pitch, .ai-analysis-close,
+      #peersSection, #compareSection, #relPerfSection,
+      #overlaySection, #technicalsSection { display: none !important; }
+      .grid-2col:has(#tickerNewsList) { grid-template-columns: 1fr !important; }
+      .grid-2col:has(#tickerNewsList) .mkt-col:has(#tickerNewsList) { display: none !important; }
+      .ai-analysis-output[hidden] { display: none !important; }
+      .print-header { display: block !important; }
+      .term-section { break-inside: avoid; page-break-inside: avoid; }
+    }
     /* Subtle hint next to the star so first-time visitors know what it does.
        Switches text when the ticker is already on the watchlist. */
     .star-hint {
@@ -2318,6 +2505,10 @@
           <h1 class="term-ticker" id="tickerHeadline">—</h1>
           <button type="button" id="starToggle" class="star-toggle" hidden title="Save to watchlist" aria-label="Save to watchlist">&#9734;</button>
           <span id="starHint" class="star-hint" hidden>&larr; click to add to watchlist</span>
+          <button type="button" id="printBtn" class="print-btn" hidden title="Print or save as PDF" aria-label="Print or save as PDF">
+            <span class="print-icon" aria-hidden="true">&#128424;</span>
+            <span class="print-label">PRINT</span>
+          </button>
         </div>
         <p class="term-ticker-sub" id="tickerSub">Enter a symbol below</p>
       </div>
@@ -2328,6 +2519,14 @@
           <button type="submit">GO &rarr;</button>
         </div>
       </form>
+    </div>
+
+    <!-- Print-only banner. Screen: display:none. Print: shown as a small
+         header with brand + report subject + generation timestamp. -->
+    <div class="print-header" id="printHeader">
+      <span class="brand">BATS.CO</span>
+      <span> &middot; Ticker research report</span>
+      <span class="meta" id="printHeaderMeta"></span>
     </div>
 
     <!-- Empty state (no ?sym= provided) -->
@@ -2590,7 +2789,7 @@
       </div>
 
       <!-- Technicals -->
-      <section class="term-section">
+      <section class="term-section" id="technicalsSection">
         <div class="term-section-label">TECHNICAL ANALYSIS <span class="sub">— rolled up from ~30 popular indicators</span></div>
         <div class="term-panel"><div id="techWidgetMount"></div></div>
       </section>
@@ -4485,6 +4684,52 @@
 
       // ----- AI Analysis (Claude Haiku 4.5) -----
       // Streams a research briefing on the current ticker from
+      // ----- Print button -----
+      // Reveals the header PRINT button, adds body.print-mode on
+      // beforeprint (removed on afterprint), and forces the hero chart
+      // into its 1Y view before capture so the print always shows the
+      // same slice regardless of what the reader was viewing. The class
+      // toggle also lets us preview print styles from the console via
+      // `document.body.classList.add('print-mode')`.
+      function initPrintButton(sym) {
+        const btn = document.getElementById('printBtn');
+        const meta = document.getElementById('printHeaderMeta');
+        if (!btn) return;
+        btn.hidden = false;
+
+        function refreshMeta() {
+          if (!meta) return;
+          const d = new Date();
+          const ymd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          const hm  = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          meta.textContent = sym + ' · generated ' + ymd + ' at ' + hm;
+        }
+
+        function forceRangeTo1Y() {
+          // Hero chart's 1Y range button — reset before print so every
+          // report shows the same slice. Idempotent: no-op if already 1Y.
+          const btn1y = document.querySelector('.tk-range-picker [data-range="1Y"]');
+          if (btn1y && !btn1y.classList.contains('active')) btn1y.click();
+        }
+
+        btn.addEventListener('click', () => {
+          forceRangeTo1Y();
+          refreshMeta();
+          // beforeprint below adds the class, but on some browsers the
+          // paint isn't flushed before the dialog opens. Set it here too.
+          document.body.classList.add('print-mode');
+          setTimeout(() => window.print(), 60);
+        });
+        window.addEventListener('beforeprint', () => {
+          refreshMeta();
+          forceRangeTo1Y();
+          document.body.classList.add('print-mode');
+        });
+        window.addEventListener('afterprint', () => {
+          document.body.classList.remove('print-mode');
+        });
+      }
+
       // /api/analyze. Parses the SSE stream manually so we can render
       // Claude's plain uppercase section headers as styled <h4>
       // elements the moment each one lands.
@@ -5195,6 +5440,7 @@
       //    (none of which TradingView's free embed supports).
       initTickerMainChart(sym);
       initAiAnalyzer(sym);
+      initPrintButton(sym);
 
       // 1b) Monthly relative performance vs SPY / QQQ. Same shape as
       //     CNBC's "AAPL vs NDX; monthly % perf" chart, with a toggle.
