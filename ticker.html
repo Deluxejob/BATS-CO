@@ -2961,6 +2961,7 @@
                 <button type="button" data-range="6M">6M</button>
                 <button type="button" data-range="YTD">YTD</button>
                 <button type="button" data-range="1Y" class="active">1Y</button>
+                <button type="button" data-range="3Y">3Y</button>
                 <button type="button" data-range="5Y">5Y</button>
                 <button type="button" data-range="All">All</button>
               </div>
@@ -3026,13 +3027,16 @@
           '6M':  { range: '1y',  interval: '1d' },
           'YTD': { range: '1y',  interval: '1d' },
           '1Y':  { range: '1y',  interval: '1d' },
+          // 3Y reuses the 5Y fetch (Yahoo has no native 3y range) and
+          // trims to the last ~156 weekly bars in sliceForRange.
+          '3Y':  { range: '5y',  interval: '1wk' },
           '5Y':  { range: '5y',  interval: '1wk' },
           'All': { range: 'max', interval: '1mo' },
         };
         const SLOT_BY_RANGE = {
           '1D':'intra5d', '5D':'intra5d',
           '1M':'daily1y','3M':'daily1y','6M':'daily1y','YTD':'daily1y','1Y':'daily1y',
-          '5Y':'weekly5y','All':'monthly',
+          '3Y':'weekly5y','5Y':'weekly5y','All':'monthly',
         };
         const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         // Always render prices with exactly 2 decimals — financial convention.
@@ -3174,6 +3178,10 @@
             }
             return daily1y;
           }
+          // 3Y shares the weekly5y cache with 5Y — trim to last ~3 years
+          // (52 weekly bars × 3 = 156). Cheaper than a second fetch and
+          // gives 5Y-quality resolution over a tighter window.
+          if (rangeKey === '3Y'  && weekly5y) return weekly5y.slice(-156);
           if (rangeKey === '5Y'  && weekly5y) return weekly5y;
           if (rangeKey === 'All' && monthly)  return monthly;
           return [];
