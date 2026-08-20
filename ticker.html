@@ -247,14 +247,19 @@
     /* --- Hide site chrome + interactive controls + excluded sections --- */
     body.print-mode .site-nav,
     body.print-mode .site-footer,
+    body.print-mode .ticker-tape-wrap,
     body.print-mode #tickerSearchForm,
+    body.print-mode #tickerSub,
     body.print-mode .star-toggle,
     body.print-mode .star-hint,
     body.print-mode .print-btn,
     body.print-mode .tk-share-bar,
+    body.print-mode [data-share-strip],
     body.print-mode .tk-picker-row,
     body.print-mode .tk-range-picker,
     body.print-mode .tk-ma-toggles,
+    body.print-mode .tk-draw-toolbar,
+    body.print-mode .prof-actions,
     body.print-mode .ai-analysis-pitch,
     body.print-mode .ai-analysis-close,
     body.print-mode #peersSection,
@@ -263,6 +268,14 @@
     body.print-mode #overlaySection,
     body.print-mode #technicalsSection {
       display: none !important;
+    }
+    /* Company Profile body has a JS "read more" toggle that clamps long
+       descriptions to 5 lines via -webkit-line-clamp. For print we always
+       want the full text — undo the clamp. */
+    body.print-mode .prof-body-collapsed {
+      display: block !important;
+      -webkit-line-clamp: unset !important;
+      overflow: visible !important;
     }
 
     /* Hide the News column and collapse its host grid to 1fr so the Key
@@ -350,12 +363,17 @@
        (Selector list is condensed but covers the essentials.) */
     @media print {
       body { background: #fff; color: #1a1a1a; padding: 0; margin: 0; }
-      .site-nav, .site-footer, #tickerSearchForm,
-      .star-toggle, .star-hint, .print-btn, .tk-share-bar,
-      .tk-picker-row, .tk-range-picker, .tk-ma-toggles,
-      .ai-analysis-pitch, .ai-analysis-close,
+      .site-nav, .site-footer, .ticker-tape-wrap, #tickerSearchForm, #tickerSub,
+      .star-toggle, .star-hint, .print-btn, .tk-share-bar, [data-share-strip],
+      .tk-picker-row, .tk-range-picker, .tk-ma-toggles, .tk-draw-toolbar,
+      .prof-actions, .ai-analysis-pitch, .ai-analysis-close,
       #peersSection, #compareSection, #relPerfSection,
       #overlaySection, #technicalsSection { display: none !important; }
+      .prof-body-collapsed {
+        display: block !important;
+        -webkit-line-clamp: unset !important;
+        overflow: visible !important;
+      }
       .grid-2col:has(#tickerNewsList) { grid-template-columns: 1fr !important; }
       .grid-2col:has(#tickerNewsList) .mkt-col:has(#tickerNewsList) { display: none !important; }
       .ai-analysis-output[hidden] { display: none !important; }
