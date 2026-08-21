@@ -1,5 +1,5 @@
 {
-  "generatedAt": 1787348015,
+  "generatedAt": 1787349357,
   "gainers": [
     {
       "symbol": "SLS",
@@ -17,16 +17,7 @@
       "changePct": 14.77272,
       "change": 1.4299994,
       "volume": 2663546,
-      "marketCap": 5268494336
-    },
-    {
-      "symbol": "UEC",
-      "shortName": "Uranium Energy Corp.",
-      "price": 12.76,
-      "changePct": 14.4395,
-      "change": 1.61,
-      "volume": 16591590,
-      "marketCap": 6255217152
+      "marketCap": 5266454016
     },
     {
       "symbol": "HOOD",
@@ -44,7 +35,7 @@
       "changePct": 12.565748,
       "change": 2.1499996,
       "volume": 21118640,
-      "marketCap": 4712366080
+      "marketCap": 4713309184
     },
     {
       "symbol": "INFQ",
@@ -225,6 +216,15 @@
       "change": 1.48,
       "volume": 111382,
       "marketCap": 2212439296
+    },
+    {
+      "symbol": "SCCO",
+      "shortName": "Southern Copper Corporation",
+      "price": 216.0,
+      "changePct": 8.69019,
+      "change": 17.27,
+      "volume": 1672255,
+      "marketCap": 182378233856
     }
   ],
   "losers": [
@@ -451,7 +451,7 @@
       "changePct": -3.50159,
       "change": -2.31,
       "volume": 7449691,
-      "marketCap": 24609972224
+      "marketCap": 24611481600
     }
   ],
   "actives": [
@@ -507,7 +507,7 @@
       "changePct": 2.2164187,
       "change": 2.9700012,
       "volume": 77453430,
-      "marketCap": 1804468355072
+      "marketCap": 1805508411392
     },
     {
       "symbol": "AAL",
@@ -654,15 +654,6 @@
       "marketCap": 47375839232
     },
     {
-      "symbol": "NOK",
-      "shortName": "Nokia Corporation Sponsored",
-      "price": 10.21,
-      "changePct": 0.591137,
-      "change": 0.0600004,
-      "volume": 44724264,
-      "marketCap": 56997675008
-    },
-    {
       "symbol": "WMT",
       "shortName": "Walmart Inc.",
       "price": 103.7,
@@ -679,6 +670,15 @@
       "change": -1.9499817,
       "volume": 42216056,
       "marketCap": 4514709504000
+    },
+    {
+      "symbol": "PLTR",
+      "shortName": "Palantir Technologies Inc.",
+      "price": 179.94,
+      "changePct": 3.4375694,
+      "change": 5.9799957,
+      "volume": 40929832,
+      "marketCap": 432406331392
     }
   ],
   "preGainers": [],
@@ -688,47 +688,56 @@
     {
       "symbol": "IQMX",
       "shortName": "IQM Quantum Computers Oyj",
-      "price": 11.6,
-      "changePct": 4.4104476,
-      "change": 0.49000072,
+      "price": 11.59,
+      "changePct": 4.3204365,
+      "change": 0.4800005,
       "volume": 2663546,
-      "marketCap": 5268494336
+      "marketCap": 5266454016
     },
     {
       "symbol": "SSMR",
       "shortName": "Sunshine Silver Mining & Refini",
-      "price": 19.25,
-      "changePct": 3.2725356,
-      "change": 0.6100006,
+      "price": 19.3,
+      "changePct": 3.5407717,
+      "change": 0.65999985,
       "volume": 541188,
       "marketCap": 2679063808
     },
     {
       "symbol": "PURR",
       "shortName": "Hyperliquid Strategies Inc",
-      "price": 10.9,
-      "changePct": 3.024572,
-      "change": 0.3199997,
+      "price": 10.95,
+      "changePct": 3.4971633,
+      "change": 0.3699999,
       "volume": 35170092,
       "marketCap": 2121963904
     },
     {
-      "symbol": "WULF",
-      "shortName": "TeraWulf Inc.",
-      "price": 16.0502,
-      "changePct": 2.6227567,
-      "change": 0.41019917,
-      "volume": 46536491,
-      "marketCap": 7803870208
-    },
-    {
       "symbol": "BMNR",
       "shortName": "BitMine Immersion Technologies,",
-      "price": 23.37,
-      "changePct": 2.3653128,
-      "change": 0.5400009,
+      "price": 23.4961,
+      "changePct": 2.9176502,
+      "change": 0.66609955,
       "volume": 57699543,
       "marketCap": 13771658240
+    },
+    {
+      "symbol": "MSTR",
+      "shortName": "Strategy Inc",
+      "price": 122.3697,
+      "changePct": 2.6160986,
+      "change": 3.1196976,
+      "volume": 45053427,
+      "marketCap": 47375839232
+    },
+    {
+      "symbol": "WULF",
+      "shortName": "TeraWulf Inc.",
+      "price": 16.0439,
+      "changePct": 2.5824757,
+      "change": 0.4038992,
+      "volume": 46536491,
+      "marketCap": 7803870208
     },
     {
       "symbol": "CVI",
@@ -738,15 +747,6 @@
       "change": 0.90060043,
       "volume": 1771078,
       "marketCap": 3971963904
-    },
-    {
-      "symbol": "TTMI",
-      "shortName": "TTM Technologies, Inc.",
-      "price": 112.98,
-      "changePct": 2.2073479,
-      "change": 2.4400024,
-      "volume": 2353181,
-      "marketCap": 11645263872
     },
     {
       "symbol": "BOBS",
@@ -767,49 +767,67 @@
       "marketCap": 2648395520
     },
     {
-      "symbol": "MSTR",
-      "shortName": "Strategy Inc",
-      "price": 121.5645,
-      "changePct": 1.9408796,
-      "change": 2.314499,
-      "volume": 45053427,
-      "marketCap": 47375839232
+      "symbol": "CAI",
+      "shortName": "Caris Life Sciences, Inc.",
+      "price": 26.78,
+      "changePct": 1.9413788,
+      "change": 0.5100002,
+      "volume": 6357672,
+      "marketCap": 7426022400
     },
     {
-      "symbol": "AADX",
-      "shortName": "Applied Aerospace & Defense, In",
-      "price": 15.2,
-      "changePct": 1.6042765,
-      "change": 0.23999977,
-      "volume": 1515835,
-      "marketCap": 2579006976
+      "symbol": "BGSI",
+      "shortName": "Boyd Group Services Inc.",
+      "price": 89.95,
+      "changePct": 1.9263421,
+      "change": 1.699997,
+      "volume": 69208,
+      "marketCap": 2456003072
     },
     {
       "symbol": "KEEL",
       "shortName": "Keel Infrastructure Corp.",
-      "price": 3.37,
-      "changePct": 1.5060227,
-      "change": 0.049999952,
+      "price": 3.38,
+      "changePct": 1.8072344,
+      "change": 0.06000018,
       "volume": 46962952,
       "marketCap": 2050342912
     },
     {
-      "symbol": "TGTX",
-      "shortName": "TG Therapeutics, Inc.",
-      "price": 54.95,
-      "changePct": 1.2529949,
-      "change": 0.6800003,
-      "volume": 5384894,
-      "marketCap": 8307057664
-    },
-    {
       "symbol": "COIN",
       "shortName": "Coinbase Global, Inc.",
-      "price": 188.8072,
-      "changePct": 1.242533,
-      "change": 2.3171997,
+      "price": 189.58,
+      "changePct": 1.6569233,
+      "change": 3.0899963,
       "volume": 22495437,
       "marketCap": 49202950144
+    },
+    {
+      "symbol": "TLX",
+      "shortName": "Telix Pharmaceuticals Limited",
+      "price": 11.5,
+      "changePct": 1.500442,
+      "change": 0.17000008,
+      "volume": 299199,
+      "marketCap": 3838343936
+    },
+    {
+      "symbol": "TTMI",
+      "shortName": "TTM Technologies, Inc.",
+      "price": 112.0,
+      "changePct": 1.320788,
+      "change": 1.4599991,
+      "volume": 2353181,
+      "marketCap": 11645263872
+    },
+    {
+      "symbol": "TGTX",
+      "shortName": "TG Therapeutics, Inc.",
+      "price": 54.9355,
+      "changePct": 1.2262772,
+      "change": 0.66550064,
+      "volume": 5384894,
+      "marketCap": 8307846144
     },
     {
       "symbol": "KOD",
@@ -830,6 +848,42 @@
       "marketCap": 2212439296
     },
     {
+      "symbol": "AADX",
+      "shortName": "Applied Aerospace & Defense, In",
+      "price": 15.12,
+      "changePct": 1.0695177,
+      "change": 0.15999985,
+      "volume": 1515835,
+      "marketCap": 2579006976
+    },
+    {
+      "symbol": "PWR",
+      "shortName": "Quanta Services, Inc.",
+      "price": 646.1101,
+      "changePct": 1.058917,
+      "change": 6.7700806,
+      "volume": 1215211,
+      "marketCap": 96120545280
+    },
+    {
+      "symbol": "ZYME",
+      "shortName": "Zymeworks Inc.",
+      "price": 28.94,
+      "changePct": 0.94175255,
+      "change": 0.27000046,
+      "volume": 834370,
+      "marketCap": 2050169856
+    },
+    {
+      "symbol": "HOOD",
+      "shortName": "Robinhood Markets, Inc.",
+      "price": 109.11,
+      "changePct": 0.9063196,
+      "change": 0.98000336,
+      "volume": 49572416,
+      "marketCap": 97217765376
+    },
+    {
       "symbol": "AMR",
       "shortName": "Alpha Metallurgical Resources, ",
       "price": 211.87,
@@ -839,85 +893,31 @@
       "marketCap": 2662726144
     },
     {
-      "symbol": "ALGT",
-      "shortName": "Allegiant Travel Company",
-      "price": 82.53,
-      "changePct": 0.83078843,
-      "change": 0.6800003,
-      "volume": 785384,
-      "marketCap": 2237595392
+      "symbol": "CIFR",
+      "shortName": "Cipher Digital Inc.",
+      "price": 15.9,
+      "changePct": 0.8563227,
+      "change": 0.13499928,
+      "volume": 54803411,
+      "marketCap": 6542959616
     },
     {
-      "symbol": "DAR",
-      "shortName": "Darling Ingredients Inc.",
-      "price": 66.25,
-      "changePct": 0.77578664,
-      "change": 0.51000214,
-      "volume": 7350222,
-      "marketCap": 10373962752
-    },
-    {
-      "symbol": "MRCY",
-      "shortName": "Mercury Systems Inc",
-      "price": 92.0,
-      "changePct": 0.70052475,
-      "change": 0.6399994,
-      "volume": 1084048,
-      "marketCap": 5485554688
-    },
-    {
-      "symbol": "Q",
-      "shortName": "Qnity Electronics, Inc.",
-      "price": 129.72,
-      "changePct": 0.65176624,
-      "change": 0.83999634,
-      "volume": 1734355,
-      "marketCap": 26979637248
-    },
-    {
-      "symbol": "TLX",
-      "shortName": "Telix Pharmaceuticals Limited",
-      "price": 11.4,
-      "changePct": 0.6178261,
-      "change": 0.069999695,
-      "volume": 299199,
-      "marketCap": 3838343936
-    },
-    {
-      "symbol": "MARA",
-      "shortName": "MARA Holdings, Inc.",
-      "price": 11.3282,
-      "changePct": 0.6056848,
-      "change": 0.06820011,
-      "volume": 101106921,
-      "marketCap": 4349730304
-    },
-    {
-      "symbol": "RIOT",
-      "shortName": "Riot Platforms, Inc.",
-      "price": 19.95,
-      "changePct": 0.60514796,
-      "change": 0.12000084,
-      "volume": 27244096,
-      "marketCap": 7441384960
-    },
-    {
-      "symbol": "JOBY",
-      "shortName": "Joby Aviation, Inc.",
-      "price": 7.5692,
-      "changePct": 0.520582,
-      "change": 0.03919983,
-      "volume": 28561776,
-      "marketCap": 7448105472
+      "symbol": "BHC",
+      "shortName": "Bausch Health Companies Inc.",
+      "price": 6.495,
+      "changePct": 0.8540346,
+      "change": 0.05499983,
+      "volume": 3970451,
+      "marketCap": 2408499200
     }
   ],
   "postLosers": [
     {
       "symbol": "AAOI",
       "shortName": "Applied Optoelectronics, Inc.",
-      "price": 112.56,
-      "changePct": -9.822145,
-      "change": -12.260002,
+      "price": 113.0,
+      "changePct": -9.469636,
+      "change": -11.82,
       "volume": 8018846,
       "marketCap": 10555932672
     },
@@ -940,40 +940,58 @@
       "marketCap": 2699444992
     },
     {
-      "symbol": "TEM",
-      "shortName": "Tempus AI, Inc.",
-      "price": 72.05,
-      "changePct": -0.88045037,
-      "change": -0.6399994,
-      "volume": 15877153,
-      "marketCap": 13115802624
-    },
-    {
-      "symbol": "RELY",
-      "shortName": "Remitly Global, Inc.",
-      "price": 26.44,
-      "changePct": -0.86239046,
-      "change": -0.22999954,
-      "volume": 2640625,
-      "marketCap": 5645613568
-    },
-    {
       "symbol": "AXTI",
       "shortName": "AXT Inc",
-      "price": 70.15,
-      "changePct": -0.834035,
-      "change": -0.58999634,
+      "price": 69.9077,
+      "changePct": -1.1765597,
+      "change": -0.8322983,
       "volume": 8232195,
       "marketCap": 4638648832
     },
     {
-      "symbol": "BULL",
-      "shortName": "Webull Corporation",
-      "price": 8.73,
-      "changePct": -0.5694783,
-      "change": -0.05000019,
-      "volume": 27678134,
-      "marketCap": 4669367808
+      "symbol": "XNDU",
+      "shortName": "Xanadu Quantum Technologies Lim",
+      "price": 10.8313,
+      "changePct": -1.0840186,
+      "change": -0.11870003,
+      "volume": 2560540,
+      "marketCap": 3331252992
+    },
+    {
+      "symbol": "PARR",
+      "shortName": "Par Pacific Holdings, Inc. Comm",
+      "price": 78.18,
+      "changePct": -1.075539,
+      "change": -0.8499985,
+      "volume": 717478,
+      "marketCap": 3959373568
+    },
+    {
+      "symbol": "TEM",
+      "shortName": "Tempus AI, Inc.",
+      "price": 72.06,
+      "changePct": -0.8667009,
+      "change": -0.6300049,
+      "volume": 15877153,
+      "marketCap": 13115802624
+    },
+    {
+      "symbol": "XEL",
+      "shortName": "Xcel Energy Inc.",
+      "price": 75.8,
+      "changePct": -0.65530795,
+      "change": -0.5,
+      "volume": 6440505,
+      "marketCap": 47659597824
+    },
+    {
+      "symbol": "RELY",
+      "shortName": "Remitly Global, Inc.",
+      "price": 26.52,
+      "changePct": -0.56242824,
+      "change": -0.14999962,
+      "volume": 2640625,
+      "marketCap": 5645613568
     },
     {
       "symbol": "PATH",
@@ -985,40 +1003,13 @@
       "marketCap": 8491990528
     },
     {
-      "symbol": "BHC",
-      "shortName": "Bausch Health Companies Inc.",
-      "price": 6.41,
-      "changePct": -0.46584177,
-      "change": -0.03000021,
-      "volume": 3970451,
-      "marketCap": 2408499200
-    },
-    {
-      "symbol": "XNDU",
-      "shortName": "Xanadu Quantum Technologies Lim",
-      "price": 10.9,
-      "changePct": -0.45662275,
-      "change": -0.05000019,
-      "volume": 2560540,
-      "marketCap": 3331252992
-    },
-    {
-      "symbol": "QUBT",
-      "shortName": "Quantum Computing Inc.",
-      "price": 8.88,
-      "changePct": -0.44843006,
-      "change": -0.03999996,
-      "volume": 13865365,
-      "marketCap": 2019014016
-    },
-    {
-      "symbol": "MRVL",
-      "shortName": "Marvell Technology, Inc.",
-      "price": 236.03,
-      "changePct": -0.42608613,
-      "change": -1.0099945,
-      "volume": 24970547,
-      "marketCap": 212753924096
+      "symbol": "AEHR",
+      "shortName": "Aehr Test Systems",
+      "price": 101.2509,
+      "changePct": -0.47095555,
+      "change": -0.4791031,
+      "volume": 1907543,
+      "marketCap": 3318478592
     },
     {
       "symbol": "SNAP",
@@ -1030,76 +1021,58 @@
       "marketCap": 8861875200
     },
     {
-      "symbol": "BTG",
-      "shortName": "B2Gold Corp",
-      "price": 5.5,
-      "changePct": -0.3623185,
-      "change": -0.01999998,
-      "volume": 26458679,
-      "marketCap": 7292310528
-    },
-    {
-      "symbol": "PGEN",
-      "shortName": "Precigen, Inc.",
-      "price": 7.175,
-      "changePct": -0.34721693,
-      "change": -0.024999619,
-      "volume": 4358769,
-      "marketCap": 2566878976
-    },
-    {
-      "symbol": "DJT",
-      "shortName": "Trump Media & Technology Group ",
-      "price": 9.07,
-      "changePct": -0.32967785,
-      "change": -0.030000687,
-      "volume": 5587813,
-      "marketCap": 2529265664
-    },
-    {
-      "symbol": "TDS",
-      "shortName": "Telephone and Data Systems, Inc",
-      "price": 33.4903,
-      "changePct": -0.32648587,
-      "change": -0.10969925,
-      "volume": 524200,
-      "marketCap": 3867897344
-    },
-    {
-      "symbol": "SA",
-      "shortName": "Seabridge Gold, Inc.",
-      "price": 30.07,
-      "changePct": -0.298409,
-      "change": -0.09000015,
-      "volume": 3011337,
-      "marketCap": 3253395968
-    },
-    {
-      "symbol": "AEHR",
-      "shortName": "Aehr Test Systems",
-      "price": 101.4352,
-      "changePct": -0.2897865,
-      "change": -0.2947998,
-      "volume": 1907543,
-      "marketCap": 3318478592
-    },
-    {
       "symbol": "INFQ",
       "shortName": "Infleqtion, Inc.",
-      "price": 14.08,
-      "changePct": -0.28328586,
-      "change": -0.03999996,
+      "price": 14.07,
+      "changePct": -0.354109,
+      "change": -0.05000019,
       "volume": 15309807,
       "marketCap": 3182041600
     },
     {
-      "symbol": "EXK",
-      "shortName": "Endeavour Silver Corporation",
-      "price": 10.59,
-      "changePct": -0.28248337,
-      "change": -0.029999733,
-      "volume": 9388636,
-      "marketCap": 3145054464
+      "symbol": "BTG",
+      "shortName": "B2Gold Corp",
+      "price": 5.502,
+      "changePct": -0.32608923,
+      "change": -0.018000126,
+      "volume": 26458679,
+      "marketCap": 7292310528
+    },
+    {
+      "symbol": "HL",
+      "shortName": "Hecla Mining Company",
+      "price": 20.6617,
+      "changePct": -0.28137076,
+      "change": -0.05830002,
+      "volume": 30469517,
+      "marketCap": 13919041536
+    },
+    {
+      "symbol": "SOUN",
+      "shortName": "SoundHound AI, Inc.",
+      "price": 7.3,
+      "changePct": -0.2732238,
+      "change": -0.01999998,
+      "volume": 28738054,
+      "marketCap": 3250884096
+    },
+    {
+      "symbol": "IONQ",
+      "shortName": "IonQ, Inc.",
+      "price": 44.738,
+      "changePct": -0.27196088,
+      "change": -0.12200165,
+      "volume": 17079779,
+      "marketCap": 18174386176
+    },
+    {
+      "symbol": "SLS",
+      "shortName": "SELLAS Life Sciences Group, Inc",
+      "price": 15.418,
+      "changePct": -0.27166763,
+      "change": -0.041999817,
+      "volume": 15056913,
+      "marketCap": 3122080768
     },
     {
       "symbol": "TRLV",
@@ -1111,13 +1084,13 @@
       "marketCap": 2135449728
     },
     {
-      "symbol": "EGO",
-      "shortName": "Eldorado Gold Corporation",
-      "price": 45.6,
-      "changePct": -0.2624732,
-      "change": -0.12000275,
-      "volume": 4285950,
-      "marketCap": 11924248576
+      "symbol": "SA",
+      "shortName": "Seabridge Gold, Inc.",
+      "price": 30.079,
+      "changePct": -0.26856557,
+      "change": -0.080999374,
+      "volume": 3011337,
+      "marketCap": 3253395968
     },
     {
       "symbol": "FUTU",
@@ -1129,69 +1102,105 @@
       "marketCap": 17333647360
     },
     {
-      "symbol": "HL",
-      "shortName": "Hecla Mining Company",
-      "price": 20.67,
-      "changePct": -0.24130906,
-      "change": -0.049999237,
-      "volume": 30469517,
-      "marketCap": 13897159680
+      "symbol": "IOVA",
+      "shortName": "Iovance Biotherapeutics, Inc.",
+      "price": 8.27,
+      "changePct": -0.24124855,
+      "change": -0.019999504,
+      "volume": 27702528,
+      "marketCap": 3755133184
+    },
+    {
+      "symbol": "BULL",
+      "shortName": "Webull Corporation",
+      "price": 8.76,
+      "changePct": -0.2277848,
+      "change": -0.019999504,
+      "volume": 27678134,
+      "marketCap": 4669367808
+    },
+    {
+      "symbol": "RGTI",
+      "shortName": "Rigetti Computing, Inc.",
+      "price": 17.87,
+      "changePct": -0.22333337,
+      "change": -0.03999901,
+      "volume": 23018157,
+      "marketCap": 5977798144
+    },
+    {
+      "symbol": "SMR",
+      "shortName": "NuScale Power Corporation",
+      "price": 9.38,
+      "changePct": -0.21276069,
+      "change": -0.019999504,
+      "volume": 35433071,
+      "marketCap": 3857661440
     }
   ],
   "postActives": [
     {
       "symbol": "AAOI",
       "shortName": "Applied Optoelectronics, Inc.",
-      "price": 112.56,
-      "changePct": -9.822145,
-      "change": -12.260002,
+      "price": 113.0,
+      "changePct": -9.469636,
+      "change": -11.82,
       "volume": 8018846,
       "marketCap": 10555932672
     },
     {
       "symbol": "IQMX",
       "shortName": "IQM Quantum Computers Oyj",
-      "price": 11.6,
-      "changePct": 4.4104476,
-      "change": 0.49000072,
+      "price": 11.59,
+      "changePct": 4.3204365,
+      "change": 0.4800005,
       "volume": 2663546,
-      "marketCap": 5268494336
+      "marketCap": 5266454016
     },
     {
       "symbol": "SSMR",
       "shortName": "Sunshine Silver Mining & Refini",
-      "price": 19.25,
-      "changePct": 3.2725356,
-      "change": 0.6100006,
+      "price": 19.3,
+      "changePct": 3.5407717,
+      "change": 0.65999985,
       "volume": 541188,
       "marketCap": 2679063808
     },
     {
       "symbol": "PURR",
       "shortName": "Hyperliquid Strategies Inc",
-      "price": 10.9,
-      "changePct": 3.024572,
-      "change": 0.3199997,
+      "price": 10.95,
+      "changePct": 3.4971633,
+      "change": 0.3699999,
       "volume": 35170092,
       "marketCap": 2121963904
     },
     {
-      "symbol": "WULF",
-      "shortName": "TeraWulf Inc.",
-      "price": 16.0502,
-      "changePct": 2.6227567,
-      "change": 0.41019917,
-      "volume": 46536491,
-      "marketCap": 7803870208
-    },
-    {
       "symbol": "BMNR",
       "shortName": "BitMine Immersion Technologies,",
-      "price": 23.37,
-      "changePct": 2.3653128,
-      "change": 0.5400009,
+      "price": 23.4961,
+      "changePct": 2.9176502,
+      "change": 0.66609955,
       "volume": 57699543,
       "marketCap": 13771658240
+    },
+    {
+      "symbol": "MSTR",
+      "shortName": "Strategy Inc",
+      "price": 122.3697,
+      "changePct": 2.6160986,
+      "change": 3.1196976,
+      "volume": 45053427,
+      "marketCap": 47375839232
+    },
+    {
+      "symbol": "WULF",
+      "shortName": "TeraWulf Inc.",
+      "price": 16.0439,
+      "changePct": 2.5824757,
+      "change": 0.4038992,
+      "volume": 46536491,
+      "marketCap": 7803870208
     },
     {
       "symbol": "CVI",
@@ -1201,15 +1210,6 @@
       "change": 0.90060043,
       "volume": 1771078,
       "marketCap": 3971963904
-    },
-    {
-      "symbol": "TTMI",
-      "shortName": "TTM Technologies, Inc.",
-      "price": 112.98,
-      "changePct": 2.2073479,
-      "change": 2.4400024,
-      "volume": 2353181,
-      "marketCap": 11645263872
     },
     {
       "symbol": "BOBS",
@@ -1239,31 +1239,49 @@
       "marketCap": 2709580288
     },
     {
-      "symbol": "MSTR",
-      "shortName": "Strategy Inc",
-      "price": 121.5645,
-      "changePct": 1.9408796,
-      "change": 2.314499,
-      "volume": 45053427,
-      "marketCap": 47375839232
+      "symbol": "CAI",
+      "shortName": "Caris Life Sciences, Inc.",
+      "price": 26.78,
+      "changePct": 1.9413788,
+      "change": 0.5100002,
+      "volume": 6357672,
+      "marketCap": 7426022400
     },
     {
-      "symbol": "AADX",
-      "shortName": "Applied Aerospace & Defense, In",
-      "price": 15.2,
-      "changePct": 1.6042765,
-      "change": 0.23999977,
-      "volume": 1515835,
-      "marketCap": 2579006976
+      "symbol": "BGSI",
+      "shortName": "Boyd Group Services Inc.",
+      "price": 89.95,
+      "changePct": 1.9263421,
+      "change": 1.699997,
+      "volume": 69208,
+      "marketCap": 2456003072
     },
     {
       "symbol": "KEEL",
       "shortName": "Keel Infrastructure Corp.",
-      "price": 3.37,
-      "changePct": 1.5060227,
-      "change": 0.049999952,
+      "price": 3.38,
+      "changePct": 1.8072344,
+      "change": 0.06000018,
       "volume": 46962952,
       "marketCap": 2050342912
+    },
+    {
+      "symbol": "COIN",
+      "shortName": "Coinbase Global, Inc.",
+      "price": 189.58,
+      "changePct": 1.6569233,
+      "change": 3.0899963,
+      "volume": 22495437,
+      "marketCap": 49202950144
+    },
+    {
+      "symbol": "TLX",
+      "shortName": "Telix Pharmaceuticals Limited",
+      "price": 11.5,
+      "changePct": 1.500442,
+      "change": 0.17000008,
+      "volume": 299199,
+      "marketCap": 3838343936
     },
     {
       "symbol": "SIND",
@@ -1275,22 +1293,31 @@
       "marketCap": 2699444992
     },
     {
-      "symbol": "TGTX",
-      "shortName": "TG Therapeutics, Inc.",
-      "price": 54.95,
-      "changePct": 1.2529949,
-      "change": 0.6800003,
-      "volume": 5384894,
-      "marketCap": 8307057664
+      "symbol": "TTMI",
+      "shortName": "TTM Technologies, Inc.",
+      "price": 112.0,
+      "changePct": 1.320788,
+      "change": 1.4599991,
+      "volume": 2353181,
+      "marketCap": 11645263872
     },
     {
-      "symbol": "COIN",
-      "shortName": "Coinbase Global, Inc.",
-      "price": 188.8072,
-      "changePct": 1.242533,
-      "change": 2.3171997,
-      "volume": 22495437,
-      "marketCap": 49202950144
+      "symbol": "TGTX",
+      "shortName": "TG Therapeutics, Inc.",
+      "price": 54.9355,
+      "changePct": 1.2262772,
+      "change": 0.66550064,
+      "volume": 5384894,
+      "marketCap": 8307846144
+    },
+    {
+      "symbol": "AXTI",
+      "shortName": "AXT Inc",
+      "price": 69.9077,
+      "changePct": -1.1765597,
+      "change": -0.8322983,
+      "volume": 8232195,
+      "marketCap": 4638648832
     },
     {
       "symbol": "KOD",
@@ -1311,58 +1338,31 @@
       "marketCap": 2212439296
     },
     {
-      "symbol": "AMR",
-      "shortName": "Alpha Metallurgical Resources, ",
-      "price": 211.87,
-      "changePct": 0.88567245,
-      "change": 1.8600006,
-      "volume": 519423,
-      "marketCap": 2662726144
+      "symbol": "XNDU",
+      "shortName": "Xanadu Quantum Technologies Lim",
+      "price": 10.8313,
+      "changePct": -1.0840186,
+      "change": -0.11870003,
+      "volume": 2560540,
+      "marketCap": 3331252992
     },
     {
-      "symbol": "TEM",
-      "shortName": "Tempus AI, Inc.",
-      "price": 72.05,
-      "changePct": -0.88045037,
-      "change": -0.6399994,
-      "volume": 15877153,
-      "marketCap": 13115802624
+      "symbol": "PARR",
+      "shortName": "Par Pacific Holdings, Inc. Comm",
+      "price": 78.18,
+      "changePct": -1.075539,
+      "change": -0.8499985,
+      "volume": 717478,
+      "marketCap": 3959373568
     },
     {
-      "symbol": "RELY",
-      "shortName": "Remitly Global, Inc.",
-      "price": 26.44,
-      "changePct": -0.86239046,
-      "change": -0.22999954,
-      "volume": 2640625,
-      "marketCap": 5645613568
-    },
-    {
-      "symbol": "AXTI",
-      "shortName": "AXT Inc",
-      "price": 70.15,
-      "changePct": -0.834035,
-      "change": -0.58999634,
-      "volume": 8232195,
-      "marketCap": 4638648832
-    },
-    {
-      "symbol": "ALGT",
-      "shortName": "Allegiant Travel Company",
-      "price": 82.53,
-      "changePct": 0.83078843,
-      "change": 0.6800003,
-      "volume": 785384,
-      "marketCap": 2237595392
-    },
-    {
-      "symbol": "DAR",
-      "shortName": "Darling Ingredients Inc.",
-      "price": 66.25,
-      "changePct": 0.77578664,
-      "change": 0.51000214,
-      "volume": 7350222,
-      "marketCap": 10373962752
+      "symbol": "AADX",
+      "shortName": "Applied Aerospace & Defense, In",
+      "price": 15.12,
+      "changePct": 1.0695177,
+      "change": 0.15999985,
+      "volume": 1515835,
+      "marketCap": 2579006976
     }
   ]
 }
