@@ -143,11 +143,19 @@ def extract_metrics(sym: str) -> dict | None:
     # --- Metric 1: latest quarterly EPS YoY growth ---------------------
     # Yahoo pre-computes this as info["earningsQuarterlyGrowth"] — same
     # fiscal quarter one year ago vs the most recent report. Decimal
-    # form (0.27 = +27%). Nothing to derive here.
+    # form (0.27 = +27%; 46.594 = +4659%).
     latest_yoy_growth = _num(info.get("earningsQuarterlyGrowth"))
 
-    # Grab the actual EPS from the last reported quarter + the year-ago
-    # EPS from earnings_history for display. yfinance returns 4 rows.
+    # Grab the actual EPS from the last reported quarter. yfinance's
+    # earnings_history returns 4 rows and its oldest row is only 3
+    # quarters before the newest (4 rows = 3 gaps), so it CAN'T give
+    # us a true year-ago quarter. Instead, derive the year-ago actual
+    # from Yahoo's own YoY growth field, which is computed internally
+    # against the true same-quarter-prior-year:
+    #   year_ago = latest / (1 + growth)
+    # This keeps latest / year-ago / growth internally consistent on the
+    # rendered table (a huge growth % will now visibly correspond to a
+    # tiny year-ago EPS, so the reader can spot low-denominator noise).
     latest_period = ""
     latest_actual = None
     year_ago_actual = None
@@ -161,11 +169,13 @@ def extract_metrics(sym: str) -> dict | None:
             latest_row = rows.iloc[-1]
             latest_period = str(rows.index[-1])[:10]
             latest_actual = _num(latest_row.get("epsActual"))
-            # earnings_history returns 4 quarters — index [0] is roughly
-            # one year before index [-1] (four quarters back).
-            if len(rows) >= 4:
-                yr_ago_row = rows.iloc[-4]
-                year_ago_actual = _num(yr_ago_row.get("epsActual"))
+    # Derive year-ago from Yahoo's growth field (only valid when we have
+    # both a latest actual AND a valid growth number, AND the derivation
+    # doesn't blow up — guard against growth = -1 which would /0).
+    if (latest_actual is not None
+        and latest_yoy_growth is not None
+        and (1 + latest_yoy_growth) != 0):
+        year_ago_actual = latest_actual / (1 + latest_yoy_growth)
 
     # --- Metric 2: next quarter expected growth (YoY consensus) --------
     next_q_growth = None
@@ -282,12 +292,24 @@ def main() -> int:
         )
         return 1
 
-    def top_by(field: str, reverse: bool = True, floor=None):
+    def top_by(field: str, reverse: bool = True, floor=None, filter_fn=None):
         pool = [r for r in all_rows if r.get(field) is not None]
         if floor is not None:
             pool = [r for r in pool if r[field] >= floor]
+        if filter_fn is not None:
+            pool = [r for r in pool if filter_fn(r)]
         pool.sort(key=lambda r: r[field], reverse=reverse)
         return pool[:TOP_N]
+
+    # Best Reports filter: exclude companies whose prior-year quarterly
+    # EPS was under $0.10 (in absolute terms). This weeds out the
+    # tiny-denominator artifacts (e.g. a swing from $0.01 to $1.00 is
+    # a mathematical +9900% but not a "genuinely accelerating profit
+    # cycle" — it's noise, not signal). Keeps genuine 3x-5x growth
+    # stories intact.
+    def _real_growth_row(r):
+        y = r.get("priorYearActual")
+        return y is not None and abs(y) >= 0.10
 
     payload = {
         "generatedAt": int(time.time()),
@@ -298,7 +320,7 @@ def main() -> int:
         # Full rows (~260) for debugging / future features
         "rows": all_rows,
         # Pre-sorted top-N lists the frontend renders directly
-        "topBestReports":       top_by("latestYoYGrowth"),
+        "topBestReports":       top_by("latestYoYGrowth", filter_fn=_real_growth_row),
         "topExpectedGrowth":    top_by("nextQuarterGrowth"),
         "topRevisionsHigher":   top_by("revisionsNet30", floor=1),
     }
