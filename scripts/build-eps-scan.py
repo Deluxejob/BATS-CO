@@ -302,14 +302,15 @@ def main() -> int:
         return pool[:TOP_N]
 
     # Best Reports filter: exclude companies whose prior-year quarterly
-    # EPS was under $0.10 (in absolute terms). This weeds out the
-    # tiny-denominator artifacts (e.g. a swing from $0.01 to $1.00 is
-    # a mathematical +9900% but not a "genuinely accelerating profit
-    # cycle" — it's noise, not signal). Keeps genuine 3x-5x growth
-    # stories intact.
+    # EPS was under $0.25 (in absolute terms). This weeds out the
+    # low-denominator artifacts (e.g. a swing from $0.03 to $1.47 is
+    # mathematically +4700% but not a "genuinely accelerating profit
+    # cycle" — it's a swing from near-breakeven to profitable, not the
+    # story the card promises). Keeps real 3x-5x growth stories intact
+    # while dropping the low-comparison-base noise.
     def _real_growth_row(r):
         y = r.get("priorYearActual")
-        return y is not None and abs(y) >= 0.10
+        return y is not None and abs(y) >= 0.25
 
     payload = {
         "generatedAt": int(time.time()),
