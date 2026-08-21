@@ -125,7 +125,12 @@
       "Bash(unzip -o /tmp/fd.zip)",
       "Bash(python)",
       "Bash(grep -n '#about\\\\|About</\\\\|>About<\\\\|id=\"about\"' \"C:/Users/whisk/BATS.CO/index.html\")",
-      "Bash(git -C \"C:/Users/whisk/BATS.CO\" add -A)"
+      "Bash(git -C \"C:/Users/whisk/BATS.CO\" add -A)",
+      "Bash(python -c \"import requests; print\\('requests', requests.__version__\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c \"import requests; print\\('ok', requests.__version__\\)\")",
+      "Bash(python scripts/build-eps-scan.py)",
+      "Bash(echo \"started pid $!\")"
     ]
   }
 }
