@@ -39,3 +39,6 @@ scratch_*.csv
 scratch_*.pdf
 scratch_*.json
 scratch_*.html
+
+# Python bytecode cache
+scripts/__pycache__/
