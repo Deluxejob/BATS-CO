@@ -311,18 +311,30 @@
       const tExp  = document.querySelector('#tblExpectedGrowth tbody');
       const tRev  = document.querySelector('#tblRevisions tbody');
 
+      // Try the branch's static file first (guaranteed fresh on preview
+      // builds and the just-deployed production build). If that 404s or
+      // is missing, fall back to /api/eps-scan which fetches the file
+      // from GitHub raw main (covers the case where the bot pushed a
+      // fresh data/eps_scan.json after Vercel skipped the data-only build).
       let d;
+      async function tryFetch(url) {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error(url + ' → HTTP ' + r.status);
+        return r.json();
+      }
       try {
-        const r = await fetch('/api/eps-scan?nc=' + Date.now(), { cache: 'no-store' });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        d = await r.json();
-      } catch (e) {
-        const emptyHtml = '<tr><td colspan="7" class="eps-empty">Scan data not available yet — the first run will publish overnight.</td></tr>';
-        tBest.innerHTML = emptyHtml;
-        tExp.innerHTML  = emptyHtml;
-        tRev.innerHTML  = emptyHtml;
-        meta.textContent = 'Failed to load scan (' + (e.message || e) + '). Check back after the nightly refresh.';
-        return;
+        d = await tryFetch('data/eps_scan.json?nc=' + Date.now());
+      } catch (_) {
+        try {
+          d = await tryFetch('/api/eps-scan?nc=' + Date.now());
+        } catch (e) {
+          const emptyHtml = '<tr><td colspan="7" class="eps-empty">Scan data not available yet — the first run will publish overnight.</td></tr>';
+          tBest.innerHTML = emptyHtml;
+          tExp.innerHTML  = emptyHtml;
+          tRev.innerHTML  = emptyHtml;
+          meta.textContent = 'Failed to load scan (' + (e.message || e) + '). Check back after the nightly refresh.';
+          return;
+        }
       }
 
       // Meta line — generation timestamp + coverage.
