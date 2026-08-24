@@ -178,23 +178,48 @@ def extract_metrics(sym: str) -> dict | None:
         year_ago_actual = latest_actual / (1 + latest_yoy_growth)
 
     # --- Metric 2: next quarter expected growth (YoY consensus) --------
-    next_q_growth = None
+    # --- Metric 4: NEW — next year vs current year expected growth ---
+    next_q_growth   = None
+    next_y_growth   = None
     try:
         ge = t.growth_estimates
-        if ge is not None and not ge.empty and "+1q" in ge.index:
-            next_q_growth = _num(ge.loc["+1q", "stockTrend"])
+        if ge is not None and not ge.empty:
+            if "+1q" in ge.index: next_q_growth = _num(ge.loc["+1q", "stockTrend"])
+            if "+1y" in ge.index: next_y_growth = _num(ge.loc["+1y", "stockTrend"])
     except Exception:
         pass
 
-    # Also grab the raw consensus EPS + analyst count for display.
-    next_q_est = None
-    next_q_analysts = None
-    next_q_end_date = ""
+    # Raw consensus EPS + analyst count for both horizons (display).
+    next_q_est = next_q_analysts = next_q_end_date = None
+    curr_y_est = curr_y_end_date = next_y_est = next_y_end_date = next_y_analysts = None
     try:
         ee = t.earnings_estimate
-        if ee is not None and not ee.empty and "+1q" in ee.index:
-            next_q_est      = _num(ee.loc["+1q", "avg"])
-            next_q_analysts = _num(ee.loc["+1q", "numberOfAnalysts"])
+        if ee is not None and not ee.empty:
+            if "+1q" in ee.index:
+                next_q_est      = _num(ee.loc["+1q", "avg"])
+                next_q_analysts = _num(ee.loc["+1q", "numberOfAnalysts"])
+            if "0y" in ee.index:
+                curr_y_est = _num(ee.loc["0y", "avg"])
+            if "+1y" in ee.index:
+                next_y_est      = _num(ee.loc["+1y", "avg"])
+                next_y_analysts = _num(ee.loc["+1y", "numberOfAnalysts"])
+    except Exception:
+        pass
+
+    # Fiscal-year end dates for the annual card (analyst-projected
+    # period-end dates from the earnings_trend endpoint).
+    try:
+        earn_trend = None  # yfinance has no clean accessor; try raw earnings_trend
+        et_df = getattr(t, "earnings_trend", None)
+        if et_df is not None:
+            if "0y" in et_df.index:
+                v = et_df.loc["0y"].get("endDate")
+                if v:
+                    curr_y_end_date = str(v)[:10]
+            if "+1y" in et_df.index:
+                v = et_df.loc["+1y"].get("endDate")
+                if v:
+                    next_y_end_date = str(v)[:10]
     except Exception:
         pass
 
@@ -247,17 +272,24 @@ def extract_metrics(sym: str) -> dict | None:
         "latestActual":       latest_actual,
         "priorYearActual":    year_ago_actual,
         "latestYoYGrowth":    latest_yoy_growth,
-        # Metric 2
+        # Metric 2: next quarter
         "nextQuarterEndDate": next_q_end_date,
         "nextQuarterEst":     next_q_est,
         "nextQuarterAnalysts": next_q_analysts,
         "nextQuarterGrowth":  next_q_growth,
-        # Metric 3
+        # Metric 3: revisions
         "revisionsUp30":      up30,
         "revisionsDown30":    down30,
         "revisionsUp7":       up7,
         "revisionsDown7":     down7,
         "revisionsNet30":     revisions_net30,
+        # Metric 4: NEW — next fiscal year vs current fiscal year
+        "currentYearEndDate": curr_y_end_date,
+        "currentYearEst":     curr_y_est,
+        "nextYearEndDate":    next_y_end_date,
+        "nextYearEst":        next_y_est,
+        "nextYearAnalysts":   next_y_analysts,
+        "nextYearGrowth":     next_y_growth,
     }
 
 
@@ -323,6 +355,7 @@ def main() -> int:
         # Pre-sorted top-N lists the frontend renders directly
         "topBestReports":       top_by("latestYoYGrowth", filter_fn=_real_growth_row),
         "topExpectedGrowth":    top_by("nextQuarterGrowth"),
+        "topNextYearGrowth":    top_by("nextYearGrowth"),
         "topRevisionsHigher":   top_by("revisionsNet30", floor=1),
     }
 

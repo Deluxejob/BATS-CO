@@ -4,18 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EPS Scan — BATS.CO</title>
-  <meta name="description" content="Which S&amp;P 500 + Nasdaq 100 companies just posted the biggest EPS growth, which are expected to next quarter, and which are getting the most upward analyst revisions." />
+  <meta name="description" content="Terminal-style leaderboards of the biggest EPS growth stories across the S&amp;P 500 + Nasdaq 100: latest report, next quarter, next fiscal year, and analyst estimate revisions." />
   <link rel="canonical" href="https://bats.co/eps-scan.html">
   <meta property="og:site_name" content="BATS.CO">
   <meta property="og:title" content="EPS Scan — BATS.CO">
-  <meta property="og:description" content="Biggest EPS beats and forward-growth leaders across the S&amp;P 500 and Nasdaq 100, refreshed nightly.">
+  <meta property="og:description" content="Terminal-style EPS growth leaderboards across the S&amp;P 500 + Nasdaq 100 — refreshed nightly.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://bats.co/eps-scan.html">
   <meta property="og:image" content="https://bats.co/og-card.png">
   <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="EPS Scan — BATS.CO">
-  <meta name="twitter:description" content="Biggest EPS beats and forward-growth leaders across the S&amp;P 500 and Nasdaq 100.">
+  <meta name="twitter:description" content="Terminal-style EPS growth leaderboards across the S&amp;P 500 + Nasdaq 100.">
   <meta name="twitter:image" content="https://bats.co/og-card.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -23,119 +23,152 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* EPS Scan — three ranking cards stacked (one per metric).
-       Each card is a scrollable-on-mobile table showing the top-25
-       companies by that metric. Rows are clickable — jump to the
-       ticker page for full analysis. */
-    .eps-lede { max-width: 780px; }
+    /* Terminal-style EPS Scan — full-width page like quotes.html.
+       Dense monospace tables, tight rows, green/red coloring on
+       positive/negative numbers, ticker symbols as clickable amber
+       links that jump to ticker.html for the drill-down. */
+    body { background: var(--term-bg); }
+    main.terminal {
+      max-width: 1720px;
+      margin: 0 auto;
+      padding: 0.75rem 1.25rem 3rem;
+      color: var(--term-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .eps-hero {
+      padding: 0.35rem 0.15rem 0.75rem;
+    }
+    .eps-hero h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem;
+      color: var(--term-amber, #ffb658);
+      letter-spacing: 0.02em;
+      margin: 0 0 0.35rem;
+    }
+    .eps-hero p {
+      color: var(--term-text-dim, #a4b0be);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      margin: 0.25rem 0;
+      max-width: 920px;
+    }
     .eps-meta {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      color: var(--text-dim);
-      margin: 0.4rem 0 1.3rem;
+      font-size: 0.68rem;
+      color: var(--term-dim, #7a8698);
+      letter-spacing: 0.02em;
+      margin: 0.55rem 0 0;
+    }
+
+    /* Grid: 2 cards per row on desktop, 1 on narrow screens. */
+    .eps-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.7rem;
+      margin: 0.65rem 0 0;
+    }
+    @media (min-width: 1100px) {
+      .eps-grid { grid-template-columns: 1fr 1fr; }
     }
 
     .eps-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem 1.1rem;
-      margin: 0 0 1.4rem;
+      background: var(--term-panel, #0f1826);
+      border: 1px solid var(--term-border, #223347);
+      border-radius: 4px;
+      overflow: hidden;
     }
     .eps-card-head {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       gap: 1rem;
+      padding: 0.55rem 0.85rem 0.5rem;
+      border-bottom: 1px solid var(--term-border, #223347);
+      background: rgba(255, 182, 88, 0.03);
       flex-wrap: wrap;
-      margin-bottom: 0.35rem;
     }
     .eps-card-head h2 {
       margin: 0;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      letter-spacing: 0.11em;
       text-transform: uppercase;
-      color: var(--amber, #ffb658);
+      color: var(--term-amber, #ffb658);
     }
-    .eps-card-hint {
+    .eps-card-head .hint {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      color: var(--text-dim);
-    }
-    .eps-card-blurb {
-      color: var(--text-dim);
-      font-size: 0.9rem;
-      line-height: 1.5;
-      margin: 0.15rem 0 0.75rem;
-      max-width: 780px;
+      font-size: 0.65rem;
+      color: var(--term-dim, #7a8698);
+      letter-spacing: 0.04em;
     }
 
-    .eps-table-wrap { overflow-x: auto; }
-    .eps-table {
+    .eps-scroll { overflow-x: auto; }
+
+    /* Terminal-style dense table */
+    .eps-tbl {
       width: 100%;
       border-collapse: collapse;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      min-width: 620px;
+      font-size: 0.75rem;
+      min-width: 720px;
     }
-    .eps-table th, .eps-table td {
-      padding: 0.5rem 0.75rem;
-      text-align: right;
-      border-bottom: 1px dashed var(--border);
-      white-space: nowrap;
-    }
-    .eps-table th:first-child, .eps-table td:first-child {
-      text-align: left;
-      width: 34px;
-      color: var(--text-dim);
+    .eps-tbl thead th {
+      position: sticky; top: 0;
+      background: var(--term-panel-2, #0a1219);
+      color: var(--term-dim, #7a8698);
       font-weight: 500;
-    }
-    .eps-table th.col-sym, .eps-table td.col-sym {
-      text-align: left;
-      width: 60px;
-    }
-    .eps-table th.col-name, .eps-table td.col-name {
-      text-align: left;
-      white-space: normal;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.85rem;
-      color: var(--text-dim);
-    }
-    .eps-table th {
-      color: var(--text-dim);
-      font-weight: 700;
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      border-bottom: 1px solid var(--border);
+      text-align: right;
+      padding: 0.45rem 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--term-border, #223347);
+      white-space: nowrap;
     }
-    .eps-table tr:last-child td { border-bottom: none; }
-    .eps-table tbody tr { cursor: pointer; transition: background 0.1s; }
-    .eps-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
-    .eps-sym {
-      color: var(--fg, #e7ecf3);
+    .eps-tbl thead th:first-child { text-align: left; }
+    .eps-tbl thead th.col-sym    { text-align: left; }
+    .eps-tbl thead th.col-name   { text-align: left; }
+    .eps-tbl tbody td {
+      padding: 0.32rem 0.6rem;
+      text-align: right;
+      border-bottom: 1px solid rgba(34, 51, 71, 0.4);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      color: var(--term-text, #e7ecf3);
+    }
+    .eps-tbl tbody tr:last-child td { border-bottom: none; }
+    .eps-tbl tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.015); }
+    .eps-tbl tbody tr { cursor: pointer; transition: background 0.1s; }
+    .eps-tbl tbody tr:hover { background: rgba(255, 182, 88, 0.06); }
+    .eps-tbl td.col-rank { color: var(--term-dim, #7a8698); font-weight: 500; width: 26px; text-align: left; }
+    .eps-tbl td.col-sym {
+      text-align: left;
+      color: var(--term-cyan, #6ee7ff);
       font-weight: 700;
       letter-spacing: 0.02em;
+      width: 62px;
     }
-    .eps-metric {
-      font-variant-numeric: tabular-nums;
-      font-weight: 700;
+    .eps-tbl td.col-name {
+      text-align: left;
+      color: var(--term-text, #e7ecf3);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.77rem;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .eps-metric.pos { color: var(--green, #22d39a); }
-    .eps-metric.neg { color: var(--red,   #ff5374); }
-    .eps-side {
-      font-size: 0.72rem;
-      color: var(--text-dim);
-      font-weight: 500;
-    }
+    .eps-tbl td.pos { color: var(--term-green, #22d39a); }
+    .eps-tbl td.neg { color: var(--term-red,   #ff5374); }
+    .eps-tbl td.metric { font-weight: 700; }
+    .eps-tbl td.dim { color: var(--term-dim, #7a8698); }
 
-    .eps-empty, .eps-loading {
-      color: var(--text-dim);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      padding: 1.2rem 0.75rem;
+    .eps-loading, .eps-empty {
+      padding: 1.4rem 0.85rem;
       text-align: center;
+      color: var(--term-dim, #7a8698);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
       font-style: italic;
     }
   </style>
@@ -179,119 +212,115 @@
     </script>
   </header>
 
-  <main class="explainer">
-
-    <section class="explainer-hero">
-      <p class="eyebrow">EPS SCAN</p>
-      <h1>Who&rsquo;s growing earnings fastest?</h1>
-      <p class="lede eps-lede">
-        Three ranked leaderboards across the S&amp;P 500 and Nasdaq 100:
-        who just posted the biggest year-over-year EPS growth on their most
-        recent quarter, who Wall Street expects to grow fastest on the
-        upcoming report, and where the net flow of analyst estimate
-        revisions is most positive in the past 30 days. Data refreshed
-        nightly from Yahoo Finance.
-      </p>
+  <main class="terminal">
+    <div class="eps-hero">
+      <h1>EPS SCAN <span style="color:var(--term-dim,#7a8698); font-weight:500; font-size:0.75rem; letter-spacing:0.06em">— S&amp;P 500 + NASDAQ 100</span></h1>
+      <p>Four leaderboards ranking which companies are showing the strongest earnings-growth signals — refreshed nightly from Yahoo Finance.
+      Rows are clickable — jump to the ticker page for the full drill-down.</p>
       <p class="eps-meta" id="epsMeta">Loading scan&hellip;</p>
-    </section>
+    </div>
 
-    <!-- Card 1: Best Reports — biggest reported YoY EPS growth from the
-         most recent earnings release. -->
-    <section class="eps-card" id="cardBestReports">
-      <div class="eps-card-head">
-        <h2>Best reports</h2>
-        <span class="eps-card-hint">Latest quarter · YoY EPS growth</span>
-      </div>
-      <p class="eps-card-blurb">
-        Companies whose most recent reported quarter grew EPS the most compared
-        with the same fiscal quarter one year ago. This is <strong>rear-view</strong>
-        — earnings that already happened — but it tells you which businesses
-        are in a genuinely accelerating profit cycle right now.
-      </p>
-      <div class="eps-table-wrap">
-        <table class="eps-table" id="tblBestReports">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th class="col-sym">Ticker</th>
-              <th class="col-name">Company</th>
-              <th>Quarter</th>
-              <th>Actual EPS</th>
-              <th>Year-ago EPS</th>
-              <th>YoY growth</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="7" class="eps-loading">Loading&hellip;</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    <div class="eps-grid">
 
-    <!-- Card 2: Highest Expected Growth — next-quarter consensus YoY. -->
-    <section class="eps-card" id="cardExpectedGrowth">
-      <div class="eps-card-head">
-        <h2>Highest expected growth</h2>
-        <span class="eps-card-hint">Next quarter · analyst consensus YoY</span>
-      </div>
-      <p class="eps-card-blurb">
-        Companies with the highest consensus YoY EPS growth expected on the
-        <strong>upcoming</strong> quarter&rsquo;s report. This is analysts&rsquo;
-        forward view — what the Street is betting on. Cross-reference with the
-        Best Reports list above to spot names where the trend is expected to
-        keep running.
-      </p>
-      <div class="eps-table-wrap">
-        <table class="eps-table" id="tblExpectedGrowth">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th class="col-sym">Ticker</th>
-              <th class="col-name">Company</th>
-              <th>Next report</th>
-              <th>Consensus EPS</th>
-              <th>Analysts</th>
-              <th>Expected YoY</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="7" class="eps-loading">Loading&hellip;</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+      <!-- Card 1: Best Reports (retrospective) -->
+      <section class="eps-card" id="cardBestReports">
+        <div class="eps-card-head">
+          <h2>BEST REPORTS</h2>
+          <span class="hint">Latest quarter · YoY EPS growth · $0.25+ prior-year floor</span>
+        </div>
+        <div class="eps-scroll">
+          <table class="eps-tbl" id="tblBestReports">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="col-sym">Ticker</th>
+                <th class="col-name">Company</th>
+                <th>Quarter</th>
+                <th>Actual</th>
+                <th>Year-Ago</th>
+                <th>YoY %</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="7" class="eps-loading">Loading&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </section>
 
-    <!-- Card 3: Most-Revised Higher — analysts raising their forward
-         estimates net of those lowering, past 30 days. -->
-    <section class="eps-card" id="cardRevisions">
-      <div class="eps-card-head">
-        <h2>Most-revised higher</h2>
-        <span class="eps-card-hint">Last 30 days · analyst up-revisions net of downs</span>
-      </div>
-      <p class="eps-card-blurb">
-        Companies where the most analysts raised their next-quarter EPS
-        estimates in the past 30 days, minus those who lowered them. Revisions
-        are the <strong>leading edge</strong> of the expected-growth list — a
-        stock trending up here is often about to move up the Expected Growth
-        table too.
-      </p>
-      <div class="eps-table-wrap">
-        <table class="eps-table" id="tblRevisions">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th class="col-sym">Ticker</th>
-              <th class="col-name">Company</th>
-              <th>Net 30d</th>
-              <th>Up 30d</th>
-              <th>Down 30d</th>
-              <th>Up 7d</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="7" class="eps-loading">Loading&hellip;</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+      <!-- Card 2: Next Quarter Expected -->
+      <section class="eps-card" id="cardExpectedGrowth">
+        <div class="eps-card-head">
+          <h2>NEXT QUARTER EXPECTED</h2>
+          <span class="hint">Upcoming report · consensus YoY</span>
+        </div>
+        <div class="eps-scroll">
+          <table class="eps-tbl" id="tblExpectedGrowth">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="col-sym">Ticker</th>
+                <th class="col-name">Company</th>
+                <th>Next Rep.</th>
+                <th>Cons. EPS</th>
+                <th>#</th>
+                <th>Exp. YoY</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="7" class="eps-loading">Loading&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </section>
 
-    <!-- Share strip -->
+      <!-- Card 3: NEW — Next Year vs This Year (annual) -->
+      <section class="eps-card" id="cardNextYearGrowth">
+        <div class="eps-card-head">
+          <h2>NEXT YEAR vs THIS YEAR</h2>
+          <span class="hint">Full FY+1 vs FY · consensus growth</span>
+        </div>
+        <div class="eps-scroll">
+          <table class="eps-tbl" id="tblNextYearGrowth">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="col-sym">Ticker</th>
+                <th class="col-name">Company</th>
+                <th>This Yr EPS</th>
+                <th>Next Yr EPS</th>
+                <th>#</th>
+                <th>Growth %</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="7" class="eps-loading">Loading&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Card 4: Most-Revised Higher -->
+      <section class="eps-card" id="cardRevisions">
+        <div class="eps-card-head">
+          <h2>MOST-REVISED HIGHER</h2>
+          <span class="hint">Analyst up-revisions net of downs · last 30 days</span>
+        </div>
+        <div class="eps-scroll">
+          <table class="eps-tbl" id="tblRevisions">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="col-sym">Ticker</th>
+                <th class="col-name">Company</th>
+                <th>Net 30d</th>
+                <th>Up 30d</th>
+                <th>Down 30d</th>
+                <th>Up 7d</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="7" class="eps-loading">Loading&hellip;</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
     <div data-share-strip></div>
-
   </main>
 
   <footer class="site-footer">
@@ -301,27 +330,21 @@
   <script src="share-strip.js" defer></script>
 
   <script>
-    // ---- EPS Scan renderer -------------------------------------------
-    // Fetches the pre-sorted top-N rankings from /api/eps-scan (which
-    // wraps data/eps_scan.json). Populates the three tables. Row clicks
-    // navigate to the ticker page for the full drill-down.
     (async function () {
-      const meta = document.getElementById('epsMeta');
-      const tBest = document.querySelector('#tblBestReports tbody');
-      const tExp  = document.querySelector('#tblExpectedGrowth tbody');
-      const tRev  = document.querySelector('#tblRevisions tbody');
+      const meta   = document.getElementById('epsMeta');
+      const tBest  = document.querySelector('#tblBestReports tbody');
+      const tExp   = document.querySelector('#tblExpectedGrowth tbody');
+      const tYear  = document.querySelector('#tblNextYearGrowth tbody');
+      const tRev   = document.querySelector('#tblRevisions tbody');
 
-      // Try the branch's static file first (guaranteed fresh on preview
-      // builds and the just-deployed production build). If that 404s or
-      // is missing, fall back to /api/eps-scan which fetches the file
-      // from GitHub raw main (covers the case where the bot pushed a
-      // fresh data/eps_scan.json after Vercel skipped the data-only build).
-      let d;
+      // Static file first (branch build), fall back to /api (GitHub raw
+      // main for post-bot-commit freshness).
       async function tryFetch(url) {
         const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) throw new Error(url + ' → HTTP ' + r.status);
         return r.json();
       }
+      let d;
       try {
         d = await tryFetch('data/eps_scan.json?nc=' + Date.now());
       } catch (_) {
@@ -331,89 +354,90 @@
           const emptyHtml = '<tr><td colspan="7" class="eps-empty">Scan data not available yet — the first run will publish overnight.</td></tr>';
           tBest.innerHTML = emptyHtml;
           tExp.innerHTML  = emptyHtml;
+          tYear.innerHTML = emptyHtml;
           tRev.innerHTML  = emptyHtml;
           meta.textContent = 'Failed to load scan (' + (e.message || e) + '). Check back after the nightly refresh.';
           return;
         }
       }
 
-      // Meta line — generation timestamp + coverage.
       const gen = new Date((d.generatedAt || 0) * 1000);
       const yyyy_mm_dd = gen.toISOString().slice(0, 10);
       const hh_mm      = gen.toISOString().slice(11, 16);
       meta.textContent =
         'Scan generated ' + yyyy_mm_dd + ' at ' + hh_mm + ' UTC · ' +
-        'coverage ' + (d.coverage || 0) + '/' + (d.universeSize || 0) +
-        ' names (misses skipped)';
+        'coverage ' + (d.coverage || 0) + '/' + (d.universeSize || 0) + ' names';
 
-      // Formatters
-      const fmtPct = (v, d0=1) => (v == null || !Number.isFinite(v)) ? '—'
-        : (v > 0 ? '+' : '') + (v * 100).toFixed(d0) + '%';
+      // ---- Formatters --------------------------------------------------
+      const fmtPct = (v, dec=1) => (v == null || !Number.isFinite(v)) ? '—'
+        : (v > 0 ? '+' : '') + (v * 100).toFixed(dec) + '%';
       const fmtEps = (v) => (v == null || !Number.isFinite(v)) ? '—' : '$' + v.toFixed(2);
       const fmtInt = (v) => (v == null || !Number.isFinite(v)) ? '—' : String(Math.round(v));
-      const clsSign = (v) => v == null ? '' : v > 0 ? 'pos' : v < 0 ? 'neg' : '';
-      const nameCell = (n) => (n || '').length > 44 ? (n.slice(0, 42) + '…') : (n || '—');
+      const clsSign = (v) => v == null ? 'dim' : v > 0 ? 'pos' : v < 0 ? 'neg' : 'dim';
+      const shortName = (n) => (n || '—').length > 32 ? (n.slice(0, 30) + '…') : (n || '—');
       const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+      const tickerHref = (sym) => 'ticker.html?sym=' + encodeURIComponent(sym);
+      const dateCell = (s) => s ? String(s).slice(0, 10) : '—';
 
-      // Row click → open ticker page in new tab.
-      function tickerHref(sym) { return 'ticker.html?sym=' + encodeURIComponent(sym); }
-
-      // ---- Card 1: Best Reports ---------------------------------------
+      // ---- Card 1: BEST REPORTS ---------------------------------------
       const best = d.topBestReports || [];
-      if (!best.length) {
-        tBest.innerHTML = '<tr><td colspan="7" class="eps-empty">No reports with parseable YoY growth this scan.</td></tr>';
-      } else {
-        tBest.innerHTML = best.map((r, i) => `
+      tBest.innerHTML = best.length
+        ? best.map((r, i) => `
           <tr onclick="location.href='${tickerHref(r.sym)}'">
-            <td>${i + 1}</td>
-            <td class="col-sym"><span class="eps-sym">${esc(r.sym)}</span></td>
-            <td class="col-name">${esc(nameCell(r.name))}</td>
-            <td>${esc(r.latestQuarter || '—')}</td>
+            <td class="col-rank">${i + 1}</td>
+            <td class="col-sym">${esc(r.sym)}</td>
+            <td class="col-name">${esc(shortName(r.name))}</td>
+            <td class="dim">${dateCell(r.latestQuarter)}</td>
             <td>${fmtEps(r.latestActual)}</td>
-            <td>${fmtEps(r.priorYearActual)}</td>
-            <td class="eps-metric ${clsSign(r.latestYoYGrowth)}">${fmtPct(r.latestYoYGrowth)}</td>
-          </tr>
-        `).join('');
-      }
+            <td class="dim">${fmtEps(r.priorYearActual)}</td>
+            <td class="metric ${clsSign(r.latestYoYGrowth)}">${fmtPct(r.latestYoYGrowth)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="7" class="eps-empty">No qualifying reports this scan.</td></tr>';
 
-      // ---- Card 2: Expected Growth ------------------------------------
+      // ---- Card 2: NEXT QUARTER EXPECTED ------------------------------
       const exp = d.topExpectedGrowth || [];
-      if (!exp.length) {
-        tExp.innerHTML = '<tr><td colspan="7" class="eps-empty">No forward estimates parsed this scan.</td></tr>';
-      } else {
-        tExp.innerHTML = exp.map((r, i) => {
-          const dt = r.nextQuarterEndDate ? String(r.nextQuarterEndDate).slice(0, 10) : '—';
-          return `
-            <tr onclick="location.href='${tickerHref(r.sym)}'">
-              <td>${i + 1}</td>
-              <td class="col-sym"><span class="eps-sym">${esc(r.sym)}</span></td>
-              <td class="col-name">${esc(nameCell(r.name))}</td>
-              <td>${esc(dt)}</td>
-              <td>${fmtEps(r.nextQuarterEst)}</td>
-              <td>${fmtInt(r.nextQuarterAnalysts)}</td>
-              <td class="eps-metric ${clsSign(r.nextQuarterGrowth)}">${fmtPct(r.nextQuarterGrowth)}</td>
-            </tr>
-          `;
-        }).join('');
-      }
-
-      // ---- Card 3: Revisions ------------------------------------------
-      const rev = d.topRevisionsHigher || [];
-      if (!rev.length) {
-        tRev.innerHTML = '<tr><td colspan="7" class="eps-empty">No net-positive revisions this scan.</td></tr>';
-      } else {
-        tRev.innerHTML = rev.map((r, i) => `
+      tExp.innerHTML = exp.length
+        ? exp.map((r, i) => `
           <tr onclick="location.href='${tickerHref(r.sym)}'">
-            <td>${i + 1}</td>
-            <td class="col-sym"><span class="eps-sym">${esc(r.sym)}</span></td>
-            <td class="col-name">${esc(nameCell(r.name))}</td>
-            <td class="eps-metric ${clsSign(r.revisionsNet30)}">${r.revisionsNet30 > 0 ? '+' : ''}${r.revisionsNet30}</td>
-            <td>${fmtInt(r.revisionsUp30)}</td>
-            <td>${fmtInt(r.revisionsDown30)}</td>
-            <td>${fmtInt(r.revisionsUp7)}</td>
-          </tr>
-        `).join('');
-      }
+            <td class="col-rank">${i + 1}</td>
+            <td class="col-sym">${esc(r.sym)}</td>
+            <td class="col-name">${esc(shortName(r.name))}</td>
+            <td class="dim">${dateCell(r.nextQuarterEndDate)}</td>
+            <td>${fmtEps(r.nextQuarterEst)}</td>
+            <td class="dim">${fmtInt(r.nextQuarterAnalysts)}</td>
+            <td class="metric ${clsSign(r.nextQuarterGrowth)}">${fmtPct(r.nextQuarterGrowth)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="7" class="eps-empty">No forward-quarter estimates parsed this scan.</td></tr>';
+
+      // ---- Card 3: NEXT YEAR vs THIS YEAR ------------------------------
+      const yr = d.topNextYearGrowth || [];
+      tYear.innerHTML = yr.length
+        ? yr.map((r, i) => `
+          <tr onclick="location.href='${tickerHref(r.sym)}'">
+            <td class="col-rank">${i + 1}</td>
+            <td class="col-sym">${esc(r.sym)}</td>
+            <td class="col-name">${esc(shortName(r.name))}</td>
+            <td class="dim">${fmtEps(r.currentYearEst)}</td>
+            <td>${fmtEps(r.nextYearEst)}</td>
+            <td class="dim">${fmtInt(r.nextYearAnalysts)}</td>
+            <td class="metric ${clsSign(r.nextYearGrowth)}">${fmtPct(r.nextYearGrowth)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="7" class="eps-empty">No forward-year estimates parsed this scan.</td></tr>';
+
+      // ---- Card 4: MOST-REVISED HIGHER --------------------------------
+      const rev = d.topRevisionsHigher || [];
+      tRev.innerHTML = rev.length
+        ? rev.map((r, i) => `
+          <tr onclick="location.href='${tickerHref(r.sym)}'">
+            <td class="col-rank">${i + 1}</td>
+            <td class="col-sym">${esc(r.sym)}</td>
+            <td class="col-name">${esc(shortName(r.name))}</td>
+            <td class="metric ${clsSign(r.revisionsNet30)}">${r.revisionsNet30 > 0 ? '+' : ''}${r.revisionsNet30}</td>
+            <td class="pos">${fmtInt(r.revisionsUp30)}</td>
+            <td class="neg">${fmtInt(r.revisionsDown30)}</td>
+            <td class="pos dim">${fmtInt(r.revisionsUp7)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="7" class="eps-empty">No net-positive revisions this scan.</td></tr>';
     })();
   </script>
 </body>
