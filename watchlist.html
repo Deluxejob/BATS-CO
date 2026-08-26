@@ -660,16 +660,30 @@
         }
       })();
       const quotePromise = (async () => {
-        try {
-          // sector=1 → server augments each quote with GICS sector name
-          // so the heatmap can group tiles into "Technology / Financials /
-          // …" bands. ETFs + indices without a sector come back null and
-          // get bucketed under "Funds & Other".
-          const r = await fetch(`/api/quote?syms=${encodeURIComponent(list.join(','))}&sector=1`);
-          if (!r.ok) return {};
-          const data = await r.json();
-          return (data && data.quotes) || {};
-        } catch (e) { return {}; }
+        // sector=1 → server augments each quote with GICS sector name so
+        // the heatmap can group tiles into "Technology / Financials / …"
+        // bands. ETFs + indices without a sector come back null and get
+        // bucketed under "Funds & Other".
+        //
+        // /api/quote hard-caps its symbol list at 20 (to keep any single
+        // Yahoo request bounded). Watchlists larger than that need to
+        // chunk here — without chunking, tickers past #20 silently drop
+        // out of the response, come back sector=null, and land in Funds
+        // & Other even when their real sector is Technology / Healthcare
+        // / etc. Chunk-and-merge fixes that.
+        const CHUNK_Q = 20;
+        const merged = {};
+        for (let i = 0; i < list.length; i += CHUNK_Q) {
+          const chunk = list.slice(i, i + CHUNK_Q);
+          try {
+            const r = await fetch(`/api/quote?syms=${encodeURIComponent(chunk.join(','))}&sector=1`);
+            if (r.ok) {
+              const data = await r.json();
+              Object.assign(merged, (data && data.quotes) || {});
+            }
+          } catch (e) { /* skip this chunk; those tickers stay quoteless */ }
+        }
+        return merged;
       })();
       const [_, quotes] = await Promise.all([historyPromise, quotePromise]);
 
