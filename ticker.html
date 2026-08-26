@@ -2129,6 +2129,44 @@
     .tk-chart-svg.drawing { cursor: crosshair; }
     .tk-chart-svg.dragging { cursor: grabbing !important; }
 
+    /* MA values strip — sits between the range/MA picker row and the
+       chart canvas. Shows current value of each toggled-on moving
+       average as a small colored pill, so the reader gets numeric
+       context without having to hover over the chart. Hidden entirely
+       when no MAs are toggled on. */
+    .tk-ma-values {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.8rem;
+      padding: 0.35rem 0.15rem 0.2rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.68rem;
+      align-items: center;
+    }
+    .tk-ma-values[hidden] { display: none; }
+    .tk-ma-values .ma-pill {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.32rem;
+      color: var(--term-dim);
+      line-height: 1.1;
+    }
+    .tk-ma-values .ma-pill .lbl {
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .tk-ma-values .ma-pill .val {
+      color: var(--term-text);
+      font-variant-numeric: tabular-nums;
+    }
+    /* Match the on-chart line colors so the reader can visually pair
+       a pill with its line at a glance. */
+    .tk-ma-values .ma-pill.ma-8ema   .lbl { color: #ffffff; opacity: 0.85; }
+    .tk-ma-values .ma-pill.ma-20ema  .lbl { color: #ffffff; }
+    .tk-ma-values .ma-pill.ma-50     .lbl { color: #eab308; }
+    .tk-ma-values .ma-pill.ma-100    .lbl { color: #f97316; }
+    .tk-ma-values .ma-pill.ma-200    .lbl { color: #ef4444; }
+
     /* Floating draw toolbar — pinned to the top-center of the SVG so
        the tool is discoverable without hunting through the chip row. */
     .tk-chart-svg-wrap { position: relative; }
@@ -3193,6 +3231,7 @@
                 <button type="button" data-ma="macd">MACD</button>
               </div>
             </div>
+            <div class="tk-ma-values" data-role="maValues" hidden></div>
             <div class="tk-chart-svg-wrap">
               <div class="tk-draw-toolbar">
                 <button type="button" data-draw="toggle" data-role="drawBtn"
@@ -4079,6 +4118,7 @@
         const svgEl     = mount.querySelector('[data-role="chart"]');
         const rangeEl   = mount.querySelector('[data-role="rangePicker"]');
         const maEl      = mount.querySelector('[data-role="maToggles"]');
+        const maValsEl  = mount.querySelector('[data-role="maValues"]');
         const footerL   = mount.querySelector('[data-role="footerLeft"]');
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
@@ -4353,6 +4393,38 @@
             showRsi: state.showRsi, showMacd: state.showMacd, wk52,
             lines: state.lines, pending: state.pendingPoint, hover: state.hover,
           });
+          updateMaValuesStrip();
+        }
+
+        // Compute the value of each toggled-on MA at the last bar of the
+        // currently visible range and render as small colored pills above
+        // the chart. Hidden entirely when no MAs are on. RSI/MACD live in
+        // their own sub-panels and get their own on-chart labels, so we
+        // don't repeat them here.
+        function updateMaValuesStrip() {
+          if (!maValsEl) return;
+          const pts = sliceForRange(state.range, cache);
+          if (!pts || pts.length < 2) { maValsEl.hidden = true; maValsEl.innerHTML = ''; return; }
+          const pills = [];
+          const fmtV = (v) => (v == null || !Number.isFinite(v)) ? '—'
+            : (v >= 100 ? v.toFixed(2) : v.toFixed(2));
+          const last = (arr) => {
+            if (!arr) return null;
+            for (let i = arr.length - 1; i >= 0; i--) {
+              if (arr[i] != null && Number.isFinite(arr[i])) return arr[i];
+            }
+            return null;
+          };
+          if (state.show8ema)  pills.push(['8ema',  '8 EMA',   last(ema(pts, 8))]);
+          if (state.show20ema) pills.push(['20ema', '20 EMA',  last(ema(pts, 20))]);
+          if (state.show50)    pills.push(['50',    '50 SMA',  last(sma(pts, 50))]);
+          if (state.show100)   pills.push(['100',   '100 SMA', last(sma(pts, 100))]);
+          if (state.show200)   pills.push(['200',   '200 SMA', last(sma(pts, 200))]);
+          if (!pills.length) { maValsEl.hidden = true; maValsEl.innerHTML = ''; return; }
+          maValsEl.innerHTML = pills.map(([key, label, val]) =>
+            `<span class="ma-pill ma-${key}"><span class="lbl">${label}</span><span class="val">$${fmtV(val)}</span></span>`
+          ).join('');
+          maValsEl.hidden = false;
         }
 
         function updateHeader() {
