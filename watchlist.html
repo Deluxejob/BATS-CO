@@ -324,6 +324,43 @@
     .wl-tile.nq     { background: #374151; color: var(--term-dim); }
     .wl-tile.nq .wl-tile-chg { opacity: 0.6; }
 
+    /* PRE badge — appears on tiles + row prices during pre-market hours
+       (4:00-9:30 AM ET) so it's obvious the number isn't a live intraday
+       quote. Once the regular session opens the tile reverts to the live
+       intraday price and the badge disappears. Post-market flicker is
+       intentionally ignored — the tile keeps the day's closing price
+       from 4pm through overnight until pre-market opens the next day. */
+    .wl-tile-pre-badge {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.52rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #ffb658;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1px 4px;
+      border-radius: 2px;
+      line-height: 1;
+    }
+    .wl-tile { position: relative; }   /* anchor the badge */
+    .wl-row-pre-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #ffb658;
+      background: rgba(255, 182, 88, 0.14);
+      border: 1px solid rgba(255, 182, 88, 0.4);
+      padding: 1px 5px 2px;
+      border-radius: 3px;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
     /* Legend under the tiles — shows what each color band means so a
        first-time visitor doesn't have to guess. Compact enough to sit
        inline with the heatmap without adding another visual block. */
@@ -668,12 +705,34 @@
         const raw = series[sym] || [];
         const q = quotes[sym] || null;
 
-        // Prefer the live /api/quote price + prev close when available
-        // (they're closer to intraday). Fall back to daily-close history.
-        let last = (q && q.price) != null ? q.price : null;
-        let prev = (q && q.prevClose) != null ? q.prevClose : null;
-        let dayAbs = (q && q.dayChange) != null ? q.dayChange : null;
-        let dayPct = (q && q.dayChangePct) != null ? q.dayChangePct : null;
+        // Which price to show is driven by Yahoo's marketState:
+        //   REGULAR                  → intraday price + regular change
+        //   PRE / PREPRE (4-9:30am)  → pre-market price + pre-market change
+        //   POST / POSTPOST / CLOSED → the day's closing price (we
+        //     deliberately IGNORE postMarketPrice so the tile keeps
+        //     showing the 4pm close all evening + overnight until
+        //     pre-market opens the next morning)
+        const ms = (q && q.marketState) || 'CLOSED';
+        const inPre = (ms === 'PRE' || ms === 'PREPRE')
+                      && Number.isFinite(q && q.preMarketPrice);
+
+        let last, prev, dayAbs, dayPct;
+        if (inPre) {
+          // Pre-market: pre-market fields, prev = yesterday's close
+          last   = q.preMarketPrice;
+          prev   = (q.prevClose != null) ? q.prevClose : (q.price != null ? q.price : null);
+          dayAbs = (q.preMarketChange != null) ? q.preMarketChange : null;
+          dayPct = (q.preMarketChangePercent != null) ? q.preMarketChangePercent : null;
+        } else {
+          // Regular hours OR post-close: use regular fields. During
+          // REGULAR these are live intraday; during POST/CLOSED
+          // regularMarketPrice IS the day's closing price.
+          last   = (q && q.price != null)     ? q.price     : null;
+          prev   = (q && q.prevClose != null) ? q.prevClose : null;
+          dayAbs = (q && q.dayChange != null) ? q.dayChange : null;
+          dayPct = (q && q.dayChangePct != null) ? q.dayChangePct : null;
+        }
+        // History fallback for tickers our quote endpoint doesn't cover
         if (last == null && raw.length >= 1) last = raw[raw.length - 1][1];
         if ((prev == null || dayPct == null) && raw.length >= 2) {
           prev = prev != null ? prev : raw[raw.length - 2][1];
@@ -706,11 +765,13 @@
           ? (dayAbs >= 0 ? '+' : '-') + '$' + Math.abs(dayAbs).toFixed(2)
           : '—';
 
+        const preBadgeRow  = inPre ? '<span class="wl-row-pre-badge">PRE</span>' : '';
+        const preBadgeTile = inPre ? '<span class="wl-tile-pre-badge">PRE</span>' : '';
         const rowHtml = `
           <tr>
             <td><button class="wl-remove" data-sym="${sym}" title="Remove from watchlist" aria-label="Remove ${sym}">&times;</button></td>
             <td class="sym"><a href="ticker.html?sym=${encodeURIComponent(sym)}">${sym}</a></td>
-            <td class="num">${fmtPrice(last)}</td>
+            <td class="num">${fmtPrice(last)}${preBadgeRow}</td>
             <td class="num chg ${clsDay}">${dayAbsStr}</td>
             <td class="num chg ${clsDay}">${fmtPct(dayPct)}</td>
             <td class="num chg ${clsYtd}">${fmtPct(ytdPct)}</td>
@@ -721,8 +782,10 @@
         const chgLabel = Number.isFinite(dayPct)
           ? (dayPct >= 0 ? '+' : '') + dayPct.toFixed(2) + '%'
           : '—';
+        const tileTitle = inPre ? `${sym}: ${chgLabel} pre-market` : `${sym}: ${chgLabel} today`;
         const tileHtml = `
-          <a class="wl-tile ${tileClass(dayPct)}" href="ticker.html?sym=${encodeURIComponent(sym)}" title="${sym}: ${chgLabel} today">
+          <a class="wl-tile ${tileClass(dayPct)}" href="ticker.html?sym=${encodeURIComponent(sym)}" title="${tileTitle}">
+            ${preBadgeTile}
             <div class="wl-tile-sym">${sym}</div>
             <div class="wl-tile-chg">${chgLabel}</div>
           </a>
