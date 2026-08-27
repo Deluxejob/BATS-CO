@@ -792,8 +792,26 @@
       justify-content: space-between;
       transition: transform 0.12s;
       cursor: pointer;
+      position: relative;   /* anchor for the PRE badge */
     }
     .sector-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+    /* PRE badge on sector tiles during pre-market hours (4-9:30am ET),
+       so the % is obviously a pre-market number and not yesterday's stale
+       regular close. Matches the watchlist tile treatment. */
+    .sector-tile .pre-badge {
+      position: absolute;
+      top: 4px;
+      right: 5px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #ffb658;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 1px 5px;
+      border-radius: 2px;
+      line-height: 1;
+    }
     .sector-tile .sector-name {
       font-size: 0.78rem;
       font-weight: 600;
@@ -3236,6 +3254,22 @@
 
         if (period.lookback === 1 && liveIsFresh && live.sectors[sym]) {
           const q = live.sectors[sym];
+          // Route on marketState so pre-market hours (4-9:30am ET) show
+          // pre-market movement instead of yesterday's stale regular
+          // price. During REGULAR/POST/CLOSED, q.price is the correct
+          // display (intraday during REGULAR, closing price during
+          // POST/CLOSED — matches the watchlist tile behavior).
+          const inPre = (q.marketState === 'PRE' || q.marketState === 'PREPRE')
+                        && Number.isFinite(q.preMarketPrice);
+          if (inPre) {
+            return {
+              last: { d: '(pre-market)', px: q.preMarketPrice },
+              baseline: { d: '(yesterday close)', px: q.prevClose },
+              chg: q.preMarketChangePct,
+              source: 'live',
+              inPre: true,
+            };
+          }
           return {
             last: { d: '(intraday)', px: q.price },
             baseline: { d: '(yesterday close)', px: q.prevClose },
@@ -3294,7 +3328,9 @@
           }
           const col = colorFor(r.info.chg, maxAbs);
           const sign = r.info.chg >= 0 ? '+' : '';
+          const preBadge = r.info.inPre ? '<span class="pre-badge">PRE</span>' : '';
           return `<div class="sector-tile" data-sym="${r.sym}" data-name="${r.name}" style="background:${col.bg}; border-color:${col.border};">
+            ${preBadge}
             <div>
               <div class="sector-name">${r.name}</div>
               <div class="sector-ticker">${r.sym.toUpperCase()}</div>

@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import time
+import urllib.parse
 import urllib.request
 import urllib.error
 
@@ -111,21 +112,117 @@ def fetch_quote(symbol: str) -> dict | None:
     }
 
 
+YAHOO_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+
+
+def get_crumb():
+    """Prime cookies then fetch a valid crumb from v1/test/getcrumb —
+    required for Yahoo's v7 quote endpoint since mid-2024. Tries a few
+    primer URLs since fc.yahoo.com is unreliable from some IPs (returns
+    404) while finance.yahoo.com works everywhere. Returns
+    (crumb, cookie_header) or (None, None) on failure."""
+    # Cookie jar so redirects can accumulate Set-Cookie headers.
+    import http.cookiejar
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    primers = [
+        "https://finance.yahoo.com/",
+        "https://fc.yahoo.com/",
+        "https://www.yahoo.com/",
+    ]
+    for url in primers:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": YAHOO_UA})
+            with opener.open(req, timeout=15) as _r:
+                _r.read(1024)  # touch response
+            if any(c.name in ("A1", "A3") for c in jar):
+                break  # got the cookies we need
+        except Exception:
+            continue
+    cookie_hdr = "; ".join(f"{c.name}={c.value}" for c in jar)
+    try:
+        req = urllib.request.Request(
+            "https://query1.finance.yahoo.com/v1/test/getcrumb",
+            headers={"User-Agent": YAHOO_UA, "Cookie": cookie_hdr},
+        )
+        with opener.open(req, timeout=15) as r:
+            crumb = r.read().decode("utf-8", errors="ignore").strip()
+        if not crumb or crumb.startswith("{"):
+            return None, None
+        return crumb, cookie_hdr
+    except Exception as exc:
+        warn(f"crumb fetch failed: {exc}")
+        return None, None
+
+
+def fetch_pre_post_batch(symbols, crumb, cookie_hdr):
+    """One v7 quote call for all sectors — returns per-symbol dict of
+    {marketState, preMarketPrice, preMarketChangePercent, preMarketTime}.
+    Returns {} on failure so the caller falls back gracefully to the
+    regular-price-only sector data."""
+    if not crumb or not symbols:
+        return {}
+    url = (
+        "https://query1.finance.yahoo.com/v7/finance/quote"
+        f"?symbols={urllib.parse.quote(','.join(symbols))}"
+        f"&crumb={urllib.parse.quote(crumb)}"
+    )
+    try:
+        req = urllib.request.Request(
+            url, headers={"User-Agent": YAHOO_UA, "Cookie": cookie_hdr})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            data = json.loads(r.read().decode("utf-8", errors="ignore"))
+    except Exception as exc:
+        warn(f"v7 quote fetch failed: {exc}")
+        return {}
+    out = {}
+    for q in (data.get("quoteResponse", {}).get("result") or []):
+        s = q.get("symbol")
+        if not s:
+            continue
+        out[s] = {
+            "marketState":            q.get("marketState"),
+            "preMarketPrice":         q.get("preMarketPrice"),
+            "preMarketChangePercent": q.get("preMarketChangePercent"),
+            "preMarketTime":          q.get("preMarketTime"),
+        }
+    return out
+
+
 def main() -> int:
     now_ts = int(time.time())
     sectors: dict[str, dict] = {}
+
+    # Fetch pre-market + marketState for every sector in ONE v7 call
+    # (uses the standard Yahoo crumb dance — same as api/quote.js does
+    # server-side for the browser). Best-effort: on failure we still
+    # write the file with regular-price-only sector data.
+    crumb, cookie_hdr = get_crumb()
+    extras = fetch_pre_post_batch(SECTORS, crumb, cookie_hdr)
 
     for sym in SECTORS:
         q = fetch_quote(sym)
         if not q:
             continue
         change_pct = (q["price"] / q["prevClose"] - 1) * 100 if q["prevClose"] else 0.0
+        extra = extras.get(sym, {})
         sectors[sym.lower()] = {
             "symbol": sym,
             "price": round(q["price"], 4),
             "prevClose": round(q["prevClose"], 4),
             "changePct": round(change_pct, 4),
             "marketTime": q["marketTime"],
+            # Pre-market fields let the sector heatmap frontend show
+            # pre-market movement during 4-9:30am ET instead of
+            # yesterday's regular close. Null when the market state is
+            # REGULAR / POST / CLOSED (no pre-market data to report).
+            "marketState":       extra.get("marketState"),
+            "preMarketPrice":    extra.get("preMarketPrice"),
+            "preMarketChangePct": extra.get("preMarketChangePercent"),
+            "preMarketTime":     extra.get("preMarketTime"),
         }
         # Tiny stagger so we don't hammer Yahoo in one burst
         time.sleep(0.15)
