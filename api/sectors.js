@@ -75,6 +75,7 @@ async function fetchFromYahoo() {
     throw new Error('unexpected yahoo response shape');
   }
   const sectors = {};
+  const num = (v) => (typeof v === 'number' && Number.isFinite(v)) ? v : null;
   for (const q of results) {
     const sym = String(q.symbol || '').toUpperCase();
     if (!sym || !SECTORS.includes(sym)) continue;
@@ -88,6 +89,13 @@ async function fetchFromYahoo() {
       prevClose:  Math.round(prevClose * 10000) / 10000,
       changePct:  Math.round(changePct * 10000) / 10000,
       marketTime: Number.isFinite(q.regularMarketTime) ? q.regularMarketTime : null,
+      // Pre-market fields let the sector heatmap frontend show pre-market
+      // movement during 4-9:30am ET instead of yesterday's regular close.
+      // marketState is one of PRE, PREPRE, REGULAR, POST, POSTPOST, CLOSED.
+      marketState:         q.marketState || null,
+      preMarketPrice:      num(q.preMarketPrice),
+      preMarketChangePct:  num(q.preMarketChangePercent),
+      preMarketTime:       num(q.preMarketTime),
     };
   }
   // Fail loudly if Yahoo returned an incomplete set — a partial grid
