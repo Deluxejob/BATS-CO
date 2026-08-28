@@ -563,6 +563,105 @@
     .brd-card .brd-tilt.bullish { color: var(--term-green); }
     .brd-card .brd-tilt.bearish { color: var(--term-red); }
 
+    /* Earnings around the session — yesterday AMC + today BMO.
+       Compact two-column card, small monospace, scrollable per side. */
+    .ea-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+    }
+    @media (min-width: 900px) {
+      .ea-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .ea-box {
+      background: var(--term-panel);
+      border: 1px solid var(--term-border);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .ea-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.4rem 0.7rem 0.35rem;
+      border-bottom: 1px solid var(--term-border);
+      background: rgba(255, 182, 88, 0.03);
+    }
+    .ea-head .ea-title {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--term-amber, #ffb658);
+    }
+    .ea-head .ea-count {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.62rem;
+      color: var(--term-dim);
+    }
+    .ea-scroll { max-height: 240px; overflow-y: auto; }
+    .ea-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.68rem;
+    }
+    .ea-tbl thead th {
+      position: sticky; top: 0;
+      background: var(--term-panel-2, #0a1219);
+      color: var(--term-dim);
+      font-weight: 500;
+      font-size: 0.56rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: right;
+      padding: 0.3rem 0.5rem;
+      border-bottom: 1px solid var(--term-border);
+      white-space: nowrap;
+    }
+    .ea-tbl thead th.col-sym,
+    .ea-tbl thead th.col-name { text-align: left; }
+    .ea-tbl tbody td {
+      padding: 0.25rem 0.5rem;
+      text-align: right;
+      border-bottom: 1px solid rgba(34, 51, 71, 0.35);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      color: var(--term-text);
+    }
+    .ea-tbl tbody tr:last-child td { border-bottom: none; }
+    .ea-tbl tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.015); }
+    .ea-tbl tbody tr { cursor: pointer; transition: background 0.1s; }
+    .ea-tbl tbody tr:hover { background: rgba(255, 182, 88, 0.06); }
+    .ea-tbl td.col-sym {
+      text-align: left;
+      color: var(--term-cyan, #6ee7ff);
+      font-weight: 700;
+      width: 54px;
+    }
+    .ea-tbl td.col-name {
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      color: var(--term-text);
+      max-width: 170px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ea-tbl td.col-surp.pos { color: var(--term-green, #22d39a); font-weight: 700; }
+    .ea-tbl td.col-surp.neg { color: var(--term-red, #ff5374);   font-weight: 700; }
+    .ea-tbl td.dim { color: var(--term-dim); }
+    .ea-empty, .ea-loading {
+      padding: 1rem 0.5rem;
+      text-align: center;
+      color: var(--term-dim);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.7rem;
+      font-style: italic;
+    }
+
     /* Movers — 3 side-by-side scrollable boxes */
     .movers-grid {
       display: grid;
@@ -1413,6 +1512,55 @@
               }
               </script>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Earnings around the session — yesterday AMC + today BMO.
+         Sits above Movers so the sequence reads "here's who just
+         reported → here's what's moving." -->
+    <section class="term-section">
+      <div class="term-section-label">EARNINGS AROUND THE SESSION <span class="sub">— reports after yesterday&rsquo;s close &middot; before today&rsquo;s open · click any ticker to open its page</span></div>
+      <div class="ea-grid">
+        <div class="ea-box">
+          <div class="ea-head">
+            <span class="ea-title" id="eaAmcTitle">AFTER YESTERDAY&rsquo;S CLOSE</span>
+            <span class="ea-count" id="eaAmcCount"></span>
+          </div>
+          <div class="ea-scroll">
+            <table class="ea-tbl" id="eaAmcTbl">
+              <thead>
+                <tr>
+                  <th class="col-sym">Ticker</th>
+                  <th class="col-name">Company</th>
+                  <th>Est EPS</th>
+                  <th>Actual</th>
+                  <th>Surp %</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="5" class="ea-loading">Loading&hellip;</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ea-box">
+          <div class="ea-head">
+            <span class="ea-title" id="eaBmoTitle">BEFORE TODAY&rsquo;S OPEN</span>
+            <span class="ea-count" id="eaBmoCount"></span>
+          </div>
+          <div class="ea-scroll">
+            <table class="ea-tbl" id="eaBmoTbl">
+              <thead>
+                <tr>
+                  <th class="col-sym">Ticker</th>
+                  <th class="col-name">Company</th>
+                  <th>Est EPS</th>
+                  <th>Actual</th>
+                  <th>Surp %</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="5" class="ea-loading">Loading&hellip;</td></tr></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -2939,6 +3087,122 @@
     // /api/movers is a serverless wrapper around data/movers.json — see
     // api/movers.js for why (Vercel edge-caches static /data/*.json).
     // Auto-refreshes every 60s so intraday moves show up without a page reload.
+    // Earnings around the session — /api/earnings-calendar filtered to
+    // (last-trading-day AMC + today BMO). Company names come from a
+    // batched /api/quote lookup for the symbols in the window, so we
+    // get shortName without adding a new backend endpoint. Row click
+    // opens ticker.html for the drill-down.
+    (async function initEarningsAroundSession() {
+      const tbodyAmc = document.querySelector('#eaAmcTbl tbody');
+      const tbodyBmo = document.querySelector('#eaBmoTbl tbody');
+      const titleAmc = document.getElementById('eaAmcTitle');
+      const titleBmo = document.getElementById('eaBmoTitle');
+      const countAmc = document.getElementById('eaAmcCount');
+      const countBmo = document.getElementById('eaBmoCount');
+      if (!tbodyAmc || !tbodyBmo) return;
+
+      // ET-local YYYY-MM-DD for `d`. Uses toLocaleDateString so a late-
+      // UTC-night page load still resolves to the correct US session.
+      function ymdET(d) {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'America/New_York',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+        }).formatToParts(d);
+        const y = parts.find(p => p.type === 'year').value;
+        const m = parts.find(p => p.type === 'month').value;
+        const dd = parts.find(p => p.type === 'day').value;
+        return `${y}-${m}-${dd}`;
+      }
+      function addDays(dateStr, delta) {
+        const d = new Date(dateStr + 'T12:00:00Z');
+        d.setUTCDate(d.getUTCDate() + delta);
+        return d.toISOString().slice(0, 10);
+      }
+      function dow(dateStr) {
+        return new Date(dateStr + 'T12:00:00Z').getUTCDay(); // 0=Sun..6=Sat
+      }
+
+      // Today's US session date (weekend → shift to next Monday).
+      let today = ymdET(new Date());
+      const dTodayDow = dow(today);
+      if (dTodayDow === 6) today = addDays(today, 2);      // Sat → Mon
+      else if (dTodayDow === 0) today = addDays(today, 1); // Sun → Mon
+      // Previous trading day (Mon → Fri, else −1).
+      const prev = addDays(today, dow(today) === 1 ? -3 : -1);
+
+      const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+      titleAmc.textContent = `AFTER ${dayNames[dow(prev)]} CLOSE`;
+      titleBmo.textContent = `BEFORE ${dayNames[dow(today)]} OPEN`;
+
+      // Fetch the earnings window
+      let rows = [];
+      try {
+        const r = await fetch(`/api/earnings-calendar?from=${prev}&to=${today}`, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        rows = Array.isArray(d.earnings) ? d.earnings : [];
+      } catch (e) {
+        const err = `<tr><td colspan="5" class="ea-empty">Failed to load: ${(e.message || e)}</td></tr>`;
+        tbodyAmc.innerHTML = err;
+        tbodyBmo.innerHTML = err;
+        return;
+      }
+
+      // Bucket
+      const amc = rows.filter(r => r.date === prev  && String(r.hour || '').toLowerCase() === 'amc');
+      const bmo = rows.filter(r => r.date === today && String(r.hour || '').toLowerCase() === 'bmo');
+
+      // Company-name lookup — batch /api/quote for the symbols in both
+      // buckets. Chunk by 20 (same cap the endpoint enforces).
+      const syms = [...new Set([...amc, ...bmo].map(r => r.symbol).filter(Boolean))];
+      const nameMap = {};
+      const CHUNK = 20;
+      for (let i = 0; i < syms.length; i += CHUNK) {
+        const chunk = syms.slice(i, i + CHUNK);
+        try {
+          const r = await fetch(`/api/quote?syms=${encodeURIComponent(chunk.join(','))}`, { cache: 'no-store' });
+          if (!r.ok) continue;
+          const j = await r.json();
+          for (const [s, q] of Object.entries((j && j.quotes) || {})) {
+            if (q && q.shortName) nameMap[s] = q.shortName;
+          }
+        } catch (_) { /* leave those unnamed */ }
+      }
+
+      const fmtEps = (v) => (v == null || !Number.isFinite(v)) ? '—' : v.toFixed(2);
+      const fmtSurp = (est, act) => {
+        if (est == null || act == null || !Number.isFinite(est) || !Number.isFinite(act) || est === 0) {
+          return { t: '—', c: 'dim' };
+        }
+        const s = ((act - est) / Math.abs(est)) * 100;
+        return { t: (s >= 0 ? '+' : '') + s.toFixed(1) + '%', c: s > 0 ? 'pos' : s < 0 ? 'neg' : 'dim' };
+      };
+      const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, c => (
+        {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]
+      ));
+
+      function render(tbody, list, count) {
+        count.textContent = list.length + (list.length === 1 ? ' co' : ' cos');
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="ea-empty">No reporters in this window.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(r => {
+          const sp = fmtSurp(r.epsEstimate, r.epsActual);
+          const name = esc(nameMap[r.symbol] || r.symbol);
+          return `<tr onclick="location.href='ticker.html?sym=${encodeURIComponent(r.symbol)}'">
+            <td class="col-sym">${esc(r.symbol)}</td>
+            <td class="col-name">${name}</td>
+            <td class="dim">${fmtEps(r.epsEstimate)}</td>
+            <td>${fmtEps(r.epsActual)}</td>
+            <td class="col-surp ${sp.c}">${sp.t}</td>
+          </tr>`;
+        }).join('');
+      }
+      render(tbodyAmc, amc, countAmc);
+      render(tbodyBmo, bmo, countBmo);
+    })();
+
     (function initMovers() {
       const lists = {
         gainers: document.getElementById('moversGainersList'),
