@@ -1988,9 +1988,19 @@ async function loadLiveData() {
   if (!current) throw new Error('Could not compute current BATS from latest data');
 
   // Historical offsets, counted in trading days from `latestIdx`.
+  // Walk back a few extra rows if the target day has a data gap (a common
+  // Nasdaq case: QQEW carries a date that NDX/HYG/LQD skipped, so the
+  // exact latestIdx-1 lookup returns null and the "Previous close" card
+  // disappears entirely). We cap at 5 lookback days so a mislabelled
+  // "Previous close" stays within a business week of the true prior close.
+  const HIST_LOOKBACK_CAP = 5;
   const history = {};
   for (const { key, days, label } of HIST_OFFSETS) {
-    const rec = batsAt(latestIdx - days);
+    let rec = null;
+    for (let extra = 0; extra <= HIST_LOOKBACK_CAP; extra++) {
+      rec = batsAt(latestIdx - days - extra);
+      if (rec) break;
+    }
     history[key] = rec ? { score: rec.blended, date: rec.date, label } : null;
   }
 
