@@ -646,12 +646,15 @@
       font-family: 'Inter', sans-serif;
       font-size: 0.7rem;
       color: var(--term-text);
-      max-width: 170px;
+      max-width: 130px;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .ea-tbl td.col-surp.pos { color: var(--term-green, #22d39a); font-weight: 700; }
     .ea-tbl td.col-surp.neg { color: var(--term-red, #ff5374);   font-weight: 700; }
+    .ea-tbl td.col-price   { color: var(--term-text); }
+    .ea-tbl td.col-chg.pos { color: var(--term-green, #22d39a); font-weight: 700; }
+    .ea-tbl td.col-chg.neg { color: var(--term-red, #ff5374);   font-weight: 700; }
     .ea-tbl td.dim { color: var(--term-dim); }
     .ea-empty, .ea-loading {
       padding: 1rem 0.5rem;
@@ -1537,9 +1540,11 @@
                   <th>Est EPS</th>
                   <th>Actual</th>
                   <th>Surp %</th>
+                  <th>Price</th>
+                  <th>Chg $</th>
                 </tr>
               </thead>
-              <tbody><tr><td colspan="5" class="ea-loading">Loading&hellip;</td></tr></tbody>
+              <tbody><tr><td colspan="7" class="ea-loading">Loading&hellip;</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1557,9 +1562,11 @@
                   <th>Est EPS</th>
                   <th>Actual</th>
                   <th>Surp %</th>
+                  <th>Price</th>
+                  <th>Chg $</th>
                 </tr>
               </thead>
-              <tbody><tr><td colspan="5" class="ea-loading">Loading&hellip;</td></tr></tbody>
+              <tbody><tr><td colspan="7" class="ea-loading">Loading&hellip;</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -3177,7 +3184,7 @@
         const d = await r.json();
         rows = Array.isArray(d.earnings) ? d.earnings : [];
       } catch (e) {
-        const err = `<tr><td colspan="5" class="ea-empty">Failed to load: ${(e.message || e)}</td></tr>`;
+        const err = `<tr><td colspan="7" class="ea-empty">Failed to load: ${(e.message || e)}</td></tr>`;
         tbodyLeft.innerHTML  = err;
         tbodyRight.innerHTML = err;
         return;
@@ -3187,10 +3194,14 @@
       const amc = rows.filter(r => r.date === leftDate  && String(r.hour || '').toLowerCase() === leftHour);
       const bmo = rows.filter(r => r.date === rightDate && String(r.hour || '').toLowerCase() === rightHour);
 
-      // Company-name lookup — batch /api/quote for the symbols in both
-      // buckets. Chunk by 20 (same cap the endpoint enforces).
+      // Company-name + price lookup — batch /api/quote for the symbols
+      // in both buckets. Chunk by 20 (same cap the endpoint enforces).
+      // For each symbol we grab shortName + current price + $ change
+      // (post-market change wins during POST/POSTPOST, then pre-market
+      // during PRE/PREPRE, else regular-session change) so post-earnings
+      // reaction shows up promptly.
       const syms = [...new Set([...amc, ...bmo].map(r => r.symbol).filter(Boolean))];
-      const nameMap = {};
+      const quoteMap = {};
       const CHUNK = 20;
       for (let i = 0; i < syms.length; i += CHUNK) {
         const chunk = syms.slice(i, i + CHUNK);
@@ -3199,9 +3210,27 @@
           if (!r.ok) continue;
           const j = await r.json();
           for (const [s, q] of Object.entries((j && j.quotes) || {})) {
-            if (q && q.shortName) nameMap[s] = q.shortName;
+            if (!q) continue;
+            const ms = String(q.marketState || '').toUpperCase();
+            let price = q.price, chg = q.dayChange;
+            if ((ms === 'POST' || ms === 'POSTPOST')
+                && Number.isFinite(q.postMarketPrice)
+                && Number.isFinite(q.postMarketChange)) {
+              price = q.postMarketPrice;
+              chg   = q.postMarketChange;
+            } else if ((ms === 'PRE' || ms === 'PREPRE')
+                && Number.isFinite(q.preMarketPrice)
+                && Number.isFinite(q.preMarketChange)) {
+              price = q.preMarketPrice;
+              chg   = q.preMarketChange;
+            }
+            quoteMap[s] = {
+              name:  q.shortName || null,
+              price: Number.isFinite(price) ? price : null,
+              chg:   Number.isFinite(chg)   ? chg   : null,
+            };
           }
-        } catch (_) { /* leave those unnamed */ }
+        } catch (_) { /* leave those unquoted */ }
       }
 
       const fmtEps = (v) => (v == null || !Number.isFinite(v)) ? '—' : v.toFixed(2);
@@ -3212,6 +3241,18 @@
         const s = ((act - est) / Math.abs(est)) * 100;
         return { t: (s >= 0 ? '+' : '') + s.toFixed(1) + '%', c: s > 0 ? 'pos' : s < 0 ? 'neg' : 'dim' };
       };
+      const fmtPrice = (p) =>
+        (p == null || !Number.isFinite(p)) ? '—' : p.toFixed(2);
+      const fmtChg = (c) => {
+        if (c == null || !Number.isFinite(c)) return { t: '—', c: 'dim' };
+        const abs = Math.abs(c);
+        // Sub-penny moves round to 0.00 — show them with a subtle sign.
+        const s = c >= 0 ? '+' : '−';
+        return {
+          t: s + abs.toFixed(2),
+          c: c > 0 ? 'pos' : c < 0 ? 'neg' : 'dim',
+        };
+      };
       const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, c => (
         {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]
       ));
@@ -3219,18 +3260,22 @@
       function render(tbody, list, count) {
         count.textContent = list.length + (list.length === 1 ? ' co' : ' cos');
         if (!list.length) {
-          tbody.innerHTML = '<tr><td colspan="5" class="ea-empty">No reporters in this window.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" class="ea-empty">No reporters in this window.</td></tr>';
           return;
         }
         tbody.innerHTML = list.map(r => {
           const sp = fmtSurp(r.epsEstimate, r.epsActual);
-          const name = esc(nameMap[r.symbol] || r.symbol);
+          const q  = quoteMap[r.symbol] || {};
+          const name = esc(q.name || r.symbol);
+          const cg = fmtChg(q.chg);
           return `<tr onclick="location.href='ticker.html?sym=${encodeURIComponent(r.symbol)}'">
             <td class="col-sym">${esc(r.symbol)}</td>
             <td class="col-name">${name}</td>
             <td class="dim">${fmtEps(r.epsEstimate)}</td>
             <td>${fmtEps(r.epsActual)}</td>
             <td class="col-surp ${sp.c}">${sp.t}</td>
+            <td class="col-price">${fmtPrice(q.price)}</td>
+            <td class="col-chg ${cg.c}">${cg.t}</td>
           </tr>`;
         }).join('');
       }
