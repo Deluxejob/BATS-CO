@@ -1521,7 +1521,7 @@
          Sits above Movers so the sequence reads "here's who just
          reported → here's what's moving." -->
     <section class="term-section">
-      <div class="term-section-label">EARNINGS AROUND THE SESSION <span class="sub">— reports after yesterday&rsquo;s close &middot; before today&rsquo;s open · click any ticker to open its page</span></div>
+      <div class="term-section-label">EARNINGS AROUND THE SESSION <span class="sub">— reports before &amp; after the trading session · window rolls at 4:00 pm ET · click any ticker to open its page</span></div>
       <div class="ea-grid">
         <div class="ea-box">
           <div class="ea-head">
@@ -3088,21 +3088,25 @@
     // api/movers.js for why (Vercel edge-caches static /data/*.json).
     // Auto-refreshes every 60s so intraday moves show up without a page reload.
     // Earnings around the session — /api/earnings-calendar filtered to
-    // (last-trading-day AMC + today BMO). Company names come from a
-    // batched /api/quote lookup for the symbols in the window, so we
-    // get shortName without adding a new backend endpoint. Row click
-    // opens ticker.html for the drill-down.
+    // a 4pm-ET-pivoting window. Rule:
+    //   • Before 4pm ET on a trading day (or on a weekend): show
+    //     yesterday's AMC + today's BMO — earnings driving today's
+    //     opening/day session.
+    //   • After 4pm ET on a trading day: shift to today's BMO + today's
+    //     AMC — all of today's earnings, morning + upcoming evening.
+    // Company names come from a batched /api/quote lookup so we get
+    // shortName without adding a backend field. Row click opens
+    // ticker.html for the drill-down.
     (async function initEarningsAroundSession() {
-      const tbodyAmc = document.querySelector('#eaAmcTbl tbody');
-      const tbodyBmo = document.querySelector('#eaBmoTbl tbody');
-      const titleAmc = document.getElementById('eaAmcTitle');
-      const titleBmo = document.getElementById('eaBmoTitle');
-      const countAmc = document.getElementById('eaAmcCount');
-      const countBmo = document.getElementById('eaBmoCount');
-      if (!tbodyAmc || !tbodyBmo) return;
+      const tbodyLeft  = document.querySelector('#eaAmcTbl tbody'); // ids kept for CSS
+      const tbodyRight = document.querySelector('#eaBmoTbl tbody');
+      const titleLeft  = document.getElementById('eaAmcTitle');
+      const titleRight = document.getElementById('eaBmoTitle');
+      const countLeft  = document.getElementById('eaAmcCount');
+      const countRight = document.getElementById('eaBmoCount');
+      if (!tbodyLeft || !tbodyRight) return;
 
-      // ET-local YYYY-MM-DD for `d`. Uses toLocaleDateString so a late-
-      // UTC-night page load still resolves to the correct US session.
+      // ET-local YYYY-MM-DD for `d`.
       function ymdET(d) {
         const parts = new Intl.DateTimeFormat('en-CA', {
           timeZone: 'America/New_York',
@@ -3113,6 +3117,14 @@
         const dd = parts.find(p => p.type === 'day').value;
         return `${y}-${m}-${dd}`;
       }
+      // ET hour 0-23 for `d`. Used to pick morning vs evening mode.
+      function hourET(d) {
+        const p = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/New_York',
+          hour: 'numeric', hour12: false,
+        }).formatToParts(d);
+        return parseInt(p.find(x => x.type === 'hour').value, 10);
+      }
       function addDays(dateStr, delta) {
         const d = new Date(dateStr + 'T12:00:00Z');
         d.setUTCDate(d.getUTCDate() + delta);
@@ -3122,35 +3134,58 @@
         return new Date(dateStr + 'T12:00:00Z').getUTCDay(); // 0=Sun..6=Sat
       }
 
-      // Today's US session date (weekend → shift to next Monday).
-      let today = ymdET(new Date());
-      const dTodayDow = dow(today);
-      if (dTodayDow === 6) today = addDays(today, 2);      // Sat → Mon
-      else if (dTodayDow === 0) today = addDays(today, 1); // Sun → Mon
+      const now = new Date();
+      const todayRaw = ymdET(now);
+      const dowRaw = dow(todayRaw);
+      const isWeekend = dowRaw === 0 || dowRaw === 6;
+      const hr = hourET(now);
+
+      // Anchor "today" to the current trading day (weekend → next Mon).
+      let today;
+      if (dowRaw === 6)      today = addDays(todayRaw, 2); // Sat → Mon
+      else if (dowRaw === 0) today = addDays(todayRaw, 1); // Sun → Mon
+      else                   today = todayRaw;
       // Previous trading day (Mon → Fri, else −1).
       const prev = addDays(today, dow(today) === 1 ? -3 : -1);
 
-      const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-      titleAmc.textContent = `AFTER ${dayNames[dow(prev)]} CLOSE`;
-      titleBmo.textContent = `BEFORE ${dayNames[dow(today)]} OPEN`;
+      // Mode: evening only on a weekday after 4pm ET.
+      const eveningMode = !isWeekend && hr >= 16;
 
-      // Fetch the earnings window
+      const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+      let leftDate, leftHour, rightDate, rightHour;
+      if (eveningMode) {
+        // Today's full-session earnings: BMO (this morning) + AMC (tonight).
+        leftDate  = today; leftHour  = 'bmo';
+        rightDate = today; rightHour = 'amc';
+        titleLeft.textContent  = `BEFORE ${dayNames[dow(today)]} OPEN`;
+        titleRight.textContent = `AFTER ${dayNames[dow(today)]} CLOSE`;
+      } else {
+        // Earnings driving today's session: yesterday's AMC + today's BMO.
+        leftDate  = prev;  leftHour  = 'amc';
+        rightDate = today; rightHour = 'bmo';
+        titleLeft.textContent  = `AFTER ${dayNames[dow(prev)]} CLOSE`;
+        titleRight.textContent = `BEFORE ${dayNames[dow(today)]} OPEN`;
+      }
+
+      // Fetch the earnings window (from=earliest date, to=latest date).
+      const fromDate = leftDate <= rightDate ? leftDate : rightDate;
+      const toDate   = leftDate >= rightDate ? leftDate : rightDate;
       let rows = [];
       try {
-        const r = await fetch(`/api/earnings-calendar?from=${prev}&to=${today}`, { cache: 'no-store' });
+        const r = await fetch(`/api/earnings-calendar?from=${fromDate}&to=${toDate}`, { cache: 'no-store' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const d = await r.json();
         rows = Array.isArray(d.earnings) ? d.earnings : [];
       } catch (e) {
         const err = `<tr><td colspan="5" class="ea-empty">Failed to load: ${(e.message || e)}</td></tr>`;
-        tbodyAmc.innerHTML = err;
-        tbodyBmo.innerHTML = err;
+        tbodyLeft.innerHTML  = err;
+        tbodyRight.innerHTML = err;
         return;
       }
 
       // Bucket
-      const amc = rows.filter(r => r.date === prev  && String(r.hour || '').toLowerCase() === 'amc');
-      const bmo = rows.filter(r => r.date === today && String(r.hour || '').toLowerCase() === 'bmo');
+      const amc = rows.filter(r => r.date === leftDate  && String(r.hour || '').toLowerCase() === leftHour);
+      const bmo = rows.filter(r => r.date === rightDate && String(r.hour || '').toLowerCase() === rightHour);
 
       // Company-name lookup — batch /api/quote for the symbols in both
       // buckets. Chunk by 20 (same cap the endpoint enforces).
@@ -3199,8 +3234,8 @@
           </tr>`;
         }).join('');
       }
-      render(tbodyAmc, amc, countAmc);
-      render(tbodyBmo, bmo, countBmo);
+      render(tbodyLeft,  amc, countLeft);
+      render(tbodyRight, bmo, countRight);
     })();
 
     (function initMovers() {
