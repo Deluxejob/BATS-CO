@@ -581,6 +581,12 @@ section { margin: 2.5rem 0; }
      labels would leave dead space on the right of the swatch group. */
   display: flex;
   align-items: center;
+  /* Center the dot+text group horizontally in each cell. With left-
+     alignment, shorter labels ("Oversold", "Bullish") clustered against
+     the left edge while longer ones ("Extremely Oversold") filled the
+     card, so the row read as visually uneven. Centering gives every
+     card the same balanced look regardless of label length. */
+  justify-content: center;
   gap: .5rem;
   font-size: .78rem;
   color: var(--text-dim);
