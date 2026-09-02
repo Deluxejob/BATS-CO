@@ -66,68 +66,6 @@
       text-decoration: none;
     }
 
-    /* ---------- This Week's Read ----------
-       A curated, human-written paragraph tying the current gauge
-       reading + trend + risk into a plain-English take. Sourced from
-       data/this_week.md (owner-edited weekly), rendered client-side
-       with a tiny markdown parser. Freshness stamp is prominent, and
-       an "update pending" hint appears if the file goes stale so the
-       reader can trust what they see or know it's outdated. */
-    .weekly-read {
-      /* Full-width within the <main> container (which itself is capped
-         at 1280px minus 2rem padding on each side). Lines up edge-to-
-         edge with the components grid below ("What goes into the BATS")
-         so the whole page feels like one column. */
-      margin: 2rem 0 2.5rem;
-      padding: 1.5rem 1.75rem;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--accent);
-      border-radius: 10px;
-    }
-    .weekly-read .wr-eyebrow {
-      font-family: 'JetBrains Mono', monospace;
-      /* Same tier as .hero-eyebrow ("Tracking the S&P 500 · Live during
-         market hours · Daily close overnight") sitting at the top of the
-         gauge, so both eyebrow-style headers read as the same voice. */
-      font-size: 0.78rem;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      font-weight: 700;
-      margin: 0 0 0.35rem;
-    }
-    .weekly-read .wr-date {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      color: var(--text-dim);
-      margin: 0 0 1rem;
-    }
-    .weekly-read .wr-body p {
-      color: var(--text);
-      /* Match the hero-eyebrow ("Tracking the ... · Live during market
-         hours · Daily close overnight") sitting at the top of the gauge,
-         so the two hero-side blurbs feel like one voice at the same tier. */
-      font-size: .78rem;
-      line-height: 1.6;
-      margin: 0 0 0.85rem;
-    }
-    .weekly-read .wr-body p:last-child { margin-bottom: 0; }
-    .weekly-read .wr-body strong { color: var(--text); }
-    .weekly-read .wr-body em     { color: var(--text-dim); font-style: italic; }
-    .weekly-read .wr-body a      { color: var(--accent); border-bottom: 1px dotted var(--accent); }
-    .weekly-read .wr-body a:hover { border-bottom-style: solid; text-decoration: none; }
-    .weekly-read .wr-stale {
-      display: block;
-      margin-top: 1rem;
-      padding-top: 0.75rem;
-      border-top: 1px dashed var(--border);
-      color: var(--text-dim);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-style: italic;
-    }
-
     /* ---------- Signal Testing CTA ----------
        Sits at the tail of the "Does BATS work?" section as the natural
        next question a reader has just earned the right to ask. Amber
@@ -485,17 +423,6 @@
     </section>
 
     <!-- Ticker lookup — quick jump to any US stock or ETF's detail page -->
-    <!-- This Week's Read — hand-written paragraph tying the current
-         gauge, trend, and risk into plain-English guidance. Sourced from
-         data/this_week.md; renderer below fetches it, parses tiny markdown,
-         and stamps freshness. Placed right after the hero so a reader sees
-         the interpretation before diving deeper. -->
-    <section class="weekly-read" id="weeklyRead" hidden>
-      <p class="wr-eyebrow">This week&rsquo;s read</p>
-      <p class="wr-date" id="weeklyReadDate"></p>
-      <div class="wr-body" id="weeklyReadBody"></div>
-    </section>
-
     <section class="ticker-lookup">
       <form id="homeTickerSearchForm" class="lookup-form">
         <label for="homeTickerSearchInput" class="lookup-label">Look up any stock or ETF &rarr;</label>
@@ -680,79 +607,6 @@
   <script>
     window.BATS_DATA_BASE = 'data/';
     window.BATS_BACKTEST_KIND = 'blended';
-
-    // ---------- This Week's Read loader ----------
-    // Fetches data/this_week.md, parses tiny markdown (paragraphs + **bold**
-    // + *italic* + [text](url) links), stamps the date, and shows a quiet
-    // "update pending" hint when the file is more than 10 days old. Hides
-    // the whole section on fetch failure so a broken deploy never leaves
-    // an empty card. All parsing is HTML-escape-safe before markdown
-    // transforms are applied.
-    (async function loadWeeklyRead() {
-      const section = document.getElementById('weeklyRead');
-      if (!section) return;
-      let text;
-      try {
-        const r = await fetch('data/this_week.md?nc=' + Date.now(), { cache: 'no-store' });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        text = (await r.text()).trim();
-      } catch (e) {
-        // Silent fail — nothing worse than a broken editorial card.
-        return;
-      }
-      if (!text) return;
-
-      // Extract date from the first line matching "date: YYYY-MM-DD".
-      let isoDate = null;
-      const lines = text.split(/\r?\n/);
-      if (lines.length && /^date:\s*\d{4}-\d{2}-\d{2}\s*$/.test(lines[0])) {
-        isoDate = lines[0].split(':')[1].trim();
-        lines.shift();
-      }
-      const body = lines.join('\n').trim();
-      if (!body) return;
-
-      // Escape then apply inline markdown.
-      const esc = (s) => s.replace(/[&<>"']/g, c => (
-        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-      ));
-      // Links: [text](url) — supports absolute (https://…) and relative
-      // (page.html, /section) URLs. External links get target=_blank; local
-      // links stay in-tab so navigation feels native.
-      const inline = (s) => esc(s)
-        .replace(/\[([^\]]+)\]\(([^\s)]+)\)/g, (_m, text, url) => {
-          const external = /^https?:\/\//i.test(url);
-          const attrs = external
-            ? ' target="_blank" rel="noopener"'
-            : '';
-          return '<a href="' + url + '"' + attrs + '>' + text + '</a>';
-        })
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
-      // Paragraphs split on blank lines.
-      const paras = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-      const html = paras.map(p => '<p>' + inline(p) + '</p>').join('');
-      document.getElementById('weeklyReadBody').innerHTML = html;
-
-      // Freshness stamp + stale hint.
-      const dateEl = document.getElementById('weeklyReadDate');
-      if (isoDate) {
-        const d = new Date(isoDate + 'T12:00:00Z');
-        const fmt = d.toLocaleDateString(undefined,
-          { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-        dateEl.textContent = 'As of ' + fmt;
-        const daysOld = Math.floor((Date.now() - d.getTime()) / 86_400_000);
-        if (daysOld > 10) {
-          const note = document.createElement('span');
-          note.className = 'wr-stale';
-          note.textContent = 'Weekly update pending — this read is ' + daysOld + ' days old.';
-          document.getElementById('weeklyReadBody').appendChild(note);
-        }
-      } else {
-        dateEl.textContent = '';
-      }
-      section.hidden = false;
-    })();
 
     // Ticker lookup — navigate to ticker.html?sym=XXX on submit.
     (function () {
