@@ -285,8 +285,20 @@ def main() -> int:
     try:
         body = call_claude(SYSTEM_PROMPT, user_prompt)
     except anthropic.APIStatusError as e:
-        detail = str(getattr(e, "response", "")) or str(e)
-        print(f"::error::Anthropic {e.status_code}: {detail[:400]}")
+        # Pull the actual JSON error body — `str(e.response)` just prints
+        # <Response [400]> which tells us nothing about WHY the request was
+        # rejected. e.body is the parsed API-error payload.
+        detail_body = getattr(e, "body", None)
+        detail_msg  = ""
+        if isinstance(detail_body, dict):
+            err = detail_body.get("error", {}) or {}
+            detail_msg = f"{err.get('type', '')}: {err.get('message', '')}"
+        if not detail_msg:
+            try:
+                detail_msg = e.response.text[:400]
+            except Exception:
+                detail_msg = str(e)[:400]
+        print(f"::error::Anthropic {e.status_code}: {detail_msg}")
         return 1
     except Exception as e:
         print(f"::error::Anthropic call failed: {e}")
