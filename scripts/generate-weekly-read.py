@@ -254,9 +254,15 @@ Write the two-paragraph take now."""
 
 # --------------------------- API call -------------------------------------
 def call_claude(system: str, user: str) -> str:
-    # Client reads ANTHROPIC_API_KEY from env automatically. Workspace
-    # routing for legacy workspace keys is handled inside the SDK.
-    client = anthropic.Anthropic()
+    # Client reads ANTHROPIC_API_KEY from env automatically. For legacy /
+    # identity-linked workspace keys the API requires an extra
+    # anthropic-workspace-id header — set ANTHROPIC_WORKSPACE_ID in the
+    # environment and we forward it via default_headers.
+    default_headers = {}
+    workspace_id = os.environ.get("ANTHROPIC_WORKSPACE_ID", "").strip()
+    if workspace_id:
+        default_headers["anthropic-workspace-id"] = workspace_id
+    client = anthropic.Anthropic(default_headers=default_headers or None)
     resp = client.messages.create(
         model=ANTHROPIC_MODEL,
         max_tokens=700,

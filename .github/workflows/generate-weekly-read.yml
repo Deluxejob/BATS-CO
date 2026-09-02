@@ -48,7 +48,8 @@ jobs:
 
       - name: Generate weekly read via Claude
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY:      ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
         run: python scripts/generate-weekly-read.py
 
       - name: Commit and push if the read changed
