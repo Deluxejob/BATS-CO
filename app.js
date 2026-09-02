@@ -2214,6 +2214,9 @@ function updateComponentsWithLatest(current) {
 function bucketLabelFor(score) {
   return BUCKETS[bucketIndexFor(score)].label;
 }
+function bucketColorFor(score) {
+  return BUCKETS[bucketIndexFor(score)].color;
+}
 
 function renderHistoricalContext(history) {
   const wrap = document.getElementById('historicalContext');
@@ -2222,11 +2225,16 @@ function renderHistoricalContext(history) {
     const rec = history[key];
     if (!rec || rec.score == null) return null;
     const scoreRounded = Math.round(rec.score);
+    // Color each card to its bucket — outline + score + bucket label all
+    // pick up the same swatch from the main gauge (crimson → orange →
+    // yellow → green), so a glance across the strip shows the color
+    // trajectory the score has traveled.
+    const color = bucketColorFor(rec.score);
     return `
-      <div class="hist-item">
+      <div class="hist-item" style="border-color:${color}">
         <div class="hist-label">${label}</div>
-        <div class="hist-value">${scoreRounded}</div>
-        <div class="hist-bucket">${bucketLabelFor(rec.score)}</div>
+        <div class="hist-value" style="color:${color}">${scoreRounded}</div>
+        <div class="hist-bucket" style="color:${color}">${bucketLabelFor(rec.score)}</div>
       </div>
     `;
   }).filter(Boolean).join('');
