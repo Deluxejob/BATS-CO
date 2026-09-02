@@ -1322,7 +1322,7 @@ function computePivotTop(current) {
   else if (score >= 70) { state = 'Top forming'; sentence = 'Multiple overheated signals firing — high risk of a short-term top.'; }
   else if (score >= 50) { state = 'Watch top';   sentence = 'Some overheated readings — pivot risk elevated.'; }
   else if (score >= 30) { state = 'Warming';     sentence = 'Mild overextension in a few components.'; }
-  else                  { state = 'Clean tape';  sentence = 'No significant overheated signals — no top warning.'; }
+  else                  { state = 'Clean tape';  sentence = 'Nothing overheated in the tape — either a calm market drifting or froth that has already sold off.'; }
   return { score, state, sentence };
 }
 
