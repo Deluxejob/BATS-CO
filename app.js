@@ -1635,10 +1635,10 @@ function computeBatsScore() {
 
 const APP_DATA_BASE = (typeof window !== 'undefined' && window.BATS_DATA_BASE) || 'data/';
 const HIST_OFFSETS = [
-  { key: 'prev',  days: 1,   label: 'Previous close' },
-  { key: 'week',  days: 5,   label: '1 week ago' },
-  { key: 'month', days: 21,  label: '1 month ago' },
-  { key: 'year',  days: 252, label: '1 year ago' },
+  { key: 'prev',  days: 1,  label: 'Previous close' },
+  { key: 'week',  days: 5,  label: '1 week ago' },
+  { key: 'month', days: 21, label: '1 month ago' },
+  { key: '3mo',   days: 63, label: '3 months ago' },
 ];
 
 async function fetchCSVText(path) {
@@ -2136,6 +2136,35 @@ function renderHistoricalContext(history) {
   wrap.innerHTML = items || '';
 }
 
+// Compact 2×2 history pill under a sub-gauge (Upside Trend / Pivot Top).
+// Takes the same batsAt + latestIdx pair loadLiveData returns, and a
+// snapshot→score function (computeUpsideTrend or computePivotTop). Walks
+// back up to 5 rows per offset for data-gap tolerance — same behavior
+// as the main-gauge historical strip.
+const SUB_HIST_OFFSETS = [
+  { label: 'PREV', days: 1  },
+  { label: '1W',   days: 5  },
+  { label: '1M',   days: 21 },
+  { label: '3M',   days: 63 },
+];
+function renderSubHistory(elemId, computeFn, batsAt, latestIdx) {
+  const wrap = document.getElementById(elemId);
+  if (!wrap || !batsAt) return;
+  const items = SUB_HIST_OFFSETS.map(({ label, days }) => {
+    let rec = null;
+    for (let extra = 0; extra <= 5; extra++) {
+      rec = batsAt(latestIdx - days - extra);
+      if (rec) break;
+    }
+    // computeFn returns { score, state, sentence } — pull the score.
+    const out = rec ? computeFn(rec) : null;
+    const raw = out && typeof out === 'object' ? out.score : out;
+    const val = Number.isFinite(raw) ? Math.round(raw) : '—';
+    return `<div class="sh-item"><span class="sh-label">${label}</span><span class="sh-value">${val}</span></div>`;
+  }).join('');
+  wrap.innerHTML = items;
+}
+
 // ============================================================
 // CONCENTRATION PAGE — Top 10 constituents vs broad market
 // Renders only when the concentration.html page is loaded (detected by
@@ -2390,6 +2419,10 @@ async function init() {
     const pivot  = currentSnapshot ? computePivotTop(currentSnapshot)   : null;
     setSubGauge('upsideTrendGauge', upside, 'upsideTrendValue', 'upsideTrendState', 'green', 'left');
     setSubGauge('pivotTopGauge',    pivot,  'pivotTopValue',    'pivotTopState',    'red',   'right');
+    if (liveContext) {
+      renderSubHistory('upsideTrendHist', computeUpsideTrend, liveContext.batsAt, liveContext.latestIdx);
+      renderSubHistory('pivotTopHist',    computePivotTop,    liveContext.batsAt, liveContext.latestIdx);
+    }
 
     // Intraday BATS: fetch spot quotes for the fast tickers, recompute the
     // composite, and re-render the gauge + sub-gauges in place. Runs once

@@ -74,7 +74,11 @@
        an "update pending" hint appears if the file goes stale so the
        reader can trust what they see or know it's outdated. */
     .weekly-read {
-      max-width: 900px;
+      /* Spans edge-to-edge with the outer sub-gauges above (upside 240 +
+         6 gap + main 585 + 6 gap + pivot 240 = 1077). Wider card = fewer
+         wrapping lines in the body copy, so the hero above the fold gets
+         a smaller vertical footprint. */
+      max-width: 1077px;
       margin: 2rem auto 2.5rem;
       padding: 1.5rem 1.75rem;
       background: var(--bg-card);
@@ -422,6 +426,7 @@
           <svg viewBox="0 0 200 360" class="sub-gauge-svg" id="upsideTrendGauge" aria-label="Upside Trend sub-gauge"></svg>
           <div class="sub-gauge-state" id="upsideTrendState">Loading…</div>
           <div class="sub-gauge-desc">Blends 8 trend &amp; participation signals.</div>
+          <div class="sub-hist" id="upsideTrendHist" aria-label="Upside Trend recent history"></div>
           <span class="sub-gauge-value visually-hidden" id="upsideTrendValue">—</span>
         </div>
         <div class="gauge-wrap gauge-main">
@@ -441,6 +446,7 @@
           <svg viewBox="0 0 200 360" class="sub-gauge-svg" id="pivotTopGauge" aria-label="Pivot Top sub-gauge"></svg>
           <div class="sub-gauge-state" id="pivotTopState">Loading…</div>
           <div class="sub-gauge-desc">Blends 5 overheated readings.</div>
+          <div class="sub-hist" id="pivotTopHist" aria-label="Pivot Top recent history"></div>
           <span class="sub-gauge-value visually-hidden" id="pivotTopValue">—</span>
         </div>
       </div>
