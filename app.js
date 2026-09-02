@@ -1203,9 +1203,13 @@ function setGauge(value) {
   if (subtitleEl) subtitleEl.textContent = b.subtitle;
   if (timeEl) timeEl.textContent = new Date().toLocaleString();
 
-  // Highlight active legend item
+  // Highlight active legend item. Border picks up the bucket's own swatch
+  // color (same one on the dot to its left and on the gauge needle) so
+  // the outline stays coordinated with the reading as regimes change.
   document.querySelectorAll('.legend-item').forEach((el, i) => {
-    el.classList.toggle('active', i === bucketIndex);
+    const isActive = i === bucketIndex;
+    el.classList.toggle('active', isActive);
+    el.style.borderColor = isActive ? BUCKETS[bucketIndex].color : '';
   });
 }
 
