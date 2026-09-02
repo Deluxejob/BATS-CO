@@ -247,6 +247,12 @@ section { margin: 2.5rem 0; }
   flex: 0 1 585px;
   min-width: 340px;
   order: 2;   /* keep main visually centered even after wrap */
+  /* Override the `margin: 0 auto` inherited from .gauge-wrap — in a flex
+     row that `auto` absorbs available space and pushes ~30px gaps between
+     the main and side gauges, breaking the intended tight-cockpit look
+     (design comment above says 6px gap). Zero it out so the flex `gap`
+     rule wins. */
+  margin: 0;
   /* Card frame that visually matches the two flanking sub-gauge cards
      so the row reads as three balanced instruments in one cockpit.
      Padding pulls in a bit at the sides so the colored arc doesn't
