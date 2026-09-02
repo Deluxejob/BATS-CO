@@ -1,0 +1,62 @@
+name: Generate weekly read
+
+# Regenerates data/this_week.md every Friday after the US close, so the
+# "This Week's Read" editorial paragraph on the home page stays fresh
+# without any manual work.
+#
+# Cron: 0 22 * * 5
+#   - Every Friday at 22:00 UTC
+#   - EDT (summer): 6:00 PM ET  (2 hours after 4pm close)
+#   - EST (winter): 5:00 PM ET  (1 hour after 4pm close)
+#   Both are comfortably after the regular-session close, so the reader
+#   sees a take grounded in the just-closed week's numbers when they
+#   open the site over the weekend.
+#
+# Manual trigger available from the Actions tab (workflow_dispatch) for
+# ad-hoc regenerations — useful after a big intraday move.
+#
+# Requires ANTHROPIC_API_KEY as a GitHub Actions secret (Settings →
+# Secrets and variables → Actions). The Vercel deployment already has
+# one wired up for the /api/analyze endpoint — reuse the same key here.
+
+on:
+  schedule:
+    - cron: '0 22 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-weekly-read
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate weekly read via Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/generate-weekly-read.py
+
+      - name: Commit and push if the read changed
+        run: |
+          if [ -n "$(git status --porcelain data/this_week.md)" ]; then
+            git config user.name  "BATS.CO Editorial Bot"
+            git config user.email "bot@bats.co"
+            git add data/this_week.md
+            git commit -m "chore: refresh weekly read $(date -u +'%Y-%m-%d')"
+            git push
+            echo "::notice::Pushed refreshed weekly read."
+          else
+            echo "::notice::Weekly read unchanged; nothing to commit."
+          fi
