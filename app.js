@@ -1322,6 +1322,96 @@ function computePivotTop(current) {
   return { score, state, sentence };
 }
 
+// Bottom Formation — mirror-image of Pivot Top on the bear side.
+// Fires when a *capitulation signature* forms: RSI oversold + breadth
+// washout + SPX broken below its own 200 MA + VIX spike + short-term flush.
+// NOT just "inverted BATS" — BATS is a slow level indicator, Bottom
+// Formation is an event indicator that should only appear in real
+// distress. Hidden by default; shouldShowBottomFormation() gates it.
+function computeBottomFormation(current) {
+  if (!current) return null;
+  const contribs = [];
+  // SPY RSI oversold — piecewise ramp:
+  //   RSI >= 50  -> 0            (no signal)
+  //   RSI 50->40 -> 0->20        (gentle warm-up as it approaches oversold)
+  //   RSI 40->20 -> 20->100      (steep through classic oversold + deeper)
+  //   RSI < 20   -> 100
+  if (current.rsiVal != null) {
+    let r;
+    if      (current.rsiVal >= 50) r = 0;
+    else if (current.rsiVal >= 40) r = (50 - current.rsiVal) * 2;         // 50->0, 40->20
+    else if (current.rsiVal >= 20) r = 20 + (40 - current.rsiVal) * 4;    // 40->20, 20->100
+    else                           r = 100;
+    contribs.push({ w: 30, s: r });
+  }
+  // % Above 200 MA washout — 0 at 30%, 100 at 5%. Broad-participation collapse.
+  if (current.pctAboveVal != null) {
+    contribs.push({ w: 20, s: Math.max(0, Math.min(100, (30 - current.pctAboveVal) * 4)) });
+  }
+  // SPX below its own 200 MA — 0 at 0% dist, 100 at -10% dist. Confirms
+  // the breadth washout with the leader-index's own trend break; when both
+  // fire together, capitulation is confirmed rank-and-file AND at the top.
+  if (current.ma200Dist != null) {
+    contribs.push({ w: 12, s: Math.max(0, Math.min(100, -current.ma200Dist * 10)) });
+  }
+  // VIX spike — 0 at VIX 20, 100 at VIX 40. Classic fear surge.
+  if (current.vix != null) {
+    contribs.push({ w: 18, s: Math.max(0, Math.min(100, (current.vix - 20) * 5)) });
+  }
+  // 5-day flush (Panic Buy signal reborn) — 0 at -3%, 100 at -10%.
+  // Historical: SPX -7%/5d fires ~2x/year, avg 20d forward +3.8%.
+  if (current.roc5 != null) {
+    contribs.push({ w: 12, s: Math.max(0, Math.min(100, (-current.roc5 - 3) * (100 / 7))) });
+  }
+  // HY-LQD spread blowout — junk-demand collapse. 0 at -1%, 100 at -5%.
+  if (current.junkSpread != null) {
+    contribs.push({ w: 8, s: Math.max(0, Math.min(100, (-current.junkSpread - 1) * 25)) });
+  }
+  let sum = 0, wsum = 0;
+  for (const c of contribs) { sum += c.s * c.w; wsum += c.w; }
+  if (wsum === 0) return null;
+  const score = sum / wsum;
+  let state, sentence;
+  if      (score >= 75) { state = 'Capitulation';        sentence = 'Multiple flush signals firing together — historically the sort of tape that puts in tradeable lows.'; }
+  else if (score >= 60) { state = 'Deep oversold';       sentence = 'Broad washout building. Bounce setup forming.'; }
+  else if (score >= 45) { state = 'Getting stretched';   sentence = 'Some oversold readings, not confluence yet.'; }
+  else if (score >= 30) { state = 'Weak, not extreme';   sentence = 'Selling underway; no capitulation yet.'; }
+  else                  { state = 'Not capitulating';    sentence = 'Selling tape has not reached extreme conditions.'; }
+  return { score, state, sentence };
+}
+
+// Reveal-gate for the Bottom Formation gauge. Returns true if EITHER:
+//   • Latest BATS has been below 40 for 10+ consecutive trading days
+//     (~2 weeks — a sustained bearish level, not a one-day dip)
+//   • SPX is at least 10% below its trailing-252-day high (real drawdown)
+// Hidden the rest of the time — a capitulation-signature gauge sitting on
+// a bull-market page every day reads "Clean tape" for months and gives
+// the visitor nothing to look at (same failure mode that killed the old
+// Extremes tab).
+function shouldShowBottomFormation(batsAt, latestIdx, spx) {
+  if (typeof batsAt !== 'function' || latestIdx == null) return false;
+  // Trigger 1: consecutive-days-below-40 walk.
+  let streak = 0;
+  for (let back = 0; back < 20; back++) {
+    const rec = batsAt(latestIdx - back);
+    if (!rec) continue;              // skip data gaps — don't reset streak
+    if (rec.blended < 40) streak++;
+    else break;                       // hit a >=40 day, streak broken
+    if (streak >= 10) return true;
+  }
+  // Trigger 2: SPX drawdown from trailing 252d ATH.
+  if (Array.isArray(spx) && spx.length) {
+    const cur = spx[spx.length - 1].close;
+    let ath = 0;
+    const start = Math.max(0, spx.length - 252);
+    for (let i = start; i < spx.length; i++) {
+      if (spx[i].close > ath) ath = spx[i].close;
+    }
+    if (ath > 0 && (cur / ath - 1) <= -0.10) return true;
+  }
+  return false;
+}
+
 // Draw a cockpit-style sub-gauge that "opens outward" — a 180° arc where the
 // FLAT chord side faces the main BATS gauge and the arc CURVES AWAY from it.
 // Left sub-gauge: arc bulges left (like a "(" shape). Right sub-gauge: mirror.
@@ -1340,7 +1430,10 @@ function buildSubGauge(svgId, palette, side) {
   const cy = 180;
   const cx = side === 'left' ? 198 : 2;   // right edge for left sub, left edge for right sub
 
-  const fillColor  = palette === 'red' ? 'rgba(239,68,68,0.65)'  : 'rgba(34,197,94,0.65)';
+  // Palette: red (Pivot Top), green (Upside Trend), cyan (Bottom Formation).
+  const fillColor = palette === 'red'  ? 'rgba(239,68,68,0.65)'
+                  : palette === 'cyan' ? 'rgba(34,211,238,0.65)'
+                  :                      'rgba(34,197,94,0.65)';
   const trackColor = 'rgba(139,149,168,0.32)';
 
   // Track: 180° arc from top of the flat edge, through the outer bulge, to the bottom of the flat edge.
@@ -1417,7 +1510,9 @@ function buildSubGauge(svgId, palette, side) {
   num.setAttribute('x', numX); num.setAttribute('y', numY);
   num.setAttribute('text-anchor', 'middle');
   num.setAttribute('dominant-baseline', 'middle');
-  num.setAttribute('fill', palette === 'red' ? '#f87171' : '#4ade80');
+  num.setAttribute('fill', palette === 'red'  ? '#f87171'
+                          : palette === 'cyan' ? '#22d3ee'
+                          :                      '#4ade80');
   num.setAttribute('font-family', "'JetBrains Mono', ui-monospace, monospace");
   num.setAttribute('font-size', '52');
   num.setAttribute('font-weight', '700');
@@ -2008,7 +2103,9 @@ async function loadLiveData() {
   // live-quote overrides (client-side intraday BATS). Slow inputs (NAAIM,
   // yields, %above200) stay at their daily-close values inside batsAt; only
   // the ticker-driven fast ones react to spot prices.
-  return { current, history, batsAt, latestIdx };
+  // `spx` is exposed so shouldShowBottomFormation can measure the trailing
+  // 252d drawdown from ATH for its reveal-gate.
+  return { current, history, batsAt, latestIdx, spx };
 }
 
 function updateComponentsWithLatest(current) {
@@ -2386,8 +2483,12 @@ async function init() {
   if (isMainPage) {
     buildLegend();
     buildGauge();
-    buildSubGauge('upsideTrendGauge', 'green', 'left');
-    buildSubGauge('pivotTopGauge',    'red',   'right');
+    buildSubGauge('upsideTrendGauge',       'green', 'left');
+    buildSubGauge('pivotTopGauge',          'red',   'right');
+    // Bottom Formation shares the right slot with Pivot Top — visible only
+    // when shouldShowBottomFormation() gate fires. Build the SVG now so it
+    // can be swapped in without a paint delay when the trigger flips.
+    buildSubGauge('bottomFormationGauge',   'cyan',  'right');
   }
 
   // Try to load real market values from the CSVs; fall back to the demo
@@ -2396,11 +2497,11 @@ async function init() {
   let currentSnapshot = null;
   let liveContext = null;   // { batsAt, latestIdx } for intraday refreshes
   try {
-    const { current, history, batsAt, latestIdx } = await loadLiveData();
+    const { current, history, batsAt, latestIdx, spx } = await loadLiveData();
     updateComponentsWithLatest(current);
     latestDate = current.date;
     currentSnapshot = current;
-    liveContext = { batsAt, latestIdx };
+    liveContext = { batsAt, latestIdx, spx };
     if (isMainPage) renderHistoricalContext(history);
     const dateNote = document.getElementById('gaugeDateNote');
     if (dateNote) dateNote.textContent = `Latest close: ${current.date}`;
@@ -2419,9 +2520,24 @@ async function init() {
     const pivot  = currentSnapshot ? computePivotTop(currentSnapshot)   : null;
     setSubGauge('upsideTrendGauge', upside, 'upsideTrendValue', 'upsideTrendState', 'green', 'left');
     setSubGauge('pivotTopGauge',    pivot,  'pivotTopValue',    'pivotTopState',    'red',   'right');
+    // Bottom Formation — always compute so its history pill can render,
+    // but the card itself stays hidden until the reveal-gate fires.
+    const bottomFmn = currentSnapshot ? computeBottomFormation(currentSnapshot) : null;
+    setSubGauge('bottomFormationGauge', bottomFmn, 'bottomFormationValue', 'bottomFormationState', 'cyan', 'right');
     if (liveContext) {
-      renderSubHistory('upsideTrendHist', computeUpsideTrend, liveContext.batsAt, liveContext.latestIdx);
-      renderSubHistory('pivotTopHist',    computePivotTop,    liveContext.batsAt, liveContext.latestIdx);
+      renderSubHistory('upsideTrendHist',     computeUpsideTrend,     liveContext.batsAt, liveContext.latestIdx);
+      renderSubHistory('pivotTopHist',        computePivotTop,        liveContext.batsAt, liveContext.latestIdx);
+      renderSubHistory('bottomFormationHist', computeBottomFormation, liveContext.batsAt, liveContext.latestIdx);
+      // Reveal-gate check: BATS<40 for 10+ trading days OR SPX -10% off ATH.
+      // When triggered, Bottom Formation takes over the right slot; Pivot Top
+      // hides (nothing overheating to warn about when the market is crashing).
+      const showBottom = shouldShowBottomFormation(liveContext.batsAt, liveContext.latestIdx, liveContext.spx);
+      const pivotCard  = document.querySelector('.sub-gauge-pivot');
+      const bottomCard = document.querySelector('.sub-gauge-bottom');
+      if (showBottom) {
+        if (pivotCard)  pivotCard.hidden  = true;
+        if (bottomCard) bottomCard.hidden = false;
+      }
     }
 
     // Intraday BATS: fetch spot quotes for the fast tickers, recompute the

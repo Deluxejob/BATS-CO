@@ -264,6 +264,9 @@ section { margin: 2.5rem 0; }
 }
 .sub-gauge-upside { order: 1; }
 .sub-gauge-pivot  { order: 3; }
+/* Bottom Formation occupies the same slot as Pivot Top — they swap based
+   on the reveal-gate in app.js. Only one is visible at any given time. */
+.sub-gauge-bottom { order: 3; }
 .sub-gauge {
   flex: 0 0 auto;
   width: 240px;
@@ -283,6 +286,7 @@ section { margin: 2.5rem 0; }
    the vertical borders of all three cards line up cleanly in the row. */
 .sub-gauge-upside { margin-right: 0; padding-right: 0.5rem; }
 .sub-gauge-pivot  { margin-left:  0; padding-left:  0.5rem; }
+.sub-gauge-bottom { margin-left:  0; padding-left:  0.5rem; }
 .sub-gauge-title {
   font-size: 0.75rem;
   font-weight: 700;
@@ -317,6 +321,14 @@ section { margin: 2.5rem 0; }
   background: rgba(239, 68, 68, 0.12);
   border-color: rgba(239, 68, 68, 0.35);
 }
+/* Bottom Formation gets a cyan hint pill — a bull-side signal (firing =
+   opportunity to buy) but visually distinct from Upside Trend's green so
+   they don't blur together on the rare occasions both are relevant. */
+.sub-gauge-bottom .sub-gauge-hint {
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.35);
+}
 .sub-gauge-svg {
   width: 220px;
   height: 396px;    /* preserves 200:360 aspect at 220px width */
@@ -336,6 +348,7 @@ section { margin: 2.5rem 0; }
 }
 .sub-gauge-upside .sub-gauge-value { color: #4ade80; }
 .sub-gauge-pivot  .sub-gauge-value { color: #f87171; }
+.sub-gauge-bottom .sub-gauge-value { color: #22d3ee; }
 .sub-gauge-state {
   font-size: 1rem;
   font-weight: 700;

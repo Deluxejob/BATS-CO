@@ -4,8 +4,9 @@
     {
       "name": "bats-static",
       "runtimeExecutable": "py",
-      "runtimeArgs": ["-3", "-m", "http.server", "8765"],
-      "port": 8765
+      "runtimeArgs": ["-3", "-m", "http.server"],
+      "port": 8765,
+      "autoPort": true
     }
   ]
 }

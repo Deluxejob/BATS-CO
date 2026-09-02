@@ -454,6 +454,18 @@
           <div class="sub-hist" id="pivotTopHist" aria-label="Pivot Top recent history"></div>
           <span class="sub-gauge-value visually-hidden" id="pivotTopValue">—</span>
         </div>
+        <!-- Bottom Formation — shares the right slot with Pivot Top. Hidden by
+             default; app.js flips `hidden` on Pivot Top and this card when the
+             reveal-gate fires (BATS <40 for 2+ weeks OR SPX -10% off ATH). -->
+        <div class="sub-gauge sub-gauge-bottom" hidden>
+          <div class="sub-gauge-title">Bottom Formation</div>
+          <div class="sub-gauge-hint">Higher = stronger buy setup</div>
+          <svg viewBox="0 0 200 360" class="sub-gauge-svg" id="bottomFormationGauge" aria-label="Bottom Formation sub-gauge"></svg>
+          <div class="sub-gauge-state" id="bottomFormationState">Loading&hellip;</div>
+          <div class="sub-gauge-desc">Fires on capitulation signatures.</div>
+          <div class="sub-hist" id="bottomFormationHist" aria-label="Bottom Formation recent history"></div>
+          <span class="sub-gauge-value visually-hidden" id="bottomFormationValue">&mdash;</span>
+        </div>
       </div>
       <div class="historical-context" id="historicalContext"></div>
       <div class="scale-legend" id="scaleLegend"></div>
