@@ -26,17 +26,20 @@ import csv
 import json
 import os
 import sys
-import urllib.request
-import urllib.error
 from datetime import date, datetime
+
+# Use the official Anthropic Python SDK — it transparently handles the
+# workspace routing needed for legacy Workspace-scoped keys (the direct
+# HTTP path errors out with "anthropic-workspace-id is required" for
+# those). Vercel's /api/analyze endpoint uses the Node SDK for the same
+# reason.
+import anthropic
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR  = os.path.join(REPO_ROOT, "data")
 OUT_PATH  = os.path.join(DATA_DIR, "this_week.md")
 
-ANTHROPIC_URL   = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
-ANTHROPIC_VER   = "2023-06-01"
 
 
 # --------------------------- data loading ---------------------------------
@@ -250,28 +253,18 @@ Write the two-paragraph take now."""
 
 
 # --------------------------- API call -------------------------------------
-def call_claude(system: str, user: str, api_key: str) -> str:
-    body = json.dumps({
-        "model": ANTHROPIC_MODEL,
-        "max_tokens": 700,
-        "system": system,
-        "messages": [{"role": "user", "content": user}],
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        ANTHROPIC_URL,
-        data=body,
-        headers={
-            "content-type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": ANTHROPIC_VER,
-        },
-        method="POST",
+def call_claude(system: str, user: str) -> str:
+    # Client reads ANTHROPIC_API_KEY from env automatically. Workspace
+    # routing for legacy workspace keys is handled inside the SDK.
+    client = anthropic.Anthropic()
+    resp = client.messages.create(
+        model=ANTHROPIC_MODEL,
+        max_tokens=700,
+        system=system,
+        messages=[{"role": "user", "content": user}],
     )
-    with urllib.request.urlopen(req, timeout=60) as r:
-        payload = json.loads(r.read().decode("utf-8"))
-    # Claude returns { content: [{ type:"text", text:"..." }, ...] }
-    parts = payload.get("content", [])
-    text = "".join(p.get("text", "") for p in parts if p.get("type") == "text")
+    parts = getattr(resp, "content", []) or []
+    text = "".join(getattr(b, "text", "") for b in parts if getattr(b, "type", "") == "text")
     return text.strip()
 
 
@@ -290,10 +283,10 @@ def main() -> int:
     user_prompt = USER_PROMPT_TEMPLATE.format(**ctx)
 
     try:
-        body = call_claude(SYSTEM_PROMPT, user_prompt, api_key)
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", errors="replace")[:400]
-        print(f"::error::Anthropic HTTP {e.code}: {detail}")
+        body = call_claude(SYSTEM_PROMPT, user_prompt)
+    except anthropic.APIStatusError as e:
+        detail = str(getattr(e, "response", "")) or str(e)
+        print(f"::error::Anthropic {e.status_code}: {detail[:400]}")
         return 1
     except Exception as e:
         print(f"::error::Anthropic call failed: {e}")

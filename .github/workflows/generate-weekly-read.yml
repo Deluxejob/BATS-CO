@@ -43,6 +43,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install Anthropic SDK
+        run: pip install --quiet anthropic
+
       - name: Generate weekly read via Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
