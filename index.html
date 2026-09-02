@@ -70,9 +70,9 @@
        A curated, human-written paragraph tying the current gauge
        reading + trend + risk into a plain-English take. Sourced from
        data/this_week.md (owner-edited weekly), rendered client-side
-       with a tiny markdown parser. Freshness stamp is prominent, and
-       an "update pending" hint appears if the file goes stale so the
-       reader can trust what they see or know it's outdated. */
+       with a tiny markdown parser. Shows "As of DAY, MONTH DD, YYYY"
+       so viewers know when this take was written; no staleness callout
+       (that just undercut trust in the live gauge sitting above it). */
     .weekly-read {
       /* Full-width within the <main> container (which itself is capped
          at 1280px minus 2rem padding on each side). Lines up edge-to-
@@ -117,16 +117,6 @@
     .weekly-read .wr-body em     { color: var(--text-dim); font-style: italic; }
     .weekly-read .wr-body a      { color: var(--accent); border-bottom: 1px dotted var(--accent); }
     .weekly-read .wr-body a:hover { border-bottom-style: solid; text-decoration: none; }
-    .weekly-read .wr-stale {
-      display: block;
-      margin-top: 1rem;
-      padding-top: 0.75rem;
-      border-top: 1px dashed var(--border);
-      color: var(--text-dim);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-style: italic;
-    }
 
     /* ---------- Signal Testing CTA ----------
        Sits at the tail of the "Does BATS work?" section as the natural
@@ -734,20 +724,18 @@
       const html = paras.map(p => '<p>' + inline(p) + '</p>').join('');
       document.getElementById('weeklyReadBody').innerHTML = html;
 
-      // Freshness stamp + stale hint.
+      // Freshness stamp. Staleness callout removed — an "N days old" hint
+      // next to the live BATS gauge undercuts the reader's trust in what
+      // they're seeing (the gauge is live; the take is a weekly editorial,
+      // and calling attention to the age was confusing that distinction).
+      // The "As of DAY, MONTH DD, YYYY" line remains so viewers know when
+      // this take was written.
       const dateEl = document.getElementById('weeklyReadDate');
       if (isoDate) {
         const d = new Date(isoDate + 'T12:00:00Z');
         const fmt = d.toLocaleDateString(undefined,
           { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
         dateEl.textContent = 'As of ' + fmt;
-        const daysOld = Math.floor((Date.now() - d.getTime()) / 86_400_000);
-        if (daysOld > 10) {
-          const note = document.createElement('span');
-          note.className = 'wr-stale';
-          note.textContent = 'Weekly update pending — this read is ' + daysOld + ' days old.';
-          document.getElementById('weeklyReadBody').appendChild(note);
-        }
       } else {
         dateEl.textContent = '';
       }
