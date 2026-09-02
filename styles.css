@@ -552,22 +552,28 @@ section { margin: 2.5rem 0; }
 
 /* Scale legend: 4 columns × 2 rows (was 5+3 with flex-wrap, which left an
    uneven bottom row). 4-column grid balances the 8 buckets, and each cell
-   fills its column so the whole strip reads as one uniform matrix. */
+   fills its column so the whole strip reads as one uniform matrix.
+   minmax(0, 1fr) forces strictly equal column widths even when one bucket
+   has a much longer action label — otherwise "Trim / Rebalance Stretched
+   Positions" would stretch its column past 1fr and squeeze the others. */
 .scale-legend {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: .5rem;
   margin: 1.5rem auto 0;
   max-width: 900px;
 }
 @media (max-width: 800px) {
-  .scale-legend { grid-template-columns: repeat(2, 1fr); }
+  .scale-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 460px) {
   .scale-legend { grid-template-columns: 1fr; }
 }
 .legend-item {
-  display: inline-flex;
+  /* display: flex (not inline-flex) so the item fills its grid cell width
+     — inline-flex only takes its intrinsic width, so cells with short
+     labels would leave dead space on the right of the swatch group. */
+  display: flex;
   align-items: center;
   gap: .5rem;
   font-size: .78rem;
