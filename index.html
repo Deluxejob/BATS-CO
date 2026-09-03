@@ -214,13 +214,17 @@
       font-size: 1rem;
       font-weight: 600;
       letter-spacing: 0.04em;
-      text-transform: uppercase;
       background: transparent;
       color: var(--text);
       border: none;
       outline: none;
       padding: 0.4rem 0;
     }
+    /* When the autocomplete controller wraps the input in a .ta-wrap
+       div for absolute-positioning the dropdown, that wrapper needs to
+       inherit the flex-grow the input used to own. Without this the
+       input collapses to its intrinsic width. */
+    .lookup-form .ta-wrap { flex: 1; min-width: 140px; }
     .lookup-form input::placeholder {
       color: var(--text-dim);
       font-weight: 400;
@@ -489,7 +493,7 @@
     <section class="ticker-lookup">
       <form id="homeTickerSearchForm" class="lookup-form">
         <label for="homeTickerSearchInput" class="lookup-label">Look up any stock or ETF &rarr;</label>
-        <input type="text" id="homeTickerSearchInput" placeholder="AAPL, NVDA, SPY…" autocomplete="off" spellcheck="false" required />
+        <input type="text" id="homeTickerSearchInput" placeholder="AAPL, Apple, Vanguard Total Stock…" autocomplete="off" spellcheck="false" required />
         <button type="submit">GO</button>
       </form>
     </section>
@@ -1000,5 +1004,9 @@
        back to the platform-specific compose URL in a new tab. Copy button
        drops the URL into the clipboard with a brief "Copied" confirmation. -->
   <script src="share-strip.js" defer></script>
+  <!-- ticker-search.js — provides the Yahoo-backed autocomplete
+       controller for #homeTickerSearchInput. Skips its own bar
+       injection because the home page ships an inline lookup form. -->
+  <script src="ticker-search.js" defer></script>
 </body>
 </html>
