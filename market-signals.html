@@ -232,15 +232,37 @@
           </p>
         </div>
 
-        <!-- Placeholder for future signals — remove this block once we add the next card -->
-        <div class="sig-card" style="opacity: 0.55;">
+        <!-- SIGNAL: Breadth Washout (companion to the Ratio card above) -->
+        <div class="sig-card" id="sig-breadth-washout">
           <div class="sig-head">
-            <h2 class="sig-title">More signals coming</h2>
-            <span class="sig-pill neutral">Placeholder</span>
+            <h2 class="sig-title">Breadth Washout (pct50 &le; 10%)</h2>
+            <span class="sig-pill" id="sigBw-pill">Loading&hellip;</span>
+            <span class="sig-tag">S&amp;P 500 &middot; daily</span>
           </div>
-          <p class="sig-desc" style="margin-bottom: 0;">
-            Additional signals will drop in as cards here. Have one you want tested? Tell us and
-            we'll backtest it against SPX forward returns before it ships.
+          <p class="sig-desc">
+            When the share of large-caps trading above their 50-day MA collapses to
+            &le;10% and then ticks back up, that's a shock-crash bottom being formed.
+            Catches the flash-crash setups the Breadth Ratio misses (Apr 2025 Liberation
+            Day, Mar 2020 COVID, Dec 2018 Powell) because ratio-based signals need
+            50MA to break faster than 200MA — here both break together.
+          </p>
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 460" class="sig-chart" id="sigBwSvg" preserveAspectRatio="xMidYMid meet" aria-label="Breadth washout and SPX chart with signal markers"></svg>
+          </div>
+          <div class="sig-stats" id="sigBwStats">
+            <div class="sig-stat"><div class="lbl">Current pct50</div><div class="val" id="sigBwNow">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">20-day low</div><div class="val" id="sigBwLow">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Fires / year</div><div class="val">~1.4</div></div>
+            <div class="sig-stat"><div class="lbl">60d fwd avg</div><div class="val pos">+1.7%</div></div>
+            <div class="sig-stat"><div class="lbl">250d fwd avg</div><div class="val pos">+16.6%</div></div>
+            <div class="sig-stat"><div class="lbl">250d hit rate</div><div class="val pos">86%</div></div>
+          </div>
+          <p class="sig-note">
+            Backtest 2005&ndash;2026 on ~100 S&amp;P constituents. Fires when the 20-day
+            minimum of pct50 hit &le;10 and today's pct50 ticks up. Baseline 250d return:
+            +10.2% / 81% hit. Shorter horizons (5&ndash;20d) are noisy &mdash; these
+            bottoms often overshoot down before turning; the 60d+ window is where the
+            edge shows up.
           </p>
         </div>
 
@@ -428,6 +450,168 @@
       document.getElementById('sigBrNow').textContent = now.ratio.toFixed(2);
       document.getElementById('sigBrLow').textContent = lowIn20.toFixed(2);
       const pill = document.getElementById('sigBr-pill');
+      const armed = lowIn20 <= THRESHOLD;
+      const fireToday = fires.length && fires[fires.length - 1].fireIdx === view.length - 1;
+      if (fireToday) {
+        pill.textContent = 'Firing today';
+        pill.className = 'sig-pill firing';
+      } else if (armed) {
+        pill.textContent = 'Armed';
+        pill.className = 'sig-pill armed';
+      } else {
+        pill.textContent = 'Not armed';
+        pill.className = 'sig-pill neutral';
+      }
+    })();
+
+    // ==========================================================
+    //  Breadth Washout signal — pct50 collapses to <=10% and ticks up.
+    //  Companion to the Ratio signal above; catches the shock-crash
+    //  bottoms the ratio misses (2018-12, 2020-03, 2025-04).
+    // ==========================================================
+    (async function initBreadthWashout() {
+      const svg = document.getElementById('sigBwSvg');
+      if (!svg) return;
+
+      async function loadCsv(path, col = 1) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+          const p = ln.split(',');
+          if (!p[0]) continue;
+          const v = parseFloat(p[col]);
+          if (Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        return out;
+      }
+
+      let pct50, spx;
+      try {
+        [pct50, spx] = await Promise.all([
+          loadCsv('data/pct_above_50ma.csv'),
+          loadCsv('data/spx.csv'),
+        ]);
+      } catch (e) {
+        svg.innerHTML = '<text x="600" y="230" text-anchor="middle" class="chart-axis-label">Failed to load data</text>';
+        return;
+      }
+
+      const spxByDate = new Map(spx.map(r => [r.date, r.v]));
+      const aligned = [];
+      for (const r of pct50) {
+        if (spxByDate.has(r.date)) {
+          aligned.push({ date: r.date, pct: r.v, spx: spxByDate.get(r.date) });
+        }
+      }
+      if (aligned.length < 260) {
+        svg.innerHTML = '<text x="600" y="230" text-anchor="middle" class="chart-axis-label">Not enough data</text>';
+        return;
+      }
+
+      // Trailing ~5-year window, same as the ratio card for continuity.
+      const view = aligned.slice(-Math.min(aligned.length, 1260));
+
+      // Signal B from the backtest: 20-day min of pct50 hit <=10 AND today
+      // ticks up AND no fire in the last 20 days. Line is drawn at the
+      // low-day, not the up-tick fire day (same lesson as the ratio card).
+      const LOOKBACK = 20, MIN_GAP = 20, THRESHOLD = 10;
+      const fires = [];
+      let lastFireIdx = -MIN_GAP - 1;
+      for (let i = LOOKBACK; i < view.length; i++) {
+        let recentLow = Infinity, lowIdx = i;
+        for (let k = 1; k <= LOOKBACK; k++) {
+          const idx = i - k;
+          if (view[idx].pct < recentLow) { recentLow = view[idx].pct; lowIdx = idx; }
+        }
+        if (recentLow <= THRESHOLD
+            && view[i].pct > view[i - 1].pct
+            && (i - lastFireIdx) >= MIN_GAP) {
+          fires.push({ fireIdx: i, lowIdx });
+          lastFireIdx = i;
+        }
+      }
+
+      // ---- SVG rendering ----
+      const W = 1200, H = 460;
+      const PAD_L = 44, PAD_R = 52, PAD_T = 20;
+      const PANEL_GAP = 30;
+      const TOP_H = 200;
+      const BOT_H = 160;
+      const plotW = W - PAD_L - PAD_R;
+      const topY0 = PAD_T;
+      const topY1 = PAD_T + TOP_H;
+      const botY0 = topY1 + PANEL_GAP;
+      const botY1 = botY0 + BOT_H;
+
+      const pMax = 100;
+      const pMin = 0;
+      const spxMax = Math.max(...view.map(v => v.spx)) * 1.02;
+      const spxMin = Math.min(...view.map(v => v.spx)) * 0.98;
+
+      const xForIdx = i => PAD_L + (i / (view.length - 1)) * plotW;
+      const yForPct = v => topY1 - ((v - pMin) / (pMax - pMin)) * TOP_H;
+      const yForSpx = v => botY1 - ((v - spxMin) / (spxMax - spxMin)) * BOT_H;
+
+      const parts = [];
+      parts.push(`<rect x="${PAD_L}" y="${topY0}" width="${plotW}" height="${TOP_H}" class="chart-bg" stroke="var(--border-soft)" stroke-width="1"/>`);
+      parts.push(`<rect x="${PAD_L}" y="${botY0}" width="${plotW}" height="${BOT_H}" class="chart-bg" stroke="var(--border-soft)" stroke-width="1"/>`);
+
+      // Gridlines every 25% on the pct panel + threshold ref lines at 10 and 5.
+      for (const t of [0, 25, 50, 75, 100]) {
+        const y = yForPct(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+        parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${t}</text>`);
+      }
+      for (const t of [10]) {
+        const y = yForPct(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-ref-line" />`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${y + 3}" class="chart-ref-label">${t}</text>`);
+      }
+
+      // Fire bars anchored at the low-day.
+      for (const f of fires) {
+        const x = xForIdx(f.lowIdx);
+        parts.push(`<line x1="${x}" y1="${topY0}" x2="${x}" y2="${botY1}" class="chart-fire-line" />`);
+      }
+
+      // pct50 polyline.
+      const pctPath = view.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForPct(v.pct).toFixed(1)}`).join(' ');
+      parts.push(`<path d="${pctPath}" class="chart-ratio-line" />`);
+
+      // SPX gridlines + polyline.
+      const spxTicks = 4;
+      for (let k = 0; k <= spxTicks; k++) {
+        const t = spxMin + (spxMax - spxMin) * (k / spxTicks);
+        const y = yForSpx(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+        parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${Math.round(t).toLocaleString()}</text>`);
+      }
+      const spxPath = view.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForSpx(v.spx).toFixed(1)}`).join(' ');
+      parts.push(`<path d="${spxPath}" class="chart-spx-line" />`);
+
+      // X-axis date ticks.
+      const xTicks = 6;
+      for (let k = 0; k <= xTicks; k++) {
+        const idx = Math.round((k / xTicks) * (view.length - 1));
+        const x = xForIdx(idx);
+        parts.push(`<text x="${x}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${view[idx].date.slice(0, 7)}</text>`);
+      }
+
+      // Panel labels.
+      parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">% ABOVE 50MA</text>`);
+      parts.push(`<text x="${PAD_L + 6}" y="${botY0 + 14}" class="chart-panel-label">S&amp;P 500</text>`);
+
+      svg.innerHTML = parts.join('');
+
+      // Stats + status pill.
+      const now = view[view.length - 1];
+      let lowIn20 = Infinity;
+      for (let k = 1; k <= 20 && k < view.length; k++) lowIn20 = Math.min(lowIn20, view[view.length - k].pct);
+      document.getElementById('sigBwNow').textContent = now.pct.toFixed(1) + '%';
+      document.getElementById('sigBwLow').textContent = lowIn20.toFixed(1) + '%';
+      const pill = document.getElementById('sigBw-pill');
       const armed = lowIn20 <= THRESHOLD;
       const fireToday = fires.length && fires[fires.length - 1].fireIdx === view.length - 1;
       if (fireToday) {
