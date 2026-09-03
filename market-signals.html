@@ -315,16 +315,25 @@
       // Fire events using the deep-dip variant that showed real edge in
       // the backtest (Signal D): 20-day min of ratio was ≤0.35 AND today
       // ticks up AND no fire in the last 20 days.
+      //
+      // Each fire also stashes `lowIdx` = the index within the trigger
+      // window where the ratio actually bottomed. The chart draws its
+      // vertical line at lowIdx (not the up-tick fire day) so the line
+      // visually sits AT the dip — reads as "here's the bottom this
+      // signal caught" instead of "here's the day the signal named."
       const LOOKBACK = 20, MIN_GAP = 20, THRESHOLD = 0.35;
       const fires = [];
       let lastFireIdx = -MIN_GAP - 1;
       for (let i = LOOKBACK; i < view.length; i++) {
-        let recentLow = Infinity;
-        for (let k = 1; k <= LOOKBACK; k++) recentLow = Math.min(recentLow, view[i - k].ratio);
+        let recentLow = Infinity, lowIdx = i;
+        for (let k = 1; k <= LOOKBACK; k++) {
+          const idx = i - k;
+          if (view[idx].ratio < recentLow) { recentLow = view[idx].ratio; lowIdx = idx; }
+        }
         if (recentLow <= THRESHOLD
             && view[i].ratio > view[i - 1].ratio
             && (i - lastFireIdx) >= MIN_GAP) {
-          fires.push(i);
+          fires.push({ fireIdx: i, lowIdx });
           lastFireIdx = i;
         }
       }
@@ -374,10 +383,11 @@
       }
 
       // Vertical FIRE bars extend from top of ratio panel through the SPX
-      // panel — so a reader can eyeball the ratio's dip AND where SPX
-      // was at the same moment.
-      for (const i of fires) {
-        const x = xForIdx(i);
+      // panel — anchored at the dip's LOW day so the line visually sits
+      // on the bottom of the ratio's dip. A reader can then eyeball
+      // where SPX was at that same moment.
+      for (const f of fires) {
+        const x = xForIdx(f.lowIdx);
         parts.push(`<line x1="${x}" y1="${topY0}" x2="${x}" y2="${botY1}" class="chart-fire-line" />`);
       }
 
@@ -419,7 +429,7 @@
       document.getElementById('sigBrLow').textContent = lowIn20.toFixed(2);
       const pill = document.getElementById('sigBr-pill');
       const armed = lowIn20 <= THRESHOLD;
-      const fireToday = fires.length && fires[fires.length - 1] === view.length - 1;
+      const fireToday = fires.length && fires[fires.length - 1].fireIdx === view.length - 1;
       if (fireToday) {
         pill.textContent = 'Firing today';
         pill.className = 'sig-pill firing';
