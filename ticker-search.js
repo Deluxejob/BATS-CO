@@ -146,13 +146,20 @@
         activeIdx = -1;
         return;
       }
-      menu.innerHTML = results.map((r, i) => `
-        <div class="ta-row" role="option" data-idx="${i}" data-sym="${esc(r.symbol)}">
-          <span class="ta-sym">${esc(r.symbol)}</span>
-          <span class="ta-name">${esc(r.name)}</span>
-          <span class="ta-meta">${esc(r.type)}${r.exchange ? ' · ' + esc(r.exchange) : ''}</span>
-        </div>
-      `).join('');
+      menu.innerHTML = results.map((r, i) => {
+        // Native browser tooltip on the row — shows the untruncated
+        // "SYM — Full Company Name" pair after a short hover, so a
+        // reader who sees only "Apple Ho…" or "Microsoft Corp…"
+        // ellipsized in the row can hover to confirm it's the right one.
+        const tip = esc(r.symbol) + ' — ' + esc(r.name);
+        return `
+          <div class="ta-row" role="option" data-idx="${i}" data-sym="${esc(r.symbol)}" title="${tip}">
+            <span class="ta-sym">${esc(r.symbol)}</span>
+            <span class="ta-name">${esc(r.name)}</span>
+            <span class="ta-meta">${esc(r.type)}${r.exchange ? ' · ' + esc(r.exchange) : ''}</span>
+          </div>
+        `;
+      }).join('');
       menu.hidden = false;
       activeIdx = -1;
     }
