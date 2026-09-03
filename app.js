@@ -1246,12 +1246,21 @@ function computeUpsideTrend(current) {
   }
   if (wsum === 0) return null;
   const score = sum / wsum;
+  // Labels tuned to what the backtest actually showed (see
+  // scripts/backtest-upside-trend.py). Two takeaways:
+  //   * HIGH readings (80+) are near baseline for forward returns — a
+  //     healthy trend does NOT strongly predict continuation.
+  //   * LOW readings (<20) preceded the strongest forward returns in the
+  //     history: 60d avg +6.5%, 250d avg +18.8% (vs baseline +2.3% /
+  //     +10.4%). Broken-trend readings are historically the best buy
+  //     setup — the same regime Bottom Formation catches from another
+  //     angle.
   let state, sentence;
-  if      (score >= 75) { state = 'Trend strong';    sentence = 'Broad participation, momentum intact, cyclicals leading.'; }
-  else if (score >= 60) { state = 'Trend intact';    sentence = 'Uptrend healthy across most trend measures.'; }
-  else if (score >= 45) { state = 'Trend neutral';   sentence = 'Mixed signals — no clear trend direction.'; }
-  else if (score >= 30) { state = 'Trend faltering'; sentence = 'Trend signals weakening — watch for continuation.'; }
-  else                  { state = 'Trend broken';    sentence = 'Broad breakdown — trend has failed.'; }
+  if      (score >= 75) { state = 'Trend strong';         sentence = 'Broad participation, momentum intact. Forward returns near baseline — a healthy tape, but incremental edge from here is small.'; }
+  else if (score >= 60) { state = 'Trend intact';         sentence = 'Uptrend healthy across most measures. Normal bull-market territory; forward returns hug baseline.'; }
+  else if (score >= 45) { state = 'Trend neutral';        sentence = 'Mixed signals — no clear direction. Returns close to baseline.'; }
+  else if (score >= 30) { state = 'Trend faltering';      sentence = 'Trend measures weakening. Usually a temporary cool-off — returns still near baseline.'; }
+  else                  { state = 'Trend broken (contrarian buy)'; sentence = 'Historically the best forward setup — 60d avg +6.5%, 250d avg +18.8% vs baseline +2.3% / +10.4%. What feels worst has been the best entry.'; }
   return { score, state, sentence };
 }
 
