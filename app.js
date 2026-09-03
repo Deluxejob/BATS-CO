@@ -1317,12 +1317,18 @@ function computePivotTop(current) {
   // still reads calm), readings > 30 stretch by 1.2 so old 80 -> new 90 and
   // the Feb-2018-style max (85.7) reaches ~97. Cap at 100.
   const score = raw <= 30 ? raw : Math.min(100, 30 + (raw - 30) * 1.2);
+  // Thresholds tuned to what the backtest actually showed (see
+  // scripts/backtest-pivot-top.py). The meaningful short-term edge only
+  // appears in the 80+ bucket — where 20d forward returns averaged
+  // -1.4% (baseline +0.8%) with a 40% hit rate (baseline 66%). Below
+  // 80 the signal is close to baseline. Labels moved up accordingly so
+  // "Real top risk" only shows when the data supports it.
   let state, sentence;
-  if      (score >= 90) { state = 'Extreme top'; sentence = 'All signals pinned near extremes — historically rare and preceded major short-term reversals (Feb 2018, Aug-Sep 2020, July 2024).'; }
-  else if (score >= 70) { state = 'Top forming'; sentence = 'Multiple overheated signals firing — high risk of a short-term top.'; }
-  else if (score >= 50) { state = 'Watch top';   sentence = 'Some overheated readings — pivot risk elevated.'; }
-  else if (score >= 30) { state = 'Warming';     sentence = 'Mild overextension in a few components.'; }
-  else                  { state = 'Clean tape';  sentence = 'Nothing overheated in the tape — either a calm market drifting or froth that has already sold off.'; }
+  if      (score >= 85) { state = 'Real top risk'; sentence = 'Empirically the sharpest short-term top warning — the 80+ bucket has averaged −1.4% at 20 days with a 40% hit rate versus baseline +0.8% / 66% (Feb 2018, Aug-Sep 2020, July 2024).'; }
+  else if (score >= 65) { state = 'Warming';       sentence = 'Multiple signals warm, but historically the meaningful short-term edge only shows up above 85.'; }
+  else if (score >= 45) { state = 'Some heat';     sentence = 'A few components on the hot side. Forward returns in this bucket read close to baseline.'; }
+  else if (score >= 25) { state = 'Mildly warm';   sentence = 'Mild overextension in a couple of components. Not a warning yet.'; }
+  else                  { state = 'Clean tape';    sentence = 'Nothing overheated in the tape — either a calm market drifting or froth that has already sold off.'; }
   return { score, state, sentence };
 }
 
