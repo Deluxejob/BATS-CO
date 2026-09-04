@@ -1026,6 +1026,7 @@
     }
     .legend-swatch.actual   { background: rgba(255, 182, 88, 0.85); border: 1px solid #ffb658; }
     .legend-swatch.estimate { background: rgba(110, 231, 255, 0.18); border: 1px dashed #6ee7ff; }
+    .legend-swatch.gaap     { background: rgba(139, 149, 168, 0.14); border: 1px dashed #8b95a8; }
     .earn-note {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.62rem;
@@ -6773,8 +6774,12 @@
           return false;
         }
 
-        const W = 560, H = 240;
-        const M = { top: 26, right: 15, bottom: 34, left: 46 };
+        const W = 560, H = 246;
+        // Bottom margin bumped 8px to give the "GAAP" tag under year
+        // labels enough breathing room without clipping. Extra px is
+        // harmless when no GAAP bars are present — the axis just sits
+        // a hair higher.
+        const M = { top: 26, right: 15, bottom: 42, left: 46 };
         const plotW = W - M.left - M.right;
         const plotH = H - M.top - M.bottom;
 
@@ -6820,31 +6825,46 @@
         const y0 = yFor(0);
         clean.forEach((d, i) => {
           const x = xFor(i);
-          const isEst = d.kind === 'estimate' || d.kind === 'derived';
+          const isEst     = d.kind === 'estimate' || d.kind === 'derived';
           const isDerived = d.kind === 'derived';
+          const isGaap    = d.basis === 'gaap';    // past bar derived from GAAP net income
           const yBar = yFor(d.value);
           const top = Math.min(yBar, y0);
           const h = Math.abs(yBar - y0);
-          // Actual → solid amber. Real estimate → dashed cyan w/ light fill.
-          // Derived (extrapolated) → dotted cyan w/ even lighter fill.
-          const fill   = isDerived ? 'rgba(110, 231, 255, 0.08)'
+          // Visual key:
+          //   Actual non-GAAP reported  → solid amber
+          //   Estimate (analyst fwd)    → dashed cyan w/ light fill
+          //   Derived-forward (extrap.) → dotted cyan w/ even lighter fill
+          //   GAAP-past (basis mismatch)→ dashed gray w/ light fill + "GAAP" tag
+          const fill   = isGaap    ? 'rgba(139, 149, 168, 0.14)'
+                       : isDerived ? 'rgba(110, 231, 255, 0.08)'
                        : isEst      ? 'rgba(110, 231, 255, 0.16)'
-                       : 'rgba(255, 182, 88, 0.9)';
-          const stroke = isEst ? '#6ee7ff' : '#ffb658';
-          const dash   = isDerived ? ' stroke-dasharray="1.5 2.5"'
+                       :              'rgba(255, 182, 88, 0.9)';
+          const stroke = isGaap    ? '#8b95a8'
+                       : isEst      ? '#6ee7ff'
+                       :              '#ffb658';
+          const dash   = isGaap    ? ' stroke-dasharray="3 3"'
+                       : isDerived ? ' stroke-dasharray="1.5 2.5"'
                        : isEst      ? ' stroke-dasharray="4 2"' : '';
-          const opacityAttr = isDerived ? ' opacity="0.85"' : '';
+          const opacityAttr = (isDerived || isGaap) ? ' opacity="0.9"' : '';
           s += `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 1).toFixed(1)}" ` +
                `fill="${fill}" stroke="${stroke}" stroke-width="1.5"${dash}${opacityAttr}/>`;
-          // Value label above bar (below if negative). Derived bars get an
-          // asterisk suffix so users can tell they're extrapolated at a glance.
+          // Value label above bar (below if negative). Derived-forward bars
+          // get an asterisk to signal extrapolation. GAAP-past bars are
+          // annotated separately with a "GAAP" tag under the year label.
           const valTxt = fmt$(d.value) + (isDerived ? '*' : '');
           const labelY = d.value >= 0 ? (top - 5) : (top + h + 12);
-          const labelFill = isDerived ? '#7b8697' : stroke;
+          const labelFill = isGaap ? '#8b95a8' : isDerived ? '#7b8697' : stroke;
           s += `<text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" ` +
                `fill="${labelFill}" font-size="10.5" font-weight="700" font-family="'JetBrains Mono', monospace">${valTxt}</text>`;
-          // X-axis period label
+          // X-axis period label — plus a small "GAAP" tag directly under
+          // the year for GAAP-basis bars so the reader can see instantly
+          // which bars are on a different accounting basis than the rest.
           s += `<text class="axis-label" x="${(x + barW / 2).toFixed(1)}" y="${(M.top + plotH + 16).toFixed(1)}" text-anchor="middle">${d.label}</text>`;
+          if (isGaap) {
+            s += `<text x="${(x + barW / 2).toFixed(1)}" y="${(M.top + plotH + 28).toFixed(1)}" text-anchor="middle" ` +
+                 `fill="#8b95a8" font-size="8.5" font-weight="700" letter-spacing="0.08em" font-family="'JetBrains Mono', monospace">GAAP</text>`;
+          }
         });
 
         // Axes
@@ -6981,28 +7001,29 @@
           if (!cur || entry.rank < cur.rank) aByYear.set(yr, entry);
         };
 
-        // 1) [DISABLED] Derived past-year EPS from GAAP net income ÷ shares
-        //    outstanding. This used to fill gaps for years earlier than
-        //    Yahoo's earningsTrend history covered, but it's on a DIFFERENT
-        //    accounting basis than every other rank on this chart:
+        // 1) Derived past-year EPS from GAAP net income / shares outstanding
+        //    (rank 3 — worst precedence, only fills gaps that no other
+        //    source covered). This is on a DIFFERENT accounting basis than
+        //    the analyst-trend and forward estimates:
         //      - Ranks 1/2/4 pull from Yahoo/Nasdaq earningsTrend, which
         //        report NON-GAAP adjusted EPS (the "consensus" analysts
         //        track — excludes SBC, amortization of intangibles, etc.).
-        //      - Derived uses GAAP net income / shares.
+        //      - This derived value uses GAAP net income / shares.
         //    For high-SBC tickers (ZS, DDOG, NET, SNOW, most SaaS names)
         //    the two disagree by huge margins — Zscaler's GAAP FY24 was
-        //    -$0.36 while non-GAAP was +$3.19. Mixing them on one chart
-        //    silently mislabels the accounting basis and misleads the
-        //    reader. Better to leave a gap than lie. Left in place as
-        //    commented-out code in case we ever want to gate on a
-        //    per-ticker "prefer GAAP" flag.
-        //
-        // (er?.pastAnnualDerived || []).forEach(row => {
-        //   if (!Number.isFinite(row.year) || !Number.isFinite(row.epsDerived)) return;
-        //   setYear(String(row.year), {
-        //     value: row.epsDerived, kind: 'actual', source: 'derived', rank: 3,
-        //   });
-        // });
+        //    -$0.36 while non-GAAP was +$3.19. Rather than hide these
+        //    bars entirely (which leaves ZS-family tickers with a barren
+        //    past), we plot them with a `basis:'gaap'` marker so the
+        //    renderer can draw them in a distinct gray/dashed style and
+        //    stamp a "GAAP" tag under the year label. Readers see
+        //    something for the past AND know it's a different basis.
+        (er?.pastAnnualDerived || []).forEach(row => {
+          if (!Number.isFinite(row.year) || !Number.isFinite(row.epsDerived)) return;
+          setYear(String(row.year), {
+            value: row.epsDerived, kind: 'actual', source: 'derived',
+            basis: 'gaap', rank: 3,
+          });
+        });
 
         // 2) Overlay analyst-trend rows (rank 2 — better than derived).
         (er?.annual || []).forEach(t => {
@@ -7074,9 +7095,24 @@
         }
 
         if (aData.length >= 2) {
+          // Include a GAAP swatch in the legend only when we're actually
+          // drawing at least one GAAP-basis bar. High-SBC SaaS names (ZS,
+          // DDOG, NET, SNOW) will show GAAP past bars because Yahoo/Nasdaq
+          // don't preserve non-GAAP past actuals for those tickers.
+          const hasGaap = aData.some(d => d && d.basis === 'gaap');
+          const annualLegend = hasGaap
+            ? `<p class="earn-legend">
+                 <span><span class="legend-swatch actual"></span>Actual (non-GAAP reported)</span>
+                 <span><span class="legend-swatch estimate"></span>Consensus estimate</span>
+                 <span><span class="legend-swatch gaap"></span>Past GAAP (net income / shares)</span>
+               </p>`
+            : legend('Actual (reported)', 'Consensus estimate');
+          const gaapNote = hasGaap
+            ? ` For this ticker, past-year bars come from GAAP net income ÷ shares because the source APIs don't preserve non-GAAP historical EPS. That's a different accounting basis than the forward analyst consensus, so bars appear in dashed gray with a "GAAP" tag under the year — don't compare them 1:1 to the forward estimates.`
+            : '';
           aWrap.innerHTML = `<svg class="earn-chart" id="aEpsSvg"></svg>` +
-            legend('Actual (reported)', 'Consensus estimate') +
-            `<p class="earn-note">Prior fiscal-year actuals alongside current-year and forward analyst consensus (Yahoo Finance + Nasdaq analyst forecast, typically 2-3 forward years).</p>`;
+            annualLegend +
+            `<p class="earn-note">Prior fiscal-year actuals alongside current-year and forward analyst consensus (Yahoo Finance + Nasdaq analyst forecast, typically 2-3 forward years).${gaapNote}</p>`;
           drawEarnBarChart(document.getElementById('aEpsSvg'), aData);
         } else {
           aWrap.innerHTML = '<div class="earn-empty">No annual EPS trend data available.</div>';
