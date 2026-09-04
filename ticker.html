@@ -6981,14 +6981,28 @@
           if (!cur || entry.rank < cur.rank) aByYear.set(yr, entry);
         };
 
-        // 1) Derived past-year EPS from net income ÷ shares (rank 3 — worst
-        //    precedence, only fills gaps).
-        (er?.pastAnnualDerived || []).forEach(row => {
-          if (!Number.isFinite(row.year) || !Number.isFinite(row.epsDerived)) return;
-          setYear(String(row.year), {
-            value: row.epsDerived, kind: 'actual', source: 'derived', rank: 3,
-          });
-        });
+        // 1) [DISABLED] Derived past-year EPS from GAAP net income ÷ shares
+        //    outstanding. This used to fill gaps for years earlier than
+        //    Yahoo's earningsTrend history covered, but it's on a DIFFERENT
+        //    accounting basis than every other rank on this chart:
+        //      - Ranks 1/2/4 pull from Yahoo/Nasdaq earningsTrend, which
+        //        report NON-GAAP adjusted EPS (the "consensus" analysts
+        //        track — excludes SBC, amortization of intangibles, etc.).
+        //      - Derived uses GAAP net income / shares.
+        //    For high-SBC tickers (ZS, DDOG, NET, SNOW, most SaaS names)
+        //    the two disagree by huge margins — Zscaler's GAAP FY24 was
+        //    -$0.36 while non-GAAP was +$3.19. Mixing them on one chart
+        //    silently mislabels the accounting basis and misleads the
+        //    reader. Better to leave a gap than lie. Left in place as
+        //    commented-out code in case we ever want to gate on a
+        //    per-ticker "prefer GAAP" flag.
+        //
+        // (er?.pastAnnualDerived || []).forEach(row => {
+        //   if (!Number.isFinite(row.year) || !Number.isFinite(row.epsDerived)) return;
+        //   setYear(String(row.year), {
+        //     value: row.epsDerived, kind: 'actual', source: 'derived', rank: 3,
+        //   });
+        // });
 
         // 2) Overlay analyst-trend rows (rank 2 — better than derived).
         (er?.annual || []).forEach(t => {
