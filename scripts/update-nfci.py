@@ -11,10 +11,11 @@ Positive values = tighter-than-average conditions (stress). Negative =
 looser (accommodative). Published Wednesday afternoons for the previous
 Friday's data. Same 1971-to-present history for both series.
 
-The iQuant NFCI Long/Cash signal on market-signals.html reads this CSV
-client-side. If a run fails, the previous file stays in place — the
-signal card degrades gracefully to whatever the last-known NFCI value
-was, showing a stale note if the reading is more than 10 days old.
+The Two-Gate Long/Cash QQQ signal on market-signals.html reads this
+CSV client-side. If a run fails, the previous file stays in place —
+the signal card degrades gracefully to whatever the last-known NFCI
+value was, showing a stale note if the reading is more than 10 days
+old.
 
 Runs as part of the daily update workflow. Fast (two HTTP GETs, ~40KB
 each) so no need to gate it behind a weekly-only cron.

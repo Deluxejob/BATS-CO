@@ -73,7 +73,7 @@ jobs:
       - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)
         run: python scripts/update-umcsent.py
 
-      - name: Refresh Chicago Fed NFCI (weekly — for the iQuant NFCI signal card)
+      - name: Refresh Chicago Fed NFCI (weekly — for the Two-Gate Long/Cash QQQ signal card)
         run: python scripts/update-nfci.py
 
       - name: Append current-year yields to yields_history.csv

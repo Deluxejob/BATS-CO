@@ -154,7 +154,7 @@
     .chart-ref-label  { fill: rgba(200, 51, 83, 0.8); font-family: 'JetBrains Mono', monospace; font-size: 9px; }
     .chart-fire-line  { stroke: rgba(34, 211, 238, 0.5); stroke-width: 1; }
 
-    /* iQuant NFCI signal — big action pill (BUY/HOLD/SELL/STAY OUT)
+    /* Two-Gate Long/Cash QQQ — big action pill (BUY/HOLD/SELL/STAY OUT)
        is the whole point of this card, so it dominates. Everything
        else (gates, backtest stats) supports the pill's verdict. */
     .iq-action-wrap {
@@ -248,14 +248,14 @@
     .iq-gate-on  { color: #22d39a; }
     .iq-gate-off { color: var(--text-faint); }
 
-    /* Tighter grid for the 9 stat cards on the iQuant panel so the
+    /* Tighter grid for the 9 stat cards on the Two-Gate panel so the
        row wraps cleanly on medium/wide viewports. */
     .iq-stats { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)) !important; gap: 0.5rem !important; }
     .iq-stats .sig-stat { padding: 0.4rem 0.45rem; }
     .iq-stats .lbl { font-size: 0.55rem; }
     .iq-stats .val { font-size: 0.86rem; }
 
-    /* iQuant history chart: green-shaded bands mark invested (long) periods,
+    /* Two-Gate history chart: yellow bands mark cash periods,
        thin dashed verticals mark BUY / SELL transitions. */
     .iq-cash-band       { fill: rgba(255, 214, 102, 0.14); }
     .iq-line-qqq        { fill: none; stroke: #64d3ff; stroke-width: 1.4; }
@@ -428,11 +428,11 @@
 
       <div class="sig-grid">
 
-        <!-- SIGNAL: iQuant NFCI Long/Cash rule on QQQ -->
-        <div class="sig-card" id="sig-iquant-nfci">
+        <!-- SIGNAL: Two-Gate Long/Cash QQQ (NFCI credit regime + RSI oversold) -->
+        <div class="sig-card" id="sig-two-gate-qqq">
           <div class="sig-head">
-            <h2 class="sig-title">iQuant Long/Cash Signal (QQQ + NFCI)</h2>
-            <span class="sig-tag">Long/Cash &middot; daily check</span>
+            <h2 class="sig-title">Two-Gate Long/Cash QQQ</h2>
+            <span class="sig-tag">NFCI regime + RSI dip &middot; daily check</span>
           </div>
           <p class="sig-desc">
             A rules-only strategy: <strong>stay long QQQ</strong> whenever
@@ -603,13 +603,13 @@
             Backtest 1999&ndash;2026 (~27 yrs) on QQQ closes + FRED NFCI weekly. Bear-market side-steps:
             dot-com bust &minus;19% (vs &minus;83% B&amp;H), 2008 &minus;27% (vs &minus;50%),
             COVID &minus;14% (vs &minus;28%), 2022 &minus;33% (vs &minus;35%). Same rule on SMH
-            22.2% CAGR (vs 9.8% B&amp;H). Source: iQuant.pro. Systematic long/cash rule shown for
-            reference only &mdash; not investment advice; results ignore trading costs and taxes.
+            22.2% CAGR (vs 9.8% B&amp;H). Systematic long/cash rule shown for reference only
+            &mdash; not investment advice; results ignore trading costs and taxes.
           </p>
 
           <div data-share-strip
-               data-share-url="https://bats.co/market-signals.html#sig-iquant-nfci"
-               data-share-title="iQuant NFCI Long/Cash Signal — BATS.CO"
+               data-share-url="https://bats.co/market-signals.html#sig-two-gate-qqq"
+               data-share-title="Two-Gate Long/Cash QQQ — BATS.CO"
                data-share-text="A rules-only long/cash signal for QQQ: stay long when credit is easing (NFCI below its 50-day average) or QQQ's 14-day RSI is under 40, otherwise sit in cash. Historically compounded at nearly double buy-and-hold since 1999 (18.3% vs 9.9% CAGR) with a live intraday pill you can act on before market close."
                style="margin-top: 0.9rem;"></div>
         </div>
@@ -691,12 +691,12 @@
     document.getElementById('footerYear').textContent = new Date().getFullYear();
 
     // ==========================================================
-    //  iQuant NFCI Long/Cash signal — daily action pill
+    //  Two-Gate Long/Cash QQQ — daily action pill
     //
-    //  Rule (from iQuant.pro): LONG QQQ when either
-    //     RSI(QQQ, 14) < 40   -- market is oversold and worth buying
+    //  Rule: LONG QQQ when either
+    //     RSI(QQQ, 14) < 40   -- mean-reversion gate (oversold bounce)
     //   OR
-    //     NFCI < SMA50(NFCI)  -- credit conditions are easing
+    //     NFCI < SMA50(NFCI)  -- credit-regime gate (easing conditions)
     //  Otherwise CASH. Nothing else.
     //
     //  We compute today's signal AND yesterday's signal so we can
@@ -704,9 +704,9 @@
     //  from STAY OUT (0→0).
     //
     //  NFCI is weekly; we forward-fill to daily then compute a 50-day
-    //  SMA. That was the winning variant in the backtest (Signal A).
+    //  SMA on that daily-forward-filled series.
     // ==========================================================
-    (async function initIquantNfci() {
+    (async function initTwoGateLongCash() {
       const pill = document.getElementById('iqActionPill');
       if (!pill) return;
       const sub  = document.getElementById('iqActionSub');
