@@ -294,6 +294,36 @@
     .iq-chart-caption .iq-sw-red    { background: transparent; border-left: 2px solid rgba(255, 83, 116, 0.85); border-right: 0; margin-right: 0.35rem; width: 0.35em; }
     .iq-chart-caption .iq-sw-green  { background: transparent; border-left: 2px solid rgba(34, 211, 154, 0.85); border-right: 0; margin-right: 0.35rem; width: 0.35em; }
 
+    /* Callout: "What to expect if you follow this signal". The rule
+       generates a lot of ugly-looking individual trades. Anyone who
+       plans to actually follow it needs to have that framed up front,
+       or they will bail during the first whipsaw and miss the edge. */
+    .iq-callout {
+      margin: 0.85rem 0 0;
+      padding: 0.9rem 1rem;
+      background: rgba(34, 211, 238, 0.045);
+      border: 1px solid rgba(34, 211, 238, 0.30);
+      border-left: 3px solid rgba(34, 211, 238, 0.65);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: var(--text-dim);
+    }
+    .iq-callout h4 {
+      color: #22d3ee;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      margin: 0 0 0.55rem;
+    }
+    .iq-callout p { margin: 0 0 0.55rem; }
+    .iq-callout p:last-child { margin-bottom: 0; }
+    .iq-callout strong { color: var(--text); }
+    .iq-callout ul { margin: 0.15rem 0 0.55rem 1.15rem; padding: 0; }
+    .iq-callout li { margin-bottom: 0.2rem; }
+
     /* Time-range toggle above the chart. Buttons behave like a segmented
        control — clicking one re-renders the SVG over a shorter window.
        The row also carries "crash preset" buttons on the left that jump
@@ -478,6 +508,42 @@
             Wide yellow bands during 2001, 2008, 2020, and 2022 are the moments the rule side-stepped major bear
             markets. Narrow bands during bull runs are short defensive exits &mdash; sometimes right, sometimes
             slightly early.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>Bad-looking individual trades are normal.</strong> The rule sells right before some rallies.
+              It buys right before some drops. Any single trade you point at can look like a mistake. That is by
+              design &mdash; mean reversion is not about being right on each trade, it is about being
+              <em>less wrong on average</em> across hundreds of them.
+            </p>
+            <p>
+              <strong>The rule still loses money in bear markets &mdash; just less.</strong> During the dot-com bust,
+              $1,000 in the rule fell to about $692 (a 31% loss). Buy &amp; Hold fell to $259 (74% loss). Same
+              shape in 2008: &minus;27% vs &minus;50%. In 2022: &minus;33% vs &minus;35%. It is not a shield; it is
+              a smaller loss.
+            </p>
+            <p><strong>The outperformance comes from two places:</strong></p>
+            <ul>
+              <li><em>Crises where NFCI spikes</em> &mdash; the rule sits in cash for months (dot-com, 2008, COVID)
+                while Buy &amp; Hold gets cut in half. This is where the biggest dollar-gap opens up.</li>
+              <li><em>Choppy markets</em> &mdash; small daily edges compound: catch most up-days, dodge enough
+                down-days, and Rule wealth outpaces Buy &amp; Hold even in flat or slightly-down stretches.</li>
+            </ul>
+            <p>
+              <strong>When it will feel worst:</strong> long steady bull runs like 2013&ndash;2019 and 2023&ndash;2024,
+              where the rule is in cash during rallies and lags Buy &amp; Hold by a few percent per year. That is the
+              cost of being ready for the next crash. If your emotional reaction to that lag is to override the rule,
+              you will kill the edge before you ever collect it.
+            </p>
+            <p>
+              <strong>How to actually use it:</strong> if you cannot hold through the whipsaws, do not trade this
+              rule live. Treat the action pill as a <strong>second opinion</strong> &mdash; an unemotional gut-check
+              against your own instincts. The <strong>+8.4% annualized alpha</strong> only exists for someone who
+              follows <em>every</em> signal, including the ones that feel wrong the moment they fire. Paper-trade it
+              through a full up-and-down cycle before committing real money.
+            </p>
           </div>
 
           <p class="sig-note">
