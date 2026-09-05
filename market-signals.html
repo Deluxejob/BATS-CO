@@ -471,7 +471,6 @@
             <div class="sig-stat"><div class="lbl">Sharpe</div><div class="val pos">0.86</div></div>
             <div class="sig-stat"><div class="lbl">Max drawdown</div><div class="val">-66.3%</div></div>
             <div class="sig-stat"><div class="lbl">Buy &amp; Hold max DD</div><div class="val neg">-83.0%</div></div>
-            <div class="sig-stat"><div class="lbl">Days invested</div><div class="val">65%</div></div>
           </div>
 
           <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
@@ -506,8 +505,11 @@
             <span class="iq-sw iq-sw-yellow"></span><strong>yellow band</strong> = how long it stayed out, and
             <span class="iq-sw iq-sw-green"></span><strong>green = BUY back</strong> (rule flipped to long).
             Wide yellow bands during 2001, 2008, 2020, and 2022 are the moments the rule side-stepped major bear
-            markets. Narrow bands during bull runs are short defensive exits &mdash; sometimes right, sometimes
-            slightly early.
+            markets. <strong>Thin yellow strokes are quick 1-3 day cash gaps</strong> where the rule sold on a
+            bounce and re-bought on the next dip &mdash; each one shaves a small chunk off the drawdown, which
+            is why the green Rule line drops less than the dashed Buy &amp; Hold line even during stretches
+            that look "always long" at a glance. The big red / green vertical marks only fire on regime-level
+            transitions, so short trades won't clutter the chart.
           </div>
 
           <div class="iq-callout">
@@ -1010,26 +1012,47 @@
 
         const parts = [];
 
-        // Cash-period shading: instead of shading invested days
-        // (65% of the chart), highlight the CASH periods — those are
-        // the moments the rule pulled you out ahead of trouble, which
-        // is the whole point of the signal. Derive cash windows as
-        // the inverse of the coalesced invested `segs` list.
-        const cashSegs = [];
-        let cursor = 0;
-        for (const [s, e] of segs) {
-          if (s - 1 >= cursor && s - 1 - cursor >= MIN_SEG) cashSegs.push([cursor, s - 1]);
-          cursor = e + 1;
+        // Cash-period shading uses RAW daily cash days — every single
+        // day the rule was in cash gets a yellow band. This matches
+        // the equity curve exactly: every flat spot down there has a
+        // yellow strip above it. Brief 1-2 day cash gaps show up as
+        // thin vertical strokes; sustained regime cash shows as wide
+        // bands. The red / green vertical marks below still come from
+        // the coalesced `cashSegs` above, so those only fire on real
+        // regime shifts — the shading tells the honest story of every
+        // day out of the market without cluttering the transition marks.
+        const rawCashSegs = [];
+        let ccStart = null;
+        for (let i = 0; i < view.length; i++) {
+          if (view[i].inv === false) {
+            if (ccStart == null) ccStart = i;
+          } else if (ccStart != null) {
+            rawCashSegs.push([ccStart, i - 1]);
+            ccStart = null;
+          }
         }
-        if (view.length - 1 - cursor >= MIN_SEG) cashSegs.push([cursor, view.length - 1]);
+        if (ccStart != null) rawCashSegs.push([ccStart, view.length - 1]);
 
-        for (const [s, e] of cashSegs) {
+        for (const [s, e] of rawCashSegs) {
           const x0 = xForIdx(s);
           const x1 = xForIdx(Math.min(view.length - 1, e + 1));
-          const wR = (x1 - x0).toFixed(1);
+          const wR = Math.max(x1 - x0, 0.6).toFixed(1);   // never thinner than ~1 CSS pixel so 1-day gaps stay visible
           parts.push(`<rect x="${x0.toFixed(1)}" y="${topY0}" width="${wR}" height="${(topY1 - topY0)}" class="iq-cash-band" />`);
           parts.push(`<rect x="${x0.toFixed(1)}" y="${botY0}" width="${wR}" height="${(botY1 - botY0)}" class="iq-cash-band" />`);
           parts.push(`<rect x="${x0.toFixed(1)}" y="${eqY0}"  width="${wR}" height="${(eqY1 - eqY0)}"  class="iq-cash-band" />`);
+        }
+
+        // Coalesced cash regions (for the red/green vertical marks only) —
+        // built from the filtered `segs` above so we still just highlight
+        // regime-level transitions with the big red/green edges.
+        const cashSegs = [];
+        {
+          let cursor = 0;
+          for (const [s, e] of segs) {
+            if (s - 1 >= cursor && s - 1 - cursor >= MIN_SEG) cashSegs.push([cursor, s - 1]);
+            cursor = e + 1;
+          }
+          if (view.length - 1 - cursor >= MIN_SEG) cashSegs.push([cursor, view.length - 1]);
         }
 
         // QQQ gridlines (log-spaced) + line
