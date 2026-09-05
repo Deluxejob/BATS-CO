@@ -153,6 +153,124 @@
     .chart-ref-line   { stroke: rgba(200, 51, 83, 0.5); stroke-width: 1; stroke-dasharray: 3 3; }
     .chart-ref-label  { fill: rgba(200, 51, 83, 0.8); font-family: 'JetBrains Mono', monospace; font-size: 9px; }
     .chart-fire-line  { stroke: rgba(34, 211, 238, 0.5); stroke-width: 1; }
+
+    /* iQuant NFCI signal — big action pill (BUY/HOLD/SELL/STAY OUT)
+       is the whole point of this card, so it dominates. Everything
+       else (gates, backtest stats) supports the pill's verdict. */
+    .iq-action-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0.4rem 0 1.1rem;
+      padding: 1.3rem 1rem 1.2rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-soft);
+    }
+    .iq-action-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.95rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      padding: 0.75rem 1.6rem;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      text-align: center;
+    }
+    .iq-action-buy     { color: #22d39a; background: rgba(34, 211, 154, 0.14); border-color: rgba(34, 211, 154, 0.55); box-shadow: 0 0 44px rgba(34, 211, 154, 0.25); }
+    .iq-action-hold    { color: #7fe5c2; background: rgba(127, 229, 194, 0.09); border-color: rgba(127, 229, 194, 0.35); }
+    .iq-action-sell    { color: #ff5374; background: rgba(255, 83, 116, 0.14); border-color: rgba(255, 83, 116, 0.55); box-shadow: 0 0 44px rgba(255, 83, 116, 0.25); }
+    .iq-action-stayout { color: var(--text-faint); background: rgba(139, 149, 168, 0.08); border-color: rgba(139, 149, 168, 0.30); }
+    .iq-action-sub {
+      color: var(--text-dim);
+      font-size: 0.86rem;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 520px;
+    }
+    .iq-action-asof {
+      color: var(--text-faint);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 0.15rem;
+    }
+    .iq-gates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-bottom: 0.75rem;
+    }
+    @media (max-width: 600px) { .iq-gates { grid-template-columns: 1fr; } }
+    .iq-gate {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.3rem 1rem;
+      align-items: baseline;
+    }
+    .iq-gate.iq-gate-firing { border-color: rgba(34, 211, 154, 0.45); background: rgba(34, 211, 154, 0.05); }
+    .iq-gate-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+    .iq-gate-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: right;
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .iq-gate-cond {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .iq-gate-state {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: right;
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .iq-gate-on  { color: #22d39a; }
+    .iq-gate-off { color: var(--text-faint); }
+
+    /* Tighter grid for the 9 stat cards on the iQuant panel so the
+       row wraps cleanly on medium/wide viewports. */
+    .iq-stats { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)) !important; gap: 0.5rem !important; }
+    .iq-stats .sig-stat { padding: 0.4rem 0.45rem; }
+    .iq-stats .lbl { font-size: 0.55rem; }
+    .iq-stats .val { font-size: 0.86rem; }
+
+    /* iQuant history chart: green-shaded bands mark invested (long) periods,
+       thin dashed verticals mark BUY / SELL transitions. */
+    .iq-cash-band       { fill: rgba(255, 83, 116, 0.16); }
+    .iq-cash-edge       { stroke: rgba(255, 83, 116, 0.55); stroke-width: 1; }
+    .iq-line-qqq        { fill: none; stroke: #64d3ff; stroke-width: 1.4; }
+    .iq-line-nfci       { fill: none; stroke: #ffb658; stroke-width: 1.2; }
+    .iq-line-sma        { fill: none; stroke: #7fe5c2; stroke-width: 1.2; stroke-dasharray: 4 3; }
+    .iq-zero-line       { stroke: rgba(139, 149, 168, 0.35); stroke-width: 1; stroke-dasharray: 2 3; }
+    .iq-mark-buy        { stroke: rgba(34, 211, 154, 0.85); stroke-width: 1.4; }
+    .iq-mark-sell       { stroke: rgba(255, 83, 116, 0.85); stroke-width: 1.4; }
+    .iq-mark-lbl        { fill: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; }
+    .iq-mark-lbl-buy    { fill: #22d39a; }
+    .iq-mark-lbl-sell   { fill: #ff5374; }
+    .iq-legend-swatch-cash { fill: rgba(255, 83, 116, 0.25); stroke: rgba(255, 83, 116, 0.55); stroke-width: 0.5; }
+    .iq-legend-line-nfci{ stroke: #ffb658; stroke-width: 1.4; }
+    .iq-legend-line-sma { stroke: #7fe5c2; stroke-width: 1.4; stroke-dasharray: 3 2; }
   </style>
 </head>
 <body>
@@ -202,6 +320,73 @@
       </p>
 
       <div class="sig-grid">
+
+        <!-- SIGNAL: iQuant NFCI Long/Cash rule on QQQ -->
+        <div class="sig-card" id="sig-iquant-nfci">
+          <div class="sig-head">
+            <h2 class="sig-title">iQuant Long/Cash Signal (QQQ + NFCI)</h2>
+            <span class="sig-tag">Long/Cash &middot; daily check</span>
+          </div>
+          <p class="sig-desc">
+            A rules-only strategy: <strong>stay long QQQ</strong> whenever
+            (a) credit conditions are easing &mdash; NFCI sits below its 50-day average, the main
+            regime filter that keeps you fully invested through most bull markets &mdash;
+            <em>or</em>
+            (b) QQQ's 14-day RSI has dropped below 40, which catches pullback bounces (including the
+            sharp rallies you get inside bear markets). Sit in cash only when <strong>both</strong>
+            fail &mdash; credit is tightening <em>and</em> nothing is oversold enough for a mean-reversion
+            bounce. Historically that combination side-steps the worst legs of every major bear,
+            compounding at nearly double the buy-and-hold rate (18.3% vs 9.9% CAGR since 1999).
+            Drawdowns are still real &mdash; max &minus;66% &mdash; just meaningfully less painful
+            than buy-and-hold's &minus;83%.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="iqActionPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="iqActionSub">Fetching QQQ and NFCI&hellip;</div>
+            <div class="iq-action-asof" id="iqActionAsof"></div>
+          </div>
+
+          <div class="iq-gates">
+            <div class="iq-gate" id="iqRsiGate">
+              <div class="iq-gate-label">RSI(QQQ, 14)</div>
+              <div class="iq-gate-value" id="iqRsi">&mdash;</div>
+              <div class="iq-gate-cond">below 40 &rarr; fire</div>
+              <div class="iq-gate-state iq-gate-off" id="iqRsiState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="iqNfciGate">
+              <div class="iq-gate-label">NFCI</div>
+              <div class="iq-gate-value" id="iqNfci">&mdash;</div>
+              <div class="iq-gate-cond">below 50d SMA &rarr; fire</div>
+              <div class="iq-gate-state iq-gate-off" id="iqNfciState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos">+18.3%</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold CAGR</div><div class="val">+9.9%</div></div>
+            <div class="sig-stat"><div class="lbl">Rule cumulative</div><div class="val pos" id="iqRuleCum">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold cumulative</div><div class="val" id="iqBhCum">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos" id="iqAlpha">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Beta vs QQQ</div><div class="val" id="iqBeta">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Sharpe</div><div class="val pos">0.86</div></div>
+            <div class="sig-stat"><div class="lbl">Max drawdown</div><div class="val">-66.3%</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold max DD</div><div class="val neg">-83.0%</div></div>
+            <div class="sig-stat"><div class="lbl">Days invested</div><div class="val">65%</div></div>
+          </div>
+
+          <div class="sig-chart-wrap" style="margin-top: 0.85rem;">
+            <svg viewBox="0 0 1200 460" class="sig-chart" id="iqChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="QQQ price and NFCI history since 1999, invested periods shaded green"></svg>
+          </div>
+
+          <p class="sig-note">
+            Backtest 1999&ndash;2026 (~27 yrs) on QQQ closes + FRED NFCI weekly. Bear-market side-steps:
+            dot-com bust &minus;19% (vs &minus;83% B&amp;H), 2008 &minus;27% (vs &minus;50%),
+            COVID &minus;14% (vs &minus;28%), 2022 &minus;33% (vs &minus;35%). Same rule on SMH
+            22.2% CAGR (vs 9.8% B&amp;H). Source: iQuant.pro. Systematic long/cash rule shown for
+            reference only &mdash; not investment advice; results ignore trading costs and taxes.
+          </p>
+        </div>
 
         <!-- SIGNAL: 50MA / 200MA Breadth Ratio -->
         <div class="sig-card" id="sig-breadth-ratio">
@@ -277,6 +462,422 @@
   <script src="ticker-search.js" defer></script>
   <script>
     document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+    // ==========================================================
+    //  iQuant NFCI Long/Cash signal — daily action pill
+    //
+    //  Rule (from iQuant.pro): LONG QQQ when either
+    //     RSI(QQQ, 14) < 40   -- market is oversold and worth buying
+    //   OR
+    //     NFCI < SMA50(NFCI)  -- credit conditions are easing
+    //  Otherwise CASH. Nothing else.
+    //
+    //  We compute today's signal AND yesterday's signal so we can
+    //  distinguish BUY NOW (0→1) from HOLD (1→1) and SELL NOW (1→0)
+    //  from STAY OUT (0→0).
+    //
+    //  NFCI is weekly; we forward-fill to daily then compute a 50-day
+    //  SMA. That was the winning variant in the backtest (Signal A).
+    // ==========================================================
+    (async function initIquantNfci() {
+      const pill = document.getElementById('iqActionPill');
+      if (!pill) return;
+      const sub  = document.getElementById('iqActionSub');
+      const asof = document.getElementById('iqActionAsof');
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+
+      async function loadCsv(path, valueCol) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        const lines = txt.trim().split(/\r?\n/).slice(1);
+        for (const ln of lines) {
+          const p = ln.split(',');
+          if (!p[0]) continue;
+          const v = parseFloat(p[valueCol]);
+          if (Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        out.sort((a, b) => a.date < b.date ? -1 : 1);
+        return out;
+      }
+
+      let qqq, nfci;
+      try {
+        [qqq, nfci] = await Promise.all([
+          loadCsv('data/qqq.csv', 1),
+          loadCsv('data/nfci.csv', 1),   // col 1 = NFCI, col 2 = ANFCI
+        ]);
+      } catch (e) {
+        fail('Could not fetch QQQ or NFCI data. Try again in a moment.');
+        return;
+      }
+      if (qqq.length < 60 || nfci.length < 60) {
+        fail('Not enough history to run the rule yet.');
+        return;
+      }
+
+      // ---- Wilder RSI(14) on QQQ closes ----
+      const PERIOD = 14;
+      const rsi = new Array(qqq.length).fill(null);
+      {
+        let gains = 0, losses = 0;
+        for (let i = 1; i <= PERIOD; i++) {
+          const d = qqq[i].v - qqq[i - 1].v;
+          if (d > 0) gains += d; else losses -= d;
+        }
+        let avgGain = gains / PERIOD;
+        let avgLoss = losses / PERIOD;
+        rsi[PERIOD] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+        for (let i = PERIOD + 1; i < qqq.length; i++) {
+          const d = qqq[i].v - qqq[i - 1].v;
+          const g = d > 0 ?  d : 0;
+          const l = d < 0 ? -d : 0;
+          avgGain = (avgGain * (PERIOD - 1) + g) / PERIOD;
+          avgLoss = (avgLoss * (PERIOD - 1) + l) / PERIOD;
+          rsi[i]  = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+        }
+      }
+
+      // ---- Forward-fill NFCI onto QQQ's daily calendar ----
+      const nfciDaily = new Array(qqq.length).fill(null);
+      let last = null, ni = 0;
+      for (let i = 0; i < qqq.length; i++) {
+        const d = qqq[i].date;
+        while (ni < nfci.length && nfci[ni].date <= d) {
+          last = nfci[ni].v;
+          ni++;
+        }
+        nfciDaily[i] = last;
+      }
+
+      // ---- SMA50 on daily-forward-filled NFCI ----
+      const SMA_N = 50;
+      const sma = new Array(qqq.length).fill(null);
+      for (let i = SMA_N - 1; i < qqq.length; i++) {
+        let s = 0, ok = true;
+        for (let k = 0; k < SMA_N; k++) {
+          const v = nfciDaily[i - k];
+          if (v == null) { ok = false; break; }
+          s += v;
+        }
+        if (ok) sma[i] = s / SMA_N;
+      }
+
+      function signalAt(i) {
+        if (i < 0 || i >= qqq.length) return null;
+        if (rsi[i] == null || nfciDaily[i] == null || sma[i] == null) return null;
+        const rsiFire  = rsi[i] < 40;
+        const nfciFire = nfciDaily[i] < sma[i];
+        return {
+          date: qqq[i].date,
+          invested: rsiFire || nfciFire,
+          rsi: rsi[i], rsiFire,
+          nfci: nfciDaily[i], sma: sma[i], nfciFire,
+        };
+      }
+
+      const today = signalAt(qqq.length - 1);
+      const yest  = signalAt(qqq.length - 2);
+      if (!today || !yest) { fail('Signal is warming up.'); return; }
+
+      // ---- Determine action state ----
+      let action, subText;
+      if (today.invested && !yest.invested) {
+        action  = 'BUY NOW';
+        pill.className = 'iq-action-pill iq-action-buy';
+        subText = "Signal just turned on — the rule says go long QQQ at today's close.";
+      } else if (today.invested && yest.invested) {
+        action  = 'HOLD';
+        pill.className = 'iq-action-pill iq-action-hold';
+        subText = 'Signal is on — already long, keep the position.';
+      } else if (!today.invested && yest.invested) {
+        action  = 'SELL NOW';
+        pill.className = 'iq-action-pill iq-action-sell';
+        subText = "Signal just turned off — the rule says exit to cash at today's close.";
+      } else {
+        action  = 'STAY OUT';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        subText = 'Signal is off — remain in cash. Watch for RSI drops below 40 or NFCI weakening.';
+      }
+      pill.textContent = action;
+      sub.textContent  = subText;
+
+      // Freshness note: NFCI is weekly (Fridays), so up to ~7 days stale is normal.
+      const daysSince = (dateStr) => {
+        const d = new Date(dateStr + 'T00:00:00Z');
+        return Math.floor((Date.now() - d.getTime()) / 86400000);
+      };
+      const nfciAge  = daysSince(nfci[nfci.length - 1].date);
+      const priceAge = daysSince(qqq[qqq.length  - 1].date);
+      let asofTxt = `As of ${qqq[qqq.length - 1].date} · NFCI thru ${nfci[nfci.length - 1].date}`;
+      if (nfciAge > 12)  asofTxt += ' (stale)';
+      if (priceAge > 4)  asofTxt += ' · price stale';
+      asof.textContent = asofTxt;
+
+      // ---- Gate readouts ----
+      const rsiEl      = document.getElementById('iqRsi');
+      const rsiState   = document.getElementById('iqRsiState');
+      const rsiGate    = document.getElementById('iqRsiGate');
+      const nfciEl     = document.getElementById('iqNfci');
+      const nfciState  = document.getElementById('iqNfciState');
+      const nfciGate   = document.getElementById('iqNfciGate');
+
+      rsiEl.textContent    = today.rsi.toFixed(1);
+      rsiState.textContent = today.rsiFire ? 'FIRING (< 40)' : `not firing (≥ 40)`;
+      rsiState.className   = 'iq-gate-state ' + (today.rsiFire ? 'iq-gate-on' : 'iq-gate-off');
+      rsiGate.classList.toggle('iq-gate-firing', today.rsiFire);
+
+      nfciEl.textContent    = today.nfci.toFixed(3);
+      nfciState.textContent = today.nfciFire
+        ? `FIRING (< ${today.sma.toFixed(3)})`
+        : `not firing (SMA50 ${today.sma.toFixed(3)})`;
+      nfciState.className   = 'iq-gate-state ' + (today.nfciFire ? 'iq-gate-on' : 'iq-gate-off');
+      nfciGate.classList.toggle('iq-gate-firing', today.nfciFire);
+
+      // ---- History chart: QQQ (log) on top, NFCI vs SMA50 on bottom,
+      //      green bands over invested (long) periods, thin dashed
+      //      verticals at every BUY / SELL transition. Data goes back
+      //      to QQQ's launch in March 1999 (NFCI reaches to 1971 but
+      //      QQQ is the binding constraint since we can't backtest a
+      //      product that didn't exist yet). ------------------------
+      const chartSvg = document.getElementById('iqChartSvg');
+      if (chartSvg) {
+        // Signal series across full history; skip until both indicators warm up
+        const invested = new Array(qqq.length).fill(null);
+        for (let i = 0; i < qqq.length; i++) {
+          if (rsi[i] == null || nfciDaily[i] == null || sma[i] == null) continue;
+          invested[i] = (rsi[i] < 40) || (nfciDaily[i] < sma[i]);
+        }
+        let firstIdx = invested.findIndex(s => s !== null);
+        if (firstIdx < 0) firstIdx = 0;
+
+        const view = [];
+        for (let i = firstIdx; i < qqq.length; i++) {
+          view.push({
+            date: qqq[i].date,
+            qqq:  qqq[i].v,
+            nfci: nfciDaily[i],
+            sma:  sma[i],
+            inv:  invested[i],
+          });
+        }
+
+        // Cumulative returns of the RULE vs BUY & HOLD over the same
+        // window that the chart shows. Convention: signal on day t-1
+        // determines whether we captured day t's return — no lookahead.
+        // Alpha (annualized) is just the difference between the two
+        // annualized compound rates; it's the "extra CAGR" you earned
+        // above simply holding QQQ over this exact period.
+        let ruleW = 1.0, bhW = 1.0;
+        const bhRets   = [];
+        const ruleRets = [];
+        for (let i = 1; i < view.length; i++) {
+          const ret = view[i].qqq / view[i - 1].qqq - 1;
+          bhW *= (1 + ret);
+          const wasIn = view[i - 1].inv === true;
+          if (wasIn) ruleW *= (1 + ret);
+          bhRets.push(ret);
+          ruleRets.push(wasIn ? ret : 0);
+        }
+        const yearsSpan = (view.length - 1) / 252;
+        const ruleCagr  = (Math.pow(ruleW, 1 / yearsSpan) - 1) * 100;
+        const bhCagr    = (Math.pow(bhW,   1 / yearsSpan) - 1) * 100;
+        const ruleCumPct = (ruleW - 1) * 100;
+        const bhCumPct   = (bhW   - 1) * 100;
+        const alphaAnn   = ruleCagr - bhCagr;
+
+        // Beta = cov(rule, bh) / var(bh). Measures how much of QQQ's
+        // daily wiggle the rule actually captures. A strategy that's
+        // always long and levered 2x would show beta ~= 2.0; one that
+        // sits in cash a lot dilutes beta below 1.
+        const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+        const bhMean = mean(bhRets), ruleMean = mean(ruleRets);
+        let cov = 0, varBh = 0;
+        for (let i = 0; i < bhRets.length; i++) {
+          cov   += (ruleRets[i] - ruleMean) * (bhRets[i] - bhMean);
+          varBh += (bhRets[i]  - bhMean) * (bhRets[i]  - bhMean);
+        }
+        const beta = varBh > 0 ? cov / varBh : NaN;
+
+        function fmtPct(v) {
+          const sign = v >= 0 ? '+' : '';
+          const abs  = Math.abs(v);
+          if (abs >= 1000) return sign + Math.round(v).toLocaleString() + '%';
+          return sign + v.toFixed(abs >= 100 ? 0 : 1) + '%';
+        }
+        const rEl    = document.getElementById('iqRuleCum');
+        const bEl    = document.getElementById('iqBhCum');
+        const aEl    = document.getElementById('iqAlpha');
+        const betaEl = document.getElementById('iqBeta');
+        if (rEl)    rEl.textContent    = fmtPct(ruleCumPct);
+        if (bEl)    bEl.textContent    = fmtPct(bhCumPct);
+        if (aEl)    aEl.textContent    = fmtPct(alphaAnn);
+        if (betaEl) betaEl.textContent = Number.isFinite(beta) ? beta.toFixed(2) : '—';
+
+        // Contiguous invested segments. First pass finds raw runs;
+        // a second pass coalesces very short cash gaps (<= 3 days)
+        // so the chart shows regime-level buys and sells instead of
+        // a noisy barcode of daily RSI blips.
+        const rawSegs = [];
+        let segStart = null;
+        for (let i = 0; i < view.length; i++) {
+          if (view[i].inv === true) {
+            if (segStart == null) segStart = i;
+          } else if (segStart != null) {
+            rawSegs.push([segStart, i - 1]);
+            segStart = null;
+          }
+        }
+        if (segStart != null) rawSegs.push([segStart, view.length - 1]);
+
+        // Coalesce cash gaps <= GAP_MERGE days, then drop invested
+        // slivers < MIN_SEG so the chart shows regime-level shading
+        // instead of a barcode of 200+ daily RSI blips.
+        const GAP_MERGE = 15;
+        const MIN_SEG   = 5;
+        const merged = [];
+        for (const s of rawSegs) {
+          if (merged.length && s[0] - merged[merged.length - 1][1] <= GAP_MERGE) {
+            merged[merged.length - 1][1] = s[1];
+          } else {
+            merged.push([s[0], s[1]]);
+          }
+        }
+        const segs = merged.filter(s => (s[1] - s[0]) >= MIN_SEG);
+        // BUY / SELL vertical marks only for MAJOR regime shifts —
+        // segments that lasted a season or more, not RSI blips.
+        const MIN_LEN = 60;
+        const bigSegs = segs.filter(s => (s[1] - s[0]) >= MIN_LEN);
+
+        // ---- SVG layout ----
+        const W = 1200, H = 460;
+        const PAD_L = 54, PAD_R = 54, PAD_T = 20;
+        const PANEL_GAP = 24;
+        const TOP_H = 220;
+        const BOT_H = 150;
+        const plotW = W - PAD_L - PAD_R;
+        const topY0 = PAD_T;
+        const topY1 = PAD_T + TOP_H;
+        const botY0 = topY1 + PANEL_GAP;
+        const botY1 = botY0 + BOT_H;
+
+        const N = view.length;
+        const xForIdx = i => PAD_L + (plotW * i) / Math.max(1, N - 1);
+
+        // QQQ on log scale so the early years aren't invisible next to 2024 highs
+        const qMin = Math.min(...view.map(v => v.qqq));
+        const qMax = Math.max(...view.map(v => v.qqq));
+        const logMin = Math.log10(qMin), logMax = Math.log10(qMax);
+        const yForQqq = v => topY1 - ((Math.log10(v) - logMin) / (logMax - logMin)) * TOP_H;
+
+        // NFCI panel — pad a hair top/bottom so lines don't touch the frame
+        const nAll = [];
+        for (const v of view) { if (v.nfci != null) nAll.push(v.nfci); if (v.sma != null) nAll.push(v.sma); }
+        const nMin = Math.min(...nAll), nMax = Math.max(...nAll);
+        const nSpan = nMax - nMin, nPad = nSpan * 0.06;
+        const yForN = v => botY1 - ((v - (nMin - nPad)) / (nSpan + 2 * nPad)) * BOT_H;
+
+        const parts = [];
+
+        // Cash-period shading: instead of shading invested days
+        // (65% of the chart), highlight the CASH periods — those are
+        // the moments the rule pulled you out ahead of trouble, which
+        // is the whole point of the signal. Derive cash windows as
+        // the inverse of the coalesced invested `segs` list.
+        const cashSegs = [];
+        let cursor = 0;
+        for (const [s, e] of segs) {
+          if (s - 1 >= cursor && s - 1 - cursor >= MIN_SEG) cashSegs.push([cursor, s - 1]);
+          cursor = e + 1;
+        }
+        if (view.length - 1 - cursor >= MIN_SEG) cashSegs.push([cursor, view.length - 1]);
+
+        for (const [s, e] of cashSegs) {
+          const x0 = xForIdx(s);
+          const x1 = xForIdx(Math.min(view.length - 1, e + 1));
+          parts.push(`<rect x="${x0.toFixed(1)}" y="${topY0}" width="${(x1 - x0).toFixed(1)}" height="${(topY1 - topY0)}" class="iq-cash-band" />`);
+          parts.push(`<rect x="${x0.toFixed(1)}" y="${botY0}" width="${(x1 - x0).toFixed(1)}" height="${(botY1 - botY0)}" class="iq-cash-band" />`);
+        }
+
+        // QQQ gridlines (log-spaced) + line
+        const qLabels = [50, 100, 200, 400, 700];
+        for (const t of qLabels) {
+          if (t < qMin * 0.9 || t > qMax * 1.1) continue;
+          const y = yForQqq(t);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+          parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">$${t}</text>`);
+        }
+        const qqqPath = view.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForQqq(v.qqq).toFixed(1)}`).join(' ');
+        parts.push(`<path d="${qqqPath}" class="iq-line-qqq" />`);
+
+        // NFCI gridlines + zero line + NFCI + SMA50
+        const nfciTicks = 3;
+        for (let k = 0; k <= nfciTicks; k++) {
+          const t = (nMin - nPad) + (nSpan + 2 * nPad) * (k / nfciTicks);
+          const y = yForN(t);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+          parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${t.toFixed(1)}</text>`);
+        }
+        if (nMin < 0 && nMax > 0) {
+          const y0 = yForN(0);
+          parts.push(`<line x1="${PAD_L}" y1="${y0}" x2="${PAD_L + plotW}" y2="${y0}" class="iq-zero-line" />`);
+        }
+        // Draw NFCI + SMA50 as continuous polylines (null-safe)
+        function polyline(prop, cls) {
+          let d = '', open = false;
+          for (let i = 0; i < view.length; i++) {
+            const y = view[i][prop];
+            if (y == null) { open = false; continue; }
+            d += `${open ? 'L' : 'M'} ${xForIdx(i).toFixed(1)} ${yForN(y).toFixed(1)} `;
+            open = true;
+          }
+          if (d) parts.push(`<path d="${d.trim()}" class="${cls}" />`);
+        }
+        polyline('nfci', 'iq-line-nfci');
+        polyline('sma',  'iq-line-sma');
+
+        // Every cash region already has its start and end drawn by the
+        // pink band edges — those ARE the sell and buy moments. Skip
+        // the extra vertical marks so the chart reads clean.
+        // (bigSegs kept for possible future annotation.)
+
+        // X-axis year ticks
+        const xTicks = 7;
+        for (let k = 0; k <= xTicks; k++) {
+          const idx = Math.round((k / xTicks) * (view.length - 1));
+          const x = xForIdx(idx);
+          parts.push(`<text x="${x}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${view[idx].date.slice(0, 4)}</text>`);
+        }
+
+        // Panel labels
+        parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">QQQ  · log scale</text>`);
+        parts.push(`<text x="${PAD_L + 6}" y="${botY0 + 14}" class="chart-panel-label">NFCI vs 50D SMA</text>`);
+
+        // Compact legend, top-right of top panel
+        const lx = PAD_L + plotW - 300, ly = topY0 + 10;
+        parts.push(`<g transform="translate(${lx}, ${ly})">
+          <rect x="0" y="0" width="14" height="10" class="iq-legend-swatch-cash" />
+          <text x="18" y="9" class="chart-axis-label">cash regime — left edge = SELL, right edge = BUY back</text>
+        </g>`);
+
+        // NFCI panel legend (right side of bottom panel)
+        const nlx = PAD_L + plotW - 220, nly = botY0 + 10;
+        parts.push(`<g transform="translate(${nlx}, ${nly})">
+          <line x1="0"   y1="5" x2="18"  y2="5" class="iq-legend-line-nfci" />
+          <text x="22"  y="9" class="chart-axis-label">NFCI</text>
+          <line x1="70"  y1="5" x2="88"  y2="5" class="iq-legend-line-sma" />
+          <text x="92"  y="9" class="chart-axis-label">50d SMA</text>
+        </g>`);
+
+        chartSvg.innerHTML = parts.join('');
+      }
+    })();
 
     // ==========================================================
     //  Breadth Ratio signal — data load + SVG render
