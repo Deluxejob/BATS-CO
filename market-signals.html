@@ -565,22 +565,26 @@
               your call for that day &mdash; not something you should watch tick by tick during trading hours.
             </p>
             <p>
-              <strong>How this card behaves through the day:</strong> the nightly workflow refreshes
-              <code>data/qqq.csv</code> around <strong>7:30 PM ET</strong> each trading day. Between 4:00 PM and
-              7:30 PM the pill still shows <em>yesterday's</em> signal. Between 9:30 AM and 4:00 PM it also shows
-              yesterday. Waiting until after 7:30 PM to check is the safe habit &mdash; that's when today's close
-              is baked in.
+              <strong>How this card behaves through the day:</strong> during market hours (9:30 AM&ndash;4:00 PM ET)
+              the card polls QQQ's live price every 60 seconds and rebuilds today's provisional signal on the
+              fly &mdash; the pill is tagged <strong>INTRADAY &middot; settles at 4:00 PM ET</strong> and reflects
+              what the rule <em>is</em> saying right now, not what it said yesterday. From 4:00 PM to 7:30 PM the
+              tag becomes <strong>Today's close</strong> and the pill locks to today's confirmed value. The
+              nightly workflow refreshes <code>data/qqq.csv</code> around 7:30 PM ET, after which the pill switches
+              to the standard "As of &lt;date&gt;" line.
             </p>
             <p><strong>Three ways to execute if you follow the rule:</strong></p>
             <ul>
-              <li><em>Market-on-close (textbook, matches the backtest exactly).</em> Around 3:45 PM ET, compute
-                the signal live off QQQ's current price. If it flips versus yesterday, submit a market-on-close
-                order &mdash; fills at 4:00 PM at the settle.</li>
-              <li><em>Next open (practical for most people).</em> Check the pill after 7:30 PM. If it changed,
-                place a market order for tomorrow's open. Fills drift a bit from the backtest each trade, but
-                the drift averages toward zero over 27 years.</li>
-              <li><em>Once-a-day check (no intraday attention).</em> Same as above with zero daytime looking.
-                If the pill is unchanged, do nothing.</li>
+              <li><em>Market-on-close (textbook, matches the backtest exactly).</em> At <strong>3:45 PM ET</strong>,
+                open this card and look at the pill &mdash; it's already computed live off QQQ's current price, so
+                whatever it says IS your MOC decision. If it says <strong>BUY NOW</strong> or <strong>SELL NOW</strong>,
+                submit a market-on-close order in your broker; it fills at 4:00 PM at the settlement price. If it
+                says HOLD or STAY OUT, do nothing.</li>
+              <li><em>Next open (practical for most people).</em> Check the pill any time after 7:30 PM ET. If
+                the confirmed-close signal changed from yesterday, place a market order for tomorrow's open. Fills
+                drift a bit from the backtest each trade, but the drift averages toward zero over 27 years.</li>
+              <li><em>Once-a-day check (no intraday attention).</em> Same as above with zero daytime looking. If
+                the pill is unchanged, do nothing.</li>
             </ul>
             <p>
               <strong>Wednesday evening is the wildcard.</strong> The Chicago Fed publishes a fresh NFCI reading
