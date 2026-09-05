@@ -291,12 +291,31 @@
     .iq-chart-caption .iq-sw-green  { background: transparent; border-left: 2px solid rgba(34, 211, 154, 0.85); border-right: 0; margin-right: 0.35rem; width: 0.35em; }
 
     /* Time-range toggle above the chart. Buttons behave like a segmented
-       control — clicking one re-renders the SVG over a shorter window. */
+       control — clicking one re-renders the SVG over a shorter window.
+       The row also carries "crash preset" buttons on the left that jump
+       straight to famous bear markets, since that's where the rule's
+       edge is most visible. */
     .iq-range-bar {
       display: flex;
-      justify-content: flex-end;
-      gap: 0.3rem;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
       margin: 0.4rem 0 0.15rem;
+    }
+    .iq-range-group {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .iq-range-group-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      align-self: center;
+      margin-right: 0.35rem;
     }
     .iq-range-btn {
       font-family: 'JetBrains Mono', monospace;
@@ -422,11 +441,21 @@
           </div>
 
           <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
-            <button type="button" class="iq-range-btn" data-years="1"  role="tab">1Y</button>
-            <button type="button" class="iq-range-btn" data-years="3"  role="tab">3Y</button>
-            <button type="button" class="iq-range-btn active" data-years="5"  role="tab">5Y</button>
-            <button type="button" class="iq-range-btn" data-years="10" role="tab">10Y</button>
-            <button type="button" class="iq-range-btn" data-years="0"  role="tab">ALL</button>
+            <div class="iq-range-group" aria-label="Famous bear markets">
+              <span class="iq-range-group-label">Crashes</span>
+              <button type="button" class="iq-range-btn" data-from="2000-01-01" data-to="2003-06-30" role="tab" title="Dot-com bust: NFCI gate closed cleanly, big win">Dot-com</button>
+              <button type="button" class="iq-range-btn" data-from="2007-06-01" data-to="2009-12-31" role="tab" title="Financial crisis: NFCI spiked, another big win">2008 GFC</button>
+              <button type="button" class="iq-range-btn" data-from="2020-01-01" data-to="2020-12-31" role="tab" title="COVID: NFCI spiked, rule side-stepped the crash">COVID</button>
+              <button type="button" class="iq-range-btn" data-from="2021-11-01" data-to="2023-06-30" role="tab" title="Fed-hike bear: NFCI moved slowly, only slight outperformance">2022 Fed</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-years="3"  role="tab">3Y</button>
+              <button type="button" class="iq-range-btn active" data-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn" data-years="0"  role="tab">ALL</button>
+            </div>
           </div>
 
           <div class="sig-chart-wrap">
@@ -792,13 +821,21 @@
 
         // Chart rendering is factored into a function so the time-range
         // buttons above can slice `viewFull` to whatever window the user
-        // picked (1Y / 3Y / 5Y / 10Y / ALL). Zoomed views space the
-        // trade marks apart so each SELL / BUY is legible.
-        function renderChart(years) {
-          const startIdx = years > 0
-            ? Math.max(0, viewFull.length - years * 252)
-            : 0;
-          const view = viewFull.slice(startIdx);
+        // picked. Accepts either a number of years (rolling window from
+        // today) or {from, to} ISO dates for the crash presets. Zoomed
+        // views space the trade marks apart so each SELL / BUY is legible.
+        function renderChart(spec) {
+          let startIdx = 0;
+          let endIdx   = viewFull.length;
+          if (typeof spec === 'number') {
+            startIdx = spec > 0 ? Math.max(0, viewFull.length - spec * 252) : 0;
+          } else if (spec && spec.from && spec.to) {
+            const s = viewFull.findIndex(v => v.date >= spec.from);
+            const e = viewFull.findIndex(v => v.date >  spec.to);
+            startIdx = s >= 0 ? s : 0;
+            endIdx   = e >= 0 ? e : viewFull.length;
+          }
+          const view = viewFull.slice(startIdx, endIdx);
           if (view.length < 2) return;
 
         // Contiguous invested segments. First pass finds raw runs;
@@ -972,16 +1009,20 @@
 
         // Default view is 5 years — recent enough that individual
         // SELL / BUY marks are readable, long enough to include COVID
-        // and the 2022 bear. Users can widen to ALL for the full arc.
-        let currentYears = 5;
-        renderChart(currentYears);
+        // and the 2022 bear. Users can widen to ALL for the full arc,
+        // or click a "Crash" preset to jump straight to a bear market
+        // where the rule's regime filter did (or didn't) shine.
+        renderChart(5);
         document.querySelectorAll('.iq-range-btn').forEach(btn => {
           btn.addEventListener('click', () => {
-            const y = parseInt(btn.dataset.years, 10);
-            currentYears = Number.isFinite(y) ? y : 0;
             document.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            renderChart(currentYears);
+            if (btn.dataset.from && btn.dataset.to) {
+              renderChart({ from: btn.dataset.from, to: btn.dataset.to });
+            } else {
+              const y = parseInt(btn.dataset.years, 10);
+              renderChart(Number.isFinite(y) ? y : 0);
+            }
           });
         });
       }
