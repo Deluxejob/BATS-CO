@@ -323,6 +323,14 @@
     .iq-callout strong { color: var(--text); }
     .iq-callout ul { margin: 0.15rem 0 0.55rem 1.15rem; padding: 0; }
     .iq-callout li { margin-bottom: 0.2rem; }
+    /* Amber variant for operational / do-this-at-a-specific-time content,
+       so it's visually distinct from the cyan behavioral callout above. */
+    .iq-callout-timing {
+      background: rgba(255, 182, 88, 0.05);
+      border-color: rgba(255, 182, 88, 0.32);
+      border-left-color: rgba(255, 182, 88, 0.75);
+    }
+    .iq-callout-timing h4 { color: #ffb658; }
 
     /* Time-range toggle above the chart. Buttons behave like a segmented
        control — clicking one re-renders the SVG over a shorter window.
@@ -545,6 +553,45 @@
               against your own instincts. The <strong>+8.4% annualized alpha</strong> only exists for someone who
               follows <em>every</em> signal, including the ones that feel wrong the moment they fire. Paper-trade it
               through a full up-and-down cycle before committing real money.
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When the signal fires &mdash; and how to actually trade it</h4>
+            <p>
+              <strong>The signal settles at market close, 4:00 PM ET.</strong> RSI(QQQ, 14) needs QQQ's closing
+              price to compute; NFCI is a weekly series released by the Chicago Fed on Wednesday afternoons for the
+              <em>previous Friday's</em> data. Both inputs are stable once the market closes, so the pill above is
+              your call for that day &mdash; not something you should watch tick by tick during trading hours.
+            </p>
+            <p>
+              <strong>How this card behaves through the day:</strong> the nightly workflow refreshes
+              <code>data/qqq.csv</code> around <strong>7:30 PM ET</strong> each trading day. Between 4:00 PM and
+              7:30 PM the pill still shows <em>yesterday's</em> signal. Between 9:30 AM and 4:00 PM it also shows
+              yesterday. Waiting until after 7:30 PM to check is the safe habit &mdash; that's when today's close
+              is baked in.
+            </p>
+            <p><strong>Three ways to execute if you follow the rule:</strong></p>
+            <ul>
+              <li><em>Market-on-close (textbook, matches the backtest exactly).</em> Around 3:45 PM ET, compute
+                the signal live off QQQ's current price. If it flips versus yesterday, submit a market-on-close
+                order &mdash; fills at 4:00 PM at the settle.</li>
+              <li><em>Next open (practical for most people).</em> Check the pill after 7:30 PM. If it changed,
+                place a market order for tomorrow's open. Fills drift a bit from the backtest each trade, but
+                the drift averages toward zero over 27 years.</li>
+              <li><em>Once-a-day check (no intraday attention).</em> Same as above with zero daytime looking.
+                If the pill is unchanged, do nothing.</li>
+            </ul>
+            <p>
+              <strong>Wednesday evening is the wildcard.</strong> The Chicago Fed publishes a fresh NFCI reading
+              Wednesday afternoons; that's the one day a week the signal can flip on macro news alone, even if
+              QQQ hasn't moved. Give the card a second look Wednesday nights.
+            </p>
+            <p>
+              <strong>About "missing a day":</strong> the strategy trades roughly once every 2&ndash;3 weeks on
+              average. Any single missed transition costs at most a few percent on that trade, so no one miss
+              destroys the edge. What <em>does</em> destroy the edge is skipping trades because you dislike them
+              &mdash; that's how you filter out the mean-reversion signal.
             </p>
           </div>
 
@@ -808,6 +855,132 @@
         : `not firing (SMA50 ${today.sma.toFixed(3)})`;
       nfciState.className   = 'iq-gate-state ' + (today.nfciFire ? 'iq-gate-on' : 'iq-gate-off');
       nfciGate.classList.toggle('iq-gate-firing', today.nfciFire);
+
+      // ==========================================================
+      //  Live intraday overlay — during market hours, poll
+      //  /api/quote?syms=QQQ every 60 s and rebuild today's RSI +
+      //  signal using the live price. The nightly CSV workflow
+      //  only lands after 7:30 PM ET, so without this the pill
+      //  would still show yesterday's signal at 3:45 PM when a
+      //  market-on-close decision has to happen. NFCI is weekly
+      //  and doesn't move intraday, so we roll SMA50 forward by
+      //  one day using yesterday's NFCI reading.
+      // ==========================================================
+      const csvLatestSignal = today;   // baseline for "yesterday" once live fires
+
+      async function fetchLiveQqq() {
+        try {
+          const r = await fetch('/api/quote?syms=QQQ', { cache: 'no-store' });
+          if (!r.ok) return null;
+          const j = await r.json();
+          return (j && j.quotes && j.quotes.QQQ) || null;
+        } catch (e) { return null; }
+      }
+
+      function computeSignalWithLivePrice(livePrice) {
+        // Rebuild RSI(14) from scratch on the existing QQQ series
+        // plus one extra "today" bar at the live price. Cheap: one
+        // pass over ~6800 daily closes.
+        const prices = new Array(qqq.length + 1);
+        for (let i = 0; i < qqq.length; i++) prices[i] = qqq[i].v;
+        prices[qqq.length] = livePrice;
+
+        const PP = 14;
+        const M  = prices.length;
+        let gs = 0, ls = 0;
+        for (let i = 1; i <= PP; i++) {
+          const d = prices[i] - prices[i - 1];
+          if (d > 0) gs += d; else ls -= d;
+        }
+        let aG = gs / PP, aL = ls / PP;
+        let last = aL === 0 ? 100 : 100 - 100 / (1 + aG / aL);
+        for (let i = PP + 1; i < M; i++) {
+          const d = prices[i] - prices[i - 1];
+          const g = d > 0 ?  d : 0;
+          const l = d < 0 ? -d : 0;
+          aG = (aG * (PP - 1) + g) / PP;
+          aL = (aL * (PP - 1) + l) / PP;
+          last = aL === 0 ? 100 : 100 - 100 / (1 + aG / aL);
+        }
+        // NFCI is weekly — today's forward-filled value is just yesterday's.
+        const liveNfci = nfciDaily[nfciDaily.length - 1];
+        // SMA50: drop the oldest of the current 50-day window and
+        // add today's forward-filled value.
+        let s = 0;
+        for (let k = qqq.length - 49; k < qqq.length; k++) s += nfciDaily[k];
+        s += liveNfci;
+        const liveSma = s / 50;
+        const rsiFire  = last < 40;
+        const nfciFire = liveNfci < liveSma;
+        return {
+          rsi: last, rsiFire,
+          nfci: liveNfci, sma: liveSma, nfciFire,
+          invested: rsiFire || nfciFire,
+        };
+      }
+
+      function applyLiveSignal(todaySig, yestSig, asofText) {
+        let action, cls, subText;
+        if (todaySig.invested && !yestSig.invested) {
+          action = 'BUY NOW';  cls = 'iq-action-buy';
+          subText = "Signal just turned on — the rule says go long QQQ at today's close.";
+        } else if (todaySig.invested && yestSig.invested) {
+          action = 'HOLD';     cls = 'iq-action-hold';
+          subText = 'Signal is on — already long, keep the position.';
+        } else if (!todaySig.invested && yestSig.invested) {
+          action = 'SELL NOW'; cls = 'iq-action-sell';
+          subText = "Signal just turned off — the rule says exit to cash at today's close.";
+        } else {
+          action = 'STAY OUT'; cls = 'iq-action-stayout';
+          subText = 'Signal is off — remain in cash. Watch for RSI drops below 40 or NFCI weakening.';
+        }
+        pill.textContent = action;
+        pill.className   = 'iq-action-pill ' + cls;
+        sub.textContent  = subText;
+        asof.textContent = asofText;
+
+        rsiEl.textContent    = todaySig.rsi.toFixed(1);
+        rsiState.textContent = todaySig.rsiFire ? 'FIRING (< 40)' : 'not firing (≥ 40)';
+        rsiState.className   = 'iq-gate-state ' + (todaySig.rsiFire ? 'iq-gate-on' : 'iq-gate-off');
+        rsiGate.classList.toggle('iq-gate-firing', todaySig.rsiFire);
+
+        nfciEl.textContent    = todaySig.nfci.toFixed(3);
+        nfciState.textContent = todaySig.nfciFire
+          ? `FIRING (< ${todaySig.sma.toFixed(3)})`
+          : `not firing (SMA50 ${todaySig.sma.toFixed(3)})`;
+        nfciState.className   = 'iq-gate-state ' + (todaySig.nfciFire ? 'iq-gate-on' : 'iq-gate-off');
+        nfciGate.classList.toggle('iq-gate-firing', todaySig.nfciFire);
+      }
+
+      async function tickLive() {
+        const q = await fetchLiveQqq();
+        if (!q || !Number.isFinite(q.price)) return;   // keep the CSV pill
+
+        const marketState = q.marketState || '';
+        const lastCsvDate = qqq[qqq.length - 1].date;
+        const todayIso    = new Date().toISOString().slice(0, 10);
+        const csvHasToday = lastCsvDate >= todayIso;
+
+        // Only overlay when today isn't in the CSV yet AND the live
+        // price actually represents today (market open or just closed).
+        // Pre-market and closed (weekend / holiday) → skip.
+        const useLive = !csvHasToday &&
+          (marketState === 'REGULAR' || marketState === 'POST' || marketState === 'POSTPOST');
+        if (!useLive) return;
+
+        const live = computeSignalWithLivePrice(q.price);
+        const label = marketState === 'REGULAR'
+          ? `INTRADAY · QQQ $${q.price.toFixed(2)} · settles at 4:00 PM ET`
+          : `Today's close · QQQ $${q.price.toFixed(2)}`;
+        applyLiveSignal(live, csvLatestSignal, label);
+      }
+
+      // Kick it off once, then poll every 60 s. The Yahoo proxy
+      // caches for 30 s so this is cheap. The interval fires
+      // regardless of tab focus, which is fine — we want the pill
+      // fresh whenever the user comes back.
+      tickLive();
+      setInterval(tickLive, 60000);
 
       // ---- History chart: QQQ (log) on top, NFCI vs SMA50 on bottom,
       //      green bands over invested (long) periods, thin dashed
