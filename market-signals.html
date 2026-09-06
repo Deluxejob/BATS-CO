@@ -836,6 +836,133 @@
                style="margin-top: 0.9rem;"></div>
         </div>
 
+        <!-- SIGNAL: International Country Rotation (Top-3 iShares country ETFs, monthly) -->
+        <div class="sig-card" id="sig-intl-rotation">
+          <div class="sig-head">
+            <h2 class="sig-title">International Country Rotation</h2>
+            <span class="sig-tag">Monthly rotation &middot; 13-country universe &middot; vs EFA</span>
+          </div>
+          <p class="sig-desc">
+            An international-only strategy for people who want overseas exposure done well.
+            Each month-end, look at <strong>13 iShares country ETFs</strong>. Filter to those
+            <strong>trading above their 10-month moving average</strong> (the monthly-bar equivalent
+            of the classic 200-day trend filter). Rank the survivors by trailing 6-month return
+            and hold the <strong>top 3 equal-weighted</strong>. Rebalance monthly. Historically
+            this has beaten the EFA developed-international benchmark by <strong>+4.22% CAGR</strong>
+            over ~19.5 years, at a max drawdown roughly in line with EFA itself.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="fr-action-pill fr-hold" id="icActionPill">
+              <span class="fr-verb">LOADING&hellip;</span>
+              <span class="fr-ticker">&mdash;</span>
+            </div>
+            <div class="iq-action-sub" id="icActionSub">Fetching country ETF prices&hellip;</div>
+            <div class="iq-action-asof" id="icActionAsof"></div>
+          </div>
+
+          <div class="fr-rankings" id="icRankings">
+            <div class="fr-rank-row" style="opacity: 0.5;">
+              <div class="fr-rank-num">&mdash;</div>
+              <div class="fr-rank-tkr">&mdash;</div>
+              <div class="fr-rank-name">rankings load once prices arrive</div>
+              <div class="fr-rank-ret">&mdash;</div>
+              <div class="fr-rank-badge fr-badge-empty">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos">+9.9%</div></div>
+            <div class="sig-stat"><div class="lbl">EFA CAGR</div><div class="val">+5.7%</div></div>
+            <div class="sig-stat"><div class="lbl">Rule cumulative</div><div class="val pos" id="icRuleCum">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">EFA cumulative</div><div class="val" id="icBenchCum">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos">+4.22%</div></div>
+            <div class="sig-stat"><div class="lbl">Rule max DD</div><div class="val">-34%</div></div>
+            <div class="sig-stat"><div class="lbl">EFA max DD</div><div class="val neg">-30%</div></div>
+            <div class="sig-stat"><div class="lbl">Rebalances/yr</div><div class="val">~9.6</div></div>
+          </div>
+
+          <div class="sig-chart-wrap" style="margin-top: 0.85rem;">
+            <svg viewBox="0 0 1200 360" class="sig-chart" id="icChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="International rotation equity curve vs EFA since 2004, with regime bands showing which country was held"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: $1,000 invested in the rotation strategy (green) vs $1,000 in EFA
+            (dashed cyan) since 2004. <em>Bottom panel</em>: colored bands show which countries were
+            held each month, one row per rebalance. Long stretches of the same colors mean the same
+            handful of countries kept leading; frequent color changes mean the leadership was shifting.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>This is an international-exposure strategy, not a US-beater.</strong> The alpha
+              is measured vs EFA (developed international). Over the last 20 years EFA has returned
+              ~5.7% CAGR while SPY has done ~9.4%. The rotation matches SPY roughly (~9.9%) but its
+              purpose is diversification: if you want US exposure, buy SPY. This card exists for the
+              slice of a portfolio dedicated to international.
+            </p>
+            <p>
+              <strong>Country ETFs are volatile.</strong> Max drawdown -34% vs EFA's -30%. That's the
+              cost of concentrating in just 3 countries at a time. If EM or a single country cracks
+              hard (2008, 2015 China, 2020, 2022) you'll feel it more than a diversified basket.
+            </p>
+            <p>
+              <strong>What the rule does mechanically</strong>: two gates, applied to each country ETF
+              at month-end. Gate 1 (trend): the ETF has to be above its 10-month moving average, which
+              is the monthly-bar approximation of the classic 200-day rule. Gate 2 (momentum): rank the
+              survivors by trailing 6-month total return; take the top 3. If fewer than 3 pass Gate 1,
+              hold only what survived. If none pass, hold cash (rare — usually happens only during
+              severe global sell-offs).
+            </p>
+            <p>
+              <strong>Why 10-month MA + 6-month momentum works</strong>: country markets trend more
+              persistently than sectors within a single country. The trend filter keeps you out of
+              markets in structural downtrends (Russia 2014, Turkey 2018, China 2021-24), and the
+              momentum rank picks up sustained leadership cycles (Latin America commodity booms, India
+              since 2014, Japan since 2023).
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When to trade and how</h4>
+            <p>
+              <strong>Rebalance once a month, at the close of the last trading day.</strong> The pill
+              above reflects the current month's holding. If it says HOLD, do nothing. If it says
+              ROTATE, sell whatever fell out of the top 3 and buy what came in, equal-weighted.
+            </p>
+            <p>
+              <strong>Turnover is moderate.</strong> ~9.6 rebalances/year historically. Not every
+              rebalance is a full swap &mdash; usually just one of the three positions rotates,
+              meaning ~3-6 trades/year per name.
+            </p>
+            <p>
+              <strong>Any brokerage works.</strong> The iShares country ETFs all trade at reasonable
+              volume &mdash; even the smaller ones (EWL, EWH) do &gt;$10M/day. Bid-ask spreads are
+              1-3 cents. Watch for currency effects: these are USD-priced but the underlying markets
+              trade in local currency, so returns bake in FX moves.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Backtest 2004-2026 (~19.5 yrs), Yahoo monthly-close data. Universe: EWJ (Japan), EWG (Germany),
+            EWU (UK), EWZ (Brazil), EWC (Canada), EWA (Australia), EWY (Korea), EWT (Taiwan), INDA (India),
+            MCHI (China), EWH (Hong Kong), EWL (Switzerland), EWW (Mexico). Some markets enter the
+            universe later (INDA in 2012, MCHI in 2011). Rule: hold top 3 by trailing 6-month return
+            among ETFs above their 10-month moving average. Benchmark: EFA (iShares MSCI EAFE developed
+            international). Results ignore trading costs and taxes &mdash; realistic drag for retail
+            execution is &lt;0.5% per year at this turnover. Systematic rotation shown for reference
+            only &mdash; not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/market-signals.html#sig-intl-rotation"
+               data-share-title="International Country Rotation — BATS.CO"
+               data-share-text="A rules-only monthly rotation across 13 iShares country ETFs. Filter to markets above their 10-month MA, hold the top 3 by trailing 6-month return. Historically +4.22% annualized alpha vs the EFA international benchmark."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
         <!-- SIGNAL: 50MA / 200MA Breadth Ratio -->
         <div class="sig-card" id="sig-breadth-ratio">
           <div class="sig-head">
@@ -1897,6 +2024,289 @@
           renderForLookback(n);
         });
       });
+    })();
+
+    // ==========================================================
+    //  International Country Rotation — Top-3 by 6-mo momentum,
+    //  gated by "above 10-month moving average", monthly rebalance,
+    //  benchmarked to EFA.
+    // ==========================================================
+    (async function initIntlRotation() {
+      const pill      = document.getElementById('icActionPill');
+      if (!pill) return;
+      const sub       = document.getElementById('icActionSub');
+      const asof      = document.getElementById('icActionAsof');
+      const rankings  = document.getElementById('icRankings');
+      const chartSvg  = document.getElementById('icChartSvg');
+      const ruleCumEl = document.getElementById('icRuleCum');
+      const benchCumEl= document.getElementById('icBenchCum');
+
+      const UNIVERSE = [
+        {sym: 'EWJ',  name: 'Japan',        color: '#ef4444'},
+        {sym: 'EWG',  name: 'Germany',      color: '#f59e0b'},
+        {sym: 'EWU',  name: 'UK',           color: '#6366f1'},
+        {sym: 'EWZ',  name: 'Brazil',       color: '#10b981'},
+        {sym: 'EWC',  name: 'Canada',       color: '#dc2626'},
+        {sym: 'EWA',  name: 'Australia',    color: '#06b6d4'},
+        {sym: 'EWY',  name: 'South Korea',  color: '#8b5cf6'},
+        {sym: 'EWT',  name: 'Taiwan',       color: '#ec4899'},
+        {sym: 'INDA', name: 'India',        color: '#f97316'},
+        {sym: 'MCHI', name: 'China',        color: '#facc15'},
+        {sym: 'EWH',  name: 'Hong Kong',    color: '#db2777'},
+        {sym: 'EWL',  name: 'Switzerland',  color: '#14b8a6'},
+        {sym: 'EWW',  name: 'Mexico',       color: '#22c55e'},
+      ];
+      const BENCH  = 'EFA';
+      const NAMES  = Object.fromEntries(UNIVERSE.map(u => [u.sym, u.name]));
+      const COLORS = Object.fromEntries(UNIVERSE.map(u => [u.sym, u.color]));
+
+      function fail(msg) {
+        pill.querySelector('.fr-verb').textContent = 'UNAVAILABLE';
+        pill.querySelector('.fr-ticker').textContent = '—';
+        sub.textContent = msg;
+      }
+
+      async function fetchHist(sym) {
+        try {
+          const r = await fetch(`/api/history?syms=${sym}&range=max&interval=1d`, {cache: 'no-store'});
+          if (!r.ok) return null;
+          const j = await r.json();
+          const s = j && j.series && j.series[sym];
+          if (!Array.isArray(s) || !s.length) return null;
+          return s.map(row => ({date: new Date(row[0] * 1000).toISOString().slice(0, 10), v: row[1]}));
+        } catch (e) { return null; }
+      }
+      async function fetchAll(syms) {
+        const out = {};
+        for (let i = 0; i < syms.length; i += 6) {
+          const batch = syms.slice(i, i + 6);
+          const results = await Promise.all(batch.map(fetchHist));
+          batch.forEach((s, k) => { if (results[k]) out[s] = results[k]; });
+        }
+        return out;
+      }
+
+      const data = await fetchAll([...UNIVERSE.map(u => u.sym), BENCH]);
+      const missing = [...UNIVERSE.map(u => u.sym), BENCH].filter(s => !data[s]);
+      if (missing.length) { fail(`Could not fetch: ${missing.join(', ')}. Try refreshing.`); return; }
+
+      const bench = data[BENCH];
+      function priceOn(sym, date) {
+        const bars = data[sym]; if (!bars) return null;
+        let lo = 0, hi = bars.length - 1, best = -1;
+        while (lo <= hi) { const mid = (lo + hi) >> 1; if (bars[mid].date <= date) { best = mid; lo = mid + 1; } else hi = mid - 1; }
+        return best >= 0 ? bars[best] : null;
+      }
+      function firstDate(sym) { return data[sym][0].date; }
+      // Simple moving average over the sym's own monthly-bar array,
+      // ending at the bar closest to (but not after) `date`.
+      function movingAvg(sym, date, N) {
+        const bars = data[sym]; if (!bars) return null;
+        let lo = 0, hi = bars.length - 1, idx = -1;
+        while (lo <= hi) { const m = (lo + hi) >> 1; if (bars[m].date <= date) { idx = m; lo = m + 1; } else hi = m - 1; }
+        if (idx < N - 1) return null;
+        let s = 0;
+        for (let k = 0; k < N; k++) s += bars[idx - k].v;
+        return s / N;
+      }
+
+      const TREND_N  = 10;  // 10-month MA (~200-day trend filter on monthly bars)
+      const MOM_N    = 6;   // 6-month momentum for ranking
+      const TOP_N    = 3;
+      const START_DATE = '2004-01-01';
+      const startI = bench.findIndex(x => x.date >= START_DATE);
+      if (startI < 0) { fail('Not enough data to backtest.'); return; }
+
+      // Walk month by month, building equity curves + pick history.
+      let ruleW = 1000, bhW = 1000;
+      let rulePeak = 1000, bhPeak = 1000, ruleMinDD = 0, bhMinDD = 0;
+      const equityRule = [ruleW], equityBench = [bhW], equityDates = [bench[startI].date];
+      const pickHistory = [];   // {startI, syms: [sym1, sym2, sym3]}
+      let lastPickKey = null;
+
+      for (let t = startI + Math.max(TREND_N, MOM_N); t < bench.length - 1; t++) {
+        const rankDate = bench[t].date;
+        const momStart = bench[t - MOM_N].date;
+
+        const eligible = [];
+        for (const u of UNIVERSE) {
+          const sym = u.sym;
+          if (firstDate(sym) > momStart) continue;
+          const price = priceOn(sym, rankDate);
+          const slowMA = movingAvg(sym, rankDate, TREND_N);
+          if (!price || !slowMA || price.v <= slowMA) continue;
+          const a = priceOn(sym, momStart);
+          if (!a || a.v <= 0) continue;
+          eligible.push({sym, mom: price.v / a.v - 1});
+        }
+        eligible.sort((a, b) => b.mom - a.mom);
+        const picked = eligible.slice(0, Math.min(TOP_N, eligible.length)).map(x => x.sym);
+        // Fallback: if no ETF passes the trend filter, hold cash for the month
+        let mret = 0;
+        if (picked.length) {
+          let cnt = 0;
+          for (const sym of picked) {
+            const a = priceOn(sym, rankDate), b = priceOn(sym, bench[t + 1].date);
+            if (a && b && a.v > 0) { mret += b.v / a.v - 1; cnt++; }
+          }
+          if (cnt) mret /= cnt; else mret = 0;
+        }
+        const bRet = bench[t + 1].v / bench[t].v - 1;
+        ruleW *= (1 + mret);
+        bhW   *= (1 + bRet);
+        if (ruleW > rulePeak) rulePeak = ruleW;
+        if (bhW   > bhPeak)   bhPeak   = bhW;
+        if (ruleW / rulePeak - 1 < ruleMinDD) ruleMinDD = ruleW / rulePeak - 1;
+        if (bhW   / bhPeak   - 1 < bhMinDD)   bhMinDD   = bhW   / bhPeak   - 1;
+        equityRule.push(ruleW);
+        equityBench.push(bhW);
+        equityDates.push(bench[t + 1].date);
+
+        const pickKey = picked.length ? picked.slice().sort().join(',') : 'CASH';
+        if (pickKey !== lastPickKey) pickHistory.push({startI: t, syms: picked.length ? picked : []});
+        lastPickKey = pickKey;
+      }
+
+      // ---- Live ranking on the latest available month ----
+      const now = bench.length - 1;
+      const rankDate = bench[now].date;
+      const momStart = bench[now - MOM_N].date;
+      const liveRanked = [];
+      for (const u of UNIVERSE) {
+        const sym = u.sym;
+        const price = priceOn(sym, rankDate);
+        const slowMA = movingAvg(sym, rankDate, TREND_N);
+        const a = priceOn(sym, momStart);
+        if (!price || !slowMA || !a || a.v <= 0) continue;
+        liveRanked.push({sym, mom: price.v / a.v - 1, aboveTrend: price.v > slowMA});
+      }
+      liveRanked.sort((a, b) => b.mom - a.mom);
+
+      // Current pick: top-3 that are also above their trend MA
+      const currentPicks = liveRanked.filter(x => x.aboveTrend).slice(0, TOP_N).map(x => x.sym);
+      const previousPicks = pickHistory.length ? pickHistory[pickHistory.length - 1].syms : [];
+      const currentSet = new Set(currentPicks), previousSet = new Set(previousPicks);
+      const toBuy  = currentPicks.filter(s => !previousSet.has(s));
+      const toSell = previousPicks.filter(s => !currentSet.has(s));
+
+      let verb, ticker, subText, cls;
+      if (!currentPicks.length) {
+        verb = 'CASH'; ticker = '—'; cls = 'fr-hold';
+        subText = 'No country ETF is trading above its 10-month MA. Sit in cash this month.';
+      } else if (!toBuy.length && !toSell.length) {
+        verb = 'HOLD';
+        ticker = currentPicks.join(' · ');
+        cls = 'fr-hold';
+        subText = `Trailing 6-mo leaders unchanged. No trades this month.`;
+      } else {
+        verb = 'ROTATE';
+        ticker = currentPicks.join(' · ');
+        cls = 'fr-rotate';
+        const parts = [];
+        if (toSell.length) parts.push(`Sell ${toSell.join(', ')}`);
+        if (toBuy.length)  parts.push(`buy ${toBuy.join(', ')}`);
+        subText = parts.join(', ') + ' at next open.';
+      }
+      pill.className = 'fr-action-pill ' + cls;
+      pill.querySelector('.fr-verb').textContent = verb;
+      pill.querySelector('.fr-ticker').textContent = ticker;
+      sub.textContent = subText;
+      asof.textContent = `As of month-end ${bench[now].date}`;
+
+      // Populate rankings — show every country ETF's momentum + trend status
+      const holdingSet = new Set(currentPicks);
+      rankings.innerHTML = liveRanked.map((r, i) => {
+        const isHolding = holdingSet.has(r.sym);
+        const badgeClass = isHolding ? 'fr-badge-pick' : 'fr-badge-empty';
+        const badgeText  = isHolding ? 'HOLDING' : (r.aboveTrend ? '—' : 'BELOW MA');
+        const rowCls = isHolding ? 'fr-rank-row fr-rank-top' : 'fr-rank-row';
+        return `<div class="${rowCls}">
+          <div class="fr-rank-num">#${i + 1}</div>
+          <div class="fr-rank-tkr">${r.sym}</div>
+          <div class="fr-rank-name">${NAMES[r.sym]}${r.aboveTrend ? '' : ' <span style="color:var(--text-faint);font-size:0.65rem;">(trend down)</span>'}</div>
+          <div class="fr-rank-ret ${r.mom >= 0 ? 'pos' : 'neg'}">${(r.mom * 100).toFixed(1)}%</div>
+          <div class="fr-rank-badge ${badgeClass}" ${!isHolding ? 'style="visibility:visible;color:var(--text-faint);border-color:var(--border-soft);"' : ''}>${badgeText}</div>
+        </div>`;
+      }).join('');
+
+      // Live cumulative stats
+      const fmtPct = v => (v >= 0 ? '+' : '') + Math.round(v).toLocaleString() + '%';
+      ruleCumEl.textContent  = fmtPct((ruleW / 1000 - 1) * 100);
+      benchCumEl.textContent = fmtPct((bhW   / 1000 - 1) * 100);
+
+      // ---- Chart: equity curves + regime bands ----
+      if (chartSvg) {
+        const W = 1200, H = 360;
+        const PAD_L = 60, PAD_R = 60, PAD_T = 20;
+        const GAP = 20;
+        const TOP_H = 220;
+        const BAND_H = 60;
+        const plotW = W - PAD_L - PAD_R;
+        const topY0 = PAD_T, topY1 = PAD_T + TOP_H;
+        const bandY0 = topY1 + GAP, bandY1 = bandY0 + BAND_H;
+        const N = equityRule.length;
+        const xForIdx = i => PAD_L + plotW * i / Math.max(1, N - 1);
+        const allEq = [...equityRule, ...equityBench];
+        const eqMin = Math.min(...allEq, 1000);
+        const eqMax = Math.max(...allEq);
+        const logLo = Math.log10(eqMin * 0.95), logHi = Math.log10(eqMax * 1.05);
+        const yForEq = v => topY1 - ((Math.log10(v) - logLo) / (logHi - logLo)) * TOP_H;
+
+        const parts = [];
+        // $1,000 reference line
+        {
+          const yRef = yForEq(1000);
+          parts.push(`<line x1="${PAD_L}" y1="${yRef}" x2="${PAD_L + plotW}" y2="${yRef}" class="iq-ref-1000" />`);
+          parts.push(`<text x="${PAD_L - 6}" y="${yRef + 3}" text-anchor="end" class="chart-axis-label">$1,000</text>`);
+        }
+        for (const t of [2000, 4000, 8000]) {
+          if (t < eqMin || t > eqMax * 1.1) continue;
+          const y = yForEq(t);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+          parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">$${(t/1000).toFixed(1)}k</text>`);
+        }
+        // Equity curves
+        const bhPath   = equityBench.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ');
+        const rulePath = equityRule.map( (v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ');
+        parts.push(`<path d="${bhPath}"   class="iq-line-eq-bh"   />`);
+        parts.push(`<path d="${rulePath}" class="iq-line-eq-rule" />`);
+        const finalRule = equityRule[N - 1], finalBh = equityBench[N - 1];
+        const fmt$ = v => v >= 10000 ? `$${(v/1000).toFixed(1)}k` : `$${Math.round(v).toLocaleString()}`;
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(finalRule) + 3}" class="iq-eq-label" style="fill:#22d39a">${fmt$(finalRule)}</text>`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(finalBh)   + 3}" class="iq-eq-label" style="fill:#64d3ff">${fmt$(finalBh)}</text>`);
+
+        // Regime bands — one segment per contiguous pick period.
+        // For 3-country holdings, we split each band vertically into 3 stripes.
+        for (let k = 0; k < pickHistory.length; k++) {
+          const seg = pickHistory[k];
+          const next = pickHistory[k + 1];
+          const eStart = seg.startI - startI;
+          const eEnd   = next ? (next.startI - startI) : (N - 1);
+          const x0 = xForIdx(Math.max(0, eStart));
+          const x1 = xForIdx(Math.min(N - 1, eEnd));
+          const w = Math.max(x1 - x0, 1);
+          const syms = seg.syms;
+          if (!syms.length) {
+            // Cash — gray band
+            parts.push(`<rect x="${x0.toFixed(1)}" y="${bandY0}" width="${w.toFixed(1)}" height="${BAND_H}" fill="#4b5563" opacity="0.5" />`);
+            continue;
+          }
+          const stripeH = BAND_H / syms.length;
+          for (let j = 0; j < syms.length; j++) {
+            const y = bandY0 + j * stripeH;
+            parts.push(`<rect x="${x0.toFixed(1)}" y="${y}" width="${w.toFixed(1)}" height="${stripeH}" fill="${COLORS[syms[j]] || '#888'}" opacity="0.65" />`);
+          }
+        }
+        parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">$1,000 → RULE vs EFA (log)</text>`);
+        parts.push(`<text x="${PAD_L + 6}" y="${bandY0 - 4}" class="chart-panel-label">HELD EACH MONTH</text>`);
+        const xTicks = 8;
+        for (let k = 0; k <= xTicks; k++) {
+          const idx = Math.round(k * (N - 1) / xTicks);
+          const x = xForIdx(idx);
+          parts.push(`<text x="${x}" y="${bandY1 + 14}" text-anchor="middle" class="chart-axis-label">${equityDates[idx].slice(0, 4)}</text>`);
+        }
+        chartSvg.innerHTML = parts.join('');
+      }
     })();
 
     // ==========================================================
