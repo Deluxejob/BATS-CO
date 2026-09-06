@@ -1,9 +1,16 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1788709066,
-  "latestPublishedAt": 1788687300,
+  "fetchedAt": 1788727135,
+  "latestPublishedAt": 1788723945,
   "items": [
+    {
+      "title": "I Make $150,000 a Year, But It Feels Like I’m Just Middle Class in a World Full of Rich People",
+      "link": "https://finance.yahoo.com/m/b3b93c35-d7e0-39b4-9973-e17e3c3de77d/i-make-%24150%2C000-a-year%2C-but.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1788723945,
+      "id": "b3b93c35-d7e0-39b4-9973-e17e3c3de77d"
+    },
     {
       "title": "ETF Inflows Set a Record in July. The Fee Mix Moved at the Same Time.",
       "link": "https://finance.yahoo.com/m/013f01aa-9caf-3553-b420-6cf2ce9be22f/etf-inflows-set-a-record-in.html",
@@ -66,13 +73,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1788545467,
       "id": "ca52c264-dd3f-3cfe-a87a-2bd4b62d015c"
-    },
-    {
-      "title": "Trade Desk Falls 4% on 15% Workforce Cut; AppLovin Ascends 3%, Magnite Pulls Back",
-      "link": "https://finance.yahoo.com/m/e985e292-5ec3-37e3-b37e-d69f3b56e2bb/trade-desk-falls-4%25-on-15%25.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1788540670,
-      "id": "e985e292-5ec3-37e3-b37e-d69f3b56e2bb"
     }
   ]
 }
