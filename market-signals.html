@@ -1526,16 +1526,21 @@
         const W = 1200, H = 560;
         const PAD_L = 60, PAD_R = 54, PAD_T = 20;
         const PANEL_GAP = 22;
-        const TOP_H = 180;   // QQQ
-        const BOT_H = 120;   // NFCI
-        const EQ_H  = 160;   // Equity
+        const TOP_H = 180;   // QQQ (now the middle panel)
+        const BOT_H = 120;   // NFCI (now the bottom panel)
+        const EQ_H  = 160;   // Equity (now the top panel — headline story)
         const plotW = W - PAD_L - PAD_R;
-        const topY0 = PAD_T;
-        const topY1 = PAD_T + TOP_H;
+        // Panel order (top to bottom): equity → QQQ → NFCI.
+        // Variable names still say top/bot/eq for their semantic content —
+        // topY0/topY1 remains "QQQ panel Y range" even though it now
+        // physically sits in the middle of the chart, and same for the
+        // others. Only the assigned Y coordinates have moved.
+        const eqY0  = PAD_T;
+        const eqY1  = eqY0 + EQ_H;
+        const topY0 = eqY1 + PANEL_GAP;
+        const topY1 = topY0 + TOP_H;
         const botY0 = topY1 + PANEL_GAP;
         const botY1 = botY0 + BOT_H;
-        const eqY0  = botY1 + PANEL_GAP;
-        const eqY1  = eqY0  + EQ_H;
 
         const N = view.length;
         const xForIdx = i => PAD_L + (plotW * i) / Math.max(1, N - 1);
@@ -1672,10 +1677,10 @@
         // to the equity curve below.
         for (const [s, e] of cashSegs) {
           const xSell = xForIdx(s).toFixed(1);
-          parts.push(`<line x1="${xSell}" y1="${topY0 - 2}" x2="${xSell}" y2="${eqY1 + 2}" class="iq-mark-sell" />`);
+          parts.push(`<line x1="${xSell}" y1="${eqY0 - 2}" x2="${xSell}" y2="${botY1 + 2}" class="iq-mark-sell" />`);
           if (e < view.length - 1) {
             const xBuy = xForIdx(e + 1).toFixed(1);
-            parts.push(`<line x1="${xBuy}" y1="${topY0 - 2}" x2="${xBuy}" y2="${eqY1 + 2}" class="iq-mark-buy" />`);
+            parts.push(`<line x1="${xBuy}" y1="${eqY0 - 2}" x2="${xBuy}" y2="${botY1 + 2}" class="iq-mark-buy" />`);
           }
         }
 
@@ -1724,7 +1729,7 @@
         for (let k = 0; k <= xTicks; k++) {
           const idx = Math.round((k / xTicks) * (view.length - 1));
           const x = xForIdx(idx);
-          parts.push(`<text x="${x}" y="${eqY1 + 14}" text-anchor="middle" class="chart-axis-label">${view[idx].date.slice(0, 4)}</text>`);
+          parts.push(`<text x="${x}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${view[idx].date.slice(0, 4)}</text>`);
         }
 
         // Panel labels
