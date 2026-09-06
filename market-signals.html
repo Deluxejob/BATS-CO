@@ -445,6 +445,11 @@
     }
     .fr-badge-pick   { color: #22d39a; background: rgba(34, 211, 154, 0.10); border-color: rgba(34, 211, 154, 0.40); }
     .fr-badge-empty  { visibility: hidden; }
+    /* Marker on the strategy-default lookback so it reads as "this is the
+       one the strategy actually uses" even when a comparison lookback is
+       currently active. Star + subtle amber border. */
+    .iq-range-btn.fr-lookback-default          { border-color: rgba(255, 182, 88, 0.35); }
+    .iq-range-btn.fr-lookback-default.active   { border-color: rgba(255, 182, 88, 0.75); background: rgba(255, 182, 88, 0.10); color: #ffb658; }
   </style>
 </head>
 <body>
@@ -710,7 +715,7 @@
               <span class="iq-range-group-label">Lookback</span>
               <button type="button" class="iq-range-btn" data-lookback="1"  role="tab" title="1-month: fast, more trades, more whipsaw">1M</button>
               <button type="button" class="iq-range-btn" data-lookback="3"  role="tab" title="3-month: quicker to react, choppier">3M</button>
-              <button type="button" class="iq-range-btn active" data-lookback="6" role="tab" title="6-month: highest historical alpha (default)">6M</button>
+              <button type="button" class="iq-range-btn active fr-lookback-default" data-lookback="6" role="tab" title="6-month is THE strategy — highest backtested alpha and lowest drawdown">6M&nbsp;★</button>
               <button type="button" class="iq-range-btn" data-lookback="12" role="tab" title="12-month: classic academic momentum, slowest">12M</button>
             </div>
             <div style="display: flex; gap: 0.6rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">
@@ -718,6 +723,12 @@
               <span>Rebalances/yr: <strong id="frLookbackRebal">3.7</strong></span>
             </div>
           </div>
+          <p style="margin: 0.25rem 0 0; font-size: 0.72rem; color: var(--text-faint); font-style: italic; line-height: 1.45;">
+            <strong style="color: #ffb658;">★</strong> is the strategy default. The other lookbacks are shown for
+            <strong>comparison only</strong> &mdash; the strategy is "buy the top ETF by trailing 6-month return,
+            hold one month, rebalance." Flipping between lookbacks each month is not the strategy and will produce
+            worse results than sticking with 6M.
+          </p>
 
           <div class="fr-rankings" id="frRankings">
             <div class="fr-rank-row" style="opacity: 0.5;">
