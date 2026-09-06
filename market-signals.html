@@ -868,16 +868,19 @@
         <!-- SIGNAL: Breadth Washout (companion to the Ratio card above) -->
         <div class="sig-card" id="sig-breadth-washout">
           <div class="sig-head">
-            <h2 class="sig-title">Breadth Washout (pct50 &le; 10%)</h2>
+            <h2 class="sig-title">Breadth Washout (pct50 &le; 15%)</h2>
             <span class="sig-pill" id="sigBw-pill">Loading&hellip;</span>
             <span class="sig-tag">S&amp;P 500 &middot; daily</span>
           </div>
           <p class="sig-desc">
             When the share of large-caps trading above their 50-day MA collapses to
-            &le;10% and then ticks back up, that's a shock-crash bottom being formed.
-            Catches the flash-crash setups the Breadth Ratio misses (Apr 2025 Liberation
-            Day, Mar 2020 COVID, Dec 2018 Powell) because ratio-based signals need
-            50MA to break faster than 200MA — here both break together.
+            &le;15% and then ticks back up, that's a washout bottom being formed.
+            Catches the shock-crash setups the Breadth Ratio misses (Apr 2025 Liberation
+            Day, Mar 2020 COVID, Dec 2018 Powell) plus a wider set of shallower dip-buys.
+            Threshold widened from 10 to 15 to catch nearly 2&times; the entries with
+            better short-term timing &mdash; fires slightly earlier so the market has
+            usually bottomed by the time you'd act, instead of overshooting down for a
+            week.
           </p>
           <div class="sig-chart-wrap">
             <svg viewBox="0 0 1200 460" class="sig-chart" id="sigBwSvg" preserveAspectRatio="xMidYMid meet" aria-label="Breadth washout and SPX chart with signal markers"></svg>
@@ -885,16 +888,20 @@
           <div class="sig-stats" id="sigBwStats">
             <div class="sig-stat"><div class="lbl">Current pct50</div><div class="val" id="sigBwNow">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">20-day low</div><div class="val" id="sigBwLow">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Fires / year</div><div class="val">~1.4</div></div>
-            <div class="sig-stat"><div class="lbl">60d fwd avg</div><div class="val pos">+1.7%</div></div>
-            <div class="sig-stat"><div class="lbl">250d fwd avg</div><div class="val pos">+16.6%</div></div>
+            <div class="sig-stat"><div class="lbl">Fires / year</div><div class="val">~2.3</div></div>
+            <div class="sig-stat"><div class="lbl">20d fwd avg</div><div class="val pos">+1.7%</div></div>
+            <div class="sig-stat"><div class="lbl">60d fwd avg</div><div class="val pos">+2.8%</div></div>
+            <div class="sig-stat"><div class="lbl">250d fwd avg</div><div class="val pos">+14.2%</div></div>
             <div class="sig-stat"><div class="lbl">250d hit rate</div><div class="val pos">86%</div></div>
           </div>
           <p class="sig-note">
             Backtest 2005&ndash;2026 on ~100 S&amp;P constituents. Fires when the 20-day
-            minimum of pct50 hit &le;10 and today's pct50 ticks up. Baseline 250d return:
-            +10.2% / 81% hit. Shorter horizons (5&ndash;20d) are noisy &mdash; these
-            bottoms often overshoot down before turning; the 60d+ window is where the
+            minimum of pct50 hit &le;15 and today's pct50 ticks up. Baseline 250d return:
+            +10.2% / 81% hit. Threshold widened from the earlier &le;10 setting after
+            testing showed 15 catches nearly 2&times; the entries (49 vs 29 over the
+            same window) with better short-term timing &mdash; the 5-day post-fire
+            return went from &minus;0.6% (catching a knife) to &#43;0.2% (bottom mostly
+            in). The 60d+ window is still where the
             edge shows up.
           </p>
         </div>
@@ -2079,7 +2086,7 @@
     })();
 
     // ==========================================================
-    //  Breadth Washout signal — pct50 collapses to <=10% and ticks up.
+    //  Breadth Washout signal — pct50 collapses to <=15% and ticks up.
     //  Companion to the Ratio signal above; catches the shock-crash
     //  bottoms the ratio misses (2018-12, 2020-03, 2025-04).
     // ==========================================================
@@ -2130,7 +2137,7 @@
       // Signal B from the backtest: 20-day min of pct50 hit <=10 AND today
       // ticks up AND no fire in the last 20 days. Line is drawn at the
       // low-day, not the up-tick fire day (same lesson as the ratio card).
-      const LOOKBACK = 20, MIN_GAP = 20, THRESHOLD = 10;
+      const LOOKBACK = 20, MIN_GAP = 20, THRESHOLD = 15;
       const fires = [];
       let lastFireIdx = -MIN_GAP - 1;
       for (let i = LOOKBACK; i < view.length; i++) {
