@@ -430,6 +430,8 @@
     }
     .fr-rank-num  { color: var(--text-faint); text-align: right; }
     .fr-rank-tkr  { color: var(--text); font-weight: 700; letter-spacing: 0.05em; }
+    .fr-rank-tkr a { color: inherit; text-decoration: none; }
+    .fr-rank-tkr a:hover { color: #22d3ee; text-decoration: underline; text-underline-offset: 2px; }
     .fr-rank-name { color: var(--text-dim); font-size: 0.72rem; }
     .fr-rank-ret  { text-align: right; font-weight: 700; }
     .fr-rank-ret.pos { color: var(--pos, #22d39a); }
@@ -1946,7 +1948,7 @@
       rankings.innerHTML = liveRanked.map((r, i) => `
         <div class="fr-rank-row ${i === 0 ? 'fr-rank-top' : ''}">
           <div class="fr-rank-num">#${i + 1}</div>
-          <div class="fr-rank-tkr">${r.sym}</div>
+          <div class="fr-rank-tkr"><a href="ticker.html?sym=${encodeURIComponent(r.sym)}" title="Open ${r.sym} chart on ticker page">${r.sym}</a></div>
           <div class="fr-rank-name">${NAMES[r.sym]}</div>
           <div class="fr-rank-ret ${r.mom >= 0 ? 'pos' : 'neg'}">${(r.mom * 100).toFixed(1)}%</div>
           <div class="fr-rank-badge ${i === 0 ? 'fr-badge-pick' : 'fr-badge-empty'}">${i === 0 ? 'HOLDING' : '—'}</div>
@@ -2309,7 +2311,7 @@
         const rowCls = isHolding ? 'fr-rank-row fr-rank-top' : 'fr-rank-row';
         return `<div class="${rowCls}">
           <div class="fr-rank-num">#${i + 1}</div>
-          <div class="fr-rank-tkr">${r.sym}</div>
+          <div class="fr-rank-tkr"><a href="ticker.html?sym=${encodeURIComponent(r.sym)}" title="Open ${r.sym} chart on ticker page">${r.sym}</a></div>
           <div class="fr-rank-name">${NAMES[r.sym]}${r.aboveTrend ? '' : ' <span style="color:var(--text-faint);font-size:0.65rem;">(trend down)</span>'}</div>
           <div class="fr-rank-ret ${r.mom >= 0 ? 'pos' : 'neg'}">${(r.mom * 100).toFixed(1)}%</div>
           <div class="fr-rank-badge ${badgeClass}" ${!isHolding ? 'style="visibility:visible;color:var(--text-faint);border-color:var(--border-soft);"' : ''}>${badgeText}</div>
