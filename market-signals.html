@@ -705,6 +705,20 @@
             <div class="iq-action-asof" id="frActionAsof"></div>
           </div>
 
+          <div class="iq-range-bar" role="tablist" aria-label="Momentum lookback window" style="margin-top: 0.75rem;">
+            <div class="iq-range-group" aria-label="Trailing-return lookback">
+              <span class="iq-range-group-label">Lookback</span>
+              <button type="button" class="iq-range-btn" data-lookback="1"  role="tab" title="1-month: fast, more trades, more whipsaw">1M</button>
+              <button type="button" class="iq-range-btn" data-lookback="3"  role="tab" title="3-month: quicker to react, choppier">3M</button>
+              <button type="button" class="iq-range-btn active" data-lookback="6" role="tab" title="6-month: highest historical alpha (default)">6M</button>
+              <button type="button" class="iq-range-btn" data-lookback="12" role="tab" title="12-month: classic academic momentum, slowest">12M</button>
+            </div>
+            <div style="display: flex; gap: 0.6rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">
+              <span>Alpha this window: <strong id="frLookbackAlpha" style="color: var(--pos, #22d39a)">+5.75%</strong></span>
+              <span>Rebalances/yr: <strong id="frLookbackRebal">3.7</strong></span>
+            </div>
+          </div>
+
           <div class="fr-rankings" id="frRankings">
             <div class="fr-rank-row" style="opacity: 0.5;">
               <div class="fr-rank-num">&mdash;</div>
@@ -1666,10 +1680,13 @@
       }
       function firstDate(sym) { return data[sym][0].date; }
 
-      const LOOKBACK = 6;
       const START_DATE = '2014-01-01';
       const startI = spy.findIndex(x => x.date >= START_DATE);
       if (startI < 0) { fail('Not enough data to backtest.'); return; }
+
+      // Wrap the whole compute-and-render pass in a function so the
+      // lookback-toggle buttons above can re-run it with a different N.
+      function renderForLookback(LOOKBACK) {
 
       // Walk month-by-month building equity curves and pick history.
       let ruleW = 1000, bhW = 1000;
@@ -1836,6 +1853,32 @@
 
         chartSvg.innerHTML = parts.join('');
       }
+
+        // Live lookback stats for the toggle bar
+        const years = (equityRule.length - 1) / 12;
+        const liveAlpha = ((Math.pow(ruleW/1000, 1/years) - 1) - (Math.pow(bhW/1000, 1/years) - 1)) * 100;
+        const rebalances = Math.max(0, pickHistory.length - 1);
+        const rebalancesPerYr = rebalances / years;
+        const alphaEl = document.getElementById('frLookbackAlpha');
+        const rebalEl = document.getElementById('frLookbackRebal');
+        if (alphaEl) {
+          alphaEl.textContent = (liveAlpha >= 0 ? '+' : '') + liveAlpha.toFixed(2) + '%';
+          alphaEl.style.color = liveAlpha >= 0 ? 'var(--pos, #22d39a)' : 'var(--neg, #ff5374)';
+        }
+        if (rebalEl) rebalEl.textContent = rebalancesPerYr.toFixed(1);
+      } // end renderForLookback
+
+      // Initial render at the default 6-month lookback, then wire the buttons.
+      renderForLookback(6);
+      document.querySelectorAll('[data-lookback]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const n = parseInt(btn.dataset.lookback, 10);
+          if (!Number.isFinite(n)) return;
+          document.querySelectorAll('[data-lookback]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderForLookback(n);
+        });
+      });
     })();
 
     // ==========================================================
