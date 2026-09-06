@@ -751,8 +751,24 @@
             <div class="sig-stat"><div class="lbl">Rebalances/yr</div><div class="val">~5.4</div></div>
           </div>
 
-          <div class="sig-chart-wrap" style="margin-top: 0.85rem;">
-            <svg viewBox="0 0 1200 360" class="sig-chart" id="frChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="Factor rotation equity curve vs SPY since 2014, with regime bands showing which ETF was held"></svg>
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range" style="margin-top: 0.75rem;">
+            <div class="iq-range-group" aria-label="Famous bear markets">
+              <span class="iq-range-group-label">Crashes</span>
+              <button type="button" class="iq-range-btn" data-fr-from="2020-01-01" data-fr-to="2020-12-31" role="tab" title="COVID crash and recovery">COVID</button>
+              <button type="button" class="iq-range-btn" data-fr-from="2021-11-01" data-fr-to="2023-06-30" role="tab" title="Fed-hike bear market">2022 Fed</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-fr-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-fr-years="3"  role="tab">3Y</button>
+              <button type="button" class="iq-range-btn" data-fr-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-fr-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn active" data-fr-years="0" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 360" class="sig-chart" id="frChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="Factor rotation equity curve vs SPY, with regime bands showing which ETF was held"></svg>
           </div>
 
           <div class="iq-chart-caption">
@@ -1937,85 +1953,10 @@
       ruleCumEl.textContent = fmtPct((ruleW / 1000 - 1) * 100);
       spyCumEl.textContent  = fmtPct((bhW   / 1000 - 1) * 100);
 
-      // ---- Chart: 2 panels ----
-      //   Top: equity curves (Rule green, SPY dashed cyan)
-      //   Bottom: colored regime bands for each pick period
-      if (chartSvg) {
-        const W = 1200, H = 360;
-        const PAD_L = 60, PAD_R = 60, PAD_T = 20;
-        const GAP = 20;
-        const TOP_H = 220;
-        const BAND_H = 60;
-        const plotW = W - PAD_L - PAD_R;
-        const topY0 = PAD_T, topY1 = PAD_T + TOP_H;
-        const bandY0 = topY1 + GAP, bandY1 = bandY0 + BAND_H;
-
-        const N = equityRule.length;
-        const xForIdx = i => PAD_L + plotW * i / Math.max(1, N - 1);
-        // Log scale on the equity panel because we span ~5x range.
-        const allEq = [...equityRule, ...equitySpy];
-        const eqMin = Math.min(...allEq, 1000);
-        const eqMax = Math.max(...allEq);
-        const logLo = Math.log10(eqMin * 0.95), logHi = Math.log10(eqMax * 1.05);
-        const yForEq = v => topY1 - ((Math.log10(v) - logLo) / (logHi - logLo)) * TOP_H;
-
-        const parts = [];
-        // Reference $1,000 line
-        {
-          const yRef = yForEq(1000);
-          parts.push(`<line x1="${PAD_L}" y1="${yRef}" x2="${PAD_L + plotW}" y2="${yRef}" class="iq-ref-1000" />`);
-          parts.push(`<text x="${PAD_L - 6}" y="${yRef + 3}" text-anchor="end" class="chart-axis-label">$1,000</text>`);
-        }
-        // A few log-spaced tick labels
-        for (const t of [2000, 4000, 8000]) {
-          if (t < eqMin || t > eqMax * 1.1) continue;
-          const y = yForEq(t);
-          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
-          parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">$${(t/1000).toFixed(1)}k</text>`);
-        }
-        // Equity paths
-        const spyPath  = equitySpy.map( (v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ');
-        const rulePath = equityRule.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ');
-        parts.push(`<path d="${spyPath}"  class="iq-line-eq-bh"   />`);
-        parts.push(`<path d="${rulePath}" class="iq-line-eq-rule" />`);
-        // End-of-window dollar labels
-        const finalRule = equityRule[N - 1], finalSpy = equitySpy[N - 1];
-        const fmt$ = v => v >= 10000 ? `$${(v/1000).toFixed(1)}k` : `$${Math.round(v).toLocaleString()}`;
-        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(finalRule) + 3}" class="iq-eq-label" style="fill:#22d39a">${fmt$(finalRule)}</text>`);
-        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(finalSpy)  + 3}" class="iq-eq-label" style="fill:#64d3ff">${fmt$(finalSpy)}</text>`);
-
-        // Regime bands — one colored rect per contiguous pick period
-        // pickHistory holds {startI (index into spy), sym}. Convert those
-        // indexes into our equity-window index (which starts at startI).
-        for (let k = 0; k < pickHistory.length; k++) {
-          const seg = pickHistory[k];
-          const nextSeg = pickHistory[k + 1];
-          const eStart = seg.startI - startI;
-          const eEnd   = nextSeg ? (nextSeg.startI - startI) : (N - 1);
-          const x0 = xForIdx(Math.max(0, eStart));
-          const x1 = xForIdx(Math.min(N - 1, eEnd));
-          const w = Math.max(x1 - x0, 1);
-          parts.push(`<rect x="${x0.toFixed(1)}" y="${bandY0}" width="${w.toFixed(1)}" height="${BAND_H}" fill="${COLORS[seg.sym] || '#888'}" opacity="0.65" />`);
-          // Ticker label if band is wide enough
-          if (w > 26) {
-            parts.push(`<text x="${(x0 + w/2).toFixed(1)}" y="${bandY0 + BAND_H/2 + 4}" text-anchor="middle" class="iq-eq-label" style="fill:#0a0a0a;font-size:10px">${seg.sym}</text>`);
-          }
-        }
-
-        // Panel labels
-        parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">$1,000 → RULE vs SPY (log)</text>`);
-        parts.push(`<text x="${PAD_L + 6}" y="${bandY0 - 4}" class="chart-panel-label">HELD EACH MONTH</text>`);
-
-        // X-axis year ticks
-        const xTicks = 8;
-        for (let k = 0; k <= xTicks; k++) {
-          const idx = Math.round(k * (N - 1) / xTicks);
-          const x = xForIdx(idx);
-          parts.push(`<text x="${x}" y="${bandY1 + 14}" text-anchor="middle" class="chart-axis-label">${equityDates[idx].slice(0, 4)}</text>`);
-        }
-
-        chartSvg.innerHTML = parts.join('');
-      }
+        // Save the freshly-computed backtest arrays so the range toggle
+        // below can re-slice the chart without recomputing the backtest.
+        frLatestData = {equityRule, equitySpy, equityDates, pickHistory, startI};
+        drawFactorChart(frCurrentRange);
 
         // Live lookback stats for the toggle bar
         const years = (equityRule.length - 1) / 12;
@@ -2031,6 +1972,109 @@
         if (rebalEl) rebalEl.textContent = rebalancesPerYr.toFixed(1);
       } // end renderForLookback
 
+      // Closure state shared between renderForLookback (writes) and
+      // drawFactorChart (reads). Range toggle updates frCurrentRange
+      // and just calls drawFactorChart against the last-computed data.
+      let frLatestData = null;
+      let frCurrentRange = {years: 0};
+
+      function drawFactorChart(rangeSpec) {
+        if (!chartSvg || !frLatestData) return;
+        const {equityRule, equitySpy, equityDates, pickHistory, startI} = frLatestData;
+        const endDate = equityDates[equityDates.length - 1];
+        let sliceFrom, sliceTo;
+        if (rangeSpec && rangeSpec.from && rangeSpec.to) {
+          sliceFrom = rangeSpec.from; sliceTo = rangeSpec.to;
+        } else if (rangeSpec && Number.isFinite(rangeSpec.years) && rangeSpec.years > 0) {
+          const y = parseInt(endDate.slice(0, 4), 10) - rangeSpec.years;
+          sliceFrom = `${y}${endDate.slice(4)}`;
+          sliceTo = endDate;
+        } else {
+          sliceFrom = equityDates[0]; sliceTo = endDate;
+        }
+        let si = equityDates.findIndex(d => d >= sliceFrom);
+        let ei = equityDates.findIndex(d => d > sliceTo);
+        if (si < 0) si = 0;
+        if (ei < 0) ei = equityDates.length;
+        if (ei - si < 2) return;
+        // Renormalize both curves to $1,000 at the slice start
+        const baseR = equityRule[si], baseS = equitySpy[si];
+        const eqR = [], eqS = [], dates = [];
+        for (let i = si; i < ei; i++) {
+          eqR.push(1000 * equityRule[i] / baseR);
+          eqS.push(1000 * equitySpy[i] / baseS);
+          dates.push(equityDates[i]);
+        }
+        const N = eqR.length;
+
+        const W = 1200, H = 360;
+        const PAD_L = 60, PAD_R = 60, PAD_T = 20;
+        const GAP = 20;
+        const TOP_H = 220;
+        const BAND_H = 60;
+        const plotW = W - PAD_L - PAD_R;
+        const topY0 = PAD_T, topY1 = PAD_T + TOP_H;
+        const bandY0 = topY1 + GAP, bandY1 = bandY0 + BAND_H;
+        const xForIdx = i => PAD_L + plotW * i / Math.max(1, N - 1);
+        const allEq = [...eqR, ...eqS];
+        const eqMin = Math.min(...allEq, 1000);
+        const eqMax = Math.max(...allEq);
+        const logLo = Math.log10(eqMin * 0.95), logHi = Math.log10(eqMax * 1.05);
+        const yForEq = v => topY1 - ((Math.log10(v) - logLo) / (logHi - logLo)) * TOP_H;
+
+        const parts = [];
+        {
+          const yRef = yForEq(1000);
+          parts.push(`<line x1="${PAD_L}" y1="${yRef}" x2="${PAD_L + plotW}" y2="${yRef}" class="iq-ref-1000" />`);
+          parts.push(`<text x="${PAD_L - 6}" y="${yRef + 3}" text-anchor="end" class="chart-axis-label">$1,000</text>`);
+        }
+        for (const t of [500, 1500, 2000, 3000, 4000, 6000, 8000, 12000, 20000]) {
+          if (t < eqMin * 1.02 || t > eqMax * 0.98) continue;
+          const y = yForEq(t);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+          const lbl = t >= 10000 ? `$${(t/1000).toFixed(1)}k` : `$${t.toLocaleString()}`;
+          parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${lbl}</text>`);
+        }
+        const spyPath  = eqS.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ');
+        const rulePath = eqR.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ');
+        parts.push(`<path d="${spyPath}"  class="iq-line-eq-bh"   />`);
+        parts.push(`<path d="${rulePath}" class="iq-line-eq-rule" />`);
+        const finalRule = eqR[N - 1], finalSpy = eqS[N - 1];
+        const fmt$ = v => v >= 10000 ? `$${(v/1000).toFixed(1)}k` : `$${Math.round(v).toLocaleString()}`;
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(finalRule) + 3}" class="iq-eq-label" style="fill:#22d39a">${fmt$(finalRule)}</text>`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(finalSpy)  + 3}" class="iq-eq-label" style="fill:#64d3ff">${fmt$(finalSpy)}</text>`);
+
+        // Regime bands — clip pickHistory segments to the visible window.
+        // Each pickHistory entry is {startI (index into spy), sym}, where
+        // the corresponding equity index is (seg.startI - startI) + 1.
+        for (let k = 0; k < pickHistory.length; k++) {
+          const seg = pickHistory[k];
+          const next = pickHistory[k + 1];
+          const segEqStart = (seg.startI  - startI) + 1;
+          const segEqEnd   = next ? ((next.startI - startI) + 1) : (equityRule.length - 1);
+          const rStart = Math.max(0, segEqStart - si);
+          const rEnd   = Math.min(N - 1, segEqEnd  - si);
+          if (rEnd <= 0 || rStart >= N - 1) continue;
+          const x0 = xForIdx(rStart);
+          const x1 = xForIdx(rEnd);
+          const w = Math.max(x1 - x0, 1);
+          parts.push(`<rect x="${x0.toFixed(1)}" y="${bandY0}" width="${w.toFixed(1)}" height="${BAND_H}" fill="${COLORS[seg.sym] || '#888'}" opacity="0.65" />`);
+          if (w > 26) {
+            parts.push(`<text x="${(x0 + w/2).toFixed(1)}" y="${bandY0 + BAND_H/2 + 4}" text-anchor="middle" class="iq-eq-label" style="fill:#0a0a0a;font-size:10px">${seg.sym}</text>`);
+          }
+        }
+        parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">$1,000 → RULE vs SPY (log)</text>`);
+        parts.push(`<text x="${PAD_L + 6}" y="${bandY0 - 4}" class="chart-panel-label">HELD EACH MONTH</text>`);
+        const xTicks = 7;
+        for (let k = 0; k <= xTicks; k++) {
+          const idx = Math.round(k * (N - 1) / xTicks);
+          const x = xForIdx(idx);
+          const label = (N <= 24) ? dates[idx].slice(0, 7) : dates[idx].slice(0, 4);
+          parts.push(`<text x="${x}" y="${bandY1 + 14}" text-anchor="middle" class="chart-axis-label">${label}</text>`);
+        }
+        chartSvg.innerHTML = parts.join('');
+      }
+
       // Initial render at the default 6-month lookback, then wire the buttons.
       renderForLookback(6);
       document.querySelectorAll('[data-lookback]').forEach(btn => {
@@ -2040,6 +2084,20 @@
           document.querySelectorAll('[data-lookback]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           renderForLookback(n);
+        });
+      });
+      // Range-toggle buttons for the chart (independent of lookback).
+      document.querySelectorAll('[data-fr-years], [data-fr-from]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-fr-years], [data-fr-from]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.frFrom && btn.dataset.frTo) {
+            frCurrentRange = {from: btn.dataset.frFrom, to: btn.dataset.frTo};
+          } else {
+            const y = parseInt(btn.dataset.frYears, 10);
+            frCurrentRange = {years: Number.isFinite(y) ? y : 0};
+          }
+          drawFactorChart(frCurrentRange);
         });
       });
     })();
