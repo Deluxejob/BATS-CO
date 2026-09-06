@@ -2200,7 +2200,13 @@
       const pickHistory = [];   // {startI, syms: [sym1, sym2, sym3]}
       let lastPickKey = null;
 
-      for (let t = startI + Math.max(TREND_N, MOM_N); t < bench.length - 1; t++) {
+      // Walk from startI directly. The trend-MA and momentum lookbacks
+      // reach back into pre-2004 ETF history (which we have plenty of),
+      // and the movingAvg/firstDate checks below already handle any ETF
+      // that lacks enough history at a given date. Starting later would
+      // just create a misalignment between the equity walk and the
+      // pick-history bands in the chart.
+      for (let t = startI; t < bench.length - 1; t++) {
         const rankDate = bench[t].date;
         const momStart = bench[t - MOM_N].date;
 
@@ -2385,15 +2391,15 @@
         parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(finalBh)   + 3}" class="iq-eq-label" style="fill:#64d3ff">${fmt$(finalBh)}</text>`);
 
         // Regime bands — one segment per contiguous pick period.
-        // pickHistory entries carry startI (absolute index into `bench`,
-        // which lines up with equityDates via +1 offset: equityDates[0]
-        // corresponds to bench[startI]). Convert into slice-relative
-        // indexes and clip to the visible window.
+        // pickHistory entries carry startI (absolute index into `bench`);
+        // equityDates[0] corresponds to bench[startI], so the equity
+        // index of a segment is simply seg.startI - startI. Convert into
+        // slice-relative indexes and clip to the visible window.
         for (let k = 0; k < pickHistory.length; k++) {
           const seg = pickHistory[k];
           const next = pickHistory[k + 1];
-          const segStartEqIdx = (seg.startI  - startI) + 1;
-          const segEndEqIdx   = next ? ((next.startI - startI) + 1) : (equityRule.length - 1);
+          const segStartEqIdx = seg.startI  - startI;
+          const segEndEqIdx   = next ? (next.startI - startI) : (equityRule.length - 1);
           const rStart = Math.max(0, segStartEqIdx - si);
           const rEnd   = Math.min(N - 1, segEndEqIdx  - si);
           if (rEnd <= 0 || rStart >= N - 1) continue;
