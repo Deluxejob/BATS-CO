@@ -141,6 +141,10 @@ for sym in AAPL MSFT NVDA AMZN GOOGL META BRK-B TSLA LLY JPM AVGO COST NFLX; do
   fetch_yahoo_daily "$sym" "$DATA_DIR/top10/$fname" "946684800"  # 2000-01-01
 done
 
+# SpaceX (SPCX) — IPO'd June 2026, so short history. Concentration table
+# handles the missing older windows via relaxed averaging (see app.js).
+fetch_yahoo_daily "SPCX" "$DATA_DIR/top10/spcx.csv" "1780272000"  # 2026-06-01
+
 # --- Market Ratios page — every symbol used by a card on market-ratios.html ---
 mkdir -p "$DATA_DIR/ratios"
 # Breadth & Strength

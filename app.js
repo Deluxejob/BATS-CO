@@ -141,7 +141,7 @@ const MC = MARKET_CONFIG[MARKET];
 // the whole historical window — introduces mild look-ahead bias at long
 // lookbacks but is accurate for what matters most (recent concentration).
 const TOP10_TICKERS = {
-  sp500:  ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'BRK-B', 'TSLA', 'LLY',  'JPM'],
+  sp500:  ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'BRK-B', 'TSLA', 'LLY',  'JPM', 'SPCX'],
   nasdaq: ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA',  'AVGO', 'COST', 'NFLX'],
 };
 
@@ -2378,27 +2378,35 @@ async function renderConcentration() {
   const tickers = TOP10_TICKERS[MARKET];
   const broadCsv = MC.breadthEqualCsv;  // RSP or QQEW
 
-  // Fetch all 10 top tickers + the broad reference in parallel
+  // Fetch top tickers + the broad reference in parallel. A missing per-ticker
+  // CSV (e.g. a recently-added constituent whose file hasn't landed yet) is
+  // swallowed to null so the whole table doesn't crash — relaxed averaging
+  // below just excludes that ticker.
   const [broadText, ...topTexts] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + broadCsv),
-    ...tickers.map(t => fetchCSVText(APP_DATA_BASE + 'top10/' + t.toLowerCase() + '.csv')),
+    ...tickers.map(t =>
+      fetchCSVText(APP_DATA_BASE + 'top10/' + t.toLowerCase() + '.csv').catch(() => null)
+    ),
   ]);
   const broad = parseDateCloseLive(broadText);
-  const topSeries = topTexts.map(parseDateCloseLive);
+  const topSeries = topTexts.map(txt => txt ? parseDateCloseLive(txt) : []);
 
   const latestDate = broad[broad.length - 1].date;
   const meta = document.getElementById('concentrationMeta');
-  if (meta) meta.textContent = `Latest close: ${latestDate}. Top 10 tickers used: ${tickers.join(', ')}.`;
+  if (meta) meta.textContent = `Latest close: ${latestDate}. Top ${tickers.length} tickers used: ${tickers.join(', ')}.`;
 
-  // For each timeframe, compute top-10 equal-weighted avg and broad-market
+  // For each timeframe, compute top-N equal-weighted avg and broad-market.
+  // Relaxed logic: average whatever tickers have data for that window. A
+  // recent-IPO name (e.g. SPCX, Aug 2026) will be excluded from the older
+  // rows automatically without collapsing the whole row to em-dash.
   const rows = CONC_WINDOWS.map(window => {
     const topReturns = topSeries.map(s => returnOver(s, window)).filter(r => r != null);
-    const topAvg = topReturns.length === tickers.length
+    const topAvg = topReturns.length > 0
       ? topReturns.reduce((sum, r) => sum + r, 0) / topReturns.length
       : null;
     const broadRet = returnOver(broad, window);
     const gap = (topAvg != null && broadRet != null) ? topAvg - broadRet : null;
-    return { label: window.label, key: window.key, topAvg, broadRet, gap };
+    return { label: window.label, key: window.key, topAvg, broadRet, gap, n: topReturns.length };
   });
 
   // Point the concentration gauge at the currently-picked period (default 1W).
@@ -2439,9 +2447,9 @@ async function renderConcentration() {
     <thead>
       <tr>
         <th>Timeframe</th>
-        <th class="num">Top 10 (equal-weight avg)</th>
+        <th class="num">Top ${tickers.length} (equal-weight avg)</th>
         <th class="num">${broadLabel}</th>
-        <th class="num">Gap (Top 10 − Broad)</th>
+        <th class="num">Gap (Top ${tickers.length} − Broad)</th>
       </tr>
     </thead>
     <tbody>
