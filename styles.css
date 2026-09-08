@@ -818,6 +818,30 @@ section { margin: 2.5rem 0; }
 .backtest-highlight .pos { color: var(--bull); }
 .backtest-highlight .neg { color: var(--bear); }
 
+/* Concentration summary — one-line stat block sitting between the intro
+   copy and the return table on concentration.html. Populated from live
+   /api/quote market caps; hidden until numbers land. */
+.conc-summary {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.conc-summary strong {
+  color: #22d3ee;
+  font-weight: 700;
+}
+.conc-summary small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-faint);
+  font-size: 0.8rem;
+}
+
 /* ====== Chart section ====== */
 .chart-widget {
   height: 600px;

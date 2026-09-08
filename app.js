@@ -2473,6 +2473,62 @@ async function renderConcentration() {
       `<a class="ticker-chip" href="ticker.html?sym=${encodeURIComponent(t)}">${t}</a>`
     ).join('');
   }
+
+  // Any "Top N" copy in the section header uses <span data-top-n>N</span>
+  // so it can be swapped to the live ticker count without hardcoding a
+  // number the sp500 (11) / nasdaq (10) mismatch would make wrong.
+  document.querySelectorAll('[data-top-n]').forEach(el => {
+    el.textContent = String(tickers.length);
+  });
+
+  // Concentration stat — combined market cap of these constituents, expressed
+  // as a share of the full index. Only shown on the S&P view (the Nasdaq total
+  // isn't wired up yet). Fetches live market caps via /api/quote and divides
+  // by SPX_TOTAL_MCAP_USD, a hand-updated benchmark (see the constant below).
+  if (MARKET === 'sp500') renderConcSummary(tickers);
+}
+
+// Approximate total S&P 500 market cap in USD, refreshed manually. Used only
+// to divide our summed top-N market caps into a "% of the index" figure on
+// concentration.html. Sourced from S&P Dow Jones factsheet + slickcharts
+// cross-check. Refresh quarterly — a stale figure just makes the ratio drift
+// a few percentage points, it never breaks the page.
+//   2026-09-07 — set to $63T (mid-2026 estimate, ~15% YTD run vs $55T
+//   end-2024; SPY +14.87% YTD per concentration.html snapshot).
+const SPX_TOTAL_MCAP_USD = 63e12;
+
+async function renderConcSummary(tickers) {
+  const box = document.getElementById('concSummary');
+  if (!box) return;
+  try {
+    const r = await fetch('/api/quote?syms=' + encodeURIComponent(tickers.join(',')));
+    if (!r.ok) return;
+    const j = await r.json();
+    const quotes = (j && j.quotes) || {};
+    let sum = 0, contributing = 0, missing = [];
+    for (const t of tickers) {
+      const mc = quotes[t] && quotes[t].marketCap;
+      if (typeof mc === 'number' && mc > 0) { sum += mc; contributing++; }
+      else missing.push(t);
+    }
+    if (contributing === 0) return;
+
+    const trillions = sum / 1e12;
+    const pct = (sum / SPX_TOTAL_MCAP_USD) * 100;
+    const tStr = trillions >= 10 ? trillions.toFixed(1) : trillions.toFixed(2);
+    const missingNote = missing.length
+      ? `<small>Market-cap data unavailable for ${missing.join(', ')} — figure excludes ${missing.length === 1 ? 'it' : 'them'}.</small>`
+      : '';
+
+    box.innerHTML = `
+      <strong>Combined market cap:</strong> $${tStr}T &mdash;
+      roughly <strong>${pct.toFixed(0)}%</strong> of the S&amp;P 500's ~$${(SPX_TOTAL_MCAP_USD/1e12).toFixed(0)}T total.
+      ${missingNote}
+    `;
+    box.hidden = false;
+  } catch (e) {
+    // Leave the box hidden on any fetch failure.
+  }
 }
 
 // ============================================================

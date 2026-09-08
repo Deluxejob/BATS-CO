@@ -109,13 +109,14 @@
 
     <section id="concentration">
       <div class="section-head">
-        <h2>Top 10 vs Equal Weight</h2>
+        <h2>Top <span data-top-n>10</span> vs Equal Weight</h2>
         <p>
-          Equal-weighted average return of today's top 10 constituents,
+          Equal-weighted average return of today's top <span data-top-n>10</span> constituents,
           compared to the equal-weighted broad-market ETF. A large positive gap =
           megacap dominance. A large negative gap = broadening rally.
         </p>
       </div>
+      <div class="conc-summary" id="concSummary" hidden></div>
       <div class="backtest-table-wrap">
         <table id="concentrationTable" class="backtest-table"></table>
       </div>
