@@ -30,6 +30,8 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
+from http.cookiejar import CookieJar
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT_PATH = os.path.join(REPO_ROOT, "data", "movers.json")
@@ -42,9 +44,128 @@ BASE_URL = (
 # How many rows to keep per list in the final JSON.
 LIST_SIZE = 25
 
+# Extra candidate pool — a curated list of US large-caps + top international
+# ADRs that we always want to check for pre/post-market moves. Yahoo's
+# predefined day_gainers / day_losers / most_actives screeners skew toward
+# smaller / faster-moving names during regular session, so a household
+# large-cap (AMGN, NVS, LLY, ...) that gets hit on news at 4 am often
+# never enters the pool and never surfaces on the pre-market movers board.
+# This list guarantees we ask Yahoo about them every cycle. Duplicates
+# with the screener rows are removed by merge_unique().
+LARGE_CAP_WATCHLIST = [
+    # S&P 100 core — the US mega/large-caps that could move any morning
+    "AAPL","MSFT","NVDA","AMZN","GOOGL","GOOG","META","TSLA","BRK-B","LLY",
+    "JPM","WMT","XOM","V","MA","UNH","JNJ","PG","HD","AVGO",
+    "ORCL","ABBV","BAC","CVX","KO","PEP","TMO","COST","MRK","ADBE",
+    "CRM","CSCO","AMD","NFLX","LIN","ACN","MCD","ABT","IBM","TXN",
+    "PM","WFC","DIS","AXP","INTU","GS","BKNG","T","NOW","RTX",
+    "UBER","QCOM","BLK","AMGN","CAT","ISRG","PGR","PFE","C","NEE",
+    "SPGI","LOW","ANET","HON","BX","GILD","DHR","TJX","LMT","DE",
+    "ADP","SYK","VRTX","REGN","BSX","MDLZ","ADI","TMUS","MMC","PLD",
+    "PANW","KLAC","AMT","SBUX","INTC","CB","MU","ELV","MO","DUK",
+    "SO","CI","CMCSA","ABNB","KKR","ICE","USB","MDT","BMY","EOG",
+    "APD","GE","EMR","BA",
+    # US large-caps outside S&P 100 that make news often
+    "SNPS","CDNS","MRVL","SMCI","ARM","CRWD","SNOW","PLTR","DDOG","FTNT",
+    "ON","MPWR","LULU","F","GM","COIN","HOOD","PYPL","MDB",
+    # Top international ADRs (NVS was the miss that prompted this list)
+    "NVS","NVO","TSM","BABA","ASML","SAP","TM","SONY","AZN","SNY",
+    "GSK","SHEL","BP","UL","BUD","BTI","HSBC","RY","BHP","RIO",
+    "TD","VALE","PBR","STLA","TEVA",
+]
+QUOTE_BATCH_SIZE = 50  # Yahoo v7 quote is happy with 50 syms in one URL
+
 
 def warn(msg: str) -> None:
     print(f"::warning::{msg}")
+
+
+YAHOO_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/131.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://finance.yahoo.com/",
+}
+
+
+# Cookie-primer URLs, tried in order until one yields cookies. fc.yahoo.com
+# is the classic entry point but some ISPs intercept it with a proxy that
+# returns 404; guce.yahoo.com/consent works when that fails (GDPR gate
+# always sets A1/A3/GUC on a plain GET).
+CRUMB_PRIMER_URLS = (
+    "https://fc.yahoo.com/",
+    "https://guce.yahoo.com/consent",
+)
+
+
+def get_yahoo_crumb():
+    """Prime Yahoo cookies at one of CRUMB_PRIMER_URLS, then hit getcrumb.
+    Returns (crumb, cookie_header) or (None, None) on failure — in which
+    case the watchlist fetch is skipped and the script degrades to the
+    original screener-only behavior."""
+    jar = CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    for primer_url in CRUMB_PRIMER_URLS:
+        try:
+            req = urllib.request.Request(primer_url, headers=YAHOO_HEADERS)
+            with opener.open(req, timeout=15) as r:
+                r.read()
+        except (urllib.error.URLError, TimeoutError) as e:
+            warn(f"crumb primer {primer_url} failed: {e}")
+            continue
+        if len(list(jar)):
+            break
+    cookie_header = "; ".join(f"{c.name}={c.value}" for c in jar)
+    if not cookie_header:
+        warn("no crumb primer succeeded; skipping watchlist fetch")
+        return None, None
+
+    crumb_req = urllib.request.Request(
+        "https://query1.finance.yahoo.com/v1/test/getcrumb",
+        headers={**YAHOO_HEADERS, "Cookie": cookie_header},
+    )
+    try:
+        with urllib.request.urlopen(crumb_req, timeout=15) as r:
+            crumb = r.read().decode("utf-8", errors="replace").strip()
+    except (urllib.error.URLError, TimeoutError) as e:
+        warn(f"getcrumb failed: {e}")
+        return None, None
+    if not crumb:
+        warn("getcrumb returned empty")
+        return None, None
+    return crumb, cookie_header
+
+
+def fetch_watchlist_quotes():
+    """Batch-fetch quote rows for LARGE_CAP_WATCHLIST via Yahoo v7 quote.
+    Returns a list of raw quote dicts in the same shape screener rows use,
+    so merge_unique() can fold them straight into the candidate pool.
+    Empty list on any failure — the script degrades to screener-only."""
+    crumb, cookies = get_yahoo_crumb()
+    if not crumb:
+        return []
+    quotes = []
+    for i in range(0, len(LARGE_CAP_WATCHLIST), QUOTE_BATCH_SIZE):
+        batch = LARGE_CAP_WATCHLIST[i:i+QUOTE_BATCH_SIZE]
+        url = (
+            "https://query1.finance.yahoo.com/v7/finance/quote"
+            f"?symbols={','.join(batch)}"
+            f"&crumb={urllib.parse.quote(crumb, safe='')}"
+        )
+        req = urllib.request.Request(url, headers={**YAHOO_HEADERS, "Cookie": cookies})
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.loads(r.read().decode("utf-8", errors="replace"))
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
+            warn(f"watchlist quote batch {i//QUOTE_BATCH_SIZE} failed: {e}")
+            continue
+        result = data.get("quoteResponse", {}).get("result") or []
+        quotes.extend(result)
+    return quotes
 
 
 def fetch_screener(scr_id: str):
@@ -151,15 +272,21 @@ def main() -> int:
     gainers_raw = fetch_screener("day_gainers")
     losers_raw  = fetch_screener("day_losers")
     actives_raw = fetch_screener("most_actives")
+    # LARGE_CAP_WATCHLIST — always-on set of ~160 US large-caps + top ADRs.
+    # See the constant's block comment for why this exists (short version:
+    # Yahoo screeners drop household names like AMGN/NVS/LLY out of the
+    # candidate pool, so pre-market moves on those never surface).
+    watchlist_raw = fetch_watchlist_quotes()
 
-    if gainers_raw is None and losers_raw is None and actives_raw is None:
-        warn("All three screener fetches failed; leaving movers.json unchanged.")
+    if gainers_raw is None and losers_raw is None and actives_raw is None and not watchlist_raw:
+        warn("All fetches failed; leaving movers.json unchanged.")
         return 0
 
-    # Merge all three so we have a broader candidate pool for pre/post
+    # Merge all sources so we have a broader candidate pool for pre/post
     # sorting — biggest overnight movers often live in most_actives even
-    # if day_gainers hasn't caught up yet.
-    candidates = merge_unique([gainers_raw, losers_raw, actives_raw])
+    # if day_gainers hasn't caught up yet, and named large-caps only exist
+    # in the watchlist source.
+    candidates = merge_unique([gainers_raw, losers_raw, actives_raw, watchlist_raw])
 
     # ---- Regular-session partition (existing behavior) --------------
     reg_gainers, reg_losers = partition_by_pct(candidates, "regularMarketChangePercent")
@@ -216,7 +343,7 @@ def main() -> int:
         f"regular {len(payload['gainers'])}/{len(payload['losers'])}/{len(payload['actives'])}, "
         f"pre {len(payload['preGainers'])}/{len(payload['preLosers'])}/{len(payload['preActives'])}, "
         f"post {len(payload['postGainers'])}/{len(payload['postLosers'])}/{len(payload['postActives'])} "
-        f"(from {len(candidates)} unique candidates)"
+        f"(from {len(candidates)} unique candidates; watchlist contributed {len(watchlist_raw)})"
     )
     return 0
 
