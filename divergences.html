@@ -90,6 +90,7 @@
     .dv-siglist b.sell { color: #ff5374; }
     .dv-tag.forming { color: var(--warn); }
     .dv-tag.confirmed { color: var(--text-dim); }
+    .dv-cell-watch { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text); line-height: 1.45; margin-top: 0.15rem; padding-top: 0.3rem; border-top: 1px dashed var(--border-soft); }
     .dv-readout {
       margin-top: 1rem; padding: 0.9rem 1rem;
       background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
@@ -272,8 +273,11 @@
         <li><strong>Two indicators, checked separately.</strong> RSI(14) and the MACD line (12, 26, 9). A divergence that shows on both carries more weight than one that shows on just one.</li>
         <li><strong>Confirmed vs. forming.</strong> A swing high only becomes official once price has pulled back for the required number of bars.
             Until then the reading is labelled <em>forming</em>: price is at a new high right now but momentum is already lower than at the previous peak. Forming readings can disappear if price keeps pushing and momentum catches up.</li>
-        <li><strong>Active means recent.</strong> A confirmed divergence counts in the scan above only if its second peak is within the last
-            12 bars (60-minute), 10 bars (daily) or 6 bars (weekly). Older ones still draw on the charts.</li>
+        <li><strong>Active until price settles it.</strong> A confirmed bearish divergence stays in force until price either closes
+            <em>above</em> the second peak (a new high cancels it, though a fresh divergence may form at that new peak) or closes
+            <em>below</em> the lowest point between the two peaks (the pattern has played out). Bullish is the mirror image. Each card shows
+            both levels. A divergence that does neither for a long stretch (about 60 daily bars, 52 weeks, 70 hourly bars) drops off as expired.
+            Settled divergences still draw on the charts.</li>
       </ul>
       <p><strong>MACD crossover signals</strong> follow a separate, simpler rule:</p>
       <ul>
@@ -500,11 +504,36 @@
       const rsi = rsiArr(c, 14);
       const macd = macdArr(c);
       const piv = findPivots(c, t.pivot);
-      return {
-        tf: tfKey, ts, c, rsi, macd, piv,
-        divs: { rsi: detect(c, rsi, piv, t), macd: detect(c, macd.line, piv, t) },
-        sig: macdSignals(macd),
-      };
+      const divs = { rsi: detect(c, rsi, piv, t), macd: detect(c, macd.line, piv, t) };
+      annotate(c, divs.rsi, t);
+      annotate(c, divs.macd, t);
+      return { tf: tfKey, ts, c, rsi, macd, piv, divs, sig: macdSignals(macd) };
+    }
+
+    // A divergence stays "active" until price settles the argument:
+    //   bearish — cancelled by a close above the second peak (a new high),
+    //             played out by a close below the lowest close between the peaks;
+    //   bullish — the mirror image.
+    // Anything that just drifts for longer than maxGap bars is dropped as expired.
+    function annotate(c, divs, t) {
+      const last = c.length - 1;
+      for (const d of divs) {
+        const between = c.slice(d.a, d.b + 1);
+        d.level = d.kind === 'bearish' ? Math.min.apply(null, between) : Math.max.apply(null, between);
+        d.state = 'active';
+        d.endAt = null;
+        if (d.forming) continue;
+        for (let i = d.b + 1; i <= last; i++) {
+          if (d.kind === 'bearish') {
+            if (c[i] > d.pb)    { d.state = 'cancelled'; d.endAt = i; break; }
+            if (c[i] < d.level) { d.state = 'played out'; d.endAt = i; break; }
+          } else {
+            if (c[i] < d.pb)    { d.state = 'cancelled'; d.endAt = i; break; }
+            if (c[i] > d.level) { d.state = 'played out'; d.endAt = i; break; }
+          }
+        }
+        if (d.state === 'active' && last - d.b > t.maxGap) { d.state = 'expired'; d.endAt = last; }
+      }
     }
 
     // Which divergences are "live" right now for this index/timeframe?
@@ -513,11 +542,11 @@
       const active = [];
       for (const key of ['rsi', 'macd']) {
         for (const d of an.divs[key]) {
-          if (d.forming || last - d.b <= t.recent) active.push(Object.assign({ ind: key }, d));
+          if (d.state === 'active') active.push(Object.assign({ ind: key }, d));
         }
       }
       if (!active.length) {
-        // most recent older divergence, for context
+        // most recent settled divergence, for context
         let lastOld = null;
         for (const key of ['rsi', 'macd']) for (const d of an.divs[key]) {
           if (!d.forming && (!lastOld || d.b > lastOld.b)) lastOld = Object.assign({ ind: key }, d);
@@ -697,7 +726,9 @@
       if (st.kind === 'none') {
         let meta = 'Momentum is confirming price.';
         if (st.lastOld) {
-          meta += '<br>Last: ' + st.lastOld.kind + ' (' + indName(st.lastOld.ind) + ') ended ' + fmtDate(an.ts[st.lastOld.b], tf, true);
+          const o = st.lastOld;
+          meta += '<br>Last: ' + o.kind + ' (' + indName(o.ind) + ') peaked ' + fmtDate(an.ts[o.b], tf, true) +
+                  (o.endAt != null ? ', ' + o.state + ' ' + fmtDate(an.ts[o.endAt], tf, true) : '');
         }
         cell.innerHTML = '<div class="dv-cell-title">No divergence</div><div class="dv-cell-meta">' + meta + '</div>';
         return st;
@@ -709,7 +740,12 @@
       const meta = 'Price ' + fmtP(d.pa) + ' &rarr; ' + fmtP(d.pb) + ' (' + fmtPct(d.pa, d.pb) + ')<br>' +
                    indName(d.ind) + ' ' + fmt1(d.ia) + ' &rarr; ' + fmt1(d.ib) + '<br>' +
                    fmtDate(an.ts[d.a], tf) + ' &rarr; ' + fmtDate(an.ts[d.b], tf);
-      cell.innerHTML = '<div class="dv-cell-title">' + title + '</div><div class="dv-cell-sub">' + sub + '</div><div class="dv-cell-meta">' + meta + '</div>';
+      const barsSince = an.c.length - 1 - d.b;
+      const watch = d.kind === 'bearish'
+        ? 'Cancels above ' + fmtP(d.pb) + ' &middot; plays out below ' + fmtP(d.level)
+        : 'Cancels below ' + fmtP(d.pb) + ' &middot; plays out above ' + fmtP(d.level);
+      const inForce = '<div class="dv-cell-watch">' + (st.forming ? 'Forming now' : 'In force ' + barsSince + ' bar' + (barsSince === 1 ? '' : 's') + ' since the peak') + '<br>' + watch + '</div>';
+      cell.innerHTML = '<div class="dv-cell-title">' + title + '</div><div class="dv-cell-sub">' + sub + '</div><div class="dv-cell-meta">' + meta + '</div>' + inForce;
       return st;
     }
 
