@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Momentum Divergences — BATS.CO</title>
+  <meta name="description" content="Bearish and bullish RSI / MACD divergences on the S&P 500, Dow Jones and Nasdaq 100 across 60-minute, daily and weekly charts — BATS.CO." />
+  <!-- BATS SEO block -->
+  <link rel="canonical" href="https://bats.co/divergences.html">
+  <meta property="og:site_name" content="BATS.CO">
+  <meta property="og:title" content="Momentum Divergences — BATS.CO">
+  <meta property="og:description" content="Is price running ahead of momentum? RSI and MACD divergence scanner for the S&P 500, Dow and Nasdaq 100 on 60-minute, daily and weekly bars.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bats.co/divergences.html">
+  <meta property="og:image" content="https://bats.co/og-card.png">
+  <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Momentum Divergences — BATS.CO">
+  <meta name="twitter:description" content="RSI and MACD divergence scanner for the S&P 500, Dow and Nasdaq 100 on 60-minute, daily and weekly bars.">
+  <meta name="twitter:image" content="https://bats.co/og-card.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    main.explainer.dv-main { max-width: 1180px; }
+
+    /* ---------- Summary grid: 3 indices x 3 timeframes ---------- */
+    .dv-grid {
+      display: grid;
+      grid-template-columns: 150px repeat(3, 1fr);
+      gap: 0.6rem;
+      align-items: stretch;
+    }
+    .dv-grid-head {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim); padding: 0 0.2rem 0.2rem; align-self: end;
+    }
+    .dv-grid-row-label {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0.6rem 0.4rem;
+    }
+    .dv-grid-row-label strong { font-size: 1rem; }
+    .dv-grid-row-label span { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); }
+    .dv-cell {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem 0.8rem;
+      min-height: 96px;
+      display: flex; flex-direction: column; gap: 0.25rem;
+    }
+    .dv-cell.bearish { border-left-color: #ff5374; }
+    .dv-cell.bullish { border-left-color: #22d39a; }
+    .dv-cell.mixed   { border-left-color: var(--warn); }
+    .dv-cell-title { font-weight: 700; font-size: 0.95rem; }
+    .dv-cell.bearish .dv-cell-title { color: #ff5374; }
+    .dv-cell.bullish .dv-cell-title { color: #22d39a; }
+    .dv-cell.mixed   .dv-cell-title { color: var(--warn); }
+    .dv-cell.none    .dv-cell-title { color: var(--text-dim); }
+    .dv-cell-sub  { font-size: 0.78rem; color: var(--text); }
+    .dv-cell-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); line-height: 1.45; }
+    .dv-tag {
+      display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; padding: 0.08rem 0.35rem; border-radius: 3px;
+      border: 1px solid currentColor; margin-left: 0.3rem; vertical-align: middle;
+    }
+    /* MACD crossover signal cards */
+    .dv-sig-head { margin-top: 1.75rem; }
+    .dv-sig-head h3 { margin: 0 0 0.25rem; font-size: 1.15rem; }
+    .dv-sig-head p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
+    .dv-cell.buy  { border-left-color: #22d39a; }
+    .dv-cell.sell { border-left-color: #ff5374; }
+    .dv-cell.buy  .dv-cell-title { color: #22d39a; }
+    .dv-cell.sell .dv-cell-title { color: #ff5374; }
+    .dv-cell.stale { border-left-color: var(--border); }
+    .dv-cell.stale .dv-cell-title { opacity: 0.75; }
+    .dv-cell-pending { font-size: 0.74rem; color: var(--warn); margin-top: 0.15rem; padding-top: 0.3rem; border-top: 1px dashed var(--border-soft); }
+    .dv-svg .sig-buy  { fill: #22d39a; stroke: #0a0e1a; stroke-width: 1; }
+    .dv-svg .sig-sell { fill: #ff5374; stroke: #0a0e1a; stroke-width: 1; }
+    .dv-svg .sig-pending { fill: none; stroke-width: 1.5; stroke-dasharray: 2 2; }
+    .dv-svg .sig-pending.sig-buy  { stroke: #22d39a; }
+    .dv-svg .sig-pending.sig-sell { stroke: #ff5374; }
+    .dv-svg .sig-label-buy  { fill: #22d39a; font-size: 10px; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .dv-svg .sig-label-sell { fill: #ff5374; font-size: 10px; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .dv-siglist { margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--text-dim); }
+    .dv-siglist b.buy  { color: #22d39a; }
+    .dv-siglist b.sell { color: #ff5374; }
+    .dv-tag.forming { color: var(--warn); }
+    .dv-tag.confirmed { color: var(--text-dim); }
+    .dv-readout {
+      margin-top: 1rem; padding: 0.9rem 1rem;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.95rem; line-height: 1.6;
+    }
+    .dv-readout p { margin: 0 0 0.4rem; }
+    .dv-readout p:last-child { margin-bottom: 0; }
+    .dv-updated { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); margin-top: 0.6rem; }
+    @media (max-width: 760px) {
+      .dv-grid { grid-template-columns: 1fr; }
+      .dv-grid-head { display: none; }
+      .dv-grid-row-label { padding-bottom: 0; }
+      .dv-cell::before {
+        content: attr(data-tf); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
+      }
+    }
+
+    /* ---------- Chart cards ---------- */
+    .dv-chart-card { margin-bottom: 1.25rem; }
+    .dv-chart-head { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .dv-chart-head h3 { margin: 0; font-size: 1.1rem; }
+    .dv-chart-head .dv-sym { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+    .dv-tf-picker { display: flex; gap: 0.2rem; margin-left: auto; }
+    .dv-tf-picker button {
+      font: inherit; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.63rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      background: transparent; color: var(--text-dim);
+      border: 1px solid var(--border); border-radius: 3px; padding: 0.2rem 0.5rem; cursor: pointer;
+    }
+    .dv-tf-picker button:hover { color: var(--text); border-color: #ffb658; }
+    .dv-tf-picker button.active { background: #ffb658; color: #0a1218; border-color: #ffb658; }
+    .dv-tf-picker button.has-bear::after,
+    .dv-tf-picker button.has-bull::after {
+      content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: 0.35rem; vertical-align: middle;
+    }
+    .dv-tf-picker button.has-bear::after { background: #ff5374; }
+    .dv-tf-picker button.has-bull::after { background: #22d39a; }
+    .dv-hover {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim);
+      min-height: 1.2em; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dv-svg { width: 100%; height: auto; display: block; cursor: crosshair; }
+    .dv-svg .grid-line { stroke: var(--border); stroke-width: 1; opacity: 0.45; stroke-dasharray: 2 3; }
+    .dv-svg .pane-line { stroke: var(--border); stroke-width: 1; }
+    .dv-svg .axis-label { fill: #c9d3e0; font-size: 11px; font-family: ui-monospace, monospace; }
+    .dv-svg .pane-title { fill: #8b95a8; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; font-family: 'Inter', sans-serif; }
+    .dv-svg .price-line { fill: none; stroke: #e6edf6; stroke-width: 1.6; }
+    .dv-svg .rsi-line   { fill: none; stroke: #ffb658; stroke-width: 1.5; }
+    .dv-svg .macd-line  { fill: none; stroke: #6ee7ff; stroke-width: 1.5; }
+    .dv-svg .macd-sig   { fill: none; stroke: #ffb658; stroke-width: 1.2; }
+    .dv-svg .hist-pos   { fill: #22d39a; opacity: 0.55; }
+    .dv-svg .hist-neg   { fill: #ff5374; opacity: 0.55; }
+    .dv-svg .ref-line   { stroke: #8b95a8; stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
+    .dv-svg .div-bear   { stroke: #ff5374; stroke-width: 2; fill: none; }
+    .dv-svg .div-bull   { stroke: #22d39a; stroke-width: 2; fill: none; }
+    .dv-svg .div-forming { stroke-dasharray: 4 4; opacity: 0.85; }
+    .dv-svg .div-dot-bear { fill: #ff5374; }
+    .dv-svg .div-dot-bull { fill: #22d39a; }
+    .dv-svg .div-label-bear { fill: #ff5374; font-size: 11px; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .dv-svg .div-label-bull { fill: #22d39a; font-size: 11px; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .dv-svg .crosshair { stroke: #8b95a8; stroke-width: 1; opacity: 0.6; }
+    .dv-chart-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; font-size: 0.74rem; color: var(--text-dim); }
+    .dv-legend span { display: inline-flex; align-items: center; gap: 0.3rem; margin-right: 0.9rem; }
+    .dv-legend i { display: inline-block; width: 14px; height: 0; border-top: 2px solid; }
+    .dv-divlist { margin: 0.6rem 0 0; padding: 0; list-style: none; font-size: 0.82rem; }
+    .dv-divlist li { padding: 0.35rem 0; border-top: 1px solid var(--border-soft); color: var(--text); }
+    .dv-divlist li:first-child { border-top: none; }
+    .dv-divlist .k-bear { color: #ff5374; font-weight: 700; }
+    .dv-divlist .k-bull { color: #22d39a; font-weight: 700; }
+    .dv-divlist .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--text-dim); }
+    .dv-empty { color: var(--text-dim); font-size: 0.82rem; margin: 0.5rem 0 0; }
+    .dv-error { color: #ff5374; font-size: 0.85rem; }
+
+    .dv-how ul { margin: 0 0 1rem 1.2rem; line-height: 1.6; }
+    .dv-how li { margin-bottom: 0.4rem; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link">
+        <img src="/stock-market-sentiment-logo.jpg" alt="BATS bull and bear logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="index.html">← Back to dashboard</a></p>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html#gauge">Score</a>
+      <a href="quotes.html">Quotes</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="markets.html">Dashboard</a>
+      <a href="sector-rotation.html">Sector Rotation</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="risk-watch.html">Risk Watch</a>
+      <a href="market-ratios.html">Market Ratios</a>
+      <a href="valuations.html">Valuations</a>
+      <a href="market-signals.html">Mkt Signals</a>
+      <a href="divergences.html">Divergences</a>
+    </nav>
+    <script>
+      (function(){
+        const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+        const isHome = here === 'index.html';
+        document.querySelectorAll('.site-nav a').forEach(a => {
+          const raw = (a.getAttribute('href') || '').toLowerCase();
+          const target = raw.split('/').pop().split('#')[0];
+          if (isHome && raw.startsWith('#'))       a.classList.add('active');
+          else if (target && target === here)       a.classList.add('active');
+        });
+      })();
+    </script>
+  </header>
+
+  <main class="explainer dv-main">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">MOMENTUM DIVERGENCES</p>
+      <h1>Is price running ahead of momentum?</h1>
+      <p class="lede">
+        When an index keeps making higher highs but RSI or MACD makes <em>lower</em> highs,
+        each push up is weaker than the last &mdash; the rally is being carried by less force.
+        That is a <strong>negative (bearish) divergence</strong>. The mirror image &mdash; lower
+        lows in price while momentum makes higher lows &mdash; is a <strong>positive (bullish)
+        divergence</strong> and often shows up near bottoms. This page scans the S&amp;P 500,
+        Dow Jones and Nasdaq 100 on 60-minute, daily and weekly bars and flags both.
+      </p>
+    </section>
+
+    <section id="summary">
+      <div class="section-head">
+        <h2>Divergence scan &mdash; right now</h2>
+        <p>Nine readings: three indices &times; three timeframes. Red = bearish divergence, green = bullish, grey = price and momentum agree.</p>
+      </div>
+      <div class="dv-grid" id="dvGrid">
+        <div class="dv-grid-head"></div>
+        <div class="dv-grid-head">60-minute</div>
+        <div class="dv-grid-head">Daily</div>
+        <div class="dv-grid-head">Weekly</div>
+        <!-- rows populated by JS -->
+      </div>
+      <div class="dv-readout" id="dvReadout"><p>Loading index data&hellip;</p></div>
+
+      <div class="section-head dv-sig-head">
+        <h3>MACD crossover signals</h3>
+        <p>Buy when the MACD line crosses above its signal line after at least 10 bars below it; sell on the mirror-image cross. A cross counts only once its bar has closed, so the signal is stamped on the next bar.</p>
+      </div>
+      <div class="dv-grid" id="dvSigGrid">
+        <div class="dv-grid-head"></div>
+        <div class="dv-grid-head">60-minute</div>
+        <div class="dv-grid-head">Daily</div>
+        <div class="dv-grid-head">Weekly</div>
+        <!-- rows populated by JS -->
+      </div>
+      <div class="dv-updated" id="dvUpdated"></div>
+    </section>
+
+    <section id="charts">
+      <div class="section-head">
+        <h2>Charts</h2>
+        <p>Price on top, RSI(14) in the middle, MACD(12,26,9) at the bottom. Divergence lines connect the two peaks (or troughs) being compared. Dashed = still forming, not yet confirmed.</p>
+      </div>
+      <div id="dvCharts"><!-- one card per index, populated by JS --></div>
+    </section>
+
+    <section id="how" class="dv-how">
+      <h2>How the scan works</h2>
+      <p>
+        The rule is the same one a chartist applies by eye, written down so it runs the same way every time.
+      </p>
+      <ul>
+        <li><strong>Find the swing points.</strong> A bar is a swing high when its close is above the closes on both sides of it
+            (5 bars each side on 60-minute and daily charts, 3 bars each side on weekly). Swing lows are the mirror image.</li>
+        <li><strong>Compare the last two.</strong> For each new swing high we look back (up to about 60 bars) for the previous
+            swing high that price has now cleared &mdash; the new peak must be the highest close since that earlier one, so a lower high
+            inside a bigger move never counts. If price made a <em>higher</em> high but the indicator made a <em>lower</em> high, that is a
+            bearish divergence. For swing lows: price lower low, indicator higher low = bullish divergence.</li>
+        <li><strong>Two indicators, checked separately.</strong> RSI(14) and the MACD line (12, 26, 9). A divergence that shows on both carries more weight than one that shows on just one.</li>
+        <li><strong>Confirmed vs. forming.</strong> A swing high only becomes official once price has pulled back for the required number of bars.
+            Until then the reading is labelled <em>forming</em>: price is at a new high right now but momentum is already lower than at the previous peak. Forming readings can disappear if price keeps pushing and momentum catches up.</li>
+        <li><strong>Active means recent.</strong> A confirmed divergence counts in the scan above only if its second peak is within the last
+            12 bars (60-minute), 10 bars (daily) or 6 bars (weekly). Older ones still draw on the charts.</li>
+      </ul>
+      <p><strong>MACD crossover signals</strong> follow a separate, simpler rule:</p>
+      <ul>
+        <li><strong>Buy</strong> when the MACD line crosses above its signal line after spending at least 10 closed bars below it.
+            <strong>Sell</strong> when it crosses below after at least 10 closed bars above it. Crosses that come sooner are ignored,
+            which filters out the quick back-and-forth wobbles when the two lines run close together.</li>
+        <li><strong>Confirmed on the next bar.</strong> A cross only counts once the bar it happened on has closed, so the marker sits on the
+            bar after the cross: the next hour, the next day, or the first bar of the next week. A qualifying cross on the still-open bar is
+            shown as <em>pending</em> and becomes a signal only if the bar closes that way.</li>
+        <li><strong>Fresh vs. old.</strong> A signal card is highlighted while the signal is recent (same windows as above); older signals stay
+            listed in grey so you can see where the last one was.</li>
+      </ul>
+      <p>
+        <strong>How to read it.</strong> Divergences are a warning, not a timing tool. Bull markets can carry a bearish divergence for
+        weeks. The pattern is strongest when it shows on the daily <em>and</em> weekly chart at the same time, on more than one index, and on
+        both indicators. A 60-minute divergence alone is short-term noise and usually resolves within a few sessions.
+      </p>
+    </section>
+
+    <div data-share-strip
+         data-share-title="Momentum divergences on the S&amp;P 500, Dow and Nasdaq 100 — BATS.CO"
+         data-share-text="Live RSI and MACD divergence scan for the major US indices on 60-minute, daily and weekly charts — is price running ahead of momentum?"></div>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="index.html">&larr; Back to the BATS</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice. &middot; <a href="consumer.html">Consumer</a> &middot; <a href="pelosi.html">Pelosi trades</a> &middot; <a href="pe.html">Private Equity</a> &middot; <a href="signal-testing.html">Signal Testing</a></p>
+  </footer>
+
+  <script>
+  (async function () {
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+    // When previewing on a local static server the /api route doesn't exist,
+    // so borrow the live site's proxy (it allows cross-origin reads).
+    const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? 'https://bats.co' : '';
+
+    const INDICES = [
+      { sym: '^GSPC', name: 'S&P 500',    short: 'SPX' },
+      { sym: '^DJI',  name: 'Dow Jones',  short: 'DJIA' },
+      { sym: '^NDX',  name: 'Nasdaq 100', short: 'NDX' },
+    ];
+    // pivot  = bars on each side needed to confirm a swing high/low
+    // show   = bars drawn on the chart
+    // recent = a confirmed divergence counts as "active" if its 2nd peak is within this many bars
+    // minGap / maxGap = allowed distance between the two peaks being compared
+    const TF = {
+      '60m': { label: '60-min', range: '3mo', interval: '60m', pivot: 5, show: 140, recent: 12, minGap: 5, maxGap: 70 },
+      '1d':  { label: 'Daily',  range: '2y',  interval: '1d',  pivot: 5, show: 130, recent: 10, minGap: 5, maxGap: 60 },
+      '1wk': { label: 'Weekly', range: '10y', interval: '1wk', pivot: 3, show: 130, recent: 6,  minGap: 3, maxGap: 52 },
+    };
+    const TF_KEYS = ['60m', '1d', '1wk'];
+
+    // ---------------- Indicator math (on plain arrays of closes) ----------------
+    function emaArr(v, n) {
+      const out = new Array(v.length).fill(null);
+      if (v.length < n) return out;
+      let sum = 0;
+      for (let i = 0; i < n; i++) sum += v[i];
+      let e = sum / n;
+      out[n - 1] = e;
+      const k = 2 / (n + 1);
+      for (let i = n; i < v.length; i++) { e = v[i] * k + e * (1 - k); out[i] = e; }
+      return out;
+    }
+    function rsiArr(v, period) {
+      period = period || 14;
+      const out = new Array(v.length).fill(null);
+      if (v.length <= period) return out;
+      let gain = 0, loss = 0;
+      for (let i = 1; i <= period; i++) { const d = v[i] - v[i - 1]; if (d >= 0) gain += d; else loss -= d; }
+      gain /= period; loss /= period;
+      out[period] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+      for (let i = period + 1; i < v.length; i++) {
+        const d = v[i] - v[i - 1];
+        gain = (gain * (period - 1) + (d > 0 ? d : 0)) / period;
+        loss = (loss * (period - 1) + (d < 0 ? -d : 0)) / period;
+        out[i] = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+      }
+      return out;
+    }
+    function macdArr(v, fast, slow, sig) {
+      fast = fast || 12; slow = slow || 26; sig = sig || 9;
+      const eF = emaArr(v, fast), eS = emaArr(v, slow);
+      const line = new Array(v.length).fill(null), signal = new Array(v.length).fill(null), hist = new Array(v.length).fill(null);
+      for (let i = 0; i < v.length; i++) if (eF[i] != null && eS[i] != null) line[i] = eF[i] - eS[i];
+      const first = line.findIndex(x => x != null);
+      if (first >= 0 && v.length - first >= sig) {
+        let sum = 0;
+        for (let i = first; i < first + sig; i++) sum += line[i];
+        let s = sum / sig;
+        signal[first + sig - 1] = s;
+        const k = 2 / (sig + 1);
+        for (let i = first + sig; i < v.length; i++) { s = line[i] * k + s * (1 - k); signal[i] = s; }
+      }
+      for (let i = 0; i < v.length; i++) if (line[i] != null && signal[i] != null) hist[i] = line[i] - signal[i];
+      return { line, signal, hist };
+    }
+
+    // ---------------- MACD crossover signals ----------------
+    // Buy = MACD line crosses above its signal line after at least MACD_MIN_RUN
+    // closed bars below it; sell = the mirror image. A cross only counts once
+    // the bar it happened on has closed, so the signal is stamped on the NEXT
+    // bar. A qualifying cross sitting on the still-open last bar is "pending".
+    const MACD_MIN_RUN = 10;
+    function macdSignals(macd) {
+      const { line, signal } = macd;
+      const N = line.length;
+      const signals = [];
+      let side = null, run = 0, pending = null;
+      for (let i = 0; i < N; i++) {
+        if (line[i] == null || signal[i] == null) continue;
+        const s = line[i] > signal[i] ? 'above' : line[i] < signal[i] ? 'below' : side;
+        if (s == null) continue;
+        if (side != null && s !== side) {
+          if (run >= MACD_MIN_RUN) {
+            const kind = s === 'above' ? 'buy' : 'sell';
+            if (i + 1 < N) signals.push({ kind, cross: i, at: i + 1, run });
+            else pending = { kind, cross: i, run };
+          }
+          side = s; run = 1;
+        } else { side = s; run++; }
+      }
+      return { signals, pending, side, run };
+    }
+
+    // ---------------- Swing points + divergence detection ----------------
+    function findPivots(c, n) {
+      const highs = [], lows = [];
+      for (let i = n; i < c.length - n; i++) {
+        let isH = true, isL = true;
+        for (let k = i - n; k <= i + n; k++) {
+          if (k === i) continue;
+          if (c[k] >= c[i]) isH = false;
+          if (c[k] <= c[i]) isL = false;
+          if (!isH && !isL) break;
+        }
+        if (isH) highs.push(i);
+        if (isL) lows.push(i);
+      }
+      return { highs, lows };
+    }
+    // Indicator extreme within +/- tol bars of a price pivot (indicator peaks
+    // rarely land on the exact same bar as the price peak).
+    function indExtreme(ind, i, wantHigh, tol) {
+      let best = null, at = i;
+      for (let k = Math.max(0, i - tol); k <= Math.min(ind.length - 1, i + tol); k++) {
+        const x = ind[k];
+        if (x == null) continue;
+        if (best == null || (wantHigh ? x > best : x < best)) { best = x; at = k; }
+      }
+      return best == null ? null : { v: best, i: at };
+    }
+    // Walk back from peak `b` looking for the previous swing high to compare
+    // against. Bar `b` must be the highest close since that earlier peak
+    // (a "higher high") — the moment we hit a bar at or above c[b] we stop,
+    // because b is then just a lower high inside a bigger structure. Among
+    // qualifying earlier peaks we pick the highest one: the previous
+    // meaningful top that price has now cleared. Mirrored for lows.
+    function priorPivot(c, pivSet, b, wantHigh, t) {
+      let a = -1, best = null;
+      for (let k = b - 1; k >= 0 && b - k <= t.maxGap; k--) {
+        if (wantHigh ? c[k] >= c[b] : c[k] <= c[b]) break;
+        if (b - k < t.minGap) continue;
+        if (!pivSet.has(k)) continue;
+        if (best == null || (wantHigh ? c[k] > best : c[k] < best)) { best = c[k]; a = k; }
+      }
+      return a;
+    }
+    function detect(c, ind, piv, t) {
+      const out = [];
+      const tol = 2;
+      const scan = (list, wantHigh, kind) => {
+        const set = new Set(list);
+        for (let j = 1; j < list.length; j++) {
+          const b = list[j];
+          const a = priorPivot(c, set, b, wantHigh, t);
+          if (a < 0) continue;
+          const ea = indExtreme(ind, a, wantHigh, tol), eb = indExtreme(ind, b, wantHigh, tol);
+          if (!ea || !eb) continue;
+          const diverges = wantHigh ? eb.v < ea.v : eb.v > ea.v;
+          if (diverges) out.push({ kind, a, b, pa: c[a], pb: c[b], ia: ea.v, ib: eb.v, iai: ea.i, ibi: eb.i, forming: false });
+        }
+      };
+      scan(piv.highs, true,  'bearish');
+      scan(piv.lows,  false, 'bullish');
+
+      // Forming: the last `pivot` bars can't be confirmed swings yet. If the
+      // extreme in that zone beats the previous confirmed peak while the
+      // indicator doesn't, flag it as forming.
+      const n = t.pivot, last = c.length - 1;
+      const zoneStart = Math.max(0, c.length - n);
+      const forming = (wantHigh, kind, list) => {
+        let m = -1;
+        for (let i = zoneStart; i <= last; i++) {
+          if (m < 0 || (wantHigh ? c[i] > c[m] : c[i] < c[m])) m = i;
+        }
+        if (m < 0) return;
+        // Must also beat everything in the `n` bars before it (left side of a would-be pivot).
+        for (let k = Math.max(0, m - n); k < m; k++) {
+          if (wantHigh ? c[k] >= c[m] : c[k] <= c[m]) return;
+        }
+        const a = priorPivot(c, new Set(list), m, wantHigh, t);
+        if (a < 0) return;
+        const ea = indExtreme(ind, a, wantHigh, tol), eb = indExtreme(ind, m, wantHigh, Math.min(tol, last - m));
+        if (!ea || !eb) return;
+        const diverges = wantHigh ? eb.v < ea.v : eb.v > ea.v;
+        if (diverges) out.push({ kind, a, b: m, pa: c[a], pb: c[m], ia: ea.v, ib: eb.v, iai: ea.i, ibi: eb.i, forming: true });
+      };
+      forming(true,  'bearish', piv.highs);
+      forming(false, 'bullish', piv.lows);
+      out.sort((x, y) => x.b - y.b);
+      return out;
+    }
+
+    function analyze(bars, tfKey) {
+      const t = TF[tfKey];
+      const ts = bars.map(b => b[0]);
+      const c  = bars.map(b => b[1]);
+      const rsi = rsiArr(c, 14);
+      const macd = macdArr(c);
+      const piv = findPivots(c, t.pivot);
+      return {
+        tf: tfKey, ts, c, rsi, macd, piv,
+        divs: { rsi: detect(c, rsi, piv, t), macd: detect(c, macd.line, piv, t) },
+        sig: macdSignals(macd),
+      };
+    }
+
+    // Which divergences are "live" right now for this index/timeframe?
+    function status(an) {
+      const t = TF[an.tf], last = an.c.length - 1;
+      const active = [];
+      for (const key of ['rsi', 'macd']) {
+        for (const d of an.divs[key]) {
+          if (d.forming || last - d.b <= t.recent) active.push(Object.assign({ ind: key }, d));
+        }
+      }
+      if (!active.length) {
+        // most recent older divergence, for context
+        let lastOld = null;
+        for (const key of ['rsi', 'macd']) for (const d of an.divs[key]) {
+          if (!d.forming && (!lastOld || d.b > lastOld.b)) lastOld = Object.assign({ ind: key }, d);
+        }
+        return { kind: 'none', inds: [], forming: false, primary: null, lastOld };
+      }
+      const bear = active.filter(d => d.kind === 'bearish');
+      const bull = active.filter(d => d.kind === 'bullish');
+      let kind, pool;
+      if (bear.length && bull.length) {
+        // both sides flagged — go with whichever is more recent
+        const nb = Math.max(...bear.map(d => d.b)), nu = Math.max(...bull.map(d => d.b));
+        kind = nb >= nu ? 'bearish' : 'bullish';
+        pool = kind === 'bearish' ? bear : bull;
+      } else { kind = bear.length ? 'bearish' : 'bullish'; pool = bear.length ? bear : bull; }
+      const inds = Array.from(new Set(pool.map(d => d.ind)));
+      const confirmed = pool.filter(d => !d.forming);
+      const primary = (confirmed.length ? confirmed : pool).slice().sort((x, y) => y.b - x.b)[0];
+      return { kind, inds, forming: confirmed.length === 0, primary, active: pool };
+    }
+
+    // ---------------- Formatting ----------------
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function etParts(ts) {
+      const d = new Date(ts * 1000);
+      const p = {};
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false })
+        .formatToParts(d).forEach(x => { p[x.type] = x.value; });
+      return { y: +p.year, m: +p.month, d: +p.day, hh: p.hour === '24' ? '00' : p.hour, mm: p.minute };
+    }
+    function fmtDate(ts, tfKey, withYear) {
+      const p = etParts(ts);
+      const base = MONTHS[p.m - 1] + ' ' + p.d;
+      if (tfKey === '60m') return base + ' ' + p.hh + ':' + p.mm;
+      if (withYear || tfKey === '1wk') return base + " '" + String(p.y).slice(2);
+      return base;
+    }
+    const fmtP = v => v == null || !isFinite(v) ? '—' : v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const fmt1 = v => v == null || !isFinite(v) ? '—' : v.toFixed(1);
+    const fmtPct = (a, b) => { const p = (b / a - 1) * 100; return (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; };
+    const indName = k => k === 'rsi' ? 'RSI' : 'MACD';
+
+    // ---------------- Data ----------------
+    // Yahoo appends a live-quote stub to its series: on weekly a mid-week bar
+    // that duplicates the current week, on 60-minute a 16:00 closing-print
+    // bar. Fold each stub into the bar it belongs to so every bar is one
+    // real period (otherwise RSI/MACD and the bar counts are skewed).
+    const pad2 = n => (n < 10 ? '0' : '') + n;
+    function dayKey(ts) { const p = etParts(ts); return p.y + '-' + pad2(p.m) + '-' + pad2(p.d); }
+    function weekKeyOf(ts) {
+      const d = new Date(dayKey(ts) + 'T12:00:00Z');
+      d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7);
+      return d.toISOString().slice(0, 10);
+    }
+    function normalizeBars(bars, tfKey) {
+      const out = [];
+      for (const b of bars) {
+        const prev = out[out.length - 1];
+        let same = false;
+        if (prev) {
+          if (tfKey === '1wk') same = weekKeyOf(prev[0]) === weekKeyOf(b[0]);
+          else if (tfKey === '1d') same = dayKey(prev[0]) === dayKey(b[0]);
+          else if (tfKey === '60m') {
+            const p = etParts(b[0]);
+            same = p.hh === '16' && p.mm === '00' && dayKey(prev[0]) === dayKey(b[0]);
+          }
+        }
+        if (same) prev[1] = b[1];          // keep the later close, drop the stub
+        else out.push([b[0], b[1]]);
+      }
+      return out;
+    }
+
+    const store = {};   // store[sym][tf] = analysis
+    async function fetchTf(tfKey) {
+      const t = TF[tfKey];
+      const url = API_BASE + '/api/history?syms=' + encodeURIComponent(INDICES.map(x => x.sym).join(',')) +
+                  '&range=' + t.range + '&interval=' + t.interval;
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const payload = await r.json();
+      for (const idx of INDICES) {
+        const s = payload && payload.series && payload.series[idx.sym];
+        if (!Array.isArray(s) || s.length < 60) continue;
+        store[idx.sym] = store[idx.sym] || {};
+        store[idx.sym][tfKey] = analyze(normalizeBars(s, tfKey), tfKey);
+      }
+    }
+
+    // ---------------- Summary grid ----------------
+    const grid = document.getElementById('dvGrid');
+    const cellEls = {};
+    for (const idx of INDICES) {
+      const lbl = document.createElement('div');
+      lbl.className = 'dv-grid-row-label';
+      lbl.innerHTML = '<strong>' + idx.name + '</strong><span>' + idx.sym + '</span>';
+      grid.appendChild(lbl);
+      cellEls[idx.sym] = {};
+      for (const tf of TF_KEYS) {
+        const cell = document.createElement('div');
+        cell.className = 'dv-cell none';
+        cell.dataset.tf = TF[tf].label;
+        cell.innerHTML = '<div class="dv-cell-title">Loading&hellip;</div>';
+        grid.appendChild(cell);
+        cellEls[idx.sym][tf] = cell;
+      }
+    }
+    // Second grid: MACD crossover signals
+    const sigGrid = document.getElementById('dvSigGrid');
+    const sigCellEls = {};
+    for (const idx of INDICES) {
+      const lbl = document.createElement('div');
+      lbl.className = 'dv-grid-row-label';
+      lbl.innerHTML = '<strong>' + idx.name + '</strong><span>' + idx.sym + '</span>';
+      sigGrid.appendChild(lbl);
+      sigCellEls[idx.sym] = {};
+      for (const tf of TF_KEYS) {
+        const cell = document.createElement('div');
+        cell.className = 'dv-cell none';
+        cell.dataset.tf = TF[tf].label;
+        cell.innerHTML = '<div class="dv-cell-title">Loading&hellip;</div>';
+        sigGrid.appendChild(cell);
+        sigCellEls[idx.sym][tf] = cell;
+      }
+    }
+
+    function renderSigCell(sym, tf) {
+      const cell = sigCellEls[sym][tf];
+      const an = store[sym] && store[sym][tf];
+      if (!an) {
+        cell.className = 'dv-cell none';
+        cell.innerHTML = '<div class="dv-cell-title">No data</div>';
+        return;
+      }
+      const t = TF[tf], sg = an.sig, last = an.c.length - 1;
+      const sigs = sg.signals;
+      const cur = sigs.length ? sigs[sigs.length - 1] : null;
+      const barsAgo = cur ? last - cur.at : null;
+      const fresh = cur && barsAgo <= t.recent;
+      // Where things stand right now
+      let now = '';
+      if (sg.side) {
+        const need = MACD_MIN_RUN - sg.run;
+        now = 'Now: MACD ' + sg.side + ' signal for ' + sg.run + ' bar' + (sg.run === 1 ? '' : 's') +
+              (need <= 0 ? ' &rarr; next cross ' + (sg.side === 'above' ? 'down = sell' : 'up = buy')
+                         : ' &rarr; needs ' + need + ' more before a cross counts');
+      }
+      let pendingLine = '';
+      if (sg.pending) {
+        pendingLine = '<div class="dv-cell-pending">Pending: cross ' + (sg.pending.kind === 'buy' ? 'up' : 'down') + ' on the open bar &mdash; becomes a ' +
+                      sg.pending.kind.toUpperCase() + ' if it closes this way.</div>';
+      }
+      if (!cur) {
+        cell.className = 'dv-cell none';
+        cell.innerHTML = '<div class="dv-cell-title">No signal yet</div><div class="dv-cell-meta">' + now + '</div>' + pendingLine;
+        return;
+      }
+      cell.className = 'dv-cell ' + cur.kind + (fresh ? '' : ' stale');
+      const title = (cur.kind === 'buy' ? 'Buy' : 'Sell') + ' signal' +
+        '<span class="dv-tag ' + (fresh ? 'forming' : 'confirmed') + '">' + (fresh ? barsAgo + ' bar' + (barsAgo === 1 ? '' : 's') + ' ago' : 'old') + '</span>';
+      const sub = 'Confirmed ' + fmtDate(an.ts[cur.at], tf, true) + ' at ' + fmtP(an.c[cur.at]);
+      const meta = 'Cross on ' + fmtDate(an.ts[cur.cross], tf) + ' after ' + cur.run + ' bars ' + (cur.kind === 'buy' ? 'below' : 'above') +
+                   (fresh ? '' : '<br>' + barsAgo + ' bars ago') + '<br>' + now;
+      cell.innerHTML = '<div class="dv-cell-title">' + title + '</div><div class="dv-cell-sub">' + sub + '</div><div class="dv-cell-meta">' + meta + '</div>' + pendingLine;
+    }
+
+    function renderCell(sym, tf) {
+      const cell = cellEls[sym][tf];
+      const an = store[sym] && store[sym][tf];
+      if (!an) {
+        cell.className = 'dv-cell none';
+        cell.innerHTML = '<div class="dv-cell-title">No data</div><div class="dv-cell-meta">Yahoo did not return this series.</div>';
+        return null;
+      }
+      const st = status(an);
+      cell.className = 'dv-cell ' + st.kind;
+      if (st.kind === 'none') {
+        let meta = 'Momentum is confirming price.';
+        if (st.lastOld) {
+          meta += '<br>Last: ' + st.lastOld.kind + ' (' + indName(st.lastOld.ind) + ') ended ' + fmtDate(an.ts[st.lastOld.b], tf, true);
+        }
+        cell.innerHTML = '<div class="dv-cell-title">No divergence</div><div class="dv-cell-meta">' + meta + '</div>';
+        return st;
+      }
+      const d = st.primary;
+      const title = (st.kind === 'bearish' ? 'Bearish' : 'Bullish') + ' divergence' +
+        '<span class="dv-tag ' + (st.forming ? 'forming' : 'confirmed') + '">' + (st.forming ? 'forming' : 'confirmed') + '</span>';
+      const sub = 'On ' + st.inds.map(indName).join(' + ');
+      const meta = 'Price ' + fmtP(d.pa) + ' &rarr; ' + fmtP(d.pb) + ' (' + fmtPct(d.pa, d.pb) + ')<br>' +
+                   indName(d.ind) + ' ' + fmt1(d.ia) + ' &rarr; ' + fmt1(d.ib) + '<br>' +
+                   fmtDate(an.ts[d.a], tf) + ' &rarr; ' + fmtDate(an.ts[d.b], tf);
+      cell.innerHTML = '<div class="dv-cell-title">' + title + '</div><div class="dv-cell-sub">' + sub + '</div><div class="dv-cell-meta">' + meta + '</div>';
+      return st;
+    }
+
+    function renderReadout(statuses) {
+      const el = document.getElementById('dvReadout');
+      let bear = 0, bull = 0, total = 0;
+      const lines = [];
+      for (const idx of INDICES) {
+        const s = statuses[idx.sym] || {};
+        const kinds = {};
+        for (const tf of TF_KEYS) {
+          const st = s[tf]; if (!st) continue; total++;
+          if (st.kind === 'bearish') bear++; if (st.kind === 'bullish') bull++;
+          kinds[tf] = st.kind;
+        }
+        if (kinds['1d'] === 'bearish' && kinds['1wk'] === 'bearish') {
+          lines.push('<strong>' + idx.name + '</strong> shows a bearish divergence on <strong>both the daily and weekly</strong> chart &mdash; the version of this pattern most worth respecting.');
+        } else if (kinds['1d'] === 'bullish' && kinds['1wk'] === 'bullish') {
+          lines.push('<strong>' + idx.name + '</strong> shows a bullish divergence on <strong>both the daily and weekly</strong> chart &mdash; sellers are running out of force at the higher-level lows.');
+        } else if (kinds['1wk'] === 'bearish') {
+          lines.push('<strong>' + idx.name + '</strong>: weekly bearish divergence. Slow to play out, but the weekly is the chart that has mattered most at major tops.');
+        } else if (kinds['1d'] === 'bearish') {
+          lines.push('<strong>' + idx.name + '</strong>: daily bearish divergence &mdash; recent highs came with less momentum than the ones before.');
+        } else if (kinds['1d'] === 'bullish') {
+          lines.push('<strong>' + idx.name + '</strong>: daily bullish divergence &mdash; recent lows came with less selling force than the ones before.');
+        }
+      }
+      let head;
+      if (!total) head = '<span class="dv-error">Could not load index data. Try refreshing in a minute.</span>';
+      else if (!bear && !bull) head = 'Price and momentum agree on all ' + total + ' readings. No divergences right now.';
+      else head = 'Bearish divergence on <strong>' + bear + ' of ' + total + '</strong> readings, bullish on <strong>' + bull + '</strong>.' +
+                  (bear && !lines.length ? ' Only on the 60-minute chart so far &mdash; short-term, usually resolves within a few sessions.' : '');
+      el.innerHTML = '<p>' + head + '</p>' + lines.map(l => '<p>' + l + '</p>').join('');
+    }
+
+    // ---------------- Charts ----------------
+    const chartsRoot = document.getElementById('dvCharts');
+    const cards = {};
+    for (const idx of INDICES) {
+      const card = document.createElement('div');
+      card.className = 'card dv-chart-card';
+      card.innerHTML =
+        '<div class="dv-chart-head"><h3>' + idx.name + '</h3><span class="dv-sym">' + idx.sym + '</span>' +
+        '<div class="dv-tf-picker">' + TF_KEYS.map(tf => '<button data-tf="' + tf + '"' + (tf === '1d' ? ' class="active"' : '') + '>' + TF[tf].label + '</button>').join('') + '</div></div>' +
+        '<div class="dv-hover" data-role="hover"></div>' +
+        '<svg class="dv-svg" data-role="svg" viewBox="0 0 960 500" preserveAspectRatio="none"></svg>' +
+        '<div class="dv-chart-footer"><div class="dv-legend">' +
+          '<span><i style="border-color:#e6edf6"></i>Close</span>' +
+          '<span><i style="border-color:#ffb658"></i>RSI(14) / MACD signal</span>' +
+          '<span><i style="border-color:#6ee7ff"></i>MACD line</span>' +
+          '<span><i style="border-color:#ff5374"></i>Bearish divergence</span>' +
+          '<span><i style="border-color:#22d39a"></i>Bullish divergence</span>' +
+          '<span>&#9650;&#9660; MACD buy / sell</span>' +
+        '</div><div data-role="footerRight"></div></div>' +
+        '<div class="dv-siglist" data-role="siglist"></div>' +
+        '<ul class="dv-divlist" data-role="list"></ul>';
+      chartsRoot.appendChild(card);
+      const state = { tf: '1d' };
+      cards[idx.sym] = { card, state, idx };
+      card.querySelectorAll('.dv-tf-picker button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.tf = btn.dataset.tf;
+          card.querySelectorAll('.dv-tf-picker button').forEach(b => b.classList.toggle('active', b === btn));
+          renderCard(idx.sym);
+        });
+      });
+    }
+
+    function renderCard(sym) {
+      const { card, state } = cards[sym];
+      const svg = card.querySelector('[data-role="svg"]');
+      const list = card.querySelector('[data-role="list"]');
+      const hover = card.querySelector('[data-role="hover"]');
+      const footR = card.querySelector('[data-role="footerRight"]');
+      const an = store[sym] && store[sym][state.tf];
+      // dots on the timeframe buttons
+      card.querySelectorAll('.dv-tf-picker button').forEach(b => {
+        const a2 = store[sym] && store[sym][b.dataset.tf];
+        const st = a2 ? status(a2) : null;
+        b.classList.toggle('has-bear', !!st && st.kind === 'bearish');
+        b.classList.toggle('has-bull', !!st && st.kind === 'bullish');
+      });
+      if (!an) {
+        svg.innerHTML = '<text x="480" y="250" text-anchor="middle" class="axis-label">No data for this timeframe.</text>';
+        list.innerHTML = '';
+        return;
+      }
+      const t = TF[state.tf];
+      const N = an.c.length, start = Math.max(0, N - t.show), count = N - start;
+      const W = 960, L = 10, R = 900;
+      // Pane stack: price, RSI, MACD. Height leaves room for the date labels.
+      const panes = {
+        price: { y0: 22,  y1: 262 },
+        rsi:   { y0: 292, y1: 378 },
+        macd:  { y0: 408, y1: 494 },
+      };
+      const bottom = panes.macd.y1;
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (bottom + 22));
+      const x = i => L + (count === 1 ? 0 : (i - start) / (count - 1) * (R - L));
+
+      // price scale
+      let pMin = Infinity, pMax = -Infinity;
+      for (let i = start; i < N; i++) { if (an.c[i] < pMin) pMin = an.c[i]; if (an.c[i] > pMax) pMax = an.c[i]; }
+      const pPad = (pMax - pMin) * 0.08 || 1;
+      pMin -= pPad; pMax += pPad;
+      const yP = v => panes.price.y1 - (v - pMin) / (pMax - pMin) * (panes.price.y1 - panes.price.y0);
+      // rsi scale (fixed 0-100 gives a familiar look)
+      const yR = v => panes.rsi.y1 - v / 100 * (panes.rsi.y1 - panes.rsi.y0);
+      // macd scale symmetric around zero
+      let mAbs = 0;
+      for (let i = start; i < N; i++) {
+        for (const v of [an.macd.line[i], an.macd.signal[i], an.macd.hist[i]]) if (v != null && Math.abs(v) > mAbs) mAbs = Math.abs(v);
+      }
+      mAbs = mAbs * 1.1 || 1;
+      const yM = v => panes.macd.y1 - (v + mAbs) / (2 * mAbs) * (panes.macd.y1 - panes.macd.y0);
+      const yFor = key => key === 'rsi' ? yR : yM;
+
+      let s = '';
+      // pane frames + titles
+      for (const [key, p] of Object.entries(panes)) {
+        s += '<line class="pane-line" x1="' + L + '" y1="' + p.y1 + '" x2="' + R + '" y2="' + p.y1 + '"/>';
+        const title = key === 'price' ? sym.replace('^', '') + ' · ' + t.label + ' close' : key === 'rsi' ? 'RSI (14)' : 'MACD (12, 26, 9)';
+        s += '<text class="pane-title" x="' + L + '" y="' + (p.y0 - 7) + '">' + title + '</text>';
+      }
+      // price grid + labels
+      for (let g = 0; g <= 4; g++) {
+        const v = pMin + (pMax - pMin) * g / 4, yy = yP(v);
+        s += '<line class="grid-line" x1="' + L + '" y1="' + yy.toFixed(1) + '" x2="' + R + '" y2="' + yy.toFixed(1) + '"/>';
+        s += '<text class="axis-label" x="' + (R + 6) + '" y="' + (yy + 4).toFixed(1) + '">' + fmtP(v) + '</text>';
+      }
+      // rsi refs
+      for (const v of [30, 50, 70]) {
+        const yy = yR(v);
+        s += '<line class="' + (v === 50 ? 'grid-line' : 'ref-line') + '" x1="' + L + '" y1="' + yy.toFixed(1) + '" x2="' + R + '" y2="' + yy.toFixed(1) + '"/>';
+        s += '<text class="axis-label" x="' + (R + 6) + '" y="' + (yy + 4).toFixed(1) + '">' + v + '</text>';
+      }
+      // macd zero line + labels
+      s += '<line class="ref-line" x1="' + L + '" y1="' + yM(0).toFixed(1) + '" x2="' + R + '" y2="' + yM(0).toFixed(1) + '"/>';
+      s += '<text class="axis-label" x="' + (R + 6) + '" y="' + (yM(0) + 4).toFixed(1) + '">0</text>';
+      s += '<text class="axis-label" x="' + (R + 6) + '" y="' + (panes.macd.y0 + 9) + '">' + fmt1(mAbs) + '</text>';
+      s += '<text class="axis-label" x="' + (R + 6) + '" y="' + (panes.macd.y1) + '">-' + fmt1(mAbs) + '</text>';
+
+      // x-axis labels (6 evenly spaced)
+      const ticks = Math.min(6, count);
+      for (let k = 0; k < ticks; k++) {
+        const i = start + Math.round(k * (count - 1) / Math.max(1, ticks - 1));
+        const xx = x(i);
+        s += '<line class="grid-line" x1="' + xx.toFixed(1) + '" y1="' + panes.price.y0 + '" x2="' + xx.toFixed(1) + '" y2="' + bottom + '"/>';
+        s += '<text class="axis-label" x="' + xx.toFixed(1) + '" y="' + (bottom + 14) + '" text-anchor="' + (k === 0 ? 'start' : k === ticks - 1 ? 'end' : 'middle') + '">' + fmtDate(an.ts[i], state.tf, state.tf !== '60m') + '</text>';
+      }
+
+      // macd histogram
+      const step = count > 1 ? (R - L) / (count - 1) : 10;
+      const bw = Math.max(1, step * 0.65);
+      for (let i = start; i < N; i++) {
+        const h = an.macd.hist[i]; if (h == null) continue;
+        const y0 = yM(0), y1 = yM(h);
+        s += '<rect class="' + (h >= 0 ? 'hist-pos' : 'hist-neg') + '" x="' + (x(i) - bw / 2).toFixed(1) + '" y="' + Math.min(y0, y1).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0.5, Math.abs(y1 - y0)).toFixed(1) + '"/>';
+      }
+      // lines
+      const path = (arr, yf) => {
+        let d = '', pen = false;
+        for (let i = start; i < N; i++) {
+          const v = arr[i];
+          if (v == null) { pen = false; continue; }
+          d += (pen ? 'L' : 'M') + x(i).toFixed(1) + ' ' + yf(v).toFixed(1);
+          pen = true;
+        }
+        return d;
+      };
+      s += '<path class="macd-sig" d="' + path(an.macd.signal, yM) + '"/>';
+      s += '<path class="macd-line" d="' + path(an.macd.line, yM) + '"/>';
+      s += '<path class="rsi-line" d="' + path(an.rsi, yR) + '"/>';
+      s += '<path class="price-line" d="' + path(an.c, yP) + '"/>';
+
+      // divergence overlays
+      const drawn = [];
+      for (const key of ['rsi', 'macd']) {
+        for (const d of an.divs[key]) {
+          if (d.a < start) continue;
+          const cls = d.kind === 'bearish' ? 'div-bear' : 'div-bull';
+          const extra = d.forming ? ' div-forming' : '';
+          const dot = d.kind === 'bearish' ? 'div-dot-bear' : 'div-dot-bull';
+          // price segment
+          s += '<line class="' + cls + extra + '" x1="' + x(d.a).toFixed(1) + '" y1="' + yP(d.pa).toFixed(1) + '" x2="' + x(d.b).toFixed(1) + '" y2="' + yP(d.pb).toFixed(1) + '"/>';
+          s += '<circle class="' + dot + '" r="3" cx="' + x(d.a).toFixed(1) + '" cy="' + yP(d.pa).toFixed(1) + '"/>';
+          s += '<circle class="' + dot + '" r="3" cx="' + x(d.b).toFixed(1) + '" cy="' + yP(d.pb).toFixed(1) + '"/>';
+          // indicator segment
+          const yf = yFor(key);
+          s += '<line class="' + cls + extra + '" x1="' + x(d.iai).toFixed(1) + '" y1="' + yf(d.ia).toFixed(1) + '" x2="' + x(d.ibi).toFixed(1) + '" y2="' + yf(d.ib).toFixed(1) + '"/>';
+          s += '<circle class="' + dot + '" r="3" cx="' + x(d.iai).toFixed(1) + '" cy="' + yf(d.ia).toFixed(1) + '"/>';
+          s += '<circle class="' + dot + '" r="3" cx="' + x(d.ibi).toFixed(1) + '" cy="' + yf(d.ib).toFixed(1) + '"/>';
+          // label near the second peak (only once per bar so RSI+MACD don't stack)
+          const labelKey = d.kind + ':' + d.b;
+          if (!drawn.includes(labelKey)) {
+            drawn.push(labelKey);
+            const ly = d.kind === 'bearish' ? yP(d.pb) - 10 : yP(d.pb) + 16;
+            const anchor = x(d.b) > R - 90 ? 'end' : 'middle';
+            s += '<text class="' + (d.kind === 'bearish' ? 'div-label-bear' : 'div-label-bull') + '" x="' + x(d.b).toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '">' +
+                 (d.kind === 'bearish' ? 'Bearish' : 'Bullish') + (d.forming ? ' (forming)' : '') + '</text>';
+          }
+        }
+      }
+      // MACD crossover markers: triangle on the MACD pane at the confirming
+      // bar, plus a matching triangle + label on the price pane.
+      const tri = (cx, cy, up, cls) => {
+        const h = 9, w = 5;
+        const pts = up ? [cx, cy, cx - w, cy + h, cx + w, cy + h] : [cx, cy, cx - w, cy - h, cx + w, cy - h];
+        return '<polygon class="' + cls + '" points="' + pts.map(v => v.toFixed(1)).join(' ') + '"/>';
+      };
+      for (const sg of an.sig.signals) {
+        if (sg.at < start) continue;
+        const up = sg.kind === 'buy', cls = up ? 'sig-buy' : 'sig-sell';
+        const xx = x(sg.at);
+        const ym = yM(an.macd.line[sg.at]);
+        s += tri(xx, up ? ym + 5 : ym - 5, up, cls);
+        const yp = yP(an.c[sg.at]);
+        s += tri(xx, up ? yp + 6 : yp - 6, up, cls);
+        s += '<text class="' + (up ? 'sig-label-buy' : 'sig-label-sell') + '" x="' + xx.toFixed(1) + '" y="' + (up ? yp + 27 : yp - 18).toFixed(1) + '" text-anchor="middle">' + (up ? 'Buy' : 'Sell') + '</text>';
+      }
+      if (an.sig.pending) {
+        const up = an.sig.pending.kind === 'buy', cls = 'sig-pending ' + (up ? 'sig-buy' : 'sig-sell');
+        const xx = x(N - 1), ym = yM(an.macd.line[N - 1]);
+        s += tri(xx, up ? ym + 5 : ym - 5, up, cls);
+      }
+      s += '<g data-role="crosshair"></g>';
+      svg.innerHTML = s;
+
+      // footer: last bar
+      const last = N - 1;
+      footR.textContent = 'Last bar ' + fmtDate(an.ts[last], state.tf, true) + ' ET · close ' + fmtP(an.c[last]) + ' · RSI ' + fmt1(an.rsi[last]) + ' · MACD ' + fmt1(an.macd.line[last]);
+
+      // MACD signals in view
+      const sigList = card.querySelector('[data-role="siglist"]');
+      const sigsInView = an.sig.signals.filter(sg => sg.at >= start);
+      let sigHtml = 'MACD crossover signals in view: ';
+      if (!sigsInView.length) sigHtml += 'none';
+      else sigHtml += sigsInView.map(sg => '<b class="' + sg.kind + '">' + (sg.kind === 'buy' ? 'Buy' : 'Sell') + '</b> ' + fmtDate(an.ts[sg.at], state.tf, true) + ' @ ' + fmtP(an.c[sg.at])).join(' &middot; ');
+      if (an.sig.pending) sigHtml += ' &middot; <span style="color:var(--warn)">pending ' + an.sig.pending.kind + ' on the open bar</span>';
+      sigList.innerHTML = sigHtml;
+
+      // list of divergences in view (newest first)
+      const inView = [];
+      for (const key of ['rsi', 'macd']) for (const d of an.divs[key]) if (d.a >= start) inView.push(Object.assign({ ind: key }, d));
+      inView.sort((p, q) => q.b - p.b || (p.ind < q.ind ? -1 : 1));
+      if (!inView.length) {
+        list.innerHTML = '<li class="dv-empty">No divergences in the last ' + count + ' bars &mdash; momentum has been tracking price.</li>';
+      } else {
+        list.innerHTML = inView.slice(0, 6).map(d =>
+          '<li><span class="' + (d.kind === 'bearish' ? 'k-bear' : 'k-bull') + '">' + (d.kind === 'bearish' ? 'Bearish' : 'Bullish') + '</span> on ' + indName(d.ind) +
+          (d.forming ? ' <span class="dv-tag forming">forming</span>' : '') +
+          ' &mdash; price ' + fmtP(d.pa) + ' &rarr; ' + fmtP(d.pb) + ' (' + fmtPct(d.pa, d.pb) + ') while ' + indName(d.ind) + ' ' + fmt1(d.ia) + ' &rarr; ' + fmt1(d.ib) +
+          ' <span class="mono">' + fmtDate(an.ts[d.a], state.tf, true) + ' &rarr; ' + fmtDate(an.ts[d.b], state.tf, true) + '</span></li>'
+        ).join('');
+      }
+
+      // hover readout
+      const cross = svg.querySelector('[data-role="crosshair"]');
+      const onMove = ev => {
+        const rect = svg.getBoundingClientRect();
+        const px = (ev.clientX - rect.left) / rect.width * W;
+        let i = start + Math.round((px - L) / (R - L) * (count - 1));
+        i = Math.max(start, Math.min(N - 1, i));
+        const xx = x(i).toFixed(1);
+        cross.innerHTML = '<line class="crosshair" x1="' + xx + '" y1="' + panes.price.y0 + '" x2="' + xx + '" y2="' + bottom + '"/>';
+        hover.textContent = fmtDate(an.ts[i], state.tf, true) + ' ET · close ' + fmtP(an.c[i]) + ' · RSI ' + fmt1(an.rsi[i]) + ' · MACD ' + fmt1(an.macd.line[i]) + ' · signal ' + fmt1(an.macd.signal[i]);
+      };
+      svg.onmousemove = onMove;
+      svg.onmouseleave = () => { cross.innerHTML = ''; hover.textContent = ''; };
+      hover.textContent = '';
+    }
+
+    // ---------------- Boot ----------------
+    const statuses = {};
+    await Promise.all(TF_KEYS.map(tf => fetchTf(tf).catch(e => { console.warn('fetch failed', tf, e); })));
+    for (const idx of INDICES) {
+      statuses[idx.sym] = {};
+      for (const tf of TF_KEYS) {
+        const st = renderCell(idx.sym, tf);
+        if (st) statuses[idx.sym][tf] = st;
+        renderSigCell(idx.sym, tf);
+      }
+      renderCard(idx.sym);
+    }
+    renderReadout(statuses);
+    const now = new Date();
+    document.getElementById('dvUpdated').textContent = 'Data: Yahoo Finance (delayed) · scanned ' +
+      now.toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET';
+  })();
+  </script>
+  <script src="ticker-search.js" defer></script>
+  <script src="share-strip.js" defer></script>
+</body>
+</html>
