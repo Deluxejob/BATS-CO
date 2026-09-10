@@ -91,6 +91,10 @@
     .dv-tag.forming { color: var(--warn); }
     .dv-tag.confirmed { color: var(--text-dim); }
     .dv-cell-watch { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text); line-height: 1.45; margin-top: 0.15rem; padding-top: 0.3rem; border-top: 1px dashed var(--border-soft); }
+    .dv-tag.playing { color: #ff5374; }
+    .dv-cell.bullish .dv-tag.playing { color: #22d39a; }
+    .dv-confirm.sell { color: #ff5374; font-weight: 700; }
+    .dv-confirm.buy  { color: #22d39a; font-weight: 700; }
     .dv-readout {
       margin-top: 1rem; padding: 0.9rem 1rem;
       background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
@@ -276,8 +280,10 @@
         <li><strong>Active until price settles it.</strong> A confirmed bearish divergence stays in force until price either closes
             <em>above</em> the second peak (a new high cancels it, though a fresh divergence may form at that new peak) or closes
             <em>below</em> the lowest point between the two peaks (the pattern has played out). Bullish is the mirror image. Each card shows
-            both levels. A divergence that does neither for a long stretch (about 60 daily bars, 52 weeks, 70 hourly bars) drops off as expired.
-            Settled divergences still draw on the charts.</li>
+            both levels. Because the breakdown is the moment the warning matters most, a played-out divergence stays on the scan as
+            <em>playing out</em> for a short while afterwards (12 hourly bars, 10 daily, 6 weekly), and the card notes when the latest MACD
+            crossover agrees with it. A divergence that does nothing for a long stretch (about 60 daily bars, 52 weeks, 70 hourly bars)
+            drops off as expired. Settled divergences still draw on the charts.</li>
       </ul>
       <p><strong>MACD crossover signals</strong> follow a separate, simpler rule:</p>
       <ul>
@@ -539,10 +545,13 @@
     // Which divergences are "live" right now for this index/timeframe?
     function status(an) {
       const t = TF[an.tf], last = an.c.length - 1;
+      // Flagged = still in force, or played out recently enough that the
+      // breakdown itself is the news (12 hourly / 10 daily / 6 weekly bars).
       const active = [];
       for (const key of ['rsi', 'macd']) {
         for (const d of an.divs[key]) {
-          if (d.state === 'active') active.push(Object.assign({ ind: key }, d));
+          const playingOut = d.state === 'played out' && d.endAt != null && last - d.endAt <= t.recent;
+          if (d.state === 'active' || playingOut) active.push(Object.assign({ ind: key, playingOut }, d));
         }
       }
       if (!active.length) {
@@ -734,17 +743,37 @@
         return st;
       }
       const d = st.primary;
+      const tag = st.forming ? ['forming', 'forming'] : d.playingOut ? ['playing', 'playing out'] : ['confirmed', 'confirmed'];
       const title = (st.kind === 'bearish' ? 'Bearish' : 'Bullish') + ' divergence' +
-        '<span class="dv-tag ' + (st.forming ? 'forming' : 'confirmed') + '">' + (st.forming ? 'forming' : 'confirmed') + '</span>';
+        '<span class="dv-tag ' + tag[0] + '">' + tag[1] + '</span>';
       const sub = 'On ' + st.inds.map(indName).join(' + ');
       const meta = 'Price ' + fmtP(d.pa) + ' &rarr; ' + fmtP(d.pb) + ' (' + fmtPct(d.pa, d.pb) + ')<br>' +
                    indName(d.ind) + ' ' + fmt1(d.ia) + ' &rarr; ' + fmt1(d.ib) + '<br>' +
                    fmtDate(an.ts[d.a], tf) + ' &rarr; ' + fmtDate(an.ts[d.b], tf);
       const barsSince = an.c.length - 1 - d.b;
-      const watch = d.kind === 'bearish'
-        ? 'Cancels above ' + fmtP(d.pb) + ' &middot; plays out below ' + fmtP(d.level)
-        : 'Cancels below ' + fmtP(d.pb) + ' &middot; plays out above ' + fmtP(d.level);
-      const inForce = '<div class="dv-cell-watch">' + (st.forming ? 'Forming now' : 'In force ' + barsSince + ' bar' + (barsSince === 1 ? '' : 's') + ' since the peak') + '<br>' + watch + '</div>';
+      let line1, watch;
+      if (st.forming) {
+        line1 = 'Forming now';
+        watch = d.kind === 'bearish'
+          ? 'Cancels above ' + fmtP(d.pb) + ' &middot; plays out below ' + fmtP(d.level)
+          : 'Cancels below ' + fmtP(d.pb) + ' &middot; plays out above ' + fmtP(d.level);
+      } else if (d.playingOut) {
+        line1 = 'Broke ' + (d.kind === 'bearish' ? 'below ' : 'above ') + fmtP(d.level) + ' on ' + fmtDate(an.ts[d.endAt], tf);
+        watch = 'Cancels ' + (d.kind === 'bearish' ? 'above ' : 'below ') + fmtP(d.pb);
+      } else {
+        line1 = 'In force ' + barsSince + ' bar' + (barsSince === 1 ? '' : 's') + ' since the peak';
+        watch = d.kind === 'bearish'
+          ? 'Cancels above ' + fmtP(d.pb) + ' &middot; plays out below ' + fmtP(d.level)
+          : 'Cancels below ' + fmtP(d.pb) + ' &middot; plays out above ' + fmtP(d.level);
+      }
+      // Does the latest MACD crossover agree? A sell after a bearish peak
+      // (or a buy after a bullish trough) is the confirmation traders look for.
+      const sigs = an.sig.signals, lastSig = sigs.length ? sigs[sigs.length - 1] : null;
+      let confirm = '';
+      if (lastSig && lastSig.at >= d.b && lastSig.kind === (d.kind === 'bearish' ? 'sell' : 'buy')) {
+        confirm = '<br><span class="dv-confirm ' + lastSig.kind + '">MACD ' + lastSig.kind + ' ' + fmtDate(an.ts[lastSig.at], tf) + ' confirms</span>';
+      }
+      const inForce = '<div class="dv-cell-watch">' + line1 + '<br>' + watch + confirm + '</div>';
       cell.innerHTML = '<div class="dv-cell-title">' + title + '</div><div class="dv-cell-sub">' + sub + '</div><div class="dv-cell-meta">' + meta + '</div>' + inForce;
       return st;
     }
