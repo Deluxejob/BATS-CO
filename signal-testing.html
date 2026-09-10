@@ -283,9 +283,9 @@
       <p class="eyebrow">SIGNAL TESTING</p>
       <h1>Does buying fear actually work?</h1>
       <p class="lede">
-        We tested ten different market-timing strategies against 15+ years of daily
-        S&amp;P 500 data using CNN&rsquo;s Fear &amp; Greed Index and our own BATS
-        score. Some of the intuitive rules people quote (&ldquo;buy when everyone is
+        We tested fourteen different market-timing strategies against 15+ years of daily
+        S&amp;P 500 data using CNN&rsquo;s Fear &amp; Greed Index, our own BATS
+        score, and the MACD crossover signals from the Divergences page. Some of the intuitive rules people quote (&ldquo;buy when everyone is
         fearful&rdquo;) don&rsquo;t actually beat plain buy-and-hold on their own.
         A few combinations do. Nothing here is cherry-picked &mdash; every strategy
         we ran is in the table below, including the losers.
@@ -334,6 +334,53 @@
       <div class="st-equity-wrap">
         <svg id="stEquityChart" class="st-equity-chart" viewBox="0 0 1000 380" preserveAspectRatio="none"></svg>
         <div class="st-legend" id="stEquityLegend"></div>
+      </div>
+    </section>
+
+    <section id="macd">
+      <div class="section-head">
+        <h2>MACD crossover signals</h2>
+        <p>
+          The buy and sell signals on the <a href="divergences.html">Divergences</a> page, run against S&amp;P 500 history:
+          buy when the MACD line (12, 26) crosses above its 9-period signal line after at least 10 closed bars below it, sell on the
+          mirror-image cross after at least 10 bars above. The position changes at the close of the bar the cross is first visible on,
+          which is the same information as acting at the next bar&rsquo;s open. Three variants sit alongside it: the same cross with
+          no 10-bar minimum, the 10-bar rule with a 200-day trend filter, and the 10-bar rule on weekly bars.
+        </p>
+      </div>
+      <div class="st-table-wrap">
+        <table class="st-table" id="stMacdTable">
+          <thead>
+            <tr>
+              <th>Variant</th>
+              <th>CAGR</th>
+              <th>vs Buy &amp; Hold</th>
+              <th>Max drawdown</th>
+              <th>Trades</th>
+              <th>Win rate</th>
+              <th>Avg trade</th>
+              <th>Avg hold</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="st-takeaway" id="stMacdVerdict"></div>
+      <h3 style="margin:1.25rem 0 0.4rem">Last 12 daily signals &mdash; 10-bar rule</h3>
+      <div class="st-table-wrap">
+        <table class="st-table" id="stMacdLog">
+          <thead>
+            <tr>
+              <th>Buy</th>
+              <th>Sell</th>
+              <th>Entry</th>
+              <th>Exit</th>
+              <th>Return</th>
+              <th>Days held</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </section>
 
@@ -470,6 +517,7 @@
 
       // ---- Equity curve chart ----
       drawEquityChart(d.strategies);
+      renderMacd(d);
 
       // ---- Combined-low money finding ----
       const combo = d.combinedLowForward;
@@ -508,6 +556,71 @@
 
     function prettyName(k) {
       return k.replace(/_/g, ' ').replace(/\bplus\b/gi, '+').replace(/\band\b/gi, 'AND').replace(/\bor\b/gi, 'OR');
+    }
+
+    // ---- MACD crossover section ----
+    function renderMacd(d) {
+      const base  = d.strategies.find(s => s.name === 'Buy_and_Hold');
+      const trend = d.strategies.find(s => s.name === 'Trend_Only');
+      const variants = [
+        ['MACD_Cross_10bar',            'Daily, 10-bar minimum (the Divergences-page rule)'],
+        ['MACD_Cross_NoFilter',         'Daily, every cross'],
+        ['MACD_Cross_10bar_plus_Trend', 'Daily, 10-bar + SPX above 200-day MA'],
+        ['MACD_Weekly_Cross_10bar',     'Weekly, 10-bar minimum'],
+      ].map(([name, label]) => Object.assign({ label }, d.strategies.find(s => s.name === name))).filter(v => v.name);
+      if (!variants.length || !base) return;
+
+      const tbody = document.getElementById('stMacdTable').querySelector('tbody');
+      tbody.innerHTML = variants.map(v => {
+        const diff = v.cagr - base.cagr;
+        return '<tr>' +
+          '<td><span class="st-strat-name">' + v.label + '</span></td>' +
+          '<td class="st-val ' + clsSign(v.cagr) + '">' + fmtPct(v.cagr) + '</td>' +
+          '<td class="st-val ' + clsSign(diff) + '">' + fmtPct(diff, 1) + '</td>' +
+          '<td class="st-val neg">' + fmtPct(v.maxDrawdown, 1) + '</td>' +
+          '<td class="st-val dim">' + fmtInt(v.trades) + '</td>' +
+          '<td class="st-val ' + (v.winRate > 0.5 ? 'pos' : 'dim') + '">' + (v.winRate == null ? '—' : Math.round(v.winRate * 100) + '%') + '</td>' +
+          '<td class="st-val ' + clsSign(v.avgTrade) + '">' + fmtPct(v.avgTrade) + '</td>' +
+          '<td class="st-val dim">' + (v.avgHoldDays == null ? '—' : v.avgHoldDays + 'd') + '</td>' +
+        '</tr>';
+      }).join('');
+
+      // Plain-English verdict, written from the numbers so it stays honest as data updates.
+      const main = variants[0];
+      const nofilt = variants.find(v => v.name === 'MACD_Cross_NoFilter');
+      const gap = (base.cagr - main.cagr) * 100;
+      let text = '<p><strong>Verdict.</strong> The 10-bar MACD crossover ' +
+        (main.cagr > base.cagr ? 'beat' : 'trailed') + ' buy-and-hold by <strong>' + Math.abs(gap).toFixed(1) + ' points a year</strong> (' +
+        fmtPct(main.cagr) + ' vs ' + fmtPct(base.cagr) + ') while being invested ' + Math.round(main.pctInMarket * 100) + '% of the time. ' +
+        'It won on <strong>' + Math.round(main.winRate * 100) + '% of ' + main.trades + ' trades</strong>, averaging ' + fmtPct(main.avgTrade) +
+        ' per trade over about ' + Math.round(main.avgHoldDays) + ' trading days. ';
+      if (Math.abs(main.maxDrawdown - base.maxDrawdown) < 0.005) {
+        text += 'Its worst drawdown matched buy-and-hold, meaning the rule was still long through the sharpest sell-off in the window: the 10-bar wait can delay a sell exactly when speed matters most. ';
+      } else if (main.maxDrawdown > base.maxDrawdown) {
+        text += 'It cut the worst drawdown to ' + fmtPct(main.maxDrawdown, 1) + ' against ' + fmtPct(base.maxDrawdown, 1) + ' for buy-and-hold. ';
+      }
+      if (nofilt) {
+        text += 'Dropping the 10-bar minimum ' + (nofilt.cagr > main.cagr ? 'raised' : 'lowered') + ' the return to ' + fmtPct(nofilt.cagr) +
+          ' and ' + (nofilt.maxDrawdown > main.maxDrawdown ? 'cut' : 'deepened') + ' the drawdown to ' + fmtPct(nofilt.maxDrawdown, 1) +
+          ', at the cost of ' + nofilt.trades + ' trades and a ' + Math.round(nofilt.winRate * 100) + '% win rate: more whipsaws, but faster exits. ';
+      }
+      if (trend) {
+        text += 'For comparison, the plain 200-day trend filter returned ' + fmtPct(trend.cagr) + ' with a ' + fmtPct(trend.maxDrawdown, 1) + ' drawdown.';
+      }
+      text += '</p><p>Read it as a <em>confirmation</em> tool, not a system: the signals are right more often than not, but the gains per trade are small and the time spent flat costs more than the crosses save.</p>';
+      document.getElementById('stMacdVerdict').innerHTML = text;
+
+      const log = document.getElementById('stMacdLog').querySelector('tbody');
+      const rows = (main.tradeLog || []).slice().reverse();
+      log.innerHTML = rows.map(t =>
+        '<tr>' +
+          '<td>' + t.entry + '</td>' +
+          '<td>' + (t.open ? '<em>still open</em>' : t.exit) + '</td>' +
+          '<td class="st-val dim">' + fmtInt(t.entryPx) + '</td>' +
+          '<td class="st-val dim">' + fmtInt(t.exitPx) + '</td>' +
+          '<td class="st-val ' + clsSign(t.ret) + '">' + fmtPct(t.ret) + '</td>' +
+          '<td class="st-val dim">' + t.days + '</td>' +
+        '</tr>').join('') || '<tr><td colspan="6" style="color:var(--text-dim)">No trades recorded.</td></tr>';
     }
 
     function renderFwdTable(id, rows) {

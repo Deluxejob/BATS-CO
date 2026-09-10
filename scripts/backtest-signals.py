@@ -110,6 +110,52 @@ class Series:
         # SPX 200-day and 50-day SMAs for trend-filter strategies.
         self.ma200 = _rolling_mean(spx, 200)
         self.ma50  = _rolling_mean(spx, 50)
+        # Daily MACD (12, 26, 9) on SPX closes — same maths as divergences.html.
+        self.macd_line, self.macd_signal = _macd(spx)
+        # Weekly closes = last trading day of each ISO week. Weekly MACD is
+        # computed on those and mapped back to the daily index so the
+        # daily runner can evaluate a weekly rule at each Friday close.
+        self.week_end_idx: list[int] = []
+        for i in range(n):
+            last_of_week = (i == n - 1) or (dates[i + 1].isocalendar()[:2] != dates[i].isocalendar()[:2])
+            if last_of_week:
+                self.week_end_idx.append(i)
+        wk_closes = [spx[i] for i in self.week_end_idx]
+        self.wk_macd_line, self.wk_macd_signal = _macd(wk_closes)
+        # daily index -> position in the weekly arrays (only for week-end days)
+        self.week_pos: dict[int, int] = {i: k for k, i in enumerate(self.week_end_idx)}
+
+
+def _ema(xs: list[float], n: int) -> list[float | None]:
+    out: list[float | None] = [None] * len(xs)
+    if len(xs) < n:
+        return out
+    e = sum(xs[:n]) / n
+    out[n - 1] = e
+    k = 2.0 / (n + 1)
+    for i in range(n, len(xs)):
+        e = xs[i] * k + e * (1 - k)
+        out[i] = e
+    return out
+
+
+def _macd(xs: list[float], fast: int = 12, slow: int = 26, sig: int = 9):
+    """Standard MACD: line = EMA(fast) - EMA(slow); signal = EMA(sig) of line."""
+    ef, es = _ema(xs, fast), _ema(xs, slow)
+    line: list[float | None] = [None] * len(xs)
+    for i in range(len(xs)):
+        if ef[i] is not None and es[i] is not None:
+            line[i] = ef[i] - es[i]
+    signal: list[float | None] = [None] * len(xs)
+    first = next((i for i, v in enumerate(line) if v is not None), -1)
+    if first >= 0 and len(xs) - first >= sig:
+        s = sum(line[first:first + sig]) / sig
+        signal[first + sig - 1] = s
+        k = 2.0 / (sig + 1)
+        for i in range(first + sig, len(xs)):
+            s = line[i] * k + s * (1 - k)
+            signal[i] = s
+    return line, signal
 
 
 def _rolling_mean(xs: list[float], n: int) -> list[float | None]:
@@ -225,6 +271,55 @@ def make_combined_or(low_fng: float, low_bats: float,
     return rule
 
 
+def make_macd_cross(min_run: int, weekly: bool = False, require_trend: bool = False):
+    """MACD crossover rule, matching the signals on divergences.html.
+
+    Buy when the MACD line crosses above its signal line after at least
+    `min_run` closed bars below it; sell on the mirror-image cross after
+    at least `min_run` bars above. Crosses that come sooner are ignored
+    (the side counter still resets). The cross is known at the close of
+    the bar it happens on, so the position changes at that close and
+    earns from the next bar — the same information as acting at the
+    next bar's open, which is how the page stamps the signal.
+
+    weekly=True runs the rule on weekly closes; the decision is taken at
+    the last trading day of each week and held through the next week.
+    require_trend=True only allows a buy when SPX > 200-day MA and also
+    exits on a trend break.
+    """
+    state = {"invested": False, "side": None, "run": 0}
+
+    def rule(s: Series, i: int) -> bool:
+        if weekly:
+            k = s.week_pos.get(i)
+            if k is None:
+                return state["invested"]          # mid-week: hold whatever we had
+            line, sig = s.wk_macd_line[k], s.wk_macd_signal[k]
+        else:
+            line, sig = s.macd_line[i], s.macd_signal[i]
+        if line is None or sig is None:
+            return state["invested"]
+        side = "above" if line > sig else "below" if line < sig else state["side"]
+        if side is None:
+            return state["invested"]
+        crossed = state["side"] is not None and side != state["side"]
+        if crossed:
+            if state["run"] >= min_run:
+                if side == "above":
+                    if not require_trend or (s.ma200[i] is not None and s.spx[i] > s.ma200[i]):
+                        state["invested"] = True
+                else:
+                    state["invested"] = False
+            state["side"], state["run"] = side, 1
+        else:
+            state["side"], state["run"] = side, state["run"] + 1
+        if require_trend and state["invested"] and s.ma200[i] is not None and s.spx[i] < s.ma200[i]:
+            state["invested"] = False
+        return state["invested"]
+
+    return rule
+
+
 def bull_market_only(s: Series, i: int) -> bool:
     """Simple regime filter: invested when SPX > 200-day MA, else out."""
     ma = s.ma200[i]
@@ -262,6 +357,32 @@ def run_strategy(name: str, description: str, rule, s: Series) -> dict:
 
     days_in_market = sum(1 for f in invested_flags if f)
     pct_in_market  = days_in_market / n if n else 0.0
+
+    # Round-trip trade log: entry at the close of the day the rule turns
+    # on, exit at the close of the day it turns off. A position still
+    # open at the end is closed at the final bar and flagged.
+    trades: list[dict] = []
+    entry_i = None
+    for i in range(n):
+        if invested_flags[i] and entry_i is None:
+            entry_i = i
+        elif not invested_flags[i] and entry_i is not None:
+            trades.append(_trade(s, entry_i, i, False))
+            entry_i = None
+    if entry_i is not None:
+        trades.append(_trade(s, entry_i, n - 1, True))
+    closed = [t for t in trades if not t["open"]]
+    rets = [t["ret"] for t in trades]
+    trade_stats = {
+        "trades": len(trades),
+        "winRate": round(sum(1 for r in rets if r > 0) / len(rets), 3) if rets else None,
+        "avgTrade": round(sum(rets) / len(rets), 4) if rets else None,
+        "medianTrade": round(sorted(rets)[len(rets) // 2], 4) if rets else None,
+        "bestTrade": round(max(rets), 4) if rets else None,
+        "worstTrade": round(min(rets), 4) if rets else None,
+        "avgHoldDays": round(sum(t["days"] for t in closed) / len(closed), 1) if closed else None,
+        "tradeLog": trades[-12:],
+    }
 
     total_return = equity[-1] - 1.0
     years = (s.dates[-1] - s.dates[0]).days / 365.25
@@ -304,6 +425,19 @@ def run_strategy(name: str, description: str, rule, s: Series) -> dict:
         "entries": entries,
         "equityFinal": round(equity[-1], 4),
         "equityCurve": sampled,
+        **trade_stats,
+    }
+
+
+def _trade(s: Series, a: int, b: int, still_open: bool) -> dict:
+    return {
+        "entry": s.dates[a].isoformat(),
+        "exit":  s.dates[b].isoformat(),
+        "entryPx": round(s.spx[a], 2),
+        "exitPx":  round(s.spx[b], 2),
+        "ret": round(s.spx[b] / s.spx[a] - 1.0, 4),
+        "days": b - a,
+        "open": still_open,
     }
 
 
@@ -451,6 +585,18 @@ def main() -> int:
         ("CNN_OR_BATS_Either_Low",
          "Loose combined: buy when CNN <= 25 OR BATS <= 30. Exit only when BOTH have risen above thresholds.",
          make_combined_or(25, 30, 55, 60)),
+        ("MACD_Cross_10bar",
+         "The Divergences-page rule on daily bars: buy when the MACD line crosses above its signal after >= 10 closed bars below; sell on the mirror cross after >= 10 bars above. Earlier crosses ignored.",
+         make_macd_cross(10)),
+        ("MACD_Cross_NoFilter",
+         "Same crossover with no 10-bar minimum: every MACD/signal cross trades. Shows what the filter is worth.",
+         make_macd_cross(0)),
+        ("MACD_Cross_10bar_plus_Trend",
+         "MACD 10-bar crossover, but buys only when SPX > 200-day MA and also exits on a trend break.",
+         make_macd_cross(10, require_trend=True)),
+        ("MACD_Weekly_Cross_10bar",
+         "The same 10-bar crossover on weekly bars: decided at each Friday close, held through the following week.",
+         make_macd_cross(10, weekly=True)),
     ]
 
     results = []
