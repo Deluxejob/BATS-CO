@@ -73,7 +73,11 @@ jobs:
       - name: Refresh U-Michigan Consumer Sentiment (monthly — tolerant of no-new-data)
         run: python scripts/update-umcsent.py
 
-      - name: Refresh Chicago Fed NFCI (weekly — for the Two-Gate Long/Cash QQQ signal card)
+      - name: Refresh Chicago Fed NFCI (weekly — tolerant of upstream errors)
+        env:
+          # Same key as Risk Watch. Script falls back to fredgraph.csv and
+          # exits 0 on failure so it can never block the commit step below.
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/update-nfci.py
 
       - name: Append current-year yields to yields_history.csv

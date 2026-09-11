@@ -1671,6 +1671,8 @@ function buildLegend() {
 function buildComponents() {
   const grid = document.getElementById('componentsGrid');
   if (!grid) return;
+  // Re-run on every intraday refresh, so wipe the previous render first.
+  grid.innerHTML = '';
 
   const totalLiveWeight = COMPONENTS
     .filter(c => c.status === 'live' && c.weight > 0)
@@ -2662,6 +2664,7 @@ async function init() {
           if (!fresh) return;
           currentSnapshot = fresh;
           updateComponentsWithLatest(fresh);
+          buildComponents();
           setGauge(computeBatsScore());
           const upsideLive = computeUpsideTrend(fresh);
           const pivotLive  = computePivotTop(fresh);
