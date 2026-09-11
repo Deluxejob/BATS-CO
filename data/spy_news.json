@@ -1,9 +1,16 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1789162385,
-  "latestPublishedAt": 1789161519,
+  "fetchedAt": 1789170872,
+  "latestPublishedAt": 1789168255,
   "items": [
+    {
+      "title": "S&P 500, Dow Break Past Four-Day Loss To End Higher As Investors Eye Fed Meeting Next Week — DELL, HPE, EL, WMT In Focus",
+      "link": "https://finance.yahoo.com/m/e32f6917-9db1-3546-90cf-dee3ca9ff621/s%26p-500%2C-dow-break-past.html",
+      "publisher": "Stocktwits",
+      "publishedAt": 1789168255,
+      "id": "e32f6917-9db1-3546-90cf-dee3ca9ff621"
+    },
     {
       "title": "SCHD and JEPI Both Pay You to Wait, Yet Only One Raises Its Payout Every Year",
       "link": "https://finance.yahoo.com/m/57dee2ce-b319-35e8-b922-6b2106302be9/schd-and-jepi-both-pay-you-to.html",
@@ -66,13 +73,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789148611,
       "id": "2743f2df-3364-300a-8334-4b15544b59bb"
-    },
-    {
-      "title": "AMC Gains 5% on Tokenization Truce Signal, Robinhood Barely Budges; Cinemark Treads Water",
-      "link": "https://finance.yahoo.com/m/972aba0a-4a3a-3f5d-81ff-2090c24925c5/amc-gains-5%25-on-tokenization.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789146805,
-      "id": "972aba0a-4a3a-3f5d-81ff-2090c24925c5"
     }
   ]
 }
