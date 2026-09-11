@@ -1105,7 +1105,7 @@ function buildGauge() {
   // the piecewise score→angle mapping — so ticks always line up with the
   // color-band transitions on the gauge.
   const MAJOR_TICKS = [0, 45, 65, 100];         // start / Neutral / Bullish / max
-  const MINOR_TICKS = [15, 18, 30, 57, 72];     // other bucket boundaries
+  const MINOR_TICKS = [15, 18, 32, 57, 72];     // other bucket boundaries
 
   function tickAngle(v) { return scoreToGaugeAngle(v); }
 
@@ -1127,18 +1127,23 @@ function buildGauge() {
   MINOR_TICKS.forEach(v => drawTick(v, 4, 1));
   MAJOR_TICKS.forEach(v => drawTick(v, 8, 2));
 
-  MAJOR_TICKS.forEach(v => {
+  // Every bucket boundary gets a number. The four anchors (0 / 45 / 65 /
+  // 100) stay big and bright; the in-between boundaries are smaller and
+  // dimmer so the gauge reads at a glance but the bands are still labelled.
+  // Segments are equal-width arcs, so 15 and 18 sit a full band apart.
+  [...MINOR_TICKS, ...MAJOR_TICKS].forEach(v => {
+    const major = MAJOR_TICKS.includes(v);
     const a = tickAngle(v);
-    const pos = polarToXY(GAUGE.cx, GAUGE.cy, GAUGE.rOuter + 28, a);
+    const pos = polarToXY(GAUGE.cx, GAUGE.cy, GAUGE.rOuter + (major ? 28 : 22), a);
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('x', pos.x);
     text.setAttribute('y', pos.y);
     text.setAttribute('text-anchor', 'middle');
     text.setAttribute('dominant-baseline', 'middle');
-    text.setAttribute('fill', '#e6edf6');
+    text.setAttribute('fill', major ? '#e6edf6' : '#8b95a8');
     text.setAttribute('font-family', "'JetBrains Mono', ui-monospace, monospace");
-    text.setAttribute('font-size', '19');
-    text.setAttribute('font-weight', '700');
+    text.setAttribute('font-size', major ? '19' : '14');
+    text.setAttribute('font-weight', major ? '700' : '600');
     text.textContent = v;
     svg.appendChild(text);
   });
