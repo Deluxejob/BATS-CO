@@ -1,9 +1,16 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1789227804,
-  "latestPublishedAt": 1789168255,
+  "fetchedAt": 1789246000,
+  "latestPublishedAt": 1789240800,
   "items": [
+    {
+      "title": "Investing in the Vanguard S&P 500 ETF (VOO)? Beware of This 1 Sneaky Risk.",
+      "link": "https://finance.yahoo.com/m/9d8eefcc-5e78-3b93-89e4-2286c8594501/investing-in-the-vanguard-s%26p.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1789240800,
+      "id": "9d8eefcc-5e78-3b93-89e4-2286c8594501"
+    },
     {
       "title": "S&P 500, Dow Break Past Four-Day Loss To End Higher As Investors Eye Fed Meeting Next Week — DELL, HPE, EL, WMT In Focus",
       "link": "https://finance.yahoo.com/m/e32f6917-9db1-3546-90cf-dee3ca9ff621/s%26p-500%2C-dow-break-past.html",
@@ -66,13 +73,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789149413,
       "id": "051cad1d-b2c9-3ad6-89a0-6b51bb738e00"
-    },
-    {
-      "title": "Affirm Rallies 5% as Midweek Selloff Unwinds; Klarna and PayPal Tick Up",
-      "link": "https://finance.yahoo.com/m/2743f2df-3364-300a-8334-4b15544b59bb/affirm-rallies-5%25-as-midweek.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789148611,
-      "id": "2743f2df-3364-300a-8334-4b15544b59bb"
     }
   ]
 }
