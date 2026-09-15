@@ -1,78 +1,113 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1789486032,
-  "latestPublishedAt": 1789482685,
+  "fetchedAt": 1789500762,
+  "latestPublishedAt": 1789499799,
   "items": [
     {
+      "title": "QuantumScape Is Down 51% This Year. Is QS Stock Dead Money or Due for a Bounce?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/quantumscape-down-51-qs-stock-191639034.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789499799,
+      "id": "7ca2bfd5-9f79-3f8c-ad26-1869440daf82"
+    },
+    {
+      "title": "Klarna Is Down 51% This Year. Is KLAR Stock Dead Money or Due for a Bounce?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/klarna-down-51-klar-stock-190355659.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789499035,
+      "id": "bacdcc61-fa39-3c69-afa8-8d3b857eb903"
+    },
+    {
+      "title": "Sirius XM Stock Is Up 53% in 2026: Take Profits, or Buy More?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/sirius-xm-stock-53-2026-185630298.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789498590,
+      "id": "6e2f6560-acde-3a28-8c6c-80191383038a"
+    },
+    {
+      "title": "Applied Digital Falls 4% and Turns Negative for the Year as the AI Buildout Trade Bleeds Out; Core Scientific Drops 5%, Cipher Mining Sinks 4%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/applied-digital-falls-4-turns-175518444.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789494918,
+      "id": "42faa11c-7bfe-3022-a127-7fdbb2df8834"
+    },
+    {
+      "title": "Western Digital Falls 4% Despite Its AI Storage Pitch; Seagate Drops 5%, Micron Holds Steady",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/western-digital-falls-4-despite-175210459.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789494730,
+      "id": "77cb491f-4868-3de0-a9ed-f4afb894f2f3"
+    },
+    {
+      "title": "Joby Slips and Is Down 53% This Year as the eVTOL Trade Keeps Unwinding; Archer Dips, EHang Eases",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/joby-slips-down-53-evtol-164133389.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789490493,
+      "id": "de75b0ae-d4e6-31e4-b752-706f054333cd"
+    },
+    {
+      "title": "Circle Internet Sinks 8% as ARK Trims Its Stake Before the Senate Clarity Act Vote; Coinbase and Bitmine Drop 5%",
+      "link": "https://finance.yahoo.com/markets/crypto/articles/circle-internet-sinks-8-ark-163920584.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789490360,
+      "id": "cb53a6a6-0233-38bb-9a25-8d3eb1d53850"
+    },
+    {
+      "title": "Norwegian Falls 3% as Wells Fargo Trims Carnival Target on Caribbean Pricing Pressure; Carnival Slips, Royal Caribbean Dips",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/norwegian-falls-3-wells-fargo-163654293.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789490214,
+      "id": "11776c7f-b5fc-32f2-a7db-ce5ed22795fd"
+    },
+    {
+      "title": "12 Investment Must Reads for This Week (Sept. 15, 2026)",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/12-investment-must-reads-week-160848000.html",
+      "publisher": "Wealth Management",
+      "publishedAt": 1789488528,
+      "id": "0cd87137-d644-341c-8da7-4a78e14e3db0"
+    },
+    {
+      "title": "Offshore Oil Stocks Rally While the Broad Market Slips: Transocean Climbs 6%, Valaris Rises 6%, W&T Offshore Gains 6%",
+      "link": "https://finance.yahoo.com/energy/articles/offshore-oil-stocks-rally-while-160315565.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789488195,
+      "id": "ff5512d0-afac-3364-9a36-389aaf54493d"
+    },
+    {
+      "title": "Ciena Rises 4% as Optics Selloff Unwinds; Coherent Edges Higher, Corning Holds Steady",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/ciena-rises-4-optics-selloff-155953305.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789487993,
+      "id": "0dbb53ba-b287-31c8-a47b-9077cd45fc49"
+    },
+    {
+      "title": "TeraWulf Falls 5% as AI Infrastructure Names Extend a Month-Long Slide; IREN Drops 4%, Applied Digital Declines 3%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/terawulf-falls-5-ai-infrastructure-153049003.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789486249,
+      "id": "9cceb649-e0f6-3f19-b297-da7bf8fbe09b"
+    },
+    {
+      "title": "Hewlett Packard Enterprise Rises 4% a Day After Evercore ISI Downgrade; Dell Climbs 4%, Super Micro Holds Steady",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/hewlett-packard-enterprise-rises-4-152709969.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789486029,
+      "id": "a1af8dc1-13ce-3965-a8d9-7b4fb0d59a51"
+    },
+    {
+      "title": "Chipotle Falls 5%: Profit Taking After a Strong Month, or the Salmonella Headline Again?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/chipotle-falls-5-profit-taking-151624255.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789485384,
+      "id": "a912fbab-00f8-3859-96ee-21772e8383d7"
+    },
+    {
       "title": "Rate Hike Jitters Rattle iBuyer Stocks: Opendoor Falls 4%, Zillow Slides 2% but Offerpad Holds Steady",
-      "link": "https://finance.yahoo.com/m/bcbad8b3-b26e-3f1d-947f-03505572f60d/rate-hike-jitters-rattle.html",
+      "link": "https://finance.yahoo.com/real-estate/articles/rate-hike-jitters-rattle-ibuyer-143125085.html",
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789482685,
       "id": "bcbad8b3-b26e-3f1d-947f-03505572f60d"
-    },
-    {
-      "title": "Gaming the Fed Odds for a Rate Hike Wednesday",
-      "link": "https://finance.yahoo.com/economy/policy/articles/gaming-fed-odds-rate-hike-142300948.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789482180,
-      "id": "e889e1e7-d37d-3ffc-9899-8087be909024"
-    },
-    {
-      "title": "ASML’s Current Share Price of $1,575 Shouldn’t Scare You.",
-      "link": "https://finance.yahoo.com/m/77c11355-fafc-3ac5-a77e-42e25a030c23/asml%E2%80%99s-current-share-price-of.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789480809,
-      "id": "77c11355-fafc-3ac5-a77e-42e25a030c23"
-    },
-    {
-      "title": "Dave & Buster’s Retreats 12% on Sales Miss; Six Flags Slips 2%, Lucky Strike Entertainment Falls 1%",
-      "link": "https://finance.yahoo.com/m/cc809535-724d-3f11-b166-20a8705346d7/dave-%26-buster%E2%80%99s-retreats-12%25.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789479813,
-      "id": "cc809535-724d-3f11-b166-20a8705346d7"
-    },
-    {
-      "title": "Reddit Drops 4% Despite User Growth; Meta Platforms Holds Steady, Snap Rises 1%",
-      "link": "https://finance.yahoo.com/m/38265747-196d-34ac-bbe2-7cff660cfa9b/reddit-drops-4%25-despite-user.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789478867,
-      "id": "38265747-196d-34ac-bbe2-7cff660cfa9b"
-    },
-    {
-      "title": "Exchange-Traded Funds, Equity Futures Lower Pre-Bell Tuesday as Traders Prepare for Fed Meeting",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/exchange-traded-funds-equity-futures-132308929.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1789478588,
-      "id": "b1a5596b-53eb-38f6-97ac-766417c40f29"
-    },
-    {
-      "title": "There Are Plenty of Eli Lilly Bulls: Here’s What They Aren’t Telling You",
-      "link": "https://finance.yahoo.com/m/e6bdc2a9-5632-36a4-8995-fd06cedafedd/there-are-plenty-of-eli-lilly.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789477554,
-      "id": "e6bdc2a9-5632-36a4-8995-fd06cedafedd"
-    },
-    {
-      "title": "Smart Investors Are Watching This Metric As Coca-Cola Pushes Past All-Time Highs",
-      "link": "https://finance.yahoo.com/m/7d99063c-6c2f-35ef-8554-ecf8ec9c37eb/smart-investors-are-watching.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789474537,
-      "id": "7d99063c-6c2f-35ef-8554-ecf8ec9c37eb"
-    },
-    {
-      "title": "CoreWeave Imploded Over The Last Few Months: One High-Conviction Wall Street Pro Says 200% Gains Start Now",
-      "link": "https://finance.yahoo.com/m/c5944334-57b1-3c18-81dd-44c346d64959/coreweave-imploded-over-the.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789472751,
-      "id": "c5944334-57b1-3c18-81dd-44c346d64959"
-    },
-    {
-      "title": "AI, Fed And 5% Treasury Yield: Three Risks Putting Nasdaq, Dow Futures On Edge Ahead Of Wednesday’s Rate Decision",
-      "link": "https://finance.yahoo.com/m/ec44df50-43d4-376b-9b44-b2a1b424a911/ai%2C-fed-and-5%25-treasury.html",
-      "publisher": "Stocktwits",
-      "publishedAt": 1789461851,
-      "id": "ec44df50-43d4-376b-9b44-b2a1b424a911"
     }
   ]
 }
