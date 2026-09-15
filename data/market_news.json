@@ -1,40 +1,117 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1789429326,
-  "latestPublishedAt": 1789426230,
+  "fetchedAt": 1789436628,
+  "latestPublishedAt": 1789436220,
   "items": [
     {
-      "title": "Tech stocks slump after AI execs call for industry slowdown",
-      "link": "https://finance.yahoo.com/technology/ai/articles/tech-stocks-slump-ai-execs-160249530.html",
-      "publisher": "CBS News",
-      "publishedAt": 1789426230,
-      "id": "658a0229-3c4e-3334-854b-a4a8553d461a"
+      "title": "Commerzbank revamps Brent crude forecast for the rest of 2026",
+      "link": "https://finance.yahoo.com/m/ef816979-5fed-3b69-810f-f5ea5159c802/commerzbank-revamps-brent.html",
+      "publisher": "TheStreet",
+      "publishedAt": 1789436220,
+      "id": "ef816979-5fed-3b69-810f-f5ea5159c802"
+    },
+    {
+      "title": "This Index Fund Could Turn $25,000 Into $20,635,655",
+      "link": "https://finance.yahoo.com/m/903a503d-3121-37e4-b1e7-47a582fb286b/this-index-fund-could-turn.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1789436100,
+      "id": "903a503d-3121-37e4-b1e7-47a582fb286b"
+    },
+    {
+      "title": "NextEra and Dominion Sweeten Merger Deal With Bill Credits and New Jobs",
+      "link": "https://finance.yahoo.com/energy/articles/nextera-dominion-sweeten-merger-deal-013000843.html",
+      "publisher": "Oilprice.com",
+      "publishedAt": 1789435800,
+      "id": "b069def5-d6a8-30fb-a654-f98ee3cca74b"
+    },
+    {
+      "title": "CORRECTED — Impact Biomedical Inc (NYSE: IBO) Announces 1 for 12.62 Reverse Stock Split to Pursue Completion of Merger with Zoar Limited (f/k/a Dr Ashleys Limited)",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/corrected-impact-biomedical-inc-nyse-012600742.html",
+      "publisher": "GlobeNewswire",
+      "publishedAt": 1789435560,
+      "id": "fbd457fc-2957-3cf3-abcb-799b9521bace"
+    },
+    {
+      "title": "Dell Seeks $4 Billion as AI Boom Fuels Growth and Debt Management",
+      "link": "https://finance.yahoo.com/technology/ai/articles/dell-seeks-4-billion-ai-012428686.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1789435468,
+      "id": "d983c1e2-3c4e-38a4-80a0-56e341dbda4e"
+    },
+    {
+      "title": "Dodgers clinch playoff berth in bid for third straight World Series",
+      "link": "https://finance.yahoo.com/m/fdc1cd24-049e-31c1-9d1e-431b47498467/dodgers-clinch-playoff-berth.html",
+      "publisher": "AFP",
+      "publishedAt": 1789435459,
+      "id": "fdc1cd24-049e-31c1-9d1e-431b47498467"
+    },
+    {
+      "title": "Autodesk, C3.ai, GoDaddy, Rapid7, and Sprout Social Stocks Trade Up, What You Need To Know",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/autodesk-c3-ai-godaddy-rapid7-012330648.html",
+      "publisher": "StockStory",
+      "publishedAt": 1789435410,
+      "id": "3eeb4617-2c0e-37fb-af61-f716ba0fb718"
+    },
+    {
+      "title": "UnitedHealth Partners with TPG to Strengthen Underperforming Florida Clinics",
+      "link": "https://finance.yahoo.com/healthcare/articles/unitedhealth-partners-tpg-strengthen-underperforming-012322987.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1789435402,
+      "id": "35b360a6-9ceb-38a5-b4a9-c5ad33ee1c4b"
+    },
+    {
+      "title": "Amazon Partners with Wiwynn to Expand U.S. AI Infrastructure Capacity",
+      "link": "https://finance.yahoo.com/technology/ai/articles/amazon-partners-wiwynn-expand-u-012223093.html",
+      "publisher": "Insider Monkey",
+      "publishedAt": 1789435343,
+      "id": "8db74c5e-5030-3c0f-a49d-e8fbfc65fabd"
+    },
+    {
+      "title": "New Zealand agencies missed red flags in child kidnapping case: inquiry",
+      "link": "https://finance.yahoo.com/m/d1c22ea8-4b11-373f-8ac8-bd1a132917a6/new-zealand-agencies-missed.html",
+      "publisher": "AFP",
+      "publishedAt": 1789435302,
+      "id": "d1c22ea8-4b11-373f-8ac8-bd1a132917a6"
+    },
+    {
+      "title": "BE Stock Falls Most In Nearly A Month: Why This Analyst Sees Over 36% Upside",
+      "link": "https://finance.yahoo.com/m/99eb6c72-cc4e-34c6-b488-70075624434c/be-stock-falls-most-in-nearly.html",
+      "publisher": "Stocktwits",
+      "publishedAt": 1789434808,
+      "id": "99eb6c72-cc4e-34c6-b488-70075624434c"
+    },
+    {
+      "title": "Bond Yields Near 5% as ETF Investors Keep Buying",
+      "link": "https://finance.yahoo.com/m/d658fd86-da31-37e3-9f7b-cd6e6f2fd283/bond-yields-near-5%25-as-etf.html",
+      "publisher": "etf.com",
+      "publishedAt": 1789432734,
+      "id": "d658fd86-da31-37e3-9f7b-cd6e6f2fd283"
+    },
+    {
+      "title": "Review & Preview: AI Is At It Again",
+      "link": "https://finance.yahoo.com/m/8aec404f-c114-3de5-883f-8ab4ed4b9540/review-%26-preview%3A-ai-is-at-it.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1789430100,
+      "id": "8aec404f-c114-3de5-883f-8ab4ed4b9540"
     },
     {
       "title": "Tech stocks slump after AI execs call for industry slowdown",
       "link": "https://finance.yahoo.com/m/658a0229-3c4e-3334-854b-a4a8553d461a/tech-stocks-slump-after-ai.html",
       "publisher": "CBS News",
-      "publishedAt": 1789426230,
+      "publishedAt": 1789426200,
       "id": "658a0229-3c4e-3334-854b-a4a8553d461a"
     },
     {
-      "title": "One Dollar of Extra Income Costs a Retired Couple $2,300 a Year in Medicare Premiums. These Funds Pay Without Crossing the Line",
-      "link": "https://finance.yahoo.com/healthcare/articles/one-dollar-extra-income-costs-223506766.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789425306,
-      "id": "78b72993-0ee7-3299-aa38-3b696b9fb596"
-    },
-    {
       "title": "The 3 Best Dividend ETFs to Build Lasting Retirement Income in 2027",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/3-best-dividend-etfs-build-222545775.html",
+      "link": "https://finance.yahoo.com/m/a32a72e1-9124-3db6-ae16-72f71fff8d3f/the-3-best-dividend-etfs-to.html",
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789424745,
       "id": "a32a72e1-9124-3db6-ae16-72f71fff8d3f"
     },
     {
       "title": "Nobody Withheld Taxes From Your First Year of Retirement Income, and the April Bill Proves It. These 3 ETFs Cover It Every Year",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/nobody-withheld-taxes-first-retirement-221512373.html",
+      "link": "https://finance.yahoo.com/m/510b6fb9-eece-3100-b42d-0acccf887265/nobody-withheld-taxes-from.html",
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789424112,
       "id": "510b6fb9-eece-3100-b42d-0acccf887265"
@@ -61,6 +138,13 @@
       "id": "35a2e45b-cb03-36e5-8c6c-4d73c365776d"
     },
     {
+      "title": "Waste Management (WM) Rises As Market Takes a Dip: Key Facts",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/waste-management-wm-rises-market-221503089.html",
+      "publisher": "Zacks",
+      "publishedAt": 1789424103,
+      "id": "e879a6c6-cbbd-38e7-ab0b-204d76cb9a89"
+    },
+    {
       "title": "Whirlpool (WHR) Sees a More Significant Dip Than Broader Market: Some Facts to Know",
       "link": "https://finance.yahoo.com/markets/stocks/articles/whirlpool-whr-sees-more-significant-221503206.html",
       "publisher": "Zacks",
@@ -68,18 +152,11 @@
       "id": "1a6c389d-4431-3840-82b2-2c24d098609e"
     },
     {
-      "title": "Why Onto Innovation (ONTO) Dipped More Than Broader Market Today",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/why-onto-innovation-onto-dipped-221503795.html",
+      "title": "Nucor (NUE) Falls More Steeply Than Broader Market: What Investors Need to Know",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/nucor-nue-falls-more-steeply-221502857.html",
       "publisher": "Zacks",
-      "publishedAt": 1789424103,
-      "id": "2d3e360d-7baf-3b2e-a617-d2fa76c3e33b"
-    },
-    {
-      "title": "Waste Management (WM) Rises As Market Takes a Dip: Key Facts",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/waste-management-wm-rises-market-221503089.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789424103,
-      "id": "e879a6c6-cbbd-38e7-ab0b-204d76cb9a89"
+      "publishedAt": 1789424102,
+      "id": "46bc23dc-3bc8-342c-818f-7556a2c64771"
     },
     {
       "title": "Medpace (MEDP) Ascends While Market Falls: Some Facts to Note",
@@ -94,125 +171,6 @@
       "publisher": "Zacks",
       "publishedAt": 1789424102,
       "id": "96f9814f-5565-3908-ad98-122137ea3d45"
-    },
-    {
-      "title": "Nucor (NUE) Falls More Steeply Than Broader Market: What Investors Need to Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/nucor-nue-falls-more-steeply-221502857.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789424102,
-      "id": "46bc23dc-3bc8-342c-818f-7556a2c64771"
-    },
-    {
-      "title": "AI-linked stocks slide after tech bosses call for slowdown in ‘reckless’ development",
-      "link": "https://finance.yahoo.com/technology/ai/articles/ai-linked-stocks-slide-tech-181747255.html",
-      "publisher": "The Guardian",
-      "publishedAt": 1789423852,
-      "id": "a45afe3a-314c-3530-80ab-a66893dc223f"
-    },
-    {
-      "title": "Canopy Growth Corporation (CGC) Advances While Market Declines: Some Information for Investors",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/canopy-growth-corporation-cgc-advances-220006473.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423206,
-      "id": "89fc611d-106f-3cc7-a5bf-2320c04c06b9"
-    },
-    {
-      "title": "Why the Market Dipped But Western Union (WU) Gained Today",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/why-market-dipped-western-union-220006769.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423206,
-      "id": "b7f0a4b1-84da-3c8d-9b7d-d2f3310f1489"
-    },
-    {
-      "title": "United Parcel Service (UPS) Ascends While Market Falls: Some Facts to Note",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/united-parcel-ups-ascends-while-220006730.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423206,
-      "id": "bdc074c5-7101-3587-96dc-f9e6a920a4aa"
-    },
-    {
-      "title": "RTX (RTX) Dips More Than Broader Market: What You Should Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/rtx-rtx-dips-more-broader-220006338.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423206,
-      "id": "acd6ca09-00a1-3fac-8b0d-a15a93dd5d6a"
-    },
-    {
-      "title": "Sweetgreen, Inc. (SG) Gains As Market Dips: What You Should Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/sweetgreen-inc-sg-gains-market-220005307.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423205,
-      "id": "16e93f6d-5f5a-337b-a8fe-84ac39960503"
-    },
-    {
-      "title": "Arch Capital Group (ACGL) Ascends While Market Falls: Some Facts to Note",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/arch-capital-group-acgl-ascends-220005240.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423205,
-      "id": "7c278424-5f6e-3886-9cda-5eb4baa9b640"
-    },
-    {
-      "title": "Tilray Brands, Inc. (TLRY) Gains As Market Dips: What You Should Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/tilray-brands-inc-tlry-gains-220005127.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423205,
-      "id": "92dbb289-0926-3a13-8654-d1399ead01a7"
-    },
-    {
-      "title": "Quanta Services (PWR) Declines More Than Market: Some Information for Investors",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/quanta-services-pwr-declines-more-220005029.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423205,
-      "id": "bb7e4475-dfb6-3a1d-9be5-e8fddf28c43d"
-    },
-    {
-      "title": "Sunrun (RUN) Suffers a Larger Drop Than the General Market: Key Insights",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/sunrun-run-suffers-larger-drop-220005809.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423205,
-      "id": "f4f32249-6915-3cea-a709-932a8bb446f1"
-    },
-    {
-      "title": "Here's Why Owens Corning (OC) Fell More Than Broader Market",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/heres-why-owens-corning-oc-220004511.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423204,
-      "id": "4e004011-dd2d-3324-9429-cb92d50c0cc7"
-    },
-    {
-      "title": "ON Semiconductor Corp. (ON) Declines More Than Market: Some Information for Investors",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/semiconductor-corp-declines-more-market-220004380.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423204,
-      "id": "9b2a3d16-4026-312f-bb1c-24f258c3da44"
-    },
-    {
-      "title": "Here's Why Kraft Heinz (KHC) Fell More Than Broader Market",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/heres-why-kraft-heinz-khc-220004080.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423204,
-      "id": "fe6919ed-26b3-38ca-b6cf-7abb8900ab58"
-    },
-    {
-      "title": "Gray Media (GTN) Gains As Market Dips: What You Should Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/gray-media-gtn-gains-market-220003991.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423203,
-      "id": "a60f72c0-8a16-3f28-bc9a-561822789097"
-    },
-    {
-      "title": "Alaska Air Group (ALK) Declines More Than Market: Some Information for Investors",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/alaska-air-group-alk-declines-220002592.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423202,
-      "id": "a6c76660-8e74-3f6f-88eb-c31b8c71d620"
-    },
-    {
-      "title": "Abbott (ABT) Rises As Market Takes a Dip: Key Facts",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/abbott-abt-rises-market-takes-220001299.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789423201,
-      "id": "b11a23e5-d067-38d6-91f3-fac9dc422fdb"
     },
     {
       "title": "If You Left a 401(k) Behind at Your Old Job, These 4 ETFs Are What the Rollover Should Look Like",
