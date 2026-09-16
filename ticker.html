@@ -2853,6 +2853,24 @@
         <div class="term-panel"><div id="techWidgetMount"></div></div>
       </section>
 
+      <!-- Momentum divergence tool — on-demand RSI/MACD divergence chart for
+           this symbol using the same engine and chart as divergences.html,
+           plus a buy/sell/hold checklist and the S&P backtest numbers for
+           whichever setup the chart is showing. Nothing is fetched until
+           the reader clicks the button. -->
+      <section class="term-section" id="divergenceSection">
+        <div class="term-section-label">MOMENTUM DIVERGENCE <span class="sub">— RSI / MACD divergences, MACD crossovers, and a buy / sell / hold checklist</span></div>
+        <div class="term-panel">
+          <div class="dv-tool-intro" id="dvToolIntro">
+            Is price running ahead of momentum? Scan this symbol's 60-minute, daily and weekly bars for bearish and bullish
+            RSI / MACD divergences and MACD crossover signals, and see whether the pieces of a top or a bottom are lining up.
+            Same rules and chart as the <a href="divergences.html">index divergence scanner</a>.
+          </div>
+          <button type="button" class="dv-tool-run" id="dvToolRun">Generate divergence chart &rarr;</button>
+          <div class="dv-tool-body" id="dvToolBody" hidden></div>
+        </div>
+      </section>
+
       <!-- Peer companies (same industry, via Finnhub) -->
       <section class="term-section" id="peersSection">
         <div class="term-section-label">PEER COMPANIES <span class="sub">— same industry (click a ticker to jump)</span></div>
@@ -2987,6 +3005,7 @@
   </footer>
 
   <script src="app.js"></script>
+  <script src="divergence-engine.js"></script>
   <script>
     (function () {
       const yearEl = document.getElementById('footerYear');
@@ -5235,6 +5254,168 @@
       // for the selected range, align them by date, and draw two line
       // series. Chart re-renders on range change or window resize.
       // -----------------------------------------------------------------
+      // Momentum divergence tool. Same engine, chart and rules as
+      // divergences.html (divergence-engine.js), run on demand for this
+      // symbol across all three timeframes, plus a transparent buy/sell/hold
+      // checklist and the S&P 500 backtest rows for the matching setup.
+      function initDivergenceTool(sym) {
+        const section = document.getElementById('divergenceSection');
+        const E = window.DivergenceEngine;
+        if (!section || !E) return;
+        const runBtn = section.querySelector('#dvToolRun');
+        const intro  = section.querySelector('#dvToolIntro');
+        const body   = section.querySelector('#dvToolBody');
+        const store  = {};                      // tfKey -> analysis
+        const state  = { tf: '1d', bt: null };  // bt = backtest json, loaded once
+        let started  = false;
+
+        async function loadBacktest() {
+          if (state.bt) return state.bt;
+          try {
+            const r = await fetch('data/divergence_backtest.json', { cache: 'no-store' });
+            if (r.ok) state.bt = await r.json();
+          } catch (e) { /* backtest table just won't render */ }
+          return state.bt;
+        }
+
+        async function loadAll() {
+          await Promise.all(E.TF_KEYS.map(async tf => {
+            try {
+              const series = await E.fetchSeries([sym], tf);
+              const s = series && series[sym];
+              if (Array.isArray(s) && s.length >= 60) store[tf] = E.analyze(E.normalizeBars(s, tf), tf);
+            } catch (e) { /* leave this timeframe missing */ }
+          }));
+        }
+
+        function buildShell() {
+          body.innerHTML =
+            '<div class="dv-verdict" data-role="verdict"></div>' +
+            '<div class="dv-chart-head"><span class="dv-sym">' + sym + '</span>' +
+              '<div class="dv-tf-picker">' + E.TF_KEYS.map(tf =>
+                '<button type="button" data-tf="' + tf + '"' + (tf === state.tf ? ' class="active"' : '') + '>' + E.TF[tf].label + '</button>'
+              ).join('') + '</div></div>' +
+            '<div class="dv-hover" data-role="hover"></div>' +
+            '<svg class="dv-svg" data-role="svg" viewBox="0 0 960 516" preserveAspectRatio="none"></svg>' +
+            '<div class="dv-chart-footer"><div class="dv-legend">' + E.legendHTML() + '</div><div data-role="footerRight"></div></div>' +
+            '<div class="dv-siglist" data-role="siglist"></div>' +
+            '<ul class="dv-divlist" data-role="list"></ul>' +
+            '<div class="dv-backtest" data-role="backtest"></div>';
+          body.querySelectorAll('.dv-tf-picker button').forEach(btn => {
+            btn.addEventListener('click', () => {
+              state.tf = btn.dataset.tf;
+              body.querySelectorAll('.dv-tf-picker button').forEach(b => b.classList.toggle('active', b === btn));
+              render();
+            });
+          });
+        }
+
+        function verdictHTML(v) {
+          const tfLabel = E.TF[state.tf].label.toLowerCase();
+          const sideWord = v.side === 'bearish' ? 'sell' : 'buy';
+          const sub = v.score
+            ? v.score + ' of 4 ' + sideWord + ' conditions met on the ' + tfLabel + ' chart'
+            : 'None of the ' + sideWord + ' conditions are met on the ' + tfLabel + ' chart';
+          return '<div class="dv-verdict-head"><span class="dv-verdict-badge ' + v.tone + '">' + v.label + '</span>' +
+                 '<span class="dv-verdict-sub">' + sub + '</span></div>' +
+            '<ul class="dv-checklist">' + v.items.map(it =>
+              '<li class="' + (it.ok ? 'ok' : 'no') + '"><span class="dv-check">' + (it.ok ? '&#10003;' : '&#10007;') + '</span>' +
+              '<div><div class="dv-check-label">' + it.label + '</div><div class="dv-check-detail">' + it.detail + '</div></div></li>'
+            ).join('') + '</ul>' +
+            '<div class="dv-verdict-note">A technical read of this chart only &mdash; not advice. All four = ' + sideWord.toUpperCase() +
+            '; three including the divergence = LEAN ' + sideWord.toUpperCase() + '; otherwise HOLD. The divergence must be in force now; ' +
+            'the other three must have happened within the last ' + v.win + ' bars.</div>';
+        }
+
+        function backtestHTML(v) {
+          const pick = E.backtestCondition(v, state.tf);
+          if (state.tf === '60m') {
+            return '<div class="dv-bt-note">No backtest for 60-minute bars &mdash; the history test covers daily and weekly S&amp;P 500 setups only.</div>';
+          }
+          if (!state.bt || !pick) {
+            return '<div class="dv-bt-note">No backtested setup matches this reading. The S&amp;P 500 history test covers divergences in force, fresh breakdowns, and weekly MACD signals.</div>';
+          }
+          const rows = state.bt.results || [];
+          const m = rows.find(r => r.condition === pick.condition);
+          const b = rows.find(r => r.condition === pick.baseline);
+          if (!m || !b) return '';
+          const pct = x => x == null ? '&mdash;' : (x >= 0 ? '+' : '') + (x * 100).toFixed(1) + '%';
+          const hit = x => x == null ? '&mdash;' : Math.round(x * 100) + '%';
+          const row = (label, r, cls) =>
+            '<tr class="' + cls + '"><td>' + label + '</td><td>' + pct(r['3m']) + '</td><td>' + hit(r['3m_hit']) + '</td>' +
+            '<td>' + pct(r['6m']) + '</td><td>' + hit(r['6m_hit']) + '</td><td>' + hit(r['p_dd10_6m']) + '</td></tr>';
+          const yrs = String(state.bt.windowStart || '').slice(0, 4) + '&ndash;' + String(state.bt.windowEnd || '').slice(0, 4);
+          const setupName = pick.condition.replace(/^SPX /, '').replace(/ \(no divergence needed\)$/, '');
+          return '<div class="dv-bt-title">What happened after this setup historically' +
+                 '<span>S&amp;P 500, ' + yrs + ' &mdash; the index, not ' + sym + '</span></div>' +
+            '<table class="dv-bt"><thead><tr><th>Setup</th><th>3-mo avg</th><th>positive</th><th>6-mo avg</th><th>positive</th><th>&ge;10% drop within 6 mo</th></tr></thead><tbody>' +
+            row(setupName + ' <small>(' + m.episodes + ' episodes)</small>', m, 'match') +
+            row('Any day', b, 'base') +
+            '</tbody></table>' +
+            '<div class="dv-bt-note">Read the two rows together: when the setup row looks like the any-day row, the pattern has not been much of an edge on the index historically.</div>';
+        }
+
+        function render() {
+          const an      = store[state.tf];
+          const svg     = body.querySelector('[data-role="svg"]');
+          const hover   = body.querySelector('[data-role="hover"]');
+          const list    = body.querySelector('[data-role="list"]');
+          const footR   = body.querySelector('[data-role="footerRight"]');
+          const sigList = body.querySelector('[data-role="siglist"]');
+          const verdEl  = body.querySelector('[data-role="verdict"]');
+          const btEl    = body.querySelector('[data-role="backtest"]');
+          body.querySelectorAll('.dv-tf-picker button').forEach(b => {
+            const a2 = store[b.dataset.tf];
+            const st = a2 ? E.status(a2) : null;
+            b.classList.toggle('has-bear', !!st && st.kind === 'bearish');
+            b.classList.toggle('has-bull', !!st && st.kind === 'bullish');
+          });
+          if (!an) {
+            svg.innerHTML = '<text x="480" y="250" text-anchor="middle" class="axis-label">No data for this timeframe.</text>';
+            verdEl.innerHTML = ''; list.innerHTML = ''; sigList.innerHTML = ''; btEl.innerHTML = ''; footR.textContent = ''; hover.textContent = '';
+            return;
+          }
+          const v = E.verdict(an, state.tf);
+          verdEl.innerHTML = verdictHTML(v);
+          const built = E.buildChartSVG(an, state.tf, sym);
+          E.mountChart(svg, built);
+          footR.textContent = E.footerText(an, state.tf);
+          sigList.innerHTML = E.sigListHTML(an, state.tf, built.geom.start);
+          list.innerHTML = E.divListHTML(an, state.tf, built.geom.start, built.geom.count);
+          E.wireHover(svg, hover, an, state.tf, built.geom);
+          btEl.innerHTML = backtestHTML(v);
+        }
+
+        async function start() {
+          if (started) return;
+          started = true;
+          runBtn.disabled = true;
+          runBtn.textContent = 'Loading ' + sym + '…';
+          await Promise.all([loadAll(), loadBacktest()]);
+          if (!Object.keys(store).length) {
+            started = false;
+            runBtn.disabled = false;
+            runBtn.textContent = 'Try again';
+            intro.innerHTML = '<span class="dv-error">Could not load price history for ' + sym + '. Yahoo may not carry this symbol on these bar sizes.</span>';
+            return;
+          }
+          intro.hidden = true;
+          runBtn.hidden = true;
+          body.hidden = false;
+          buildShell();
+          // Open on the first timeframe that has a live divergence (daily first);
+          // otherwise stay on daily.
+          const pref = ['1d', '1wk', '60m'].find(tf => store[tf] && E.status(store[tf]).kind !== 'none');
+          if (pref && pref !== state.tf) {
+            state.tf = pref;
+            body.querySelectorAll('.dv-tf-picker button').forEach(b => b.classList.toggle('active', b.dataset.tf === pref));
+          }
+          render();
+        }
+
+        runBtn.addEventListener('click', start);
+      }
+
       function initPriceOverlay(primarySym) {
         const section     = document.getElementById('overlaySection');
         if (!section) return;
@@ -5539,6 +5720,7 @@
       //     CNBC's "AAPL vs NDX; monthly % perf" chart, with a toggle.
       initRelPerf(sym);
       initPriceOverlay(sym);
+      initDivergenceTool(sym);
 
       // 2) Key statistics (Symbol Info widget — market cap, PE, EPS, sector, description)
       mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
