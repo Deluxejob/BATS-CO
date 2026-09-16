@@ -1,71 +1,260 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1789572010,
-  "latestPublishedAt": 1789571262,
+  "fetchedAt": 1789586601,
+  "latestPublishedAt": 1789586136,
   "items": [
+    {
+      "title": "Fed Hikes 25 Basis Points, Projects Another Hike in 2026: Do Prediction Markets Agree?",
+      "link": "https://finance.yahoo.com/economy/policy/articles/fed-hikes-25-basis-points-191536747.html",
+      "publisher": "Benzinga Prediction Markets",
+      "publishedAt": 1789586136,
+      "id": "0018b643-5f39-38a8-aa54-35e61b3efcc3"
+    },
+    {
+      "title": "Dow Falls 700 Points, S&P 500 Slides",
+      "link": "https://finance.yahoo.com/m/91b55f9b-c7d6-3128-b757-6f449cd3fbe5/dow-falls-700-points%2C-s%26p-500.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1789586131,
+      "id": "91b55f9b-c7d6-3128-b757-6f449cd3fbe5"
+    },
+    {
+      "title": "The Fed's Hawkish Pivot Didn't Fix The 10-Year Yield; S&P 500 Slides (Live Coverage)",
+      "link": "https://finance.yahoo.com/m/371d943b-ed80-3fee-8721-4e1980308671/the-fed%27s-hawkish-pivot.html",
+      "publisher": "Investor's Business Daily",
+      "publishedAt": 1789586093,
+      "id": "371d943b-ed80-3fee-8721-4e1980308671"
+    },
+    {
+      "title": "JEPI Income ETF Stumbles 3% Year-Over-Year, But One Number Is Spooking Investors",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/jepi-income-etf-stumbles-3-191020224.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789585820,
+      "id": "13072665-1001-31ae-90a4-5e3fdd9133e8"
+    },
+    {
+      "title": "Dow Falls 500 Points as the Federal Reserve Raises Key Interest Rate",
+      "link": "https://finance.yahoo.com/markets/articles/oil-pares-gains-stock-futures-085800807.html",
+      "publisher": "The Wall Street Journal",
+      "publishedAt": 1789585680,
+      "id": "c2604562-4cae-3e9c-b14d-d70b042dd87f"
+    },
+    {
+      "title": "Okta Just Rallied 28% in a Month and Cybersecurity Stocks Are Red-Hot Now. Is $200 Coming Soon?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/okta-just-rallied-28-month-190603563.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789585563,
+      "id": "ddd8c562-5ff0-3e5f-afba-4ce1fdde7203"
+    },
+    {
+      "title": "The Dow falls 400 points after the Fed raises interest rates",
+      "link": "https://finance.yahoo.com/economy/policy/articles/dow-falls-400-points-fed-190536341.html",
+      "publisher": "Quartz",
+      "publishedAt": 1789585536,
+      "id": "b1ce278d-807b-3621-96f4-1db34f8701fd"
+    },
+    {
+      "title": "US Equity Indexes Mixed After Fed Rate Hike",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/us-equity-indexes-mixed-fed-190521671.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1789585521,
+      "id": "00e665c3-387d-38b6-be87-aebfa0226777"
+    },
+    {
+      "title": "Stock market today: Dow, S&P 500, Nasdaq turn lower after Fed hikes interest rates to 3.75%-4%",
+      "link": "https://finance.yahoo.com/markets/live/stock-market-today-wednesday-september-16-dow-sp-500-nasdaq-fed-meeting-decision-080356525.html",
+      "publisher": "Yahoo Finance",
+      "publishedAt": 1789585375,
+      "id": "e0e03532-6aaf-4f32-b08e-7db0a01cb4c5"
+    },
+    {
+      "title": "Lululemon Just Dropped 18% in a Month. Is It Time to Sell?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/lululemon-just-dropped-18-month-190217893.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789585337,
+      "id": "a1c53b2c-7faf-3431-b770-f4593aca5dad"
+    },
+    {
+      "title": "Stock Market Today: Index Gains Get Shaved After Fed Hikes Rates By Quarter Point (Live Coverage)",
+      "link": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-index.html",
+      "publisher": "Investor's Business Daily",
+      "publishedAt": 1789584652,
+      "id": "127b3c0b-f974-36dd-8852-5793b5347c93"
+    },
+    {
+      "title": "What Does AT&T Stock Do To Your Money When The Market Falls?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/does-t-stock-money-market-185036211.html",
+      "publisher": "Trefis",
+      "publishedAt": 1789584636,
+      "id": "7ab19b7e-12a3-3fc0-adca-1c60720a54f3"
+    },
+    {
+      "title": "Nebius Is Still Down 21% in a Month: Did Today Just Mark the Bottom?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/nebius-still-down-21-month-185005926.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789584605,
+      "id": "3000939c-eae2-38ae-9717-07b867d0a1c6"
+    },
+    {
+      "title": "An $800,000 SPYI Portfolio Could Fall Below $350,000 by Age 67",
+      "link": "https://finance.yahoo.com/markets/options/articles/800-000-spyi-portfolio-could-184818067.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789584498,
+      "id": "7dd591f7-0528-34ed-ac3b-d6c50f64a78b"
+    },
+    {
+      "title": "1 of Wall Street's Most Bullish Market Strategists Just Slashed His 2026 S&P 500 Price Target by 500 Points",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/1-wall-streets-most-bullish-182701372.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1789583221,
+      "id": "4acfcce1-0aa7-32fa-bd8f-b2a2d68abc94"
+    },
+    {
+      "title": "Lumentum Stock Leads the S&P 500 While Corning Can’t Keep Up",
+      "link": "https://finance.yahoo.com/m/e6a75500-86a2-3183-93f1-a0e54dabc37e/lumentum-stock-leads-the-s%26p.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1789582920,
+      "id": "e6a75500-86a2-3183-93f1-a0e54dabc37e"
+    },
+    {
+      "title": "Worried About a Market Crash? This Dividend Stock Outperformed as the S&P 500 Sank in Both 2008 and 2022",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/worried-market-crash-dividend-stock-182000711.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1789582800,
+      "id": "cbff92d3-c52c-3468-bacd-c6073af34247"
+    },
+    {
+      "title": "Federal Reserve interest rate hikes usually pound stocks, but then something surprising happens",
+      "link": "https://finance.yahoo.com/economy/article/federal-reserve-interest-rate-hikes-usually-pound-stocks-but-then-something-surprising-happens-100449563.html",
+      "publisher": "Yahoo Finance",
+      "publishedAt": 1789582522,
+      "id": "3a0effd5-a5aa-41c3-b0f2-85db92bb5f23"
+    },
+    {
+      "title": "A $1,000 Investment in Coca-Cola Nearly Tripled. Here’s Why That Wasn’t Enough",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/1-000-investment-coca-cola-181305314.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789582385,
+      "id": "0c4ce3ae-6cfb-3641-b313-89df0ac3ac7a"
+    },
+    {
+      "title": "Higher Interest Rates Add to Data Center Builders’ Borrowing Costs",
+      "link": "https://finance.yahoo.com/m/d7f38015-0beb-36bb-9724-23b307690e42/higher-interest-rates-add-to.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1789582192,
+      "id": "d7f38015-0beb-36bb-9724-23b307690e42"
+    },
+    {
+      "title": "Royalties Inc. Investee Company Music Royalties Inc. Pays Milestone 80th Monthly Dividend",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/royalties-inc-investee-company-music-180700944.html",
+      "publisher": "CNW Group",
+      "publishedAt": 1789582020,
+      "id": "cb7626ab-ce7c-390b-9b84-12bb6ca56d98"
+    },
+    {
+      "title": "Stocks wobble but no sign of panic as yields surge",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stocks-wobble-no-sign-panic-095232827.html",
+      "publisher": "Reuters",
+      "publishedAt": 1789581700,
+      "id": "54bf79b8-367f-3a69-b390-f73f53b2dbc3"
+    },
+    {
+      "title": "Bloom Energy Gains 4% as S&P 500 Entry Nears; FuelCell Energy Ticks Up, Plug Power Slips",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/bloom-energy-gains-4-p-175900566.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789581540,
+      "id": "45bcb2a0-73e3-363c-ba33-6e947cbac36e"
+    },
+    {
+      "title": "GE Vernova Climbs 5% as CEO Sees Backlog Hitting $200B Early; Eaton and Quanta Services Edge Higher",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/ge-vernova-climbs-5-ceo-175610084.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789581370,
+      "id": "88563851-9a25-3918-93b5-9b69fff9e0d4"
+    },
+    {
+      "title": "Update: US Equity Indexes Mixed as Fed Almost Certain to Tighten Monetary Policy, Crude Oil Slumps",
+      "link": "https://finance.yahoo.com/economy/policy/articles/us-equity-indexes-mixed-fed-175406637.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1789581246,
+      "id": "e6dff6a6-1630-3550-809e-1270ffe0155d"
+    },
+    {
+      "title": "TeraWulf Rallies 7% as AI Hosting Bid Returns; Core Scientific Jumps 7%, IREN Rises 3%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/terawulf-rallies-7-ai-hosting-175318555.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1789581198,
+      "id": "1179052d-2457-3ac2-bffe-22079ae16d7b"
+    },
+    {
+      "title": "The Dow, S&P 500, and Nasdaq Split Ahead of a Near-Certain Rate Hike",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/dow-p-500-nasdaq-split-174421385.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1789580661,
+      "id": "e2c93b35-94d3-359d-a2c3-743773eff771"
+    },
+    {
+      "title": "Update: Equities Mixed Intraday Ahead of Fed Decision",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/equities-mixed-intraday-ahead-fed-174324176.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1789580604,
+      "id": "70efd088-6469-336c-96f4-f4342dd03768"
+    },
+    {
+      "title": "Stocks Bounce Back Ahead of a Big Day for the Fed",
+      "link": "https://finance.yahoo.com/m/cad86be8-3bad-3394-8ec6-1e2cfac903d0/stocks-bounce-back-ahead-of-a.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1789580408,
+      "id": "cad86be8-3bad-3394-8ec6-1e2cfac903d0"
+    },
+    {
+      "title": "Tech stocks today: OpenAI raising funds at $1.2 trillion valuation,  SK Hynix and Intel moves",
+      "link": "https://finance.yahoo.com/technology/live/tech-stocks-today-openai-raising-funds-at-12-trillion-valuation-sk-hynix-and-intel-moves-140134624.html",
+      "publisher": "Yahoo Finance",
+      "publishedAt": 1789578908,
+      "id": "e732ea48-5342-4e1d-bae4-74baa6899210"
+    },
+    {
+      "title": "US Equity Indexes Mixed as Fed Set to Tighten Monetary Policy",
+      "link": "https://finance.yahoo.com/economy/policy/articles/us-equity-indexes-mixed-fed-162426272.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1789575866,
+      "id": "82d1558a-8df5-3ab6-b235-6e36d206da00"
+    },
+    {
+      "title": "Markets Steady as Investors Await Rate Decision",
+      "link": "https://finance.yahoo.com/m/1beeccbe-0395-3aed-9363-982c953a0cec/markets-steady-as-investors.html",
+      "publisher": "The Wall Street Journal",
+      "publishedAt": 1789575420,
+      "id": "1beeccbe-0395-3aed-9363-982c953a0cec"
+    },
+    {
+      "title": "Top Midday Stories: Markets Await Key Fed Decision on Rates; SK Hynix Exploring Deal With Intel to Make Chips in US",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/top-midday-stories-markets-await-154538743.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1789573538,
+      "id": "addaa6cd-9e30-399e-8f72-8be0567a96a7"
+    },
+    {
+      "title": "Stocks gain as yields retreat ahead of Fed rate decision",
+      "link": "https://finance.yahoo.com/markets/world-indices/articles/asian-markets-nervous-start-ahead-012257597.html",
+      "publisher": "Reuters",
+      "publishedAt": 1789573360,
+      "id": "bf70ba60-62fb-3d3d-9107-0f12d488366d"
+    },
+    {
+      "title": "What Happens to Stocks If the Fed Lifts Rates",
+      "link": "https://finance.yahoo.com/m/3668202d-684d-37f5-a009-617488e8aec5/what-happens-to-stocks-if-the.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1789572928,
+      "id": "3668202d-684d-37f5-a009-617488e8aec5"
+    },
     {
       "title": "Why Cipher Digital Stock Is Skyrocketing Today",
       "link": "https://finance.yahoo.com/markets/stocks/articles/why-cipher-digital-stock-skyrocketing-150742187.html",
       "publisher": "Motley Fool",
       "publishedAt": 1789571262,
       "id": "432dceff-8529-3fd2-8f7a-09e92616bdd3"
-    },
-    {
-      "title": "What History Reveals About Stock Market Crashes During Presidential Transitions",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/history-reveals-stock-market-crashes-145000280.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1789570200,
-      "id": "def66528-e93c-35a4-9f75-1bdca6e69a08"
-    },
-    {
-      "title": "Optics Stocks Rally as Oversold Bounce Takes Hold: Coherent Jumps 6%, Lumentum Climbs 5%, Applied Optoelectronics Advances 3%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/optics-stocks-rally-oversold-bounce-144615359.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789569975,
-      "id": "3cf26466-c826-37e6-954a-3779d41eadb7"
-    },
-    {
-      "title": "Inverse Equity ETFs to Consider Amid Rising Market Risks",
-      "link": "https://finance.yahoo.com/markets/options/articles/inverse-equity-etfs-consider-amid-144600313.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789569960,
-      "id": "a1c11832-20c7-3040-9c23-b53f0d92bbc9"
-    },
-    {
-      "title": "Stock market today: S&P 500 and Nasdaq rise ahead of crucial Fed interest rate decision",
-      "link": "https://finance.yahoo.com/markets/live/stock-market-today-wednesday-september-16-dow-sp-500-nasdaq-fed-meeting-decision-080356525.html",
-      "publisher": "Yahoo Finance",
-      "publishedAt": 1789569894,
-      "id": "e0e03532-6aaf-4f32-b08e-7db0a01cb4c5"
-    },
-    {
-      "title": "3 Reasons GIS is Risky and 1 Stock to Buy Instead",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/3-reasons-gis-risky-1-144452689.html",
-      "publisher": "StockStory",
-      "publishedAt": 1789569892,
-      "id": "cdace9b1-b90d-3187-b8ab-180541f9cb09"
-    },
-    {
-      "title": "SpaceX Rises 5% as Starship’s First Orbital Attempt Gets Launch Date; Rocket Lab and AST SpaceMobile Hold Steady",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/spacex-rises-5-starship-first-143618850.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789569378,
-      "id": "74f40589-070a-3f73-8ea7-0fe80aacb9aa"
-    },
-    {
-      "title": "Retail Sales, Imports Come In Warm Ahead of FOMC Decision",
-      "link": "https://finance.yahoo.com/economy/policy/articles/retail-sales-imports-come-warm-143500791.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789569300,
-      "id": "6abf328e-df17-38d0-9294-ad350b038ee7"
-    },
-    {
-      "title": "Dell Rises 5% Despite Fresh Silver Lake Share Sale Filings; Super Micro Climbs 3%, Hewlett Packard Enterprise Ticks Up",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/dell-rises-5-despite-fresh-143139136.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789569099,
-      "id": "99efe91a-8e0e-3867-b3e1-c5ed285449f0"
     },
     {
       "title": "BC-Most Active Stocks",
@@ -75,123 +264,11 @@
       "id": "018718ca-1cf9-3fcf-b438-6d730834ab03"
     },
     {
-      "title": "G&A Releases 15th Edition of Sustainability Reporting Trends",
-      "link": "https://finance.yahoo.com/media-advertising/articles/g-releases-15th-edition-sustainability-143000470.html",
-      "publisher": "ACCESS Newswire",
-      "publishedAt": 1789569000,
-      "id": "d155a551-5846-3381-a393-e6ccb818a1ae"
-    },
-    {
-      "title": "3 Reasons to Sell WEN and 1 Stock to Buy Instead",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/3-reasons-sell-wen-1-142852688.html",
-      "publisher": "StockStory",
-      "publishedAt": 1789568932,
-      "id": "91c13dc4-2220-36ae-b40d-ae7a5c37fa08"
-    },
-    {
-      "title": "Is Coca-Cola Stock Worth Buying After 11% Rally in 3 Months?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/coca-cola-stock-worth-buying-142500347.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789568700,
-      "id": "59f66b20-daf4-3be6-b358-4caa0708742b"
-    },
-    {
-      "title": "IQVIA Stock Rises 60% in 6 Months: Here's What You Should Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/iqvia-stock-rises-60-6-141600888.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789568160,
-      "id": "32553884-8408-3c58-814e-cd4fbfad8ec8"
-    },
-    {
-      "title": "Nasdaq, S&P 500 climb ahead of keenly awaited Fed decision",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/wall-st-futures-edge-higher-090745072.html",
-      "publisher": "Reuters",
-      "publishedAt": 1789567725,
-      "id": "77d7fd31-9459-3456-9fa6-5ab27ad5ec48"
-    },
-    {
-      "title": "Stock Market Today: Nasdaq, S&P 500 Up Ahead Of Likely Fed Rate Increase; AI Leader Dell Jams (Live Coverage)",
-      "link": "https://finance.yahoo.com/m/127b3c0b-f974-36dd-8852-5793b5347c93/stock-market-today%3A-nasdaq%2C.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1789567628,
-      "id": "127b3c0b-f974-36dd-8852-5793b5347c93"
-    },
-    {
-      "title": "Fewer and Fewer S&P 500 Stocks Yield Over 4%. Here's My Top Pick to Buy Now.",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/fewer-fewer-p-500-stocks-140500387.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1789567500,
-      "id": "a80b0252-4a5d-385d-b5de-a29fae0133cb"
-    },
-    {
-      "title": "The S&P 500 Rose Nearly 40% in Two Years as the 55+ Workforce Rate Shrunk. At 63, Selling Investments to Retire Early Isn’t Social Security Earnings.",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-rose-nearly-40-140312836.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789567392,
-      "id": "9b075607-c82b-3e5c-925e-ccf1fe01d3bc"
-    },
-    {
-      "title": "Cipher Digital Surges 9% on Conditional ERCOT Status for 3.2 GW of Texas Capacity; Core Scientific Rises 4%, IREN Nudges Higher",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/cipher-digital-surges-9-conditional-140043735.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789567243,
-      "id": "64ccb2c0-775d-33f2-9e9b-c321cb3c0b6f"
-    },
-    {
-      "title": "4 Dividend ETFs That Let You Own Hundreds of Payers in 1 Trade",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/4-dividend-etfs-let-own-140009811.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789567209,
-      "id": "81c875c3-229d-3c4d-844a-1f4fae25f703"
-    },
-    {
-      "title": "G&A Releases 15th Edition of Sustainability Reporting Trends",
-      "link": "https://finance.yahoo.com/economy/policy/articles/g-releases-15th-edition-sustainability-140000171.html",
-      "publisher": "PR Newswire",
-      "publishedAt": 1789567200,
-      "id": "3b51b938-e271-3596-bbf8-9f80d7790203"
-    },
-    {
-      "title": "3 Reasons ICFI is Risky and 1 Stock to Buy Instead",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/3-reasons-icfi-risky-1-135652261.html",
-      "publisher": "StockStory",
-      "publishedAt": 1789567012,
-      "id": "2379a232-101c-36f6-bdfa-cf3014c363dd"
-    },
-    {
-      "title": "Markets Steady as Investors Await Rate Decision",
-      "link": "https://finance.yahoo.com/m/1beeccbe-0395-3aed-9363-982c953a0cec/markets-steady-as-investors.html",
-      "publisher": "The Wall Street Journal",
-      "publishedAt": 1789566480,
-      "id": "1beeccbe-0395-3aed-9363-982c953a0cec"
-    },
-    {
-      "title": "Markets Steady as Investors Await Rate Decision",
-      "link": "https://finance.yahoo.com/markets/articles/oil-pares-gains-stock-futures-085800807.html",
-      "publisher": "The Wall Street Journal",
-      "publishedAt": 1789566480,
-      "id": "c2604562-4cae-3e9c-b14d-d70b042dd87f"
-    },
-    {
-      "title": "Unloved Consumer Names Like Walmart and Nike Face Pressure as Rate Hike Draws Near",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/unloved-consumer-names-walmart-nike-134600267.html",
-      "publisher": "Bloomberg",
-      "publishedAt": 1789566360,
-      "id": "fce42a25-8e83-3037-afdd-1daa9efd677b"
-    },
-    {
-      "title": "Ciena Climbs 4% as $10B Backlog Outlook Outweighs Month-Long Slide; Arista and Cisco Edge Higher",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/ciena-climbs-4-10b-backlog-134518479.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789566318,
-      "id": "c9e4c0d0-564c-3fbf-8217-89d0dfdd9017"
-    },
-    {
-      "title": "Stocks Bounce Back Ahead of a Big Day for the Fed",
-      "link": "https://finance.yahoo.com/m/cad86be8-3bad-3394-8ec6-1e2cfac903d0/stocks-bounce-back-ahead-of-a.html",
+      "title": "American Express and IBM Drag the Dow",
+      "link": "https://finance.yahoo.com/m/16d94fd5-cc01-3d2b-8776-d773e0daccea/american-express-and-ibm-drag.html",
       "publisher": "Barrons.com",
-      "publishedAt": 1789566046,
-      "id": "cad86be8-3bad-3394-8ec6-1e2cfac903d0"
+      "publishedAt": 1789568185,
+      "id": "16d94fd5-cc01-3d2b-8776-d773e0daccea"
     },
     {
       "title": "Wall St opens higher ahead of much-anticipated Fed decision",
@@ -208,13 +285,6 @@
       "id": "5ee06bea-d10f-3179-ad2f-6f27241487b3"
     },
     {
-      "title": "Tech stocks today: OpenAI raising funds at $1.2 trillion valuation,  SK Hynix and Intel moves",
-      "link": "https://finance.yahoo.com/technology/live/tech-stocks-today-openai-raising-funds-at-12-trillion-valuation-sk-hynix-and-intel-moves-140134624.html",
-      "publisher": "Yahoo Finance",
-      "publishedAt": 1789564783,
-      "id": "e732ea48-5342-4e1d-bae4-74baa6899210"
-    },
-    {
       "title": "Stock Market News for Sep 16, 2026",
       "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-news-sep-16-131000619.html",
       "publisher": "Zacks",
@@ -222,95 +292,18 @@
       "id": "8c87fd6d-7df0-3ef1-b121-f48458adbb9b"
     },
     {
+      "title": "This Dividend Stock Is Beating the Market in 2026 and Yields 2.36%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/dividend-stock-beating-market-2026-130002850.html",
+      "publisher": "Barchart",
+      "publishedAt": 1789563602,
+      "id": "73fc9f23-fc35-3153-a976-f9f9d24bfb6a"
+    },
+    {
       "title": "Update: US Equity Futures Rise Pre-Bell as Traders Await Fed Rate Decision",
       "link": "https://finance.yahoo.com/markets/stocks/articles/us-equity-futures-rise-pre-125218529.html",
       "publisher": "MT Newswires",
       "publishedAt": 1789563138,
       "id": "d3635af0-8350-39b3-89f4-450f643c4279"
-    },
-    {
-      "title": "4 Stocks With Strong Interest Coverage to Buy as Yields Rise",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/4-stocks-strong-interest-coverage-125000967.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789563000,
-      "id": "1325f8a4-389b-3a80-8076-4f7f2ed5736f"
-    },
-    {
-      "title": "MBody AI Completes Name Change Following Merger and $10 Million Offering",
-      "link": "https://finance.yahoo.com/technology/ai/articles/mbody-ai-completes-name-change-123500827.html",
-      "publisher": "GlobeNewswire",
-      "publishedAt": 1789562100,
-      "id": "e05458f3-9f41-3ece-a2ec-96bd1fc8dd1b"
-    },
-    {
-      "title": "Dow Jones Futures Rise As Oil Prices, Yields Fall Before Fed Rate Hike; Will Market Rally Bid Bond Voyage?",
-      "link": "https://finance.yahoo.com/m/10d3ce21-753d-3a1d-b088-1aa8059410a8/dow-jones-futures-rise-as-oil.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1789560470,
-      "id": "10d3ce21-753d-3a1d-b088-1aa8059410a8"
-    },
-    {
-      "title": "5 Things to Know Before the Stock Market Opens on Wednesday",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/5-things-know-stock-market-120520658.html",
-      "publisher": "Investopedia",
-      "publishedAt": 1789560320,
-      "id": "6228e489-2239-38b8-8471-ea470d857d3a"
-    },
-    {
-      "title": "September Syndrome in Full Swing: 3 Picks to Safeguard Your Portfolio",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/september-syndrome-full-swing-3-115900248.html",
-      "publisher": "Zacks",
-      "publishedAt": 1789559940,
-      "id": "6cf4ec0d-a824-3547-890d-d810684c31f8"
-    },
-    {
-      "title": "US Equity Futures Rise Pre-Bell as Traders Await Fed Rate Decision",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/us-equity-futures-rise-pre-115303878.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1789559583,
-      "id": "ffe7c0e0-ba4a-3eb3-a933-8c1696f6bdc6"
-    },
-    {
-      "title": "The Stock Market Is Flashing a Warning Sign Rarely Seen in 145 Years. Here's What History Says Comes Next.",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-flashing-warning-sign-115000114.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1789559400,
-      "id": "a8d44c1e-607a-3f76-a505-dc4aba19ad6a"
-    },
-    {
-      "title": "Nasdaq rises ahead of crucial Fed rate decision",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/wall-street-set-tiptoe-green-114200039.html",
-      "publisher": "Proactive",
-      "publishedAt": 1789558920,
-      "id": "4ee052e2-b052-34fa-8f99-a80265a63a3f"
-    },
-    {
-      "title": "A Bear Market Is Coming. History Says the Smartest Investors Are Already Making This 1 Move",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/bear-market-coming-history-says-112000787.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1789557600,
-      "id": "4f3e5c7d-734f-376c-a0f5-27096fd7525b"
-    },
-    {
-      "title": "Easing Oil Bills, Tech Strength Lifts Wall Street Pre-Bell; Asia, Europe Up",
-      "link": "https://finance.yahoo.com/markets/articles/easing-oil-bills-tech-strength-111810039.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1789557490,
-      "id": "e5362b31-c86e-3505-8e9c-38be48e9075f"
-    },
-    {
-      "title": "Stocks Rise Pre-Bell Ahead of Fed Policy Decision",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stocks-rise-pre-bell-ahead-111416430.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1789557256,
-      "id": "0ca7ecb7-9775-3a34-80b9-dc9bbdbb74fe"
-    },
-    {
-      "title": "Why Are Nasdaq Futures Rising Premarket? INTC, SKHY, ORCL, SPCX, ASTS, CRCL, COIN Stocks In Focus",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/why-nasdaq-futures-rising-premarket-083244004.html",
-      "publisher": "Stocktwits",
-      "publishedAt": 1789547564,
-      "id": "c6de5010-eb00-3954-899a-bdfd1738314c"
     },
     {
       "title": "You Bought VOO and VTI for Diversification. About 85% of Your Money Sits in the Same Stocks",
