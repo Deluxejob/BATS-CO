@@ -1,9 +1,16 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1789522361,
-  "latestPublishedAt": 1789509895,
+  "fetchedAt": 1789548412,
+  "latestPublishedAt": 1789540177,
   "items": [
+    {
+      "title": "Stock Market: Will S&P 500 Open Up or Down Today?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-p-500-open-062937200.html",
+      "publisher": "Benzinga Prediction Markets",
+      "publishedAt": 1789540177,
+      "id": "5853a60b-abe7-37b7-a90b-da56945fded0"
+    },
     {
       "title": "S&P 500, Nasdaq, Dow End Lower As Investors Price In Rate Hike Ahead Of Fed Meeting — AMZN, META, MU, TSLA, PLTR In Focus",
       "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-nasdaq-dow-end-220455877.html",
@@ -101,13 +108,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789487993,
       "id": "0dbb53ba-b287-31c8-a47b-9077cd45fc49"
-    },
-    {
-      "title": "TeraWulf Falls 5% as AI Infrastructure Names Extend a Month-Long Slide; IREN Drops 4%, Applied Digital Declines 3%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/terawulf-falls-5-ai-infrastructure-153049003.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789486249,
-      "id": "9cceb649-e0f6-3f19-b297-da7bf8fbe09b"
     }
   ]
 }
