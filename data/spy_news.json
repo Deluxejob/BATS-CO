@@ -1,9 +1,16 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1789694626,
-  "latestPublishedAt": 1789684699,
+  "fetchedAt": 1789719976,
+  "latestPublishedAt": 1789710161,
   "items": [
+    {
+      "title": "Stock Market: Will S&P 500 Open Up or Down Today?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-p-500-open-054241259.html",
+      "publisher": "Benzinga Prediction Markets",
+      "publishedAt": 1789710161,
+      "id": "dd3adf0f-6170-3c67-92d7-2f23f9204633"
+    },
     {
       "title": "ETF Oasis at Future Proof: Tuesday Highlights",
       "link": "https://finance.yahoo.com/markets/options/articles/etf-oasis-future-proof-tuesday-223819508.html",
@@ -101,13 +108,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789661181,
       "id": "901ade08-e237-33d6-bb36-81a483928955"
-    },
-    {
-      "title": "FuelCell Jumps 13% as House Shifts Data Center Power Costs to Operators; Plug Power Climbs 7%, Bloom Energy Rises 3%",
-      "link": "https://finance.yahoo.com/economy/policy/articles/fuelcell-jumps-13-house-shifts-155210122.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789660330,
-      "id": "fe9e281a-ac7b-3208-8ba6-e3b15d959b5a"
     }
   ]
 }
