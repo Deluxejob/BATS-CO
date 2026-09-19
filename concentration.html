@@ -81,7 +81,7 @@
     <section id="conc-gauge-section">
       <div class="section-head">
         <h2>Who's winning right now?</h2>
-        <p>Return gap between the equal-weighted top 10 and the equal-weighted broad market over the selected window. The needle tells the story at a glance.</p>
+        <p>Return gap between the equal-weighted top <span data-top-n>10</span> and the equal-weighted broad market over the selected window. The needle tells the story at a glance.</p>
       </div>
       <div class="conc-gauge-picker" id="concGaugePicker" role="tablist" aria-label="Time period">
         <button type="button" data-period="d1">1D</button>
@@ -211,26 +211,26 @@
       <ol class="usage-list">
         <li>
           <strong>Gap is the story.</strong>
-          If Top 10 is beating the broad market (positive gap), the index rally is being
+          If the top <span data-top-n>10</span> are beating the broad market (positive gap), the index rally is being
           led by megacaps &mdash; a "narrow" market. If the broad market is beating the
-          top 10 (negative gap), participation is broadening &mdash; historically a
+          top <span data-top-n>10</span> (negative gap), participation is broadening &mdash; historically a
           healthier setup.
         </li>
         <li>
           <strong>Longer windows are less accurate.</strong>
-          We use today's top 10 for the entire lookback. Nvidia wasn't in the top 10
+          We use today's top <span data-top-n>10</span> for the entire lookback. Nvidia wasn't in the top 10
           before 2023, and Meta hit the top 10 later than most. Over 1D, 1W, 1M, 1Q
           this is fine; over 6M and 1Y it's approximately right; before that it drifts.
         </li>
         <li>
           <strong>Cross-reference with the BATS.</strong>
-          When the top 10 vs broad gap is stretched (either direction), and the BATS
+          When the top <span data-top-n>10</span> vs broad gap is stretched (either direction), and the BATS
           Breadth component is also flagging extremes, the concentration story is
           especially strong.
         </li>
         <li>
           <strong>Note the sector concentration.</strong>
-          The <span data-market-label>S&amp;P 500</span>'s top 10 is heavily tech.
+          The <span data-market-label>S&amp;P 500</span>'s top <span data-top-n>10</span> is heavily tech.
           When tech leads the index, this table shows a big positive gap; when
           value/dividend stocks lead, the gap flips negative.
         </li>

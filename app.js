@@ -141,7 +141,9 @@ const MC = MARKET_CONFIG[MARKET];
 // the whole historical window — introduces mild look-ahead bias at long
 // lookbacks but is accurate for what matters most (recent concentration).
 const TOP10_TICKERS = {
-  sp500:  ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'BRK-B', 'TSLA', 'LLY',  'JPM', 'SPCX'],
+  // SPCX (SpaceX, IPO June 2026) is top-tier by market cap but not an S&P 500
+  // member yet (12-month seasoning rule) — add it back once it joins.
+  sp500:  ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'BRK-B', 'TSLA', 'LLY',  'JPM'],
   nasdaq: ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA',  'AVGO', 'COST', 'NFLX'],
 };
 
@@ -2325,6 +2327,10 @@ function scoreConcentration(gap) {
   return Math.max(5, Math.min(95, score));
 }
 
+// Number of constituents in the current market's list (11 for S&P, 10 for
+// Nasdaq); renderConcentration sets it before the gauge is drawn.
+let CONC_TOP_N = 10;
+
 function setConcentrationGauge(gap, periodLabel) {
   const marker = document.getElementById('concGaugeMarker');
   const reading = document.getElementById('concGaugeReading');
@@ -2332,7 +2338,7 @@ function setConcentrationGauge(gap, periodLabel) {
   if (!marker) return;
   if (gap == null) {
     if (reading) reading.textContent = 'Not enough data';
-    if (valueEl) valueEl.textContent = periodLabel ? `${periodLabel} Top 10 gap: —` : '';
+    if (valueEl) valueEl.textContent = periodLabel ? `${periodLabel} Top ${CONC_TOP_N} gap: —` : '';
     marker.style.left = '50%';
     return;
   }
@@ -2343,7 +2349,7 @@ function setConcentrationGauge(gap, periodLabel) {
   if (valueEl) {
     const sign = gap >= 0 ? '+' : '';
     const label = periodLabel || '1 Week';
-    valueEl.textContent = `${label} Top 10 gap: ${sign}${gap.toFixed(2)}%`;
+    valueEl.textContent = `${label} Top ${CONC_TOP_N} gap: ${sign}${gap.toFixed(2)}%`;
   }
 }
 
@@ -2383,6 +2389,7 @@ async function renderConcentration() {
   if (!table) return;
 
   const tickers = TOP10_TICKERS[MARKET];
+  CONC_TOP_N = tickers.length;
   const broadCsv = MC.breadthEqualCsv;  // RSP or QQEW
 
   // Fetch top tickers + the broad reference in parallel. A missing per-ticker
@@ -2403,9 +2410,9 @@ async function renderConcentration() {
   if (meta) meta.textContent = `Latest close: ${latestDate}. Top ${tickers.length} tickers used: ${tickers.join(', ')}.`;
 
   // For each timeframe, compute top-N equal-weighted avg and broad-market.
-  // Relaxed logic: average whatever tickers have data for that window. A
-  // recent-IPO name (e.g. SPCX, Aug 2026) will be excluded from the older
-  // rows automatically without collapsing the whole row to em-dash.
+  // Relaxed logic: average whatever tickers have data for that window, so a
+  // recent IPO with a short history drops out of the older rows on its own
+  // instead of collapsing the whole row to an em-dash.
   const rows = CONC_WINDOWS.map(window => {
     const topReturns = topSeries.map(s => returnOver(s, window)).filter(r => r != null);
     const topAvg = topReturns.length > 0

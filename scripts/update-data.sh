@@ -50,7 +50,9 @@ fetch_treasury_yields() {
 
 # --- Yahoo Finance chart API -> Date,Close CSV ---
 fetch_yahoo_daily() {
-  local symbol="$1" out="$2" start_ts="$3"
+  # $4 = minimum rows to accept (default 100). Recent IPOs (e.g. SPCX, June
+  # 2026) legitimately have fewer, so callers pass a lower floor for them.
+  local symbol="$1" out="$2" start_ts="$3" min_rows="${4:-100}"
   local encoded="${symbol//^/%5E}"
   local url="https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?period1=${start_ts}&period2=${END_TS}&interval=1d"
   local json="$(mktemp --suffix=.json)"
@@ -80,8 +82,8 @@ fetch_yahoo_daily() {
         printf "%s,%.4f\n", strftime("%Y-%m-%d", $1+0, 1), $2+0
       }' > "$tmp_out"
 
-  # Sanity: at least 100 rows (data files always have thousands)
-  if [ "$(wc -l < "$tmp_out")" -lt 100 ]; then
+  # Sanity: at least min_rows rows (established names have thousands)
+  if [ "$(wc -l < "$tmp_out")" -lt "$min_rows" ]; then
     warn "Suspiciously few rows for $symbol; leaving $out unchanged"
     rm -f "$json" "$tmp_ts" "$tmp_cl" "$tmp_out"; return 0
   fi
@@ -141,9 +143,9 @@ for sym in AAPL MSFT NVDA AMZN GOOGL META BRK-B TSLA LLY JPM AVGO COST NFLX; do
   fetch_yahoo_daily "$sym" "$DATA_DIR/top10/$fname" "946684800"  # 2000-01-01
 done
 
-# SpaceX (SPCX) — IPO'd June 2026, so short history. Concentration table
-# handles the missing older windows via relaxed averaging (see app.js).
-fetch_yahoo_daily "SPCX" "$DATA_DIR/top10/spcx.csv" "1780272000"  # 2026-06-01
+# SpaceX (SPCX) — IPO'd June 2026. Not in the Concentration list until it
+# joins the S&P 500; fetched anyway so the file is ready when it does.
+fetch_yahoo_daily "SPCX" "$DATA_DIR/top10/spcx.csv" "1780272000" 20  # 2026-06-01; accept a short file
 
 # --- Market Ratios page — every symbol used by a card on market-ratios.html ---
 mkdir -p "$DATA_DIR/ratios"
