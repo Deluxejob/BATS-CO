@@ -261,8 +261,7 @@
     body.print-mode .tk-ma-toggles,
     body.print-mode .tk-draw-toolbar,
     body.print-mode .prof-actions,
-    body.print-mode .ai-analysis-pitch,
-    body.print-mode .ai-analysis-close,
+    body.print-mode #analysisHubSection,
     body.print-mode #peersSection,
     body.print-mode #compareSection,
     body.print-mode #relPerfSection,
@@ -270,6 +269,18 @@
     body.print-mode #technicalsSection {
       display: none !important;
     }
+    /* An OPEN hub modal (AI briefing / divergence chart) prints as a plain
+       block at the end of the report; closed ones stay out of the print. */
+    body.print-mode .tk-modal-overlay:not(.open) { display: none !important; }
+    body.print-mode .tk-modal-overlay.open {
+      position: static; display: block; opacity: 1;
+      background: none; backdrop-filter: none; padding: 0; margin-top: 1rem;
+    }
+    body.print-mode .tk-modal-overlay.open .tk-modal {
+      max-width: none; max-height: none; height: auto; overflow: visible;
+      box-shadow: none; border-radius: 0;
+    }
+    body.print-mode .tk-modal-overlay.open .tk-modal-close { display: none !important; }
     /* Company Profile body has a JS "read more" toggle that clamps long
        descriptions to 5 lines via -webkit-line-clamp. For print we always
        want the full text — undo the clamp. */
@@ -367,9 +378,19 @@
       .site-nav, .site-footer, .ticker-tape-wrap, .breadcrumb, #tickerSearchForm, #tickerSub,
       .star-toggle, .star-hint, .print-btn, .tk-share-bar, [data-share-strip],
       .tk-picker-row, .tk-range-picker, .tk-ma-toggles, .tk-draw-toolbar,
-      .prof-actions, .ai-analysis-pitch, .ai-analysis-close,
+      .prof-actions, #analysisHubSection,
       #peersSection, #compareSection, #relPerfSection,
       #overlaySection, #technicalsSection { display: none !important; }
+      .tk-modal-overlay:not(.open) { display: none !important; }
+      .tk-modal-overlay.open {
+        position: static; display: block; opacity: 1;
+        background: none; backdrop-filter: none; padding: 0; margin-top: 1rem;
+      }
+      .tk-modal-overlay.open .tk-modal {
+        max-width: none; max-height: none; height: auto; overflow: visible;
+        box-shadow: none; border-radius: 0;
+      }
+      .tk-modal-overlay.open .tk-modal-close { display: none !important; }
       .prof-body-collapsed {
         display: block !important;
         -webkit-line-clamp: unset !important;
@@ -2302,29 +2323,52 @@
       font-family: ui-monospace, monospace; font-size: 0.9rem;
     }
 
-    /* ---------- AI Analysis card ---------- */
-    /* Pitch state = just the blurb + amber button. Output state = a
-       bordered card with a small × close button, streaming body copy,
-       and a footer stamping the disclaimer + timing. */
-    .ai-analysis-panel { padding: 1.25rem 1.5rem; position: relative; }
-    /* Pitch state = centered hero. Once the output opens the analysis
-       card is full-width and left-aligned (prose reads better that way);
-       only the pre-click blurb + button get the centered treatment. */
-    .ai-analysis-pitch {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 0.75rem 0;
+    /* ---------- Analysis hub (AI briefing + tools) ---------- */
+    /* One tile per analysis. Each launches a modal; the tile keeps a
+       one-line description and a badge saying whether the output is
+       AI-generated or rules-based. */
+    .hub-panel { padding: 1rem 1.25rem; }
+    .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.85rem; }
+    .hub-tile {
+      background: var(--term-panel-2);
+      border: 1px solid var(--term-border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem 1rem;
+      display: flex; flex-direction: column; gap: 0.55rem;
     }
-    .ai-analysis-blurb {
-      margin: 0 0 1.15rem;
-      color: var(--term-text);
-      font-size: 0.95rem;
-      line-height: 1.55;
-      max-width: 62ch;
+    .hub-tile-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .hub-tile-icon { font-size: 1.1rem; }
+    .hub-tile-title { font-weight: 700; color: var(--term-text); font-size: 1rem; }
+    .hub-badge {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.15rem 0.45rem; border-radius: 3px; border: 1px solid currentColor;
     }
-    .ai-analysis-blurb strong { color: var(--term-cyan); font-weight: 700; }
+    .hub-badge.ai    { color: var(--term-amber); }
+    .hub-badge.rules { color: var(--term-cyan); }
+    .hub-tile-desc { margin: 0; color: var(--term-dim); font-size: 0.86rem; line-height: 1.5; flex: 1; }
+    .hub-tile-desc strong { color: var(--term-cyan); font-weight: 700; }
+    .hub-tile-desc a { color: var(--term-cyan); }
+    .hub-btn { align-self: flex-start; }
+
+    /* Hub modals: holders-modal chrome plus a wide variant for the
+       three-pane divergence chart, a sub-title line, body scroll lock,
+       and full-screen on phones (a small box scrolling inside a scrolling
+       page is miserable on mobile). */
+    .tk-modal.wide { max-width: 1160px; }
+    .tk-modal-title .tk-modal-sub {
+      display: block; margin-top: 0.2rem;
+      font-size: 0.66rem; font-weight: 500; letter-spacing: 0.04em; text-transform: none;
+      color: var(--term-dim);
+    }
+    .tk-modal-body { padding-top: 0.9rem; }
+    .tk-modal .ai-analysis-output { border: 0; border-radius: 0; background: transparent; padding: 0; }
+    body.tk-modal-open { overflow: hidden; }
+    @media (max-width: 720px) {
+      .tk-modal-overlay { padding: 0; }
+      .tk-modal { max-width: none; max-height: none; height: 100%; border-radius: 0; border: 0; }
+    }
     .ai-analysis-btn {
       display: inline-flex;
       align-items: center;
@@ -2356,14 +2400,6 @@
       padding: 1.1rem 1.25rem 0.85rem;
       margin-top: 0.5rem;
     }
-    .ai-analysis-close {
-      position: absolute; top: 0.35rem; right: 0.55rem;
-      background: transparent; border: 0;
-      color: var(--term-dim); font-size: 1.35rem; line-height: 1;
-      cursor: pointer; padding: 0.15rem 0.45rem;
-      border-radius: 3px;
-    }
-    .ai-analysis-close:hover { color: var(--term-red); background: rgba(255, 83, 116, 0.08); }
     .ai-analysis-body {
       color: var(--term-text);
       font-size: 0.92rem;
@@ -2609,26 +2645,47 @@
            state: just the pitch + button. Click loads the analysis inline
            below, streaming word-by-word. Same-ticker re-clicks within 24h
            replay the cached response (no API cost). -->
-      <section class="term-section" id="aiAnalysisSection">
-        <div class="term-section-label">AI ANALYSIS <span class="sub">— powered by Claude Haiku 4.5</span></div>
-        <div class="term-panel ai-analysis-panel">
-          <div class="ai-analysis-pitch" data-role="aiPitch">
-            <p class="ai-analysis-blurb">
-              Research briefing on <strong data-role="aiSym">this ticker</strong> &mdash;
-              business snapshot, industry &amp; competition, fundamentals, valuation,
-              technical setup, insider signal, and bull/base/bear cases. Uses all the data
-              on this page.
-            </p>
-            <button type="button" class="ai-analysis-btn" data-role="aiRunBtn">
-              <span aria-hidden="true">🎯</span>
-              <span data-role="aiRunBtnLabel">ANALYZE <span data-role="aiRunBtnSym">this ticker</span> WITH AI</span>
-              <span aria-hidden="true">&rarr;</span>
-            </button>
-          </div>
-          <div class="ai-analysis-output" data-role="aiOutput" hidden>
-            <button type="button" class="ai-analysis-close" data-role="aiCloseBtn" aria-label="Close AI analysis">&times;</button>
-            <div class="ai-analysis-body" data-role="aiBody"></div>
-            <div class="ai-analysis-footer" data-role="aiFooter"></div>
+      <!-- Analysis hub — one place for every deeper analysis on this symbol.
+           Each tile launches a modal (full-screen on phones) so the top of
+           the page stays compact as tools are added. The AI briefing is
+           model-generated; the divergence tool is rules-based — the badges
+           say which is which. Deep links: ?tool=ai / ?tool=divergence. -->
+      <section class="term-section" id="analysisHubSection">
+        <div class="term-section-label">ANALYSIS <span class="sub">— AI research briefing &middot; momentum divergence &middot; more coming</span></div>
+        <div class="term-panel hub-panel">
+          <div class="hub-grid">
+            <div class="hub-tile">
+              <div class="hub-tile-head">
+                <span class="hub-tile-icon" aria-hidden="true">🎯</span>
+                <span class="hub-tile-title">AI research briefing</span>
+                <span class="hub-badge ai">Claude Haiku 4.5</span>
+              </div>
+              <p class="hub-tile-desc">
+                Business snapshot, industry &amp; competition, fundamentals, valuation, technical setup,
+                insider signal, and bull / base / bear cases for <strong data-role="aiSym">this ticker</strong>
+                &mdash; built from all the data on this page.
+              </p>
+              <button type="button" class="ai-analysis-btn hub-btn" data-role="aiRunBtn">
+                <span data-role="aiRunBtnLabel">ANALYZE <span data-role="aiRunBtnSym">this ticker</span> WITH AI</span>
+                <span aria-hidden="true">&rarr;</span>
+              </button>
+            </div>
+            <div class="hub-tile">
+              <div class="hub-tile-head">
+                <span class="hub-tile-icon" aria-hidden="true">📈</span>
+                <span class="hub-tile-title">Momentum divergence</span>
+                <span class="hub-badge rules">Rules-based &middot; no AI</span>
+              </div>
+              <p class="hub-tile-desc">
+                RSI / MACD divergences on 60-minute, daily and weekly bars, MACD crossover signals,
+                a buy / sell / hold checklist, and what followed the same setup in S&amp;P 500 history.
+                Same rules and chart as the <a href="divergences.html">index divergence scanner</a>.
+              </p>
+              <button type="button" class="ai-analysis-btn hub-btn" id="dvToolRun">
+                <span data-role="dvRunLabel">MOMENTUM DIVERGENCE</span>
+                <span aria-hidden="true">&rarr;</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -2853,24 +2910,6 @@
         <div class="term-panel"><div id="techWidgetMount"></div></div>
       </section>
 
-      <!-- Momentum divergence tool — on-demand RSI/MACD divergence chart for
-           this symbol using the same engine and chart as divergences.html,
-           plus a buy/sell/hold checklist and the S&P backtest numbers for
-           whichever setup the chart is showing. Nothing is fetched until
-           the reader clicks the button. -->
-      <section class="term-section" id="divergenceSection">
-        <div class="term-section-label">MOMENTUM DIVERGENCE <span class="sub">— RSI / MACD divergences, MACD crossovers, and a buy / sell / hold checklist</span></div>
-        <div class="term-panel">
-          <div class="dv-tool-intro" id="dvToolIntro">
-            Is price running ahead of momentum? Scan this symbol's 60-minute, daily and weekly bars for bearish and bullish
-            RSI / MACD divergences and MACD crossover signals, and see whether the pieces of a top or a bottom are lining up.
-            Same rules and chart as the <a href="divergences.html">index divergence scanner</a>.
-          </div>
-          <button type="button" class="dv-tool-run" id="dvToolRun">Generate divergence chart &rarr;</button>
-          <div class="dv-tool-body" id="dvToolBody" hidden></div>
-        </div>
-      </section>
-
       <!-- Peer companies (same industry, via Finnhub) -->
       <section class="term-section" id="peersSection">
         <div class="term-section-label">PEER COMPANIES <span class="sub">— same industry (click a ticker to jump)</span></div>
@@ -2997,6 +3036,42 @@
         <button type="button" class="holders-modal-close" id="holdersModalClose" aria-label="Close">&times;</button>
       </div>
       <div class="holders-modal-body" id="holdersModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Analysis hub modals. Same chrome as the holders modal (shared
+       classes); the .tk-modal-* classes add the wide variant, the
+       full-screen-on-phones rule, and the print-as-a-block behaviour. -->
+  <div class="holders-modal-overlay tk-modal-overlay" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true" hidden>
+    <div class="holders-modal tk-modal">
+      <div class="holders-modal-head tk-modal-head">
+        <div class="holders-modal-title tk-modal-title" id="aiModalTitle">
+          AI RESEARCH BRIEFING &middot; <span data-role="aiSym">this ticker</span>
+          <span class="tk-modal-sub">Claude Haiku 4.5 &middot; AI-generated commentary, not investment advice</span>
+        </div>
+        <button type="button" class="holders-modal-close tk-modal-close" data-role="aiCloseBtn" aria-label="Close">&times;</button>
+      </div>
+      <div class="holders-modal-body tk-modal-body">
+        <div class="ai-analysis-output" data-role="aiOutput">
+          <div class="ai-analysis-body" data-role="aiBody"></div>
+          <div class="ai-analysis-footer" data-role="aiFooter"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="holders-modal-overlay tk-modal-overlay" id="divergenceModal" role="dialog" aria-modal="true" aria-labelledby="divergenceModalTitle" aria-hidden="true" hidden>
+    <div class="holders-modal tk-modal wide">
+      <div class="holders-modal-head tk-modal-head">
+        <div class="holders-modal-title tk-modal-title" id="divergenceModalTitle">
+          MOMENTUM DIVERGENCE &middot; <span data-role="dvSym">this ticker</span>
+          <span class="tk-modal-sub">Rules-based, no AI &middot; same engine as the index divergence scanner</span>
+        </div>
+        <button type="button" class="holders-modal-close tk-modal-close" id="divergenceModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="holders-modal-body tk-modal-body">
+        <div class="dv-tool-intro" id="dvToolIntro" hidden></div>
+        <div class="dv-tool-body" id="dvToolBody" hidden></div>
+      </div>
     </div>
   </div>
 
@@ -4846,17 +4921,20 @@
       // Claude's plain uppercase section headers as styled <h4>
       // elements the moment each one lands.
       function initAiAnalyzer(sym) {
-        const section = document.getElementById('aiAnalysisSection');
-        if (!section) return;
-        section.querySelectorAll('[data-role="aiSym"]').forEach(el => el.textContent = sym);
-        section.querySelectorAll('[data-role="aiRunBtnSym"]').forEach(el => el.textContent = sym);
+        const section = document.getElementById('analysisHubSection');
+        const modal   = document.getElementById('aiModal');
+        if (!section || !modal) return;
+        [section, modal].forEach(root => {
+          root.querySelectorAll('[data-role="aiSym"]').forEach(el => el.textContent = sym);
+          root.querySelectorAll('[data-role="aiRunBtnSym"]').forEach(el => el.textContent = sym);
+        });
 
         const runBtn  = section.querySelector('[data-role="aiRunBtn"]');
         const runLbl  = section.querySelector('[data-role="aiRunBtnLabel"]');
-        const output  = section.querySelector('[data-role="aiOutput"]');
-        const body    = section.querySelector('[data-role="aiBody"]');
-        const footer  = section.querySelector('[data-role="aiFooter"]');
-        const closeBtn = section.querySelector('[data-role="aiCloseBtn"]');
+        const output  = modal.querySelector('[data-role="aiOutput"]');
+        const body    = modal.querySelector('[data-role="aiBody"]');
+        const footer  = modal.querySelector('[data-role="aiFooter"]');
+        const closeBtn = modal.querySelector('[data-role="aiCloseBtn"]');
 
         // Snapshot the button label so we can restore it after a run.
         const originalLabelHtml = runLbl.innerHTML;
@@ -4945,19 +5023,23 @@
         }
 
         let inflight = null;   // AbortController for the current stream
+        let aborted  = false;  // set when the reader closed the modal mid-stream
+        let haveResult = false; // a completed, error-free briefing is in the modal
 
         async function runAnalysis() {
           if (inflight) return;
           runBtn.disabled = true;
           runBtn.classList.add('loading');
           runLbl.textContent = 'ANALYZING ' + sym + '…';
-          output.hidden = false;
           body.innerHTML = '';
           footer.textContent = '';
+          openTkModal(modal);
+          setToolParam('ai');
           const startedAt = Date.now();
 
           let raw = '';
           let cached = false;
+          aborted = false;
           inflight = new AbortController();
           try {
             const r = await fetch('/api/analyze?sym=' + encodeURIComponent(sym), {
@@ -4986,8 +5068,6 @@
                   if (evt.type === 'text' && typeof evt.text === 'string') {
                     raw += evt.text;
                     renderBody(raw, true);
-                    // Auto-scroll the card into view on first chunk only.
-                    if (raw.length < 200) output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                   } else if (evt.type === 'source') {
                     cached = !!evt.cached;
                   } else if (evt.type === 'error') {
@@ -5000,31 +5080,72 @@
               }
             }
           } catch (e) {
-            if (e.name === 'AbortError') {
-              raw += '\n\n[Cancelled]';
-            } else {
-              raw += '\n\n[Error] ' + (e.message || e);
-            }
+            if (e.name !== 'AbortError') raw += '\n\n[Error] ' + (e.message || e);
           } finally {
             inflight = null;
-            renderBody(raw, false);
-            const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
-            footer.innerHTML =
-              '<span>' + (cached ? 'Loaded from 24-hour cache' : 'Generated in ' + secs + 's') + '</span>' +
-              '<span>Claude Haiku 4.5 · Not investment advice</span>';
+            if (aborted) {
+              // Reader closed the modal mid-stream: drop the partial text so
+              // the next click starts a fresh run instead of re-showing it.
+              body.innerHTML = '';
+              footer.textContent = '';
+              aborted = false;
+            } else {
+              renderBody(raw, false);
+              const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
+              footer.innerHTML =
+                '<span>' + (cached ? 'Loaded from 24-hour cache' : 'Generated in ' + secs + 's') + '</span>' +
+                '<span>Claude Haiku 4.5 · Not investment advice</span>';
+              haveResult = raw.trim().length > 0 && !/\[Error\]/.test(raw);
+            }
             runBtn.disabled = false;
             runBtn.classList.remove('loading');
             runLbl.innerHTML = originalLabelHtml;
           }
         }
 
-        runBtn.addEventListener('click', runAnalysis);
-        closeBtn.addEventListener('click', () => {
-          if (inflight) { inflight.abort(); inflight = null; }
-          output.hidden = true;
-          body.innerHTML = '';
-          footer.textContent = '';
+        // A finished, error-free briefing stays in the modal so re-opening is
+        // instant; anything else (nothing yet, a failed call) runs it again.
+        runBtn.addEventListener('click', () => {
+          if (!inflight && haveResult) { openTkModal(modal); setToolParam('ai'); return; }
+          runAnalysis();
         });
+        wireTkModal(modal, closeBtn, () => {
+          if (inflight) { aborted = true; inflight.abort(); }
+          setToolParam(null);
+        });
+      }
+
+      // Shared open / close for the analysis-hub modals (AI briefing,
+      // divergence chart). Same behaviour as the holders modal, plus a body
+      // scroll lock and the ?tool= URL param so an open analysis is shareable.
+      function openTkModal(overlay) {
+        overlay.hidden = false;
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('tk-modal-open');
+        const bodyEl = overlay.querySelector('.tk-modal-body');
+        if (bodyEl) bodyEl.scrollTop = 0;
+      }
+      function closeTkModal(overlay) {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('tk-modal-open');
+        setTimeout(() => { if (!overlay.classList.contains('open')) overlay.hidden = true; }, 200);
+      }
+      function wireTkModal(overlay, closeBtn, onClose) {
+        const close = () => { closeTkModal(overlay); if (onClose) onClose(); };
+        closeBtn.addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+        });
+      }
+      function setToolParam(name) {
+        try {
+          const u = new URL(window.location.href);
+          if (name) u.searchParams.set('tool', name); else u.searchParams.delete('tool');
+          history.replaceState(null, '', u.toString());
+        } catch (e) { /* URL / history unavailable — the modal still works */ }
       }
 
       function initRelPerf(sym) {
@@ -5259,15 +5380,20 @@
       // symbol across all three timeframes, plus a transparent buy/sell/hold
       // checklist and the S&P 500 backtest rows for the matching setup.
       function initDivergenceTool(sym) {
-        const section = document.getElementById('divergenceSection');
+        const section = document.getElementById('analysisHubSection');
+        const modal   = document.getElementById('divergenceModal');
         const E = window.DivergenceEngine;
-        if (!section || !E) return;
-        const runBtn = section.querySelector('#dvToolRun');
-        const intro  = section.querySelector('#dvToolIntro');
-        const body   = section.querySelector('#dvToolBody');
+        if (!section || !modal || !E) return;
+        modal.querySelectorAll('[data-role="dvSym"]').forEach(el => el.textContent = sym);
+        const runBtn   = section.querySelector('#dvToolRun');
+        const runLbl   = section.querySelector('[data-role="dvRunLabel"]');
+        const closeBtn = modal.querySelector('#divergenceModalClose');
+        const intro    = modal.querySelector('#dvToolIntro');
+        const body     = modal.querySelector('#dvToolBody');
         const store  = {};                      // tfKey -> analysis
         const state  = { tf: '1d', bt: null };  // bt = backtest json, loaded once
-        let started  = false;
+        const originalLabel = runLbl.textContent;
+        let loaded = false, loading = false;
 
         async function loadBacktest() {
           if (state.bt) return state.bt;
@@ -5386,21 +5512,34 @@
           btEl.innerHTML = backtestHTML(v);
         }
 
+        // Open the modal straight away so the reader sees the loading state
+        // there; data is fetched once and kept, so later clicks are instant.
         async function start() {
-          if (started) return;
-          started = true;
+          openTkModal(modal);
+          setToolParam('divergence');
+          if (loaded || loading) return;
+          loading = true;
           runBtn.disabled = true;
-          runBtn.textContent = 'Loading ' + sym + '…';
+          runBtn.classList.add('loading');
+          runLbl.textContent = 'LOADING ' + sym + '…';
+          intro.hidden = false;
+          intro.innerHTML = 'Fetching 60-minute, daily and weekly bars for ' + sym + '…';
+          body.hidden = true;
           await Promise.all([loadAll(), loadBacktest()]);
+          loading = false;
+          runBtn.disabled = false;
+          runBtn.classList.remove('loading');
+          runLbl.textContent = originalLabel;
           if (!Object.keys(store).length) {
-            started = false;
-            runBtn.disabled = false;
-            runBtn.textContent = 'Try again';
-            intro.innerHTML = '<span class="dv-error">Could not load price history for ' + sym + '. Yahoo may not carry this symbol on these bar sizes.</span>';
+            intro.innerHTML =
+              '<span class="dv-error">Could not load price history for ' + sym + '. Yahoo may not carry this symbol on these bar sizes.</span> ' +
+              '<button type="button" class="dv-tool-run" data-role="dvRetry">Try again</button>';
+            const retry = intro.querySelector('[data-role="dvRetry"]');
+            if (retry) retry.addEventListener('click', start);
             return;
           }
+          loaded = true;
           intro.hidden = true;
-          runBtn.hidden = true;
           body.hidden = false;
           buildShell();
           // Open on the first timeframe that has a live divergence (daily first);
@@ -5414,6 +5553,7 @@
         }
 
         runBtn.addEventListener('click', start);
+        wireTkModal(modal, closeBtn, () => setToolParam(null));
       }
 
       function initPriceOverlay(primarySym) {
@@ -5721,6 +5861,16 @@
       initRelPerf(sym);
       initPriceOverlay(sym);
       initDivergenceTool(sym);
+
+      // Deep link into an analysis-hub modal: ?tool=ai or ?tool=divergence
+      // (the modals write this param when opened, so shared links reopen it).
+      const deepTool = (params.get('tool') || '').toLowerCase();
+      if (deepTool === 'ai' || deepTool === 'divergence') {
+        const launcher = deepTool === 'ai'
+          ? document.querySelector('#analysisHubSection [data-role="aiRunBtn"]')
+          : document.getElementById('dvToolRun');
+        if (launcher) setTimeout(() => launcher.click(), 0);
+      }
 
       // 2) Key statistics (Symbol Info widget — market cap, PE, EPS, sector, description)
       mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
