@@ -1,9 +1,16 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1789833578,
-  "latestPublishedAt": 1789806900,
+  "fetchedAt": 1789851257,
+  "latestPublishedAt": 1789833900,
   "items": [
+    {
+      "title": "Is Berkshire Hathaway Stock a Better Buy Than an S&P 500 Index Fund?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/berkshire-hathaway-stock-better-buy-160500962.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1789833900,
+      "id": "7a2934c2-a3b4-3f9d-8c5d-e863675cdc6a"
+    },
     {
       "title": "VOO vs. SPY: Is There Actually a Difference?",
       "link": "https://finance.yahoo.com/markets/stocks/articles/voo-vs-spy-actually-difference-083500118.html",
@@ -101,13 +108,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1789750784,
       "id": "4b126ed0-2db4-375f-ac52-c95fa6000a93"
-    },
-    {
-      "title": "Strategy Climbs 12%, Coinbase Jumps 10% as Bitcoin Tops $80,000",
-      "link": "https://finance.yahoo.com/markets/crypto/articles/strategy-climbs-12-coinbase-jumps-155737829.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1789747057,
-      "id": "0dd08c9b-9367-3355-9ebc-2e2499b2f945"
     }
   ]
 }
