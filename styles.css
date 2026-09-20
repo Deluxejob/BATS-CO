@@ -87,21 +87,27 @@ h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); }
 }
 .brand-link:hover { text-decoration: none; }
 
-/* The logo image is stark black-on-white line art; invert it so the black
-   elements become white on our dark navy background, and boost contrast a
-   touch so the light-gray fills read cleanly. */
+/* The logo is a transparent PNG that already carries its own green-to-red
+   gradient, so it goes on the dark background as-is — no filter. */
 .brand-logo {
   height: 68px;
   width: auto;
   flex-shrink: 0;
-  filter: invert(1) contrast(1.15) brightness(1.05);
 }
-.brand-text { display: flex; flex-direction: column; }
+.brand-text { display: flex; flex-direction: column; min-width: 0; }
+/* Teko is a tall, narrow display face, so the full site name fits on a single
+   line beside the logo on any normal screen. The vw term lets it ride the
+   window width; the clamp bounds stop it going tiny or oversized. Phones are
+   too narrow for one line at a readable size — see the mobile block. */
 .brand h1 {
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  line-height: 1.15;
+  font-family: 'Teko', 'Oswald', 'Inter', system-ui, sans-serif;
+  /* 2.3rem of Teko has the same capital-letter height as the 2rem of Inter
+     this replaced — same height on screen, ~20% less width. */
+  font-size: clamp(1.9rem, 3vw, 2.3rem);
+  font-weight: 600;
+  letter-spacing: 0.012em;
+  line-height: 1.04;
+  white-space: nowrap;
   background: linear-gradient(90deg, #6ee7ff, #22d39a);
   -webkit-background-clip: text;
   background-clip: text;
@@ -1414,7 +1420,10 @@ a.ticker-chip:hover {
   .site-header { padding: 1.25rem 1rem .5rem; }
   main { padding: .5rem 1rem 2rem; }
   .brand-logo { height: 52px; }
-  .brand h1 { font-size: 1.4rem; }
+  /* A phone is too narrow to hold 35 characters on one line at a size worth
+     reading, so here the name is allowed to break — still beside the logo,
+     just over two lines. */
+  .brand h1 { font-size: clamp(1.6rem, 7vw, 2.2rem); white-space: normal; }
   .brand .tagline { font-size: .85rem; }
   .reading-label { font-size: 1.5rem; }
   .hero { padding: 1.25rem; }
