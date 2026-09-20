@@ -692,14 +692,15 @@
         <div class="sig-card" id="sig-factor-rotation">
           <div class="sig-head">
             <h2 class="sig-title">Factor ETF Momentum Rotation</h2>
-            <span class="sig-tag">Monthly rotation &middot; 8-ETF universe</span>
+            <span class="sig-tag">Monthly rotation &middot; 9-ETF universe</span>
           </div>
           <p class="sig-desc">
-            Each month-end, rank <strong>8 factor ETFs</strong> (momentum, quality, value, low-vol,
+            Each month-end, rank <strong>9 factor ETFs</strong> (momentum, quality, value, low-vol,
             growth, free-cash-flow) by their trailing 6-month total return. Buy the <strong>top one</strong>
             at the next market open, hold for the full month, then re-rank and rotate if the leader
-            changed. Historically the strategy has beaten SPY by <strong>+5.75% CAGR</strong> since 2014
-            with lower drawdown (−18% vs −25%). Fewer than 12 trades a year on average &mdash; often the
+            changed. Historically the strategy has beaten SPY by <strong data-fr-stat="alpha">&mdash;</strong> CAGR
+            since 2014 with lower drawdown (<span data-fr-stat="ddRule">&mdash;</span> vs
+            <span data-fr-stat="ddSpy">&mdash;</span>). Fewer than 12 trades a year on average &mdash; often the
             same ETF stays on top for months.
           </p>
 
@@ -721,7 +722,7 @@
               <button type="button" class="iq-range-btn" data-lookback="12" role="tab" title="12-month: classic academic momentum, slowest">12M</button>
             </div>
             <div style="display: flex; gap: 0.6rem; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">
-              <span>Alpha this window: <strong id="frLookbackAlpha" style="color: var(--pos, #22d39a)">+5.75%</strong></span>
+              <span>Alpha this window: <strong id="frLookbackAlpha" style="color: var(--pos, #22d39a)">&mdash;</strong></span>
               <span>Rebalances/yr: <strong id="frLookbackRebal">3.7</strong></span>
             </div>
           </div>
@@ -743,14 +744,16 @@
           </div>
 
           <div class="sig-stats iq-stats">
-            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos">+17.9%</div></div>
-            <div class="sig-stat"><div class="lbl">SPY CAGR</div><div class="val">+12.2%</div></div>
+            <!-- Filled by the backtest for the 6-month default (the strategy);
+                 the lookback toggle above has its own alpha/rebalance readout. -->
+            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos" data-fr-stat="cagrRule">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">SPY CAGR</div><div class="val" data-fr-stat="cagrSpy">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">Rule cumulative</div><div class="val pos" id="frRuleCum">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">SPY cumulative</div><div class="val" id="frSpyCum">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos">+5.75%</div></div>
-            <div class="sig-stat"><div class="lbl">Rule max DD</div><div class="val">-18%</div></div>
-            <div class="sig-stat"><div class="lbl">SPY max DD</div><div class="val neg">-25%</div></div>
-            <div class="sig-stat"><div class="lbl">Rebalances/yr</div><div class="val">~5.4</div></div>
+            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos" data-fr-stat="alpha">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Rule max DD</div><div class="val" data-fr-stat="ddRule">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">SPY max DD</div><div class="val neg" data-fr-stat="ddSpy">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Rebalances/yr</div><div class="val" data-fr-stat="rebal">&mdash;</div></div>
           </div>
 
           <div class="iq-range-bar" role="tablist" aria-label="Chart time range" style="margin-top: 0.75rem;">
@@ -776,8 +779,9 @@
           <div class="iq-chart-caption">
             <strong>How to read this chart.</strong>
             <em>Top panel</em>: $1,000 invested at the start of 2014 in the rotation strategy (green) vs
-            $1,000 in SPY (dashed cyan). The green line ends higher because of the +5.75% annualized
-            alpha compounded over ~13 years.
+            $1,000 in SPY (dashed cyan). The green line ends higher because of the
+            <span data-fr-stat="alpha">&mdash;</span> annualized alpha compounded over
+            <span data-fr-stat="years">&mdash;</span> years.
             <em>Bottom panel</em>: the ETF actually held each month, shown as colored horizontal bands
             &mdash; every band change is a rotation trade. Long stretches of one color mean the strategy
             stayed put; frequent color changes mean the leader kept flipping.
@@ -788,7 +792,7 @@
             <p>
               <strong>You'll hold the same ETF for months at a time.</strong> The 6-month lookback is
               deliberately slow to avoid whipsaw. Since 2014 the strategy has averaged
-              <strong>~5 rebalances per year</strong>. That means low trading friction and low tax churn
+              <strong><span data-fr-stat="rebal">&mdash;</span> rebalances per year</strong>. That means low trading friction and low tax churn
               &mdash; but you'll also spend long stretches watching a single ETF outperform or lag the
               broader market.
             </p>
@@ -799,15 +803,15 @@
               from being smarter than SPY every calendar year.
             </p>
             <p>
-              <strong>Drawdowns are still real.</strong> Max −18% since 2014 &mdash; better than SPY's
-              −25%, but you will absolutely watch the pill say HOLD while your ETF drops 15% in a
+              <strong>Drawdowns are still real.</strong> Max <span data-fr-stat="ddRule">&mdash;</span> since 2014 &mdash; better than SPY's
+              <span data-fr-stat="ddSpy">&mdash;</span>, but you will absolutely watch the pill say HOLD while your ETF drops 15% in a
               correction. That's the deal.
             </p>
             <p>
               <strong>Why this works</strong>: cross-sectional momentum (buy the strongest, hold, re-rank)
               is one of the most-tested effects in academic finance. Doing it across factor ETFs instead
               of individual stocks means zero survivorship bias (ETFs are their own index) and one-click
-              execution. The +5.75% figure is honest &mdash; it's within the 3-5% "genuine alpha" range
+              execution. The <span data-fr-stat="alpha">&mdash;</span> figure is honest &mdash; it's within the 3-6% "genuine alpha" range
               that survivorship-free literature suggests.
             </p>
           </div>
@@ -825,7 +829,7 @@
                 new one at market open the next trading day.</li>
             </ul>
             <p>
-              <strong>Any brokerage works.</strong> All 8 ETFs trade heavily &mdash; MTUM alone does
+              <strong>Any brokerage works.</strong> All 9 ETFs trade heavily &mdash; MTUM alone does
               &gt;$100M/day. Bid-ask spread is 1-2 cents. You could even set calendar alerts for the
               last trading day of each month.
             </p>
@@ -839,9 +843,11 @@
           </div>
 
           <p class="sig-note">
-            Backtest 2014-01 &ndash; 2026-09 (~12.8 yrs), Yahoo monthly-close data. Universe: MTUM,
-            QUAL, USMV, VLUE, IWD, IWY, SPHQ, COWZ. Zero survivorship bias &mdash; factor ETFs are
-            indexes themselves. Top-1 by trailing 6-month total return, held equal-weight for the next
+            Backtest 2014-01 &ndash; <span data-fr-stat="end">latest month-end</span>
+            (<span data-fr-stat="years">&mdash;</span> yrs), Yahoo monthly-close data. Universe: MTUM,
+            QUAL, USMV, VLUE, IWD, IWY, SPHQ, COWZ, SPMO. Each ETF joins the ranking once it has enough
+            history for the lookback (COWZ from 2017, SPMO from 2016). Zero survivorship bias &mdash;
+            factor ETFs are indexes themselves. Top-1 by trailing 6-month return, held for the next
             month. Results ignore trading costs and taxes; realistic drag for retail execution is
             &lt;0.3% per year at these turnover levels. Systematic rotation shown for reference only
             &mdash; not investment advice.
@@ -850,7 +856,7 @@
           <div data-share-strip
                data-share-url="https://bats.co/market-signals.html#sig-factor-rotation"
                data-share-title="Factor ETF Momentum Rotation — BATS.CO"
-               data-share-text="A rules-only monthly rotation across 8 factor ETFs (momentum, quality, value, low-vol, growth, free-cash-flow). Hold the top ETF by trailing 6-month return, rebalance monthly. Historically +5.75% annualized alpha over SPY with lower drawdown."
+               data-share-text="A rules-only monthly rotation across 9 factor ETFs (momentum, quality, value, low-vol, growth, free-cash-flow). Hold the top ETF by trailing 6-month return, rebalance monthly. Historically beat SPY with a smaller drawdown — live backtest on the page."
                style="margin-top: 0.9rem;"></div>
         </div>
 
@@ -1797,7 +1803,7 @@
     // ==========================================================
     //  Factor ETF Momentum Rotation — Top-1 by 6-mo return, monthly
     //
-    //  Fetches monthly closes for 8 factor ETFs + SPY via /api/history,
+    //  Fetches monthly closes for 9 factor ETFs + SPY via /api/history,
     //  ranks the universe each month-end by trailing 6-month return,
     //  holds the top-1 equal-weight for the next month, rebalances.
     //  Zero survivorship bias — factor ETFs are indexes themselves.
@@ -1821,6 +1827,11 @@
         {sym: 'IWY',  name: 'Russell Growth',  color: '#22d39a'},
         {sym: 'SPHQ', name: 'S&P Quality',     color: '#7fe5c2'},
         {sym: 'COWZ', name: 'Cash Cows 100',   color: '#e879f9'},
+        // Added 2026-09 after a hybrid backtest: +SPMO lifted 6M alpha from
+        // +5.59% to +6.10% since 2014 (+8.10% -> +8.81% since 2017) with the
+        // same drawdown/turnover, and improved 3M and 12M too. VFLO was
+        // tested and rejected (buys spikes that reverse). See session notes.
+        {sym: 'SPMO', name: 'S&P Momentum',    color: '#fb7185'},
       ];
       const BENCH  = 'SPY';
       const NAMES  = Object.fromEntries(UNIVERSE.map(u => [u.sym, u.name]));
@@ -1977,6 +1988,26 @@
           alphaEl.style.color = liveAlpha >= 0 ? 'var(--pos, #22d39a)' : 'var(--neg, #ff5374)';
         }
         if (rebalEl) rebalEl.textContent = rebalancesPerYr.toFixed(1);
+
+        // The strategy is the 6-month lookback; stamp its numbers into the
+        // copy and the stats grid so the page never quotes a stale figure.
+        if (LOOKBACK === 6) {
+          const pct = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d) + '%';
+          const stats = {
+            alpha:    pct(liveAlpha, 2),
+            cagrRule: pct((Math.pow(ruleW / 1000, 1 / years) - 1) * 100, 1),
+            cagrSpy:  pct((Math.pow(bhW   / 1000, 1 / years) - 1) * 100, 1),
+            ddRule:   (ruleMinDD * 100).toFixed(0) + '%',
+            ddSpy:    (bhMinDD   * 100).toFixed(0) + '%',
+            rebal:    rebalancesPerYr.toFixed(1),
+            years:    years.toFixed(1),
+            end:      spy[now].date.slice(0, 7),
+          };
+          document.querySelectorAll('[data-fr-stat]').forEach(el => {
+            const v = stats[el.dataset.frStat];
+            if (v != null) el.textContent = v;
+          });
+        }
       } // end renderForLookback
 
       // Closure state shared between renderForLookback (writes) and
