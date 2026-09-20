@@ -1039,12 +1039,14 @@ section { margin: 2.5rem 0; }
   text-decoration: none;
 }
 
-/* ====== Brand as link (used on explainer pages) ====== */
+/* ====== Brand as link (used on explainer pages) ======
+   No display here: this rule sits after the .brand-link/.brand-content block
+   near the top, so a display value would win and knock the logo and the site
+   name onto separate lines on every page except the home page. */
 .brand-link,
 .brand-link:hover {
   text-decoration: none;
   color: inherit;
-  display: block;
 }
 .breadcrumb {
   margin: .45rem 0 0;
