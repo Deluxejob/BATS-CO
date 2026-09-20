@@ -276,7 +276,8 @@
       letter-spacing: 0.04em;
       padding: 0.4rem 0.7rem;
       background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border, #223347);
+      /* Outlined in the same amber as the GO button beside it. */
+      border: 1px solid var(--warn, #ffb658);
       border-radius: 4px;
       color: var(--text, #e6edf3);
     }
