@@ -619,6 +619,21 @@
       return 'sr-n5';
     }
 
+    // 1D uses its own grader. The fixed buckets above are sized for
+    // multi-month returns (+15% is "bright"), so a daily move — almost
+    // never beyond +/-3% — could only ever land in the two dimmest tiers
+    // and the day's leaders and laggards were invisible. Here each cell
+    // is scored against the day's biggest sector move, so whoever moved
+    // most today hits full colour. `scale` is floored at 0.5% by the
+    // caller so a dead-quiet day doesn't paint a +0.1% move bright green.
+    function dayColorClass(v, scale){
+      if (v === null || v === undefined || isNaN(v)) return 'sr-z';
+      if (v === 0) return 'sr-z';
+      const r = Math.abs(v) / scale;          // 0..1 share of today's biggest move
+      const tier = r >= .85 ? 5 : r >= .6 ? 4 : r >= .35 ? 3 : r >= .15 ? 2 : 1;
+      return (v > 0 ? 'sr-p' : 'sr-n') + tier;
+    }
+
     function fmtPct(v){
       if (v === null || v === undefined || isNaN(v)) return '—';
       const s = v >= 0 ? '+' : '';
@@ -672,12 +687,17 @@
       let thead = '<thead><tr><th>Sector</th>';
       for (const h of HORIZONS) thead += `<th>${h.label}</th>`;
       thead += '</tr></thead>';
+      // Biggest absolute 1D move across sectors — the yardstick for the
+      // 1D column's colour (see dayColorClass). Floored at 0.5%.
+      const dayScale = Math.max(0.5,
+        ...rows.map(r => Math.abs(r.r['1d'])).filter(x => isFinite(x)));
       let tbody = '<tbody>';
       for (const row of rows){
         tbody += `<tr><th><span class="sym">${row.sector.sym}</span>${row.sector.name}</th>`;
         for (const h of HORIZONS){
           const v = row.r[h.key];
-          tbody += `<td><span class="sr-cell ${colorClass(v)}">${fmtPct(v)}</span></td>`;
+          const cls = h.key === '1d' ? dayColorClass(v, dayScale) : colorClass(v);
+          tbody += `<td><span class="sr-cell ${cls}">${fmtPct(v)}</span></td>`;
         }
         tbody += '</tr>';
       }
