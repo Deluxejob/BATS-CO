@@ -338,7 +338,14 @@
   // ---------------- Chart ----------------
   // Returns { svg, geom } — the SVG inner markup for an analysis plus the
   // geometry the hover readout needs. Caller mounts it with mountChart().
-  function buildChartSVG(an, tfKey, titleSym) {
+  // opts (all optional):
+  //   divergences: false  -> skip the divergence overlays
+  //   macdMarkers: false  -> skip the plain MACD-cross triangles
+  //   markers: [{ at, kind:'buy'|'sell', rsiAt, rsiVal }]
+  //                       -> draw these arrows instead (price + MACD panes),
+  //                          with a dot on the RSI pane where it was extreme
+  function buildChartSVG(an, tfKey, titleSym, opts) {
+    opts = opts || {};
     const t = TF[tfKey];
     const N = an.c.length, start = Math.max(0, N - t.show), count = N - start;
     const W = 960, L = 10, R = 900;
@@ -428,7 +435,7 @@
 
     // divergence overlays
     const drawn = [];
-    for (const key of ['rsi', 'macd']) {
+    for (const key of (opts.divergences === false ? [] : ['rsi', 'macd'])) {
       for (const d of an.divs[key]) {
         if (d.a < start) continue;
         const cls = d.kind === 'bearish' ? 'div-bear' : 'div-bull';
@@ -461,7 +468,8 @@
       const pts = up ? [cx, cy, cx - w, cy + h, cx + w, cy + h] : [cx, cy, cx - w, cy - h, cx + w, cy - h];
       return '<polygon class="' + cls + '" points="' + pts.map(v => v.toFixed(1)).join(' ') + '"/>';
     };
-    for (const sg of an.sig.signals) {
+    const markerList = opts.markers ? opts.markers : (opts.macdMarkers === false ? [] : an.sig.signals);
+    for (const sg of markerList) {
       if (sg.at < start) continue;
       const up = sg.kind === 'buy', cls = up ? 'sig-buy' : 'sig-sell';
       const xx = x(sg.at);
@@ -470,8 +478,12 @@
       const yp = yP(an.c[sg.at]);
       s += tri(xx, up ? yp + 6 : yp - 6, up, cls);
       s += '<text class="' + (up ? 'sig-label-buy' : 'sig-label-sell') + '" x="' + xx.toFixed(1) + '" y="' + (up ? yp + 27 : yp - 18).toFixed(1) + '" text-anchor="middle">' + (up ? 'Buy' : 'Sell') + '</text>';
+      // the RSI extreme that armed this signal
+      if (sg.rsiAt != null && sg.rsiAt >= start && sg.rsiVal != null) {
+        s += '<circle class="' + (up ? 'div-dot-bull' : 'div-dot-bear') + '" r="3.5" cx="' + x(sg.rsiAt).toFixed(1) + '" cy="' + yR(sg.rsiVal).toFixed(1) + '"/>';
+      }
     }
-    if (an.sig.pending) {
+    if (an.sig.pending && !opts.markers && opts.macdMarkers !== false) {
       const up = an.sig.pending.kind === 'buy', cls = 'sig-pending ' + (up ? 'sig-buy' : 'sig-sell');
       const xx = x(N - 1), ym = yM(an.macd.line[N - 1]);
       s += tri(xx, up ? ym + 5 : ym - 5, up, cls);
@@ -675,6 +687,78 @@
     return c ? { condition: c, baseline: 'Baseline (any day)' } : null;
   }
 
+  // ---------------- RSI + MACD combined signals ----------------
+  // A MACD cross (same 10-bar-run rule as above) only counts here if RSI
+  // set up the move first:
+  //   SELL — RSI closed at or above 70 somewhere in the `win` bars up to and
+  //          including the cross bar, then the MACD line rolled under its
+  //          signal line.
+  //   BUY  — RSI at or below 30 in that window, then the MACD crossed up.
+  // win = 2x the timeframe's "recent" setting (24 hourly, 20 daily, 12 weekly,
+  // 10 monthly), the same window the buy/sell/hold checklist uses.
+  function comboSignals(an, tfKey) {
+    const t = TF[tfKey], win = Math.max(10, t.recent * 2);
+    const r = an.rsi, N = an.c.length, last = N - 1;
+    const extremeBefore = (i, sell) => {
+      let best = null;
+      for (let k = Math.max(0, i - win); k <= i; k++) {
+        if (r[k] == null) continue;
+        if (sell ? r[k] >= 70 : r[k] <= 30) {
+          if (!best || (sell ? r[k] > best.val : r[k] < best.val)) best = { at: k, val: r[k] };
+        }
+      }
+      return best;
+    };
+    const signals = [];
+    for (const sg of an.sig.signals) {
+      const sell = sg.kind === 'sell';
+      const ex = extremeBefore(sg.cross, sell);
+      if (ex) signals.push({ kind: sg.kind, at: sg.at, cross: sg.cross, run: sg.run, rsiAt: ex.at, rsiVal: ex.val });
+    }
+    // Pending: qualifying cross on the still-open bar, with RSI set up.
+    let pending = null;
+    if (an.sig.pending) {
+      const ex = extremeBefore(last, an.sig.pending.kind === 'sell');
+      if (ex) pending = { kind: an.sig.pending.kind, rsiAt: ex.at, rsiVal: ex.val };
+    }
+    // Armed: RSI has been extreme within the window and the MACD is still on
+    // the side a cross would come from (above for a sell, below for a buy),
+    // so the next qualifying cross would fire a signal.
+    let armed = null;
+    const side = an.sig.side;
+    if (side === 'above') { const ex = extremeBefore(last, true);  if (ex) armed = { kind: 'sell', rsiAt: ex.at, rsiVal: ex.val, run: an.sig.run }; }
+    if (side === 'below') { const ex = extremeBefore(last, false); if (ex) armed = { kind: 'buy',  rsiAt: ex.at, rsiVal: ex.val, run: an.sig.run }; }
+    const latest = signals.length ? signals[signals.length - 1] : null;
+    return { signals, pending, armed, latest, win, rsiNow: r[last] };
+  }
+
+  // Forward price change after each signal, at the given bar horizons, and
+  // a per-kind summary: how many, average move, and how often price went the
+  // signal's way. Signals too recent for a horizon are left out of it.
+  function comboOutcomes(an, signals, horizons) {
+    horizons = horizons || [5, 10, 20];
+    const c = an.c, N = c.length;
+    const rows = signals.map(sg => {
+      const fwd = {};
+      for (const h of horizons) {
+        const j = sg.at + h;
+        fwd[h] = j < N ? (c[j] / c[sg.at] - 1) * 100 : null;
+      }
+      return Object.assign({ price: c[sg.at], fwd }, sg);
+    });
+    const summary = {};
+    for (const kind of ['buy', 'sell']) {
+      const mine = rows.filter(x => x.kind === kind);
+      summary[kind] = { n: mine.length, byH: {} };
+      for (const h of horizons) {
+        const vals = mine.map(x => x.fwd[h]).filter(v => v != null);
+        const hits = vals.filter(v => kind === 'buy' ? v > 0 : v < 0).length;
+        summary[kind].byH[h] = vals.length ? { n: vals.length, avg: vals.reduce((a, b) => a + b, 0) / vals.length, hit: hits / vals.length } : null;
+      }
+    }
+    return { rows, summary, horizons };
+  }
+
   global.DivergenceEngine = {
     TF, TF_KEYS, MACD_MIN_RUN,
     emaArr, rsiArr, macdArr, macdSignals, findPivots, indExtreme, priorPivot, detect, analyze, annotate, status,
@@ -682,5 +766,6 @@
     normalizeBars, fetchSeries,
     buildChartSVG, mountChart, wireHover, legendHTML, footerText, sigListHTML, divListHTML,
     rsiEvents, verdict, backtestCondition,
+    comboSignals, comboOutcomes,
   };
 })(window);

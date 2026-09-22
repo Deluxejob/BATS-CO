@@ -2358,6 +2358,17 @@
        and full-screen on phones (a small box scrolling inside a scrolling
        page is miserable on mobile). */
     .tk-modal.wide { max-width: 1160px; }
+    /* RSI + MACD signal tool */
+    .sg-status { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+    .sg-status-detail { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+    .sg-status-detail b { color: var(--text); }
+    .dv-verdict-badge.armed-sell { color: #ff8a9e; background: rgba(255, 83, 116, 0.06); border: 1px dashed rgba(255, 83, 116, 0.5); }
+    .dv-verdict-badge.armed-buy  { color: #7be7c1; background: rgba(34, 211, 154, 0.06); border: 1px dashed rgba(34, 211, 154, 0.5); }
+    .sg-table td.buy, .sg-table b.buy   { color: #22d39a; }
+    .sg-table td.sell, .sg-table b.sell { color: #ff5374; }
+    .sg-table td.pos { color: #22d39a; } .sg-table td.neg { color: #ff5374; } .sg-table td.na { color: var(--text-faint); }
+    .sg-summary { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--text-dim); line-height: 1.55; }
+    .sg-summary b { color: var(--text); }
     .tk-modal-title .tk-modal-sub {
       display: block; margin-top: 0.2rem;
       font-size: 0.66rem; font-weight: 500; letter-spacing: 0.04em; text-transform: none;
@@ -2652,7 +2663,7 @@
            model-generated; the divergence tool is rules-based — the badges
            say which is which. Deep links: ?tool=ai / ?tool=divergence. -->
       <section class="term-section" id="analysisHubSection">
-        <div class="term-section-label">ANALYSIS <span class="sub">— AI research briefing &middot; momentum divergence &middot; more coming</span></div>
+        <div class="term-section-label">ANALYSIS <span class="sub">— AI research briefing &middot; momentum divergence &middot; RSI + MACD signals</span></div>
         <div class="term-panel hub-panel">
           <div class="hub-grid">
             <div class="hub-tile">
@@ -2684,6 +2695,22 @@
               </p>
               <button type="button" class="ai-analysis-btn hub-btn" id="dvToolRun">
                 <span data-role="dvRunLabel">MOMENTUM DIVERGENCE</span>
+                <span aria-hidden="true">&rarr;</span>
+              </button>
+            </div>
+            <div class="hub-tile">
+              <div class="hub-tile-head">
+                <span class="hub-tile-icon" aria-hidden="true">&#9650;&#9660;</span>
+                <span class="hub-tile-title">RSI + MACD buy / sell signals</span>
+                <span class="hub-badge rules">Rules-based &middot; no AI</span>
+              </div>
+              <p class="hub-tile-desc">
+                Sell arrows where RSI was overbought and the MACD then rolled over; buy arrows where RSI was
+                oversold and the MACD then crossed up. On 60-minute, daily, weekly and monthly bars, with what
+                price did after every past signal on this chart.
+              </p>
+              <button type="button" class="ai-analysis-btn hub-btn" id="sigToolRun">
+                <span data-role="sigRunLabel">BUY / SELL SIGNALS</span>
                 <span aria-hidden="true">&rarr;</span>
               </button>
             </div>
@@ -3072,6 +3099,21 @@
       <div class="holders-modal-body tk-modal-body">
         <div class="dv-tool-intro" id="dvToolIntro" hidden></div>
         <div class="dv-tool-body" id="dvToolBody" hidden></div>
+      </div>
+    </div>
+  </div>
+  <div class="holders-modal-overlay tk-modal-overlay" id="signalsModal" role="dialog" aria-modal="true" aria-labelledby="signalsModalTitle" aria-hidden="true" hidden>
+    <div class="holders-modal tk-modal wide">
+      <div class="holders-modal-head tk-modal-head">
+        <div class="holders-modal-title tk-modal-title" id="signalsModalTitle">
+          RSI + MACD SIGNALS &middot; <span data-role="sigSym">this ticker</span>
+          <span class="tk-modal-sub">Rules-based, no AI &middot; sell = overbought RSI then MACD rolls over &middot; buy = oversold RSI then MACD crosses up</span>
+        </div>
+        <button type="button" class="holders-modal-close tk-modal-close" id="signalsModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="holders-modal-body tk-modal-body">
+        <div class="dv-tool-intro" id="sigToolIntro" hidden></div>
+        <div class="dv-tool-body" id="sigToolBody" hidden></div>
       </div>
     </div>
   </div>
@@ -5557,6 +5599,203 @@
         wireTkModal(modal, closeBtn, () => setToolParam(null));
       }
 
+      // RSI + MACD buy/sell signal tool. Same bars and indicator math as the
+      // divergence tool (divergence-engine.js); a different rule on top:
+      // a MACD cross only counts once RSI has been overbought (sell) or
+      // oversold (buy) in the bars leading up to it. Arrows on the chart,
+      // a table of every past signal with what price did next.
+      function initSignalTool(sym) {
+        const section = document.getElementById('analysisHubSection');
+        const modal   = document.getElementById('signalsModal');
+        const E = window.DivergenceEngine;
+        if (!section || !modal || !E || !E.comboSignals) return;
+        modal.querySelectorAll('[data-role="sigSym"]').forEach(el => el.textContent = sym);
+        const runBtn   = section.querySelector('#sigToolRun');
+        const runLbl   = section.querySelector('[data-role="sigRunLabel"]');
+        const closeBtn = modal.querySelector('#signalsModalClose');
+        const intro    = modal.querySelector('#sigToolIntro');
+        const body     = modal.querySelector('#sigToolBody');
+        const store  = {};                 // tfKey -> analysis
+        const state  = { tf: '1d' };
+        const originalLabel = runLbl.textContent;
+        let loaded = false, loading = false;
+        const HORIZONS = [5, 10, 20];
+
+        async function loadAll() {
+          await Promise.all(E.TF_KEYS.map(async tf => {
+            try {
+              const series = await E.fetchSeries([sym], tf);
+              const s = series && series[sym];
+              if (Array.isArray(s) && s.length >= 60) store[tf] = E.analyze(E.normalizeBars(s, tf), tf);
+            } catch (e) { /* leave this timeframe missing */ }
+          }));
+        }
+
+        function buildShell() {
+          body.innerHTML =
+            '<div class="dv-verdict" data-role="status"></div>' +
+            '<div class="dv-chart-head"><span class="dv-sym">' + sym + '</span>' +
+              '<div class="dv-tf-picker">' + E.TF_KEYS.map(tf =>
+                '<button type="button" data-tf="' + tf + '"' + (tf === state.tf ? ' class="active"' : '') + '>' + E.TF[tf].label + '</button>'
+              ).join('') + '</div></div>' +
+            '<div class="dv-hover" data-role="hover"></div>' +
+            '<svg class="dv-svg" data-role="svg" viewBox="0 0 960 516" preserveAspectRatio="none"></svg>' +
+            '<div class="dv-chart-footer"><div class="dv-legend">' +
+              '<span>&#9660; Sell &mdash; RSI was &ge;70, then MACD crossed under its signal</span>' +
+              '<span>&#9650; Buy &mdash; RSI was &le;30, then MACD crossed over its signal</span>' +
+              '<span><i style="border-color:#ff5374"></i><i style="border-color:#22d39a"></i>dot on RSI = the reading that armed it</span>' +
+            '</div><div data-role="footerRight"></div></div>' +
+            '<div class="dv-backtest" data-role="table"></div>';
+          body.querySelectorAll('.dv-tf-picker button').forEach(btn => {
+            btn.addEventListener('click', () => {
+              state.tf = btn.dataset.tf;
+              body.querySelectorAll('.dv-tf-picker button').forEach(b => b.classList.toggle('active', b === btn));
+              render();
+            });
+          });
+        }
+
+        const pct = v => v == null ? '<td class="na">&mdash;</td>' : '<td class="' + (v >= 0 ? 'pos' : 'neg') + '">' + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</td>';
+        const barsWord = (n, tf) => n + ' ' + (tf === '60m' ? 'hour' : tf === '1d' ? 'day' : tf === '1wk' ? 'week' : 'month') + (n === 1 ? '' : 's');
+
+        function statusHTML(an, cs) {
+          const tf = state.tf, t = E.TF[tf], last = an.c.length - 1;
+          const d = i => E.fmtDate(an.ts[i], tf, true);
+          const lt = cs.latest, ago = lt ? last - lt.at : null;
+          let badge, tone, detail;
+          if (lt && ago <= t.recent) {
+            tone = lt.kind; badge = lt.kind.toUpperCase() + ' &middot; ' + (ago === 0 ? 'this bar' : barsWord(ago, tf) + ' ago');
+            detail = '<b>' + (lt.kind === 'sell' ? 'Sell' : 'Buy') + ' signal confirmed ' + d(lt.at) + ' at ' + E.fmtP(an.c[lt.at]) + '.</b> ' +
+                     'RSI ' + (lt.kind === 'sell' ? 'peaked ' : 'bottomed ') + E.fmt1(lt.rsiVal) + ' on ' + d(lt.rsiAt) + ', then the MACD line crossed ' +
+                     (lt.kind === 'sell' ? 'under' : 'over') + ' its signal line on ' + d(lt.cross) + ' after ' + lt.run + ' bars ' + (lt.kind === 'sell' ? 'above' : 'below') + ' it. ' +
+                     'RSI now ' + E.fmt1(cs.rsiNow) + '.';
+          } else if (cs.pending) {
+            tone = 'armed-' + cs.pending.kind; badge = cs.pending.kind.toUpperCase() + ' PENDING';
+            detail = '<b>A ' + cs.pending.kind + ' cross is sitting on the still-open bar.</b> RSI ' + (cs.pending.kind === 'sell' ? 'peaked ' : 'bottomed ') +
+                     E.fmt1(cs.pending.rsiVal) + ' on ' + d(cs.pending.rsiAt) + '. It becomes a signal only if this bar closes with the lines crossed.';
+          } else if (cs.armed) {
+            const a = cs.armed, need = Math.max(0, E.MACD_MIN_RUN - a.run);
+            tone = 'armed-' + a.kind; badge = a.kind.toUpperCase() + ' SETUP ARMED';
+            detail = '<b>RSI ' + (a.kind === 'sell' ? 'was overbought &mdash; peaked ' : 'was oversold &mdash; bottomed ') + E.fmt1(a.rsiVal) + ' on ' + d(a.rsiAt) + '.</b> ' +
+                     'The MACD line is still ' + (a.kind === 'sell' ? 'above' : 'below') + ' its signal line (' + a.run + ' bars). ' +
+                     (need > 0 ? 'It needs ' + need + ' more before a cross would count; after that, the' : 'The') +
+                     ' next cross ' + (a.kind === 'sell' ? 'down fires a SELL' : 'up fires a BUY') + '. RSI now ' + E.fmt1(cs.rsiNow) + '.';
+          } else {
+            tone = 'hold'; badge = 'NO SETUP';
+            detail = 'RSI is ' + E.fmt1(cs.rsiNow) + ' and has not been ' +
+                     (an.sig.side === 'above' ? 'above 70' : an.sig.side === 'below' ? 'below 30' : 'at either extreme') +
+                     ' in the last ' + cs.win + ' bars, so the next MACD cross would not count as a signal.' +
+                     (lt ? ' Last signal: <b>' + lt.kind + '</b> on ' + d(lt.at) + ' (' + barsWord(ago, tf) + ' ago).' : ' No signals in the loaded history.');
+          }
+          return '<div class="sg-status"><span class="dv-verdict-badge ' + tone + '">' + badge + '</span>' +
+                 '<span class="dv-verdict-sub">' + E.TF[tf].label + ' chart</span></div>' +
+                 '<div class="sg-status-detail">' + detail + '</div>';
+        }
+
+        function tableHTML(an, cs) {
+          const tf = state.tf;
+          const oc = E.comboOutcomes(an, cs.signals, HORIZONS);
+          if (!oc.rows.length) {
+            return '<div class="dv-bt-note">No RSI + MACD signals in the loaded ' + E.TF[tf].label.toLowerCase() + ' history (' + an.c.length + ' bars). ' +
+                   'The MACD crossed plenty of times, but never within ' + cs.win + ' bars of an overbought or oversold RSI reading.</div>';
+          }
+          const rows = oc.rows.slice().reverse().slice(0, 12);
+          const hdr = HORIZONS.map(h => '<th>+' + h + ' bars</th>').join('');
+          const trs = rows.map(r =>
+            '<tr><td><b class="' + r.kind + '">' + (r.kind === 'sell' ? '&#9660; Sell' : '&#9650; Buy') + '</b></td>' +
+            '<td>' + E.fmtDate(an.ts[r.at], tf, true) + '</td><td>' + E.fmtP(r.price) + '</td>' +
+            '<td>' + E.fmt1(r.rsiVal) + ' <small>' + E.fmtDate(an.ts[r.rsiAt], tf, false) + '</small></td>' +
+            HORIZONS.map(h => pct(r.fwd[h])).join('') + '</tr>').join('');
+          const sumLine = kind => {
+            const sm = oc.summary[kind]; if (!sm.n) return '';
+            const parts = HORIZONS.map(h => {
+              const b = sm.byH[h]; if (!b) return null;
+              return '+' + h + ': ' + (kind === 'sell' ? 'lower ' : 'higher ') + Math.round(b.hit * 100) + '% of the time (avg ' + (b.avg >= 0 ? '+' : '') + b.avg.toFixed(1) + '%)';
+            }).filter(Boolean);
+            return '<div><b>' + sm.n + ' ' + kind + (sm.n === 1 ? ' signal' : ' signals') + '</b> in the loaded history' + (parts.length ? ' &mdash; price was ' + parts.join(' &middot; ') : '') + '.</div>';
+          };
+          return '<div class="dv-bt-title">Every signal on this chart, and what price did next' +
+                 '<span>' + sym + ', ' + E.TF[tf].label.toLowerCase() + ' bars, most recent first' + (oc.rows.length > 12 ? ' (last 12 of ' + oc.rows.length + ')' : '') + '</span></div>' +
+                 '<table class="dv-bt sg-table"><thead><tr><th>Signal</th><th>Confirmed</th><th>Price</th><th>RSI extreme</th>' + hdr + '</tr></thead><tbody>' + trs + '</tbody></table>' +
+                 '<div class="sg-summary">' + sumLine('sell') + sumLine('buy') +
+                 '<div>Signals too recent to have ' + HORIZONS[HORIZONS.length - 1] + ' bars of follow-through show a dash. This is ' + sym + '\u2019s own history on this bar size, not a market-wide test.</div></div>';
+        }
+
+        function render() {
+          const an      = store[state.tf];
+          const svg     = body.querySelector('[data-role="svg"]');
+          const hover   = body.querySelector('[data-role="hover"]');
+          const footR   = body.querySelector('[data-role="footerRight"]');
+          const statEl  = body.querySelector('[data-role="status"]');
+          const tblEl   = body.querySelector('[data-role="table"]');
+          // dots on the timeframe buttons: a fresh or armed setup
+          body.querySelectorAll('.dv-tf-picker button').forEach(b => {
+            const a2 = store[b.dataset.tf];
+            const c2 = a2 ? E.comboSignals(a2, b.dataset.tf) : null;
+            const live = c2 && ((c2.latest && a2.c.length - 1 - c2.latest.at <= E.TF[b.dataset.tf].recent) ? c2.latest.kind : c2.pending ? c2.pending.kind : c2.armed ? c2.armed.kind : null);
+            b.classList.toggle('has-bear', live === 'sell');
+            b.classList.toggle('has-bull', live === 'buy');
+          });
+          if (!an) {
+            svg.innerHTML = '<text x="480" y="250" text-anchor="middle" class="axis-label">No data for this timeframe.</text>';
+            statEl.innerHTML = ''; tblEl.innerHTML = ''; footR.textContent = ''; hover.textContent = '';
+            return;
+          }
+          const cs = E.comboSignals(an, state.tf);
+          statEl.innerHTML = statusHTML(an, cs);
+          const built = E.buildChartSVG(an, state.tf, sym, { divergences: false, markers: cs.signals });
+          E.mountChart(svg, built);
+          footR.textContent = E.footerText(an, state.tf);
+          E.wireHover(svg, hover, an, state.tf, built.geom);
+          tblEl.innerHTML = tableHTML(an, cs);
+        }
+
+        async function start() {
+          openTkModal(modal);
+          setToolParam('signals');
+          if (loaded || loading) return;
+          loading = true;
+          runBtn.disabled = true;
+          runBtn.classList.add('loading');
+          runLbl.textContent = 'LOADING ' + sym + '\u2026';
+          intro.hidden = false;
+          intro.innerHTML = 'Fetching 60-minute, daily, weekly and monthly bars for ' + sym + '\u2026';
+          body.hidden = true;
+          await loadAll();
+          loading = false;
+          runBtn.disabled = false;
+          runBtn.classList.remove('loading');
+          runLbl.textContent = originalLabel;
+          if (!Object.keys(store).length) {
+            intro.innerHTML =
+              '<span class="dv-error">Could not load price history for ' + sym + '. Yahoo may not carry this symbol on these bar sizes.</span> ' +
+              '<button type="button" class="dv-tool-run" data-role="sigRetry">Try again</button>';
+            const retry = intro.querySelector('[data-role="sigRetry"]');
+            if (retry) retry.addEventListener('click', start);
+            return;
+          }
+          loaded = true;
+          intro.hidden = true;
+          body.hidden = false;
+          buildShell();
+          // Open on the first timeframe with a fresh signal (daily first),
+          // otherwise stay on daily.
+          const pref = ['1d', '1wk', '60m', '1mo'].find(tf => {
+            const a2 = store[tf]; if (!a2) return false;
+            const c2 = E.comboSignals(a2, tf);
+            return c2.latest && a2.c.length - 1 - c2.latest.at <= E.TF[tf].recent;
+          });
+          if (pref && pref !== state.tf) {
+            state.tf = pref;
+            body.querySelectorAll('.dv-tf-picker button').forEach(b => b.classList.toggle('active', b.dataset.tf === pref));
+          }
+          render();
+        }
+
+        runBtn.addEventListener('click', start);
+        wireTkModal(modal, closeBtn, () => setToolParam(null));
+      }
+
       function initPriceOverlay(primarySym) {
         const section     = document.getElementById('overlaySection');
         if (!section) return;
@@ -5862,16 +6101,18 @@
       initRelPerf(sym);
       initPriceOverlay(sym);
       initDivergenceTool(sym);
+      initSignalTool(sym);
 
-      // Deep link into an analysis-hub modal: ?tool=ai or ?tool=divergence
-      // (the modals write this param when opened, so shared links reopen it).
+      // Deep link into an analysis-hub modal: ?tool=ai, ?tool=divergence or
+      // ?tool=signals (the modals write this param when opened, so shared
+      // links reopen it).
       const deepTool = (params.get('tool') || '').toLowerCase();
-      if (deepTool === 'ai' || deepTool === 'divergence') {
-        const launcher = deepTool === 'ai'
-          ? document.querySelector('#analysisHubSection [data-role="aiRunBtn"]')
-          : document.getElementById('dvToolRun');
-        if (launcher) setTimeout(() => launcher.click(), 0);
-      }
+      const launchers = {
+        ai: document.querySelector('#analysisHubSection [data-role="aiRunBtn"]'),
+        divergence: document.getElementById('dvToolRun'),
+        signals: document.getElementById('sigToolRun'),
+      };
+      if (launchers[deepTool]) setTimeout(() => launchers[deepTool].click(), 0);
 
       // 2) Key statistics (Symbol Info widget — market cap, PE, EPS, sector, description)
       mountTvWidget('infoWidgetMount', 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js', {
