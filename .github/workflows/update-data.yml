@@ -116,6 +116,9 @@ jobs:
       - name: Regenerate Signal Testing backtest (CNN F&G + BATS strategies)
         run: python scripts/backtest-signals.py
 
+      - name: Rebuild Market Stats total-return sheet (55 ETF proxies from Yahoo — always exits 0)
+        run: python scripts/update-market-stats.py
+
       - name: Commit and push if anything changed
         run: |
           if [ -n "$(git status --porcelain data/)" ]; then

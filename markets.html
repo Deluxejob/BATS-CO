@@ -478,6 +478,38 @@
       .chart-modal { padding: 0; }
       .chart-modal-body { width: 100vw; height: 100vh; border-radius: 0; }
     }
+
+    /* ---- Market stats: the total-return sheet ---- */
+    .stats-card { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap; }
+    .stats-card-text { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; flex: 1 1 380px; }
+    .stats-card-text strong { font-size: 1.05rem; }
+    .stats-card-text span { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
+    .stats-asof { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--text-dim); }
+    .stats-asof b { color: var(--text); font-weight: 600; }
+    .stats-modal-body { padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; min-height: 0; }
+    .stats-head { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; margin: 0 2.4rem 0.6rem 0; }
+    .stats-head h3 { margin: 0; font-size: 1.05rem; }
+    .stats-head .stats-asof { font-size: 0.78rem; }
+    .stats-scroll { overflow: auto; flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: 8px; }
+    .stats-table { border-collapse: separate; border-spacing: 0; width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; }
+    .stats-table th, .stats-table td { padding: 0.32rem 0.55rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border-soft); }
+    .stats-table th:first-child, .stats-table td:first-child { text-align: left; position: sticky; left: 0; background: var(--bg-card); z-index: 1; min-width: 200px; }
+    .stats-table thead th { position: sticky; top: 0; background: var(--bg-elevated); z-index: 2; color: var(--text-dim); font-weight: 700; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .stats-table thead th:first-child { z-index: 3; background: var(--bg-elevated); }
+    .stats-table thead th.tr-head { text-align: center; color: var(--accent); }
+    .stats-table tr.grp td { background: rgba(255, 184, 66, 0.07); color: var(--warn); font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; padding-top: 0.5rem; }
+    .stats-table td.name { font-family: 'Inter', sans-serif; font-size: 0.8rem; color: var(--text); }
+    .stats-table td.name small { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; margin-left: 0.4rem; }
+    .stats-table td.pos { color: #22d39a; } .stats-table td.neg { color: #ff5374; } .stats-table td.na { color: var(--text-faint); }
+    .stats-table td.stale::after { content: '*'; color: var(--warn); }
+    .stats-foot { margin-top: 0.6rem; font-size: 0.72rem; color: var(--text-faint); line-height: 1.5; }
+    .stats-foot b { color: var(--text-dim); font-weight: 600; }
+    .stats-loading, .stats-error { padding: 2rem; text-align: center; color: var(--text-dim); }
+    .stats-error { color: #ff5374; }
+    @media (max-width: 720px) {
+      .stats-table td:first-child, .stats-table th:first-child { min-width: 150px; }
+      .stats-table td.name small { display: block; margin: 0; }
+    }
     .idx-chart-price {
       font-size: 1.55rem; font-weight: 700; color: var(--text);
     }
@@ -1178,6 +1210,22 @@
       </div>
     </section>
 
+    <!-- MARKET STATS — one-sheet total returns for every major market -->
+    <section id="market-stats">
+      <div class="section-head">
+        <h2>Market stats</h2>
+        <p>Every major market on one sheet, the way the Bloomberg total-return tables lay it out: equity indices, bonds, commodities, the eleven S&amp;P sectors and the style factors, with YTD, 1-week, 1 / 3 / 6 / 12-month and annualized 3 / 5 / 10-year returns. Rebuilt after every close.</p>
+      </div>
+      <div class="card stats-card">
+        <div class="stats-card-text">
+          <strong>Total returns &mdash; all markets</strong>
+          <span>55 benchmarks in five groups &mdash; the total-return index itself where Yahoo carries one, otherwise its ETF proxy (iShares wherever one exists), dividends reinvested. Green is up, red is down, every column on one screen.</span>
+          <span class="stats-asof" data-role="statsAsOf">Loading&hellip;</span>
+        </div>
+        <button type="button" class="btn-primary" id="statsOpen">Open market stats &rarr;</button>
+      </div>
+    </section>
+
     <!-- INTEREST RATES — yield curve + 10Y - 2Y spread -->
     <section class="rates-dollar" id="rates">
       <div class="section-head">
@@ -1264,6 +1312,18 @@
        iframe loads ticker.html?sym=X&chartOnly=1 which strips ticker.html
        down to just its main chart card, giving the popup the full-featured
        candles / volume / RSI / MACD / drawing engine without duplication. -->
+  <div id="statsModal" class="chart-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Market stats">
+    <div class="chart-modal-backdrop" data-close></div>
+    <div class="chart-modal-body stats-modal-body">
+      <button class="chart-modal-close" type="button" aria-label="Close">&times;</button>
+      <div class="stats-head">
+        <h3>Total returns &mdash; all markets</h3>
+        <span class="stats-asof" data-role="statsAsOf"></span>
+      </div>
+      <div class="stats-scroll" data-role="statsScroll"><div class="stats-loading">Loading&hellip;</div></div>
+      <div class="stats-foot" data-role="statsFoot"></div>
+    </div>
+  </div>
   <div id="chartModal" class="chart-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Chart">
     <div class="chart-modal-backdrop" data-close></div>
     <div class="chart-modal-body">
@@ -2440,6 +2500,104 @@
     }
     refresh();
     setInterval(refresh, 30000);
+  })();
+
+  // ---- Market stats sheet ---------------------------------------------
+  // data/market_stats.json is rebuilt nightly by scripts/update-market-stats.py.
+  // Read it from GitHub first so the page never shows a deploy-time copy
+  // (Vercel does not always redeploy on data-only commits), then fall back
+  // to the relative path for local previews.
+  (function () {
+    const modal   = document.getElementById('statsModal');
+    const openBtn = document.getElementById('statsOpen');
+    if (!modal || !openBtn) return;
+    const close   = modal.querySelector('.chart-modal-close');
+    const back    = modal.querySelector('.chart-modal-backdrop');
+    const scroll  = modal.querySelector('[data-role="statsScroll"]');
+    const foot    = modal.querySelector('[data-role="statsFoot"]');
+    const asOfEls = document.querySelectorAll('[data-role="statsAsOf"]');
+    const SRC = ['https://raw.githubusercontent.com/Deluxejob/BATS-CO/main/data/market_stats.json', 'data/market_stats.json'];
+    let data = null, loading = null, lastActive = null;
+
+    const fmtDate = iso => {
+      if (!iso) return '';
+      const [y, m, d] = iso.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' });
+    };
+    const fmtPct = v => v == null || !isFinite(v) ? '&mdash;' : (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+    const cls = v => v == null || !isFinite(v) ? 'na' : v >= 0 ? 'pos' : 'neg';
+
+    async function load() {
+      if (data) return data;
+      if (loading) return loading;
+      loading = (async () => {
+        for (const url of SRC) {
+          try {
+            const r = await fetch(url, { cache: 'no-store' });
+            if (!r.ok) continue;
+            const j = await r.json();
+            if (j && Array.isArray(j.groups)) { data = j; return j; }
+          } catch (e) { /* try the next source */ }
+        }
+        return null;
+      })();
+      return loading;
+    }
+
+    function paintAsOf(j) {
+      const txt = j && j.asOf ? 'Total returns as of <b>' + fmtDate(j.asOf) + '</b> &middot; updated after each close' : 'Data unavailable';
+      asOfEls.forEach(el => { el.innerHTML = txt; });
+    }
+
+    function render(j) {
+      if (!j) { scroll.innerHTML = '<div class="stats-error">Could not load the market stats sheet. Try again in a minute.</div>'; foot.innerHTML = ''; return; }
+      const cols = j.columns, labels = j.columnLabels || cols, ann = new Set(j.annualized || []);
+      let h = '<table class="stats-table"><thead><tr><th></th><th class="tr-head" colspan="' + cols.length + '">Total returns</th></tr>' +
+              '<tr><th>Index &middot; proxy</th>' + cols.map((c, i) => '<th>' + labels[i] + (ann.has(c) ? '^' : '') + '</th>').join('') + '</tr></thead><tbody>';
+      let stale = false;
+      for (const g of j.groups) {
+        h += '<tr class="grp"><td colspan="' + (cols.length + 1) + '">' + g.title + '</td></tr>';
+        for (const r of g.rows) {
+          const isStale = r.asOf && j.asOf && r.asOf !== j.asOf; if (isStale) stale = true;
+          const isIndex = String(r.symbol).charAt(0) === '^';
+          h += '<tr><td class="name' + (isStale ? ' stale' : '') + '" title="' + (r.note || '').replace(/"/g, '&quot;') + '">' + r.name +
+               '<small>' + (isIndex ? 'index' : r.symbol) + '</small></td>' +
+               cols.map(c => '<td class="' + cls(r[c]) + '">' + fmtPct(r[c]) + '</td>').join('') + '</tr>';
+        }
+      }
+      h += '</tbody></table>';
+      scroll.innerHTML = h;
+      foot.innerHTML =
+        '<b>Total returns as of ' + fmtDate(j.asOf) + '.</b> Rows marked <b>index</b> are the total-return index itself (S&amp;P 500, Russell 2000, Nasdaq Composite). ' +
+        'Every other row is the ETF named beside it (hover a name for the fund): ' +
+        'dividends reinvested, net of the fund\u2019s expenses, so those run a touch below the published index numbers. ' +
+        '^ Annualized. ' + (stale ? '* Row as of its own last trading day (a market closed on the sheet date). ' : '') +
+        'S&amp;P/TSX in Canadian dollars. Sector rows use the iShares Dow Jones U.S. sector funds, whose sector definitions differ slightly from S&amp;P 500 GICS sectors. ' +
+        'Source: Yahoo Finance adjusted closes. Past performance is no guarantee of future results.';
+    }
+
+    async function open() {
+      lastActive = document.activeElement;
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      const j = await load();
+      paintAsOf(j);
+      render(j);
+    }
+    function closeModal() {
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      if (lastActive && typeof lastActive.focus === 'function') lastActive.focus();
+    }
+    openBtn.addEventListener('click', open);
+    close.addEventListener('click', closeModal);
+    back.addEventListener('click', closeModal);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+
+    // Paint the as-of line on the card straight away.
+    load().then(paintAsOf);
   })();
 
   // ---- Card click → chart popup ---------------------------------------
