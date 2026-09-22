@@ -23,8 +23,13 @@
     '60m': { label: '60-min', range: '3mo', interval: '60m', pivot: 5, show: 140, recent: 12, minGap: 5, maxGap: 70 },
     '1d':  { label: 'Daily',  range: '2y',  interval: '1d',  pivot: 5, show: 130, recent: 10, minGap: 5, maxGap: 60 },
     '1wk': { label: 'Weekly', range: '10y', interval: '1wk', pivot: 3, show: 130, recent: 6,  minGap: 3, maxGap: 52 },
+    // Monthly pulls 10y, not max: Yahoo's max-range monthly feed for ^GSPC
+    // and ^NDX is riddled with missing months (87 gaps in the last decade
+    // alone), which would wreck RSI/MACD. 10y comes back complete. That is
+    // 120 bars; the first ~36 warm up the indicators, the rest are drawn.
+    '1mo': { label: 'Monthly', range: '10y', interval: '1mo', pivot: 2, show: 84, recent: 3, minGap: 2, maxGap: 24 },
   };
-  const TF_KEYS = ['60m', '1d', '1wk'];
+  const TF_KEYS = ['60m', '1d', '1wk', '1mo'];
 
   // ---------------- Indicator math (on plain arrays of closes) ----------------
   function emaArr(v, n) {
@@ -231,7 +236,7 @@
   function status(an) {
     const t = TF[an.tf], last = an.c.length - 1;
     // Flagged = still in force, or played out recently enough that the
-    // breakdown itself is the news (12 hourly / 10 daily / 6 weekly bars).
+    // breakdown itself is the news (12 hourly / 10 daily / 6 weekly / 3 monthly bars).
     const active = [];
     for (const key of ['rsi', 'macd']) {
       for (const d of an.divs[key]) {
@@ -275,6 +280,8 @@
     const p = etParts(ts);
     const base = MONTHS[p.m - 1] + ' ' + p.d;
     if (tfKey === '60m') return base + ' ' + p.hh + ':' + p.mm;
+    // A monthly bar is stamped on the 1st; showing the day would only mislead.
+    if (tfKey === '1mo') return MONTHS[p.m - 1] + " '" + String(p.y).slice(2);
     if (withYear || tfKey === '1wk') return base + " '" + String(p.y).slice(2);
     return base;
   }
@@ -285,11 +292,13 @@
 
   // ---------------- Data ----------------
   // Yahoo appends a live-quote stub to its series: on weekly a mid-week bar
-  // that duplicates the current week, on 60-minute a 16:00 closing-print
+  // that duplicates the current week, on monthly a mid-month bar that
+  // duplicates the current month, on 60-minute a 16:00 closing-print
   // bar. Fold each stub into the bar it belongs to so every bar is one
   // real period (otherwise RSI/MACD and the bar counts are skewed).
   const pad2 = n => (n < 10 ? '0' : '') + n;
   function dayKey(ts) { const p = etParts(ts); return p.y + '-' + pad2(p.m) + '-' + pad2(p.d); }
+  function monthKey(ts) { const p = etParts(ts); return p.y + '-' + pad2(p.m); }
   function weekKeyOf(ts) {
     const d = new Date(dayKey(ts) + 'T12:00:00Z');
     d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7);
@@ -302,6 +311,7 @@
       let same = false;
       if (prev) {
         if (tfKey === '1wk') same = weekKeyOf(prev[0]) === weekKeyOf(b[0]);
+        else if (tfKey === '1mo') same = monthKey(prev[0]) === monthKey(b[0]);
         else if (tfKey === '1d') same = dayKey(prev[0]) === dayKey(b[0]);
         else if (tfKey === '60m') {
           const p = etParts(b[0]);
@@ -566,7 +576,8 @@
   //   4. price just made a new high (low) for the lookback
   // 4 of 4 = SELL/BUY, 3 of 4 with the divergence = LEAN, else HOLD.
   // The window is 2x the timeframe's "recent" setting (24 hourly bars,
-  // 20 daily, 12 weekly), so nothing older than a few weeks can qualify.
+  // 20 daily, 12 weekly, floor of 10 on monthly), so nothing older than a
+  // few weeks — or a few months, on the monthly chart — can qualify.
   function verdict(an, tfKey) {
     const t = TF[tfKey], N = an.c.length, last = N - 1;
     const win = Math.max(10, t.recent * 2);
@@ -646,7 +657,7 @@
 
   // Which row of data/divergence_backtest.json best matches this reading.
   // The backtest only covers daily and weekly S&P 500 setups, so 60-minute
-  // readings and setups it never tested return null.
+  // and monthly readings and setups it never tested return null.
   function backtestCondition(v, tfKey) {
     if (tfKey !== '1d' && tfKey !== '1wk') return null;
     const st = v.st, weekly = tfKey === '1wk';

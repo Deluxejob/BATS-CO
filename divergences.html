@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Momentum Divergences — BATS.CO</title>
-  <meta name="description" content="Bearish and bullish RSI / MACD divergences on the S&P 500, Dow Jones and Nasdaq 100 across 60-minute, daily and weekly charts — BATS.CO." />
+  <meta name="description" content="Bearish and bullish RSI / MACD divergences on the S&P 500, Dow Jones and Nasdaq 100 across 60-minute, daily, weekly and monthly charts — BATS.CO." />
   <!-- BATS SEO block -->
   <link rel="canonical" href="https://bats.co/divergences.html">
   <meta property="og:site_name" content="BATS.CO">
   <meta property="og:title" content="Momentum Divergences — BATS.CO">
-  <meta property="og:description" content="Is price running ahead of momentum? RSI and MACD divergence scanner for the S&P 500, Dow and Nasdaq 100 on 60-minute, daily and weekly bars.">
+  <meta property="og:description" content="Is price running ahead of momentum? RSI and MACD divergence scanner for the S&P 500, Dow and Nasdaq 100 on 60-minute, daily, weekly and monthly bars.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://bats.co/divergences.html">
   <meta property="og:image" content="https://bats.co/og-card.png?v=2">
   <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="">
-  <meta name="twitter:description" content="RSI and MACD divergence scanner for the S&P 500, Dow and Nasdaq 100 on 60-minute, daily and weekly bars.">
+  <meta name="twitter:description" content="RSI and MACD divergence scanner for the S&P 500, Dow and Nasdaq 100 on 60-minute, daily, weekly and monthly bars.">
   <meta name="twitter:image" content="https://bats.co/og-card.png?v=2">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -26,10 +26,10 @@
   <style>
     main.explainer.dv-main { max-width: 1180px; }
 
-    /* ---------- Summary grid: 3 indices x 3 timeframes ---------- */
+    /* ---------- Summary grid: 3 indices x 4 timeframes ---------- */
     .dv-grid {
       display: grid;
-      grid-template-columns: 150px repeat(3, 1fr);
+      grid-template-columns: 150px repeat(4, 1fr);
       gap: 0.6rem;
       align-items: stretch;
     }
@@ -151,20 +151,21 @@
         That is a <strong>negative (bearish) divergence</strong>. The mirror image &mdash; lower
         lows in price while momentum makes higher lows &mdash; is a <strong>positive (bullish)
         divergence</strong> and often shows up near bottoms. This page scans the S&amp;P 500,
-        Dow Jones and Nasdaq 100 on 60-minute, daily and weekly bars and flags both.
+        Dow Jones and Nasdaq 100 on 60-minute, daily, weekly and monthly bars and flags both.
       </p>
     </section>
 
     <section id="summary">
       <div class="section-head">
         <h2>Divergence scan &mdash; right now</h2>
-        <p>Nine readings: three indices &times; three timeframes. Red = bearish divergence, green = bullish, grey = price and momentum agree.</p>
+        <p>Twelve readings: three indices &times; four timeframes. Red = bearish divergence, green = bullish, grey = price and momentum agree.</p>
       </div>
       <div class="dv-grid" id="dvGrid">
         <div class="dv-grid-head"></div>
         <div class="dv-grid-head">60-minute</div>
         <div class="dv-grid-head">Daily</div>
         <div class="dv-grid-head">Weekly</div>
+        <div class="dv-grid-head">Monthly</div>
         <!-- rows populated by JS -->
       </div>
       <div class="dv-readout" id="dvReadout"><p>Loading index data&hellip;</p></div>
@@ -178,6 +179,7 @@
         <div class="dv-grid-head">60-minute</div>
         <div class="dv-grid-head">Daily</div>
         <div class="dv-grid-head">Weekly</div>
+        <div class="dv-grid-head">Monthly</div>
         <!-- rows populated by JS -->
       </div>
       <div class="dv-updated" id="dvUpdated"></div>
@@ -198,7 +200,7 @@
       </p>
       <ul>
         <li><strong>Find the swing points.</strong> A bar is a swing high when its close is above the closes on both sides of it
-            (5 bars each side on 60-minute and daily charts, 3 bars each side on weekly). Swing lows are the mirror image.</li>
+            (5 bars each side on 60-minute and daily charts, 3 bars each side on weekly, 2 on monthly). Swing lows are the mirror image.</li>
         <li><strong>Compare the last two.</strong> For each new swing high we look back (up to about 60 bars) for the previous
             swing high that price has now cleared &mdash; the new peak must be the highest close since that earlier one, so a lower high
             inside a bigger move never counts. If price made a <em>higher</em> high but the indicator made a <em>lower</em> high, that is a
@@ -210,9 +212,12 @@
             <em>above</em> the second peak (a new high cancels it, though a fresh divergence may form at that new peak) or closes
             <em>below</em> the lowest point between the two peaks (the pattern has played out). Bullish is the mirror image. Each card shows
             both levels. Because the breakdown is the moment the warning matters most, a played-out divergence stays on the scan as
-            <em>playing out</em> for a short while afterwards (12 hourly bars, 10 daily, 6 weekly), and the card notes when the latest MACD
-            crossover agrees with it. A divergence that does nothing for a long stretch (about 60 daily bars, 52 weeks, 70 hourly bars)
+            <em>playing out</em> for a short while afterwards (12 hourly bars, 10 daily, 6 weekly, 3 monthly), and the card notes when the latest MACD
+            crossover agrees with it. A divergence that does nothing for a long stretch (about 60 daily bars, 52 weeks, 24 months, 70 hourly bars)
             drops off as expired. Settled divergences still draw on the charts.</li>
+        <li><strong>Monthly bars cover the last ten years.</strong> Yahoo's longer monthly history for the indices has months missing, which
+            would corrupt the indicators, so the monthly scan uses the ten-year feed that comes back complete. The first three years of it
+            are spent warming up RSI and MACD, so the monthly chart shows roughly the last seven.</li>
       </ul>
       <p><strong>MACD crossover signals</strong> follow a separate, simpler rule:</p>
       <ul>
@@ -220,7 +225,7 @@
             <strong>Sell</strong> when it crosses below after at least 10 closed bars above it. Crosses that come sooner are ignored,
             which filters out the quick back-and-forth wobbles when the two lines run close together.</li>
         <li><strong>Confirmed on the next bar.</strong> A cross only counts once the bar it happened on has closed, so the marker sits on the
-            bar after the cross: the next hour, the next day, or the first bar of the next week. A qualifying cross on the still-open bar is
+            bar after the cross: the next hour, the next day, or the first bar of the next week or month. A qualifying cross on the still-open bar is
             shown as <em>pending</em> and becomes a signal only if the bar closes that way.</li>
         <li><strong>Fresh vs. old.</strong> A signal card is highlighted while the signal is recent (same windows as above); older signals stay
             listed in grey so you can see where the last one was.</li>
@@ -228,13 +233,15 @@
       <p>
         <strong>How to read it.</strong> Divergences are a warning, not a timing tool. Bull markets can carry a bearish divergence for
         weeks. The pattern is strongest when it shows on the daily <em>and</em> weekly chart at the same time, on more than one index, and on
-        both indicators. A 60-minute divergence alone is short-term noise and usually resolves within a few sessions.
+        both indicators. A 60-minute divergence alone is short-term noise and usually resolves within a few sessions. A monthly divergence
+        is the rarest and slowest of all: it can take a year to play out, but it is the chart the biggest turns have tended to show up on,
+        and one that lines up with the weekly deserves the most respect of anything on this page.
       </p>
     </section>
 
     <div data-share-strip
          data-share-title="Momentum divergences on the S&amp;P 500, Dow and Nasdaq 100 — BATS.CO"
-         data-share-text="Live RSI and MACD divergence scan for the major US indices on 60-minute, daily and weekly charts — is price running ahead of momentum?"></div>
+         data-share-text="Live RSI and MACD divergence scan for the major US indices on 60-minute, daily, weekly and monthly charts — is price running ahead of momentum?"></div>
 
     <div class="next-nav">
       <a class="btn-primary" href="index.html">&larr; Back to the BATS</a>
@@ -420,7 +427,15 @@
           if (st.kind === 'bearish') bear++; if (st.kind === 'bullish') bull++;
           kinds[tf] = st.kind;
         }
-        if (kinds['1d'] === 'bearish' && kinds['1wk'] === 'bearish') {
+        if (kinds['1mo'] === 'bearish' && kinds['1wk'] === 'bearish') {
+          lines.push('<strong>' + idx.name + '</strong> shows a bearish divergence on <strong>both the weekly and monthly</strong> chart &mdash; the rarest version of this pattern, and the one that has lined up with the biggest tops.');
+        } else if (kinds['1mo'] === 'bullish' && kinds['1wk'] === 'bullish') {
+          lines.push('<strong>' + idx.name + '</strong> shows a bullish divergence on <strong>both the weekly and monthly</strong> chart &mdash; selling force has been fading at the highest level there is.');
+        } else if (kinds['1mo'] === 'bearish') {
+          lines.push('<strong>' + idx.name + '</strong>: monthly bearish divergence. Rare and slow &mdash; it can take a year to play out &mdash; but this is the chart the largest turns have tended to show up on.');
+        } else if (kinds['1mo'] === 'bullish') {
+          lines.push('<strong>' + idx.name + '</strong>: monthly bullish divergence &mdash; the last big lows came with less selling force than the ones before, at the slowest timeframe on the page.');
+        } else if (kinds['1d'] === 'bearish' && kinds['1wk'] === 'bearish') {
           lines.push('<strong>' + idx.name + '</strong> shows a bearish divergence on <strong>both the daily and weekly</strong> chart &mdash; the version of this pattern most worth respecting.');
         } else if (kinds['1d'] === 'bullish' && kinds['1wk'] === 'bullish') {
           lines.push('<strong>' + idx.name + '</strong> shows a bullish divergence on <strong>both the daily and weekly</strong> chart &mdash; sellers are running out of force at the higher-level lows.');

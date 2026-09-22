@@ -2678,7 +2678,7 @@
                 <span class="hub-badge rules">Rules-based &middot; no AI</span>
               </div>
               <p class="hub-tile-desc">
-                RSI / MACD divergences on 60-minute, daily and weekly bars, MACD crossover signals,
+                RSI / MACD divergences on 60-minute, daily, weekly and monthly bars, MACD crossover signals,
                 a buy / sell / hold checklist, and what followed the same setup in S&amp;P 500 history.
                 Same rules and chart as the <a href="divergences.html">index divergence scanner</a>.
               </p>
@@ -5378,7 +5378,7 @@
       // -----------------------------------------------------------------
       // Momentum divergence tool. Same engine, chart and rules as
       // divergences.html (divergence-engine.js), run on demand for this
-      // symbol across all three timeframes, plus a transparent buy/sell/hold
+      // symbol across all four timeframes, plus a transparent buy/sell/hold
       // checklist and the S&P 500 backtest rows for the matching setup.
       function initDivergenceTool(sym) {
         const section = document.getElementById('analysisHubSection');
@@ -5524,7 +5524,7 @@
           runBtn.classList.add('loading');
           runLbl.textContent = 'LOADING ' + sym + '…';
           intro.hidden = false;
-          intro.innerHTML = 'Fetching 60-minute, daily and weekly bars for ' + sym + '…';
+          intro.innerHTML = 'Fetching 60-minute, daily, weekly and monthly bars for ' + sym + '…';
           body.hidden = true;
           await Promise.all([loadAll(), loadBacktest()]);
           loading = false;
