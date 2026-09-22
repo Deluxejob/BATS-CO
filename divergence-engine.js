@@ -688,12 +688,17 @@
   }
 
   // ---------------- RSI + MACD combined signals ----------------
-  // A MACD cross (same 10-bar-run rule as above) only counts here if RSI
-  // set up the move first:
-  //   SELL — RSI closed at or above 70 somewhere in the `win` bars up to and
-  //          including the cross bar, then the MACD line rolled under its
-  //          signal line.
-  //   BUY  — RSI at or below 30 in that window, then the MACD crossed up.
+  // A MACD cross (same 10-bar-run rule as above) counts here when RSI has
+  // already turned the same way:
+  //   SELL — RSI made its high of the last `win` bars BEFORE the cross bar
+  //          and is below that high at the cross, then the MACD line rolled
+  //          under its signal line.
+  //   BUY  — the mirror image: RSI off its low of the window, then the MACD
+  //          crossed up.
+  // No 70/30 threshold: RSI does not have to have been overbought or
+  // oversold, only to have peaked (or troughed) and turned. Signals whose
+  // RSI turn did come from at or beyond 70/30 are tagged `extreme` so the
+  // stronger ones still stand out.
   // win = 2x the timeframe's "recent" setting (24 hourly, 20 daily, 12 weekly,
   // 10 monthly), the same window the buy/sell/hold checklist uses.
   function comboSignals(an, tfKey) {
@@ -701,33 +706,35 @@
     const r = an.rsi, N = an.c.length, last = N - 1;
     const extremeBefore = (i, sell) => {
       let best = null;
-      for (let k = Math.max(0, i - win); k <= i; k++) {
+      for (let k = Math.max(0, i - win); k < i; k++) {
         if (r[k] == null) continue;
-        if (sell ? r[k] >= 70 : r[k] <= 30) {
-          if (!best || (sell ? r[k] > best.val : r[k] < best.val)) best = { at: k, val: r[k] };
-        }
+        if (!best || (sell ? r[k] > best.val : r[k] < best.val)) best = { at: k, val: r[k] };
       }
+      // RSI must have come off that high/low by the cross bar
+      if (!best || r[i] == null || (sell ? r[i] >= best.val : r[i] <= best.val)) return null;
+      best.extreme = sell ? best.val >= 70 : best.val <= 30;
       return best;
     };
     const signals = [];
     for (const sg of an.sig.signals) {
       const sell = sg.kind === 'sell';
       const ex = extremeBefore(sg.cross, sell);
-      if (ex) signals.push({ kind: sg.kind, at: sg.at, cross: sg.cross, run: sg.run, rsiAt: ex.at, rsiVal: ex.val });
+      if (ex) signals.push({ kind: sg.kind, at: sg.at, cross: sg.cross, run: sg.run, rsiAt: ex.at, rsiVal: ex.val, extreme: ex.extreme });
     }
     // Pending: qualifying cross on the still-open bar, with RSI set up.
     let pending = null;
     if (an.sig.pending) {
       const ex = extremeBefore(last, an.sig.pending.kind === 'sell');
-      if (ex) pending = { kind: an.sig.pending.kind, rsiAt: ex.at, rsiVal: ex.val };
+      if (ex) pending = { kind: an.sig.pending.kind, rsiAt: ex.at, rsiVal: ex.val, extreme: ex.extreme };
     }
-    // Armed: RSI has been extreme within the window and the MACD is still on
-    // the side a cross would come from (above for a sell, below for a buy),
-    // so the next qualifying cross would fire a signal.
+    // Armed: RSI has already turned down from its high of the window (or up
+    // from its low) and the MACD is still on the side a cross would come from
+    // (above for a sell, below for a buy), so the next qualifying cross would
+    // fire a signal.
     let armed = null;
     const side = an.sig.side;
-    if (side === 'above') { const ex = extremeBefore(last, true);  if (ex) armed = { kind: 'sell', rsiAt: ex.at, rsiVal: ex.val, run: an.sig.run }; }
-    if (side === 'below') { const ex = extremeBefore(last, false); if (ex) armed = { kind: 'buy',  rsiAt: ex.at, rsiVal: ex.val, run: an.sig.run }; }
+    if (side === 'above') { const ex = extremeBefore(last, true);  if (ex) armed = { kind: 'sell', rsiAt: ex.at, rsiVal: ex.val, run: an.sig.run, extreme: ex.extreme }; }
+    if (side === 'below') { const ex = extremeBefore(last, false); if (ex) armed = { kind: 'buy',  rsiAt: ex.at, rsiVal: ex.val, run: an.sig.run, extreme: ex.extreme }; }
     const latest = signals.length ? signals[signals.length - 1] : null;
     return { signals, pending, armed, latest, win, rsiNow: r[last] };
   }
