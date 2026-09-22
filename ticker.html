@@ -2118,6 +2118,20 @@
     .tk-range-picker button.active {
       background: var(--term-amber); color: #0a1218; border-color: var(--term-amber);
     }
+    /* Return for each range sits under its label — the Yahoo-style strip.
+       Buttons keep their tab behaviour; the second line is read-only. */
+    .tk-range-picker button {
+      display: flex; flex-direction: column; align-items: center; gap: 0.08rem;
+      min-width: 3.3rem; padding: 0.24rem 0.4rem 0.2rem; line-height: 1.1;
+    }
+    .tk-range-picker button .rng-perf {
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0; text-transform: none;
+      color: var(--term-dim); min-height: 0.7rem;
+    }
+    .tk-range-picker button .rng-perf.pos { color: #22d39a; }
+    .tk-range-picker button .rng-perf.neg { color: #ff5374; }
+    .tk-range-picker button.active .rng-perf.pos { color: #0b5c3a; }
+    .tk-range-picker button.active .rng-perf.neg { color: #8a1226; }
     .tk-ma-toggles button[data-ma="8ema"].active {
       background: rgba(255, 255, 255, 0.10); color: #ffffff; border-color: #ffffff;
     }
@@ -4566,6 +4580,58 @@
           maValsEl.hidden = false;
         }
 
+        // Return under every range button, Yahoo-style. All computed from
+        // the series the chart already caches — nothing extra is fetched
+        // for the daily ranges, and the weekly / monthly slots are pulled
+        // in the background after the first paint (see the boot below).
+        // Every figure is the last close vs the close on or just before
+        // the range's start:
+        //   1D  previous close            5D  five trading days back
+        //   1M / 3M / 6M  calendar months back
+        //   YTD last close of the prior calendar year (first bar of this
+        //       year if the series does not reach back that far)
+        //   1Y  the daily series' start   3Y / 5Y  weekly, years back
+        //   All the first monthly close Yahoo has
+        // A range whose data is not loaded yet shows nothing until it is.
+        function renderRangePerf() {
+          const d = cache.daily1y, w = cache.weekly5y, m = cache.monthly;
+          const src = d || w || m;
+          if (!src || !src.length) return;
+          const lastBar = src[src.length - 1], lastClose = lastBar[4], lastTs = lastBar[0];
+          const pctFrom = base => (base != null && isFinite(base) && base) ? (lastClose / base - 1) * 100 : null;
+          const closeAtOrBefore = (bars, ts) => { let v = null; for (const b of bars) { if (b[0] <= ts) v = b[4]; else break; } return v; };
+          const monthsAgo = n => { const dt = new Date(lastTs * 1000); dt.setUTCMonth(dt.getUTCMonth() - n); return dt.getTime() / 1000; };
+          const out = {};
+          if (d && d.length >= 2) {
+            out['1D'] = pctFrom(d[d.length - 2][4]);
+            out['5D'] = d.length >= 6 ? pctFrom(d[d.length - 6][4]) : null;
+            out['1M'] = pctFrom(closeAtOrBefore(d, monthsAgo(1)));
+            out['3M'] = pctFrom(closeAtOrBefore(d, monthsAgo(3)));
+            out['6M'] = pctFrom(closeAtOrBefore(d, monthsAgo(6)));
+            const y = new Date(lastTs * 1000).getUTCFullYear();
+            let prevYearClose = null, firstThisYear = null;
+            for (const b of d) {
+              const by = new Date(b[0] * 1000).getUTCFullYear();
+              if (by < y) prevYearClose = b[4]; else if (firstThisYear == null) firstThisYear = b[4];
+            }
+            out['YTD'] = pctFrom(prevYearClose != null ? prevYearClose : firstThisYear);
+            out['1Y'] = pctFrom(closeAtOrBefore(d, monthsAgo(12)) ?? d[0][4]);
+          }
+          if (w && w.length) {
+            out['3Y'] = pctFrom(closeAtOrBefore(w, monthsAgo(36)) ?? w[0][4]);
+            out['5Y'] = pctFrom(w[0][4]);
+          }
+          if (m && m.length) out['All'] = pctFrom(m[0][4]);
+          rangeEl.querySelectorAll('button[data-range]').forEach(b => {
+            const el = b.querySelector('.rng-perf'); if (!el) return;
+            const v = out[b.dataset.range];
+            if (v == null || !isFinite(v)) { if (!(b.dataset.range in out)) return; el.textContent = ''; el.className = 'rng-perf'; return; }
+            const big = Math.abs(v) >= 1000;
+            el.textContent = (v > 0 ? '+' : '') + (big ? Math.round(v).toLocaleString('en-US') : fmt(v, 2)) + '%';
+            el.className = 'rng-perf ' + (v >= 0 ? 'pos' : 'neg');
+          });
+        }
+
         function updateHeader() {
           const daily = cache.daily1y || cache.intra5d || cache.weekly5y || cache.monthly;
           if (!daily || daily.length < 2) return;
@@ -4581,6 +4647,7 @@
           footerL.textContent = sym;
           footerR.textContent = 'as of ' + new Date(last[0] * 1000).toLocaleDateString('en-US');
           renderPerf();
+          renderRangePerf();
           renderOhl();
         }
 
@@ -4623,14 +4690,18 @@
           const wk52First = bars[0][4];
           const wk52Pct = (isFinite(wk52First) && wk52First)
             ? ((lastClose - wk52First) / wk52First) * 100 : null;
-          // First trading day of the current calendar year, based on the
-          // most recent bar's year. daily1y typically holds ~252 bars so
-          // Jan 1 of the current year is inside the window on any date.
+          // YTD base = the last close of the prior calendar year (the way
+          // Yahoo and every broker quote it), falling back to the first bar
+          // of this year if the series does not reach back that far. Same
+          // base the range-button strip uses, so the two YTD figures agree.
           const curYear = new Date(bars[bars.length - 1][0] * 1000).getUTCFullYear();
-          let ytdFirst = null;
+          let ytdFirst = null, prevYearLast = null;
           for (const b of bars) {
-            if (new Date(b[0] * 1000).getUTCFullYear() === curYear) { ytdFirst = b[4]; break; }
+            const by = new Date(b[0] * 1000).getUTCFullYear();
+            if (by < curYear) prevYearLast = b[4];
+            else if (ytdFirst == null) ytdFirst = b[4];
           }
+          if (prevYearLast != null) ytdFirst = prevYearLast;
           const ytdPct = (isFinite(ytdFirst) && ytdFirst)
             ? ((lastClose - ytdFirst) / ytdFirst) * 100 : null;
           const chip = (label, pct) => {
@@ -4883,7 +4954,20 @@
           });
         })();
 
-        switchTo(state.range);
+        // Two lines per range button: the label, and the return beneath it.
+        rangeEl.querySelectorAll('button[data-range]').forEach(b => {
+          const lbl = b.textContent.trim();
+          b.innerHTML = '<span class="rng-lbl">' + lbl + '</span><span class="rng-perf"></span>';
+        });
+        // The 3Y / 5Y / All returns need the weekly and monthly slots.
+        // Once the first chart is up, fetch them quietly so those buttons
+        // fill in and switching to them later is instant. A failure just
+        // leaves that line blank.
+        switchTo(state.range).then(async () => {
+          for (const k of ['5Y', 'All']) {
+            try { await ensureData(k); renderRangePerf(); } catch (e) { /* leave blank */ }
+          }
+        });
       }
 
       // -----------------------------------------------------------------
