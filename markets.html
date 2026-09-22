@@ -480,7 +480,17 @@
     }
 
     /* ---- Market stats: the total-return sheet ---- */
+    /* The page header holds the stats card on its right: title and lede on
+       the left, the card as a compact column on the right, stacking below
+       the text once the row gets too narrow. */
+    .hero-with-stats { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem 2.5rem; flex-wrap: wrap; padding-bottom: 1.25rem; }
+    .hero-with-stats .hero-text { flex: 1 1 440px; min-width: 0; }
     .stats-card { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap; }
+    .stats-card--hero { flex: 0 1 400px; flex-direction: column; align-items: flex-start; gap: 0.85rem; padding: 1.05rem 1.2rem; }
+    .stats-card--hero .stats-card-text { flex: 1 1 auto; }
+    .stats-card--hero .stats-card-text strong { font-size: 1rem; }
+    .stats-card--hero .stats-card-text span { font-size: 0.84rem; }
+    .stats-card--hero .btn-primary { align-self: stretch; text-align: center; }
     .stats-card-text { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; flex: 1 1 380px; }
     .stats-card-text strong { font-size: 1.05rem; }
     .stats-card-text span { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
@@ -646,13 +656,25 @@
 
   <main>
 
-    <section class="explainer-hero">
-      <p class="eyebrow">DASHBOARD</p>
-      <h1>Dashboard</h1>
-      <p class="lede">
-        All the key markets on one page — equities, developed and emerging markets, commodities,
-        currencies, rates, and volatility. Live delayed charts from TradingView.
-      </p>
+    <section class="explainer-hero hero-with-stats">
+      <div class="hero-text">
+        <p class="eyebrow">DASHBOARD</p>
+        <h1>Dashboard</h1>
+        <p class="lede">
+          All the key markets on one page — equities, developed and emerging markets, commodities,
+          currencies, rates, and volatility. Live delayed charts from TradingView.
+        </p>
+      </div>
+      <!-- Market stats sits beside the page title on purpose: it is the one
+           thing on this page that is a sheet rather than a chart. -->
+      <div class="card stats-card stats-card--hero">
+        <div class="stats-card-text">
+          <strong>Market stats &mdash; total returns, all markets</strong>
+          <span>55 benchmarks in five groups: equity indices, bonds, commodities, the S&amp;P sectors and the style factors. YTD through annualized 10-year, one screen. Rebuilt after every close.</span>
+          <span class="stats-asof" data-role="statsAsOf">Loading&hellip;</span>
+        </div>
+        <button type="button" class="btn-primary" id="statsOpen">Open market stats &rarr;</button>
+      </div>
     </section>
 
     <!-- MARKETS -->
@@ -1207,22 +1229,6 @@
             <span data-role="footerRight"></span>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- MARKET STATS — one-sheet total returns for every major market -->
-    <section id="market-stats">
-      <div class="section-head">
-        <h2>Market stats</h2>
-        <p>Every major market on one sheet, the way the Bloomberg total-return tables lay it out: equity indices, bonds, commodities, the eleven S&amp;P sectors and the style factors, with YTD, 1-week, 1 / 3 / 6 / 12-month and annualized 3 / 5 / 10-year returns. Rebuilt after every close.</p>
-      </div>
-      <div class="card stats-card">
-        <div class="stats-card-text">
-          <strong>Total returns &mdash; all markets</strong>
-          <span>55 benchmarks in five groups &mdash; the total-return index itself where Yahoo carries one, otherwise its ETF proxy (iShares wherever one exists), dividends reinvested. Green is up, red is down, every column on one screen.</span>
-          <span class="stats-asof" data-role="statsAsOf">Loading&hellip;</span>
-        </div>
-        <button type="button" class="btn-primary" id="statsOpen">Open market stats &rarr;</button>
       </div>
     </section>
 
