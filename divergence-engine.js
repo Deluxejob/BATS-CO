@@ -344,6 +344,8 @@
   //   markers: [{ at, kind:'buy'|'sell', rsiAt, rsiVal }]
   //                       -> draw these arrows instead (price + MACD panes),
   //                          with a dot on the RSI pane where it was extreme
+  //   showPending: true   -> with a custom marker list, still draw the dashed
+  //                          triangle for a qualifying cross on the open bar
   function buildChartSVG(an, tfKey, titleSym, opts) {
     opts = opts || {};
     const t = TF[tfKey];
@@ -483,7 +485,7 @@
         s += '<circle class="' + (up ? 'div-dot-bull' : 'div-dot-bear') + '" r="3.5" cx="' + x(sg.rsiAt).toFixed(1) + '" cy="' + yR(sg.rsiVal).toFixed(1) + '"/>';
       }
     }
-    if (an.sig.pending && !opts.markers && opts.macdMarkers !== false) {
+    if (an.sig.pending && (opts.markers ? opts.showPending : opts.macdMarkers !== false)) {
       const up = an.sig.pending.kind === 'buy', cls = 'sig-pending ' + (up ? 'sig-buy' : 'sig-sell');
       const xx = x(N - 1), ym = yM(an.macd.line[N - 1]);
       s += tri(xx, up ? ym + 5 : ym - 5, up, cls);

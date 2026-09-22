@@ -75,6 +75,11 @@
     .dv-cell-pending { font-size: 0.74rem; color: var(--warn); margin-top: 0.15rem; padding-top: 0.3rem; border-top: 1px dashed var(--border-soft); }
     .dv-cell-watch { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text); line-height: 1.45; margin-top: 0.15rem; padding-top: 0.3rem; border-top: 1px dashed var(--border-soft); }
     .dv-cell.bullish .dv-tag.playing { color: #22d39a; }
+    .dv-tag.sell { color: #ff5374; border-color: rgba(255, 83, 116, 0.4); }
+    .dv-tag.buy  { color: #22d39a; border-color: rgba(34, 211, 154, 0.4); }
+    .dv-armed { font-weight: 700; }
+    .dv-armed.sell { color: #ff8a9e; } .dv-armed.buy { color: #7be7c1; }
+    .dv-cell-track { font-size: 0.7rem; color: var(--text-faint); line-height: 1.45; margin-top: 0.15rem; padding-top: 0.3rem; border-top: 1px dashed var(--border-soft); }
     .dv-confirm.sell { color: #ff5374; font-weight: 700; }
     .dv-confirm.buy  { color: #22d39a; font-weight: 700; }
     .dv-readout {
@@ -151,7 +156,7 @@
         That is a <strong>negative (bearish) divergence</strong>. The mirror image &mdash; lower
         lows in price while momentum makes higher lows &mdash; is a <strong>positive (bullish)
         divergence</strong> and often shows up near bottoms. This page scans the S&amp;P 500,
-        Dow Jones and Nasdaq 100 on 60-minute, daily, weekly and monthly bars and flags both.
+        Dow Jones and Nasdaq 100 on 60-minute, daily, weekly and monthly bars and flags both, alongside RSI + MACD buy / sell signals.
       </p>
     </section>
 
@@ -171,8 +176,8 @@
       <div class="dv-readout" id="dvReadout"><p>Loading index data&hellip;</p></div>
 
       <div class="section-head dv-sig-head">
-        <h3>MACD crossover signals</h3>
-        <p>Buy when the MACD line crosses above its signal line after at least 10 bars below it; sell on the mirror-image cross. A cross counts only once its bar has closed, so the signal is stamped on the next bar.</p>
+        <h3>RSI + MACD buy / sell signals</h3>
+        <p>Sell when RSI has turned down from a recent high and the MACD line then crosses under its signal line after at least 10 bars above it; buy is the mirror image. A cross counts only once its bar has closed, so the signal is stamped on the next bar. Turns that came from overbought (RSI &ge;70) or oversold (&le;30) are marked &mdash; the stronger version. Same rule as the buy / sell tool on every ticker page.</p>
       </div>
       <div class="dv-grid" id="dvSigGrid">
         <div class="dv-grid-head"></div>
@@ -188,7 +193,7 @@
     <section id="charts">
       <div class="section-head">
         <h2>Charts</h2>
-        <p>Price on top, RSI(14) in the middle, MACD(12,26,9) at the bottom. Divergence lines connect the two peaks (or troughs) being compared. Dashed = still forming, not yet confirmed.</p>
+        <p>Price on top, RSI(14) in the middle, MACD(12,26,9) at the bottom. Divergence lines connect the two peaks (or troughs) being compared. Dashed = still forming, not yet confirmed. Triangles are the buy / sell signals; the dot on the RSI pane marks the high or low RSI turned from before each one.</p>
       </div>
       <div id="dvCharts"><!-- one card per index, populated by JS --></div>
     </section>
@@ -219,11 +224,18 @@
             would corrupt the indicators, so the monthly scan uses the ten-year feed that comes back complete. The first three years of it
             are spent warming up RSI and MACD, so the monthly chart shows roughly the last seven.</li>
       </ul>
-      <p><strong>MACD crossover signals</strong> follow a separate, simpler rule:</p>
+      <p><strong>Buy / sell signals</strong> follow a separate, simpler rule:</p>
       <ul>
         <li><strong>Buy</strong> when the MACD line crosses above its signal line after spending at least 10 closed bars below it.
             <strong>Sell</strong> when it crosses below after at least 10 closed bars above it. Crosses that come sooner are ignored,
             which filters out the quick back-and-forth wobbles when the two lines run close together.</li>
+        <li><strong>RSI has to have turned first.</strong> For a sell, RSI must already be below its high of the recent window (20 daily bars,
+            12 weekly, 24 hourly, 10 monthly) when the cross comes; for a buy, above its low. RSI does <em>not</em> have to have been overbought
+            or oversold &mdash; in practice almost every 10-bar cross passes this test, because by then RSI has long since turned. What the RSI
+            adds is context: each card and chart shows the reading the turn came from, and a turn from at or beyond 70 / 30 is marked as the
+            stronger version of the signal.</li>
+        <li><strong>Setup armed.</strong> When RSI has already turned but the MACD has not crossed yet, the card says so and tells you how many
+            more bars the lines need before a cross would count.</li>
         <li><strong>Confirmed on the next bar.</strong> A cross only counts once the bar it happened on has closed, so the marker sits on the
             bar after the cross: the next hour, the next day, or the first bar of the next week or month. A qualifying cross on the still-open bar is
             shown as <em>pending</em> and becomes a signal only if the bar closes that way.</li>
@@ -266,7 +278,7 @@
     // Indicator math, divergence detection, formatting and the chart builder
     // all live in divergence-engine.js (shared with the ticker-page tool).
     const {
-      TF, TF_KEYS, MACD_MIN_RUN, analyze, status,
+      TF, TF_KEYS, MACD_MIN_RUN, analyze, status, comboSignals, comboOutcomes,
       fmtDate, fmtP, fmt1, fmtPct, indName, normalizeBars, fetchSeries,
       buildChartSVG, mountChart, wireHover, legendHTML, footerText, sigListHTML, divListHTML,
     } = window.DivergenceEngine;
@@ -319,6 +331,8 @@
       }
     }
 
+    // Buy / sell signal cards: the RSI + MACD rule from the engine
+    // (comboSignals), the same one the ticker-page tool uses.
     function renderSigCell(sym, tf) {
       const cell = sigCellEls[sym][tf];
       const an = store[sym] && store[sym][tf];
@@ -328,23 +342,39 @@
         return;
       }
       const t = TF[tf], sg = an.sig, last = an.c.length - 1;
-      const sigs = sg.signals;
-      const cur = sigs.length ? sigs[sigs.length - 1] : null;
+      const cs = comboSignals(an, tf);
+      const cur = cs.latest;
       const barsAgo = cur ? last - cur.at : null;
       const fresh = cur && barsAgo <= t.recent;
+      const extremeWord = s => s.extreme ? (s.kind === 'sell' ? ' (overbought)' : ' (oversold)') : '';
       // Where things stand right now
       let now = '';
-      if (sg.side) {
-        const need = MACD_MIN_RUN - sg.run;
-        now = 'Now: MACD ' + sg.side + ' signal for ' + sg.run + ' bar' + (sg.run === 1 ? '' : 's') +
-              (need <= 0 ? ' &rarr; next cross ' + (sg.side === 'above' ? 'down = sell' : 'up = buy')
-                         : ' &rarr; needs ' + need + ' more before a cross counts');
+      // A fresh signal owns the card; the armed line only appears once it has aged out.
+      if (cs.armed && !fresh) {
+        const a = cs.armed, need = MACD_MIN_RUN - a.run;
+        now = '<span class="dv-armed ' + a.kind + '">Setup armed:</span> RSI turned ' + (a.kind === 'sell' ? 'down from ' : 'up from ') + fmt1(a.rsiVal) + extremeWord(a) +
+              ' on ' + fmtDate(an.ts[a.rsiAt], tf) + '; MACD still ' + (a.kind === 'sell' ? 'above' : 'below') + ' signal for ' + a.run + ' bar' + (a.run === 1 ? '' : 's') +
+              (need <= 0 ? ' &rarr; next cross ' + (a.kind === 'sell' ? 'down = sell' : 'up = buy') : ' &rarr; needs ' + need + ' more before a cross counts');
+      } else if (sg.side) {
+        now = 'Now: MACD ' + sg.side + ' signal for ' + sg.run + ' bar' + (sg.run === 1 ? '' : 's') + '; RSI ' + fmt1(cs.rsiNow) +
+              ' is still at its ' + (sg.side === 'above' ? 'high' : 'low') + ' of the window &mdash; no setup until it turns';
       }
       let pendingLine = '';
-      if (sg.pending) {
-        pendingLine = '<div class="dv-cell-pending">Pending: cross ' + (sg.pending.kind === 'buy' ? 'up' : 'down') + ' on the open bar &mdash; becomes a ' +
-                      sg.pending.kind.toUpperCase() + ' if it closes this way.</div>';
+      if (cs.pending) {
+        const p = cs.pending;
+        pendingLine = '<div class="dv-cell-pending">Pending: cross ' + (p.kind === 'buy' ? 'up' : 'down') + ' on the open bar after RSI turned from ' + fmt1(p.rsiVal) + extremeWord(p) +
+                      ' &mdash; becomes a ' + p.kind.toUpperCase() + ' if it closes this way.</div>';
       }
+      // How this index's own signals have played out, 10 bars on
+      let track = '';
+      const oc = comboOutcomes(an, cs.signals, [10]);
+      const line = kind => {
+        const sm = oc.summary[kind], b = sm.byH[10];
+        if (!sm.n || !b) return null;
+        return sm.n + ' ' + kind + (sm.n === 1 ? '' : 's') + ': ' + (kind === 'sell' ? 'lower' : 'higher') + ' 10 bars later ' + Math.round(b.hit * 100) + '% of the time';
+      };
+      const parts = [line('sell'), line('buy')].filter(Boolean);
+      if (parts.length) track = '<div class="dv-cell-track">On this chart &mdash; ' + parts.join(' &middot; ') + '</div>';
       if (!cur) {
         cell.className = 'dv-cell none';
         cell.innerHTML = '<div class="dv-cell-title">No signal yet</div><div class="dv-cell-meta">' + now + '</div>' + pendingLine;
@@ -352,11 +382,13 @@
       }
       cell.className = 'dv-cell ' + cur.kind + (fresh ? '' : ' stale');
       const title = (cur.kind === 'buy' ? 'Buy' : 'Sell') + ' signal' +
-        '<span class="dv-tag ' + (fresh ? 'forming' : 'confirmed') + '">' + (fresh ? barsAgo + ' bar' + (barsAgo === 1 ? '' : 's') + ' ago' : 'old') + '</span>';
+        '<span class="dv-tag ' + (fresh ? 'forming' : 'confirmed') + '">' + (fresh ? barsAgo + ' bar' + (barsAgo === 1 ? '' : 's') + ' ago' : 'old') + '</span>' +
+        (cur.extreme ? '<span class="dv-tag ' + cur.kind + '">' + (cur.kind === 'sell' ? 'from overbought' : 'from oversold') + '</span>' : '');
       const sub = 'Confirmed ' + fmtDate(an.ts[cur.at], tf, true) + ' at ' + fmtP(an.c[cur.at]);
-      const meta = 'Cross on ' + fmtDate(an.ts[cur.cross], tf) + ' after ' + cur.run + ' bars ' + (cur.kind === 'buy' ? 'below' : 'above') +
+      const meta = 'RSI turned ' + (cur.kind === 'sell' ? 'down from ' : 'up from ') + fmt1(cur.rsiVal) + ' on ' + fmtDate(an.ts[cur.rsiAt], tf) +
+                   '<br>Cross on ' + fmtDate(an.ts[cur.cross], tf) + ' after ' + cur.run + ' bars ' + (cur.kind === 'buy' ? 'below' : 'above') +
                    (fresh ? '' : '<br>' + barsAgo + ' bars ago') + '<br>' + now;
-      cell.innerHTML = '<div class="dv-cell-title">' + title + '</div><div class="dv-cell-sub">' + sub + '</div><div class="dv-cell-meta">' + meta + '</div>' + pendingLine;
+      cell.innerHTML = '<div class="dv-cell-title">' + title + '</div><div class="dv-cell-sub">' + sub + '</div><div class="dv-cell-meta">' + meta + '</div>' + pendingLine + track;
     }
 
     function renderCell(sym, tf) {
@@ -500,7 +532,7 @@
         list.innerHTML = '';
         return;
       }
-      const built = buildChartSVG(an, state.tf, sym);
+      const built = buildChartSVG(an, state.tf, sym, { markers: comboSignals(an, state.tf).signals, showPending: true });
       mountChart(svg, built);
       footR.textContent = footerText(an, state.tf);
       card.querySelector('[data-role="siglist"]').innerHTML = sigListHTML(an, state.tf, built.geom.start);
