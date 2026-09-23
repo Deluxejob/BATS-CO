@@ -4727,12 +4727,37 @@
             const j = await r.json();
             const q = j && j.quotes && j.quotes[sym];
             if (!q) return;
-            // Overwrite the daily-bar OHL with the live quote's values whenever
-            // available — they're the authoritative intraday extremes and
-            // beat the possibly-stale last daily bar (which only updates when
-            // /api/history is re-fetched).
-            if (q.regularMarketOpen != null || q.regularMarketDayHigh != null || q.regularMarketDayLow != null) {
-              paintOhl(q.regularMarketOpen, q.regularMarketDayHigh, q.regularMarketDayLow);
+            // The quote feed can run ahead of the chart feed: Yahoo leaves a
+            // just-finished session's daily bar without a close for hours,
+            // and /api/history is edge-cached for 15 minutes. When the quote's
+            // regular-session print is newer than the last daily bar — or the
+            // same day with a different close — patch that bar (or append
+            // one) so the big price, change, O/H/L, candle and the 1D/YTD/52W
+            // figures all agree with the quote instead of showing yesterday.
+            const d = cache.daily1y;
+            if (d && d.length && Number.isFinite(q.price) && Number.isFinite(q.regularMarketTime)) {
+              const dayOf = ts => new Date(ts * 1000).toISOString().slice(0, 10);
+              const last = d[d.length - 1];
+              const qDay = dayOf(q.regularMarketTime), lastDay = dayOf(last[0]);
+              const o = Number.isFinite(q.open)    ? q.open : q.price;
+              const h = Number.isFinite(q.dayHigh) ? Math.max(q.dayHigh, q.price) : q.price;
+              const l = Number.isFinite(q.dayLow)  ? Math.min(q.dayLow,  q.price) : q.price;
+              let changed = false;
+              if (qDay > lastDay) {
+                // Keep the same time-of-day Yahoo stamps daily bars with, so
+                // the new candle sits on the grid like the others.
+                d.push([Date.parse(qDay + 'T13:30:00Z') / 1000, o, h, l, q.price, 0]);
+                changed = true;
+              } else if (qDay === lastDay && last[4] !== q.price) {
+                last[1] = o; last[2] = h; last[3] = l; last[4] = q.price;
+                changed = true;
+              }
+              if (changed) { wk52 = fiftyTwoWeek(d); updateHeader(); redraw(); }
+            }
+            // Live O/H/L straight from the quote — the authoritative intraday
+            // extremes, ahead of whatever the last daily bar says.
+            if (q.open != null || q.dayHigh != null || q.dayLow != null) {
+              paintOhl(q.open, q.dayHigh, q.dayLow);
             }
             const state = String(q.marketState || '').toUpperCase();
             let tier = null;

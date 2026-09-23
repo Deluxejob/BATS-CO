@@ -47,6 +47,12 @@ function compactQuote(q) {
     prevClose:              pick('regularMarketPreviousClose'),
     dayChange:              pick('regularMarketChange'),
     dayChangePct:           pick('regularMarketChangePercent'),
+    // Regular-session open / high / low and the time of the last regular
+    // print, so a page can patch a lagging daily bar from the quote.
+    open:                   pick('regularMarketOpen'),
+    dayHigh:                pick('regularMarketDayHigh'),
+    dayLow:                 pick('regularMarketDayLow'),
+    regularMarketTime:      pick('regularMarketTime'),
     // Yahoo returns dividend yield as a percentage number (e.g. 0.44 = 0.44%)
     // in trailingAnnualDividendYield (fraction) — normalize to percent below.
     dividendYieldPct:       Number.isFinite(q.trailingAnnualDividendYield)

@@ -35,6 +35,23 @@ async function fetchYahooChart(sym, range, interval, wantOhlc) {
     const highs = q && q.high;
     const lows  = q && q.low;
     const vols  = q && q.volume;
+    // Yahoo leaves the just-finished session's last bar with a null close
+    // for hours after the bell (open/high/low are populated, close is not).
+    // The loop below would drop that bar entirely, so every page fed by
+    // this route showed the PRIOR day as "last close" all evening. The
+    // response meta carries the official close (regularMarketPrice stamped
+    // regularMarketTime), so patch it into the last bar — and only there.
+    const meta = result.meta || {};
+    const lastI = tss.length - 1;
+    if (lastI >= 0 && !Number.isFinite(closes[lastI])
+        && Number.isFinite(meta.regularMarketPrice) && Number.isFinite(meta.regularMarketTime)
+        && meta.regularMarketTime >= tss[lastI]) {
+      const c = meta.regularMarketPrice;
+      closes[lastI] = c;
+      if (opens && !Number.isFinite(opens[lastI])) opens[lastI] = c;
+      if (highs) highs[lastI] = Number.isFinite(highs[lastI]) ? Math.max(highs[lastI], c) : c;
+      if (lows)  lows[lastI]  = Number.isFinite(lows[lastI])  ? Math.min(lows[lastI],  c) : c;
+    }
     const out = [];
     for (let i = 0; i < tss.length; i++) {
       const c = closes[i];
