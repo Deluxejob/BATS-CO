@@ -1,22 +1,78 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1790153224,
-  "latestPublishedAt": 1790143428,
+  "fetchedAt": 1790176765,
+  "latestPublishedAt": 1790175764,
   "items": [
     {
+      "title": "Two Biotechs Get Beaten Down: Jaguar Health Collapses 59%, Viking Therapeutics Sinks 4%",
+      "link": "https://finance.yahoo.com/healthcare/articles/two-biotechs-beaten-down-jaguar-150244696.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790175764,
+      "id": "37aa686c-9c3b-309c-a735-94ed94472720"
+    },
+    {
+      "title": "McDonald’s Falls 4% as Investor Day Sets $8.5B Franchisee Support Plan; Wendy’s Dips, Yum! Brands Holds Steady",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/mcdonald-falls-4-investor-day-142936117.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790173776,
+      "id": "2cdad514-5d12-34c6-a2e4-cb7812008115"
+    },
+    {
+      "title": "Royal Caribbean Group Falls 5% on $3B Sandals Resorts Stake; Carnival and Norwegian Slide 3%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/royal-caribbean-group-falls-5-141638827.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790172998,
+      "id": "a17785d9-8000-3ead-b56e-bc61e8d88f43"
+    },
+    {
+      "title": "Fastly Just Ripped 138% This Year but It’s Now Falling. Is It Time to Sell?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/fastly-just-ripped-138-now-140538816.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790172338,
+      "id": "c81f7963-142e-3eee-8b5b-f9525e936da8"
+    },
+    {
+      "title": "Intel Skyrocketed 30% Higher in 1 Month: Here’s What to Do Now",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/intel-skyrocketed-30-higher-1-134257267.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790170977,
+      "id": "b73055ca-1edb-3833-bdbb-4d17e192efe3"
+    },
+    {
+      "title": "Exchange-Traded Funds Lower, Equity Futures Mixed Pre-Bell Wednesday as Traders Await Developments in US-Iran Talks",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/exchange-traded-funds-lower-equity-133135107.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1790170295,
+      "id": "52ee3077-7b18-3d5e-acc3-683984820c33"
+    },
+    {
+      "title": "Alibaba Falls 4% as Reported Beijing AI Probe Undercuts Chip Rally; Baidu Eases, JD.com Dips",
+      "link": "https://finance.yahoo.com/technology/ai/articles/alibaba-falls-4-reported-beijing-132444018.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790169884,
+      "id": "81926957-1d37-3e92-999f-ee41e2b86f62"
+    },
+    {
+      "title": "IonQ Surges 11% as NVIDIA Research Center Deal Follows Error-Decoder Breakthrough; D-Wave Climbs 5%, Rigetti Rises 4%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/ionq-surges-11-nvidia-research-131945976.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790169585,
+      "id": "ee6f99e6-9caa-39b8-9176-24f441952990"
+    },
+    {
+      "title": "The ‘Warsh Volatility Effect’ Means It’s Time to Lock In Profits",
+      "link": "https://finance.yahoo.com/m/fa24ddee-607f-3920-a957-4d616985d42b/the-%E2%80%98warsh-volatility-effect%E2%80%99.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1790168280,
+      "id": "fa24ddee-607f-3920-a957-4d616985d42b"
+    },
+    {
       "title": "Stock Market: Will S&P 500 Open Up or Down Today?",
-      "link": "https://finance.yahoo.com/m/acb58153-b072-37a4-ad5a-8f94ef613c24/stock-market%3A-will-s%26p-500.html",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-p-500-open-060348380.html",
       "publisher": "Benzinga Prediction Markets",
       "publishedAt": 1790143428,
       "id": "acb58153-b072-37a4-ad5a-8f94ef613c24"
-    },
-    {
-      "title": "Lock In 2026 Profits Before Warsh Takes Them Away",
-      "link": "https://finance.yahoo.com/m/fa24ddee-607f-3920-a957-4d616985d42b/lock-in-2026-profits-before.html",
-      "publisher": "Barrons.com",
-      "publishedAt": 1790139600,
-      "id": "fa24ddee-607f-3920-a957-4d616985d42b"
     },
     {
       "title": "Invest Like Buffett: Lessons From the Oracle of Omaha",
@@ -27,52 +83,31 @@
     },
     {
       "title": "The Market Is Near Another All-Time High and You’re 66 With Cash to Invest. Buying Now Feels Like the Top. These 3 ETFs Are How You Get In Anyway",
-      "link": "https://finance.yahoo.com/m/6bfce66c-9ed1-32e5-ab44-08a3638cb612/the-market-is-near-another.html",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/market-near-another-time-high-222553442.html",
       "publisher": "24/7 Wall St.",
       "publishedAt": 1790115953,
       "id": "6bfce66c-9ed1-32e5-ab44-08a3638cb612"
     },
     {
       "title": "VGT Holders Bought ‘Tech’ and Own No Google, Meta, or Amazon: The Sector Rule That Decides What’s Inside",
-      "link": "https://finance.yahoo.com/m/9eace8c6-764d-3cf8-8db1-6af1f9e20cce/vgt-holders-bought-%E2%80%98tech%E2%80%99-and.html",
+      "link": "https://finance.yahoo.com/technology/articles/vgt-holders-bought-tech-own-221504326.html",
       "publisher": "24/7 Wall St.",
       "publishedAt": 1790115304,
       "id": "9eace8c6-764d-3cf8-8db1-6af1f9e20cce"
     },
     {
       "title": "Nasdaq Jumps To Close At Record As Chipmakers Climb, Oil Prices Cool — AAPL, META, SPCX, MSFT, VKTX In Focus",
-      "link": "https://finance.yahoo.com/m/e59fc4ec-18c2-366a-ae39-5881feb805de/nasdaq-jumps-to-close-at.html",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/nasdaq-jumps-close-record-chipmakers-212609686.html",
       "publisher": "Stocktwits",
       "publishedAt": 1790112369,
       "id": "e59fc4ec-18c2-366a-ae39-5881feb805de"
     },
     {
-      "title": "12 S&P 500 Stocks Join Trillion-Dollar Club — What Could Go Wrong?",
-      "link": "https://finance.yahoo.com/m/5e66dab7-8878-3060-a695-fcaf0a891a01/12-s%26p-500-stocks-join.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1790106077,
-      "id": "5e66dab7-8878-3060-a695-fcaf0a891a01"
-    },
-    {
       "title": "Skyworks Just Surged 33% in a Month: Is It Too Late to Buy SWKS Stock Now?",
-      "link": "https://finance.yahoo.com/m/87b80507-e02e-39c0-855c-54c4c852c677/skyworks-just-surged-33%25-in-a.html",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/skyworks-just-surged-33-month-191252439.html",
       "publisher": "24/7 Wall St.",
       "publishedAt": 1790104372,
       "id": "87b80507-e02e-39c0-855c-54c4c852c677"
-    },
-    {
-      "title": "Adobe Is Down 32% This Year: Is ADBE Stock Dead Money or Due for a Bounce?",
-      "link": "https://finance.yahoo.com/m/b22b00da-e322-3f1a-bb33-b4debe123b1a/adobe-is-down-32%25-this-year%3A.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790103564,
-      "id": "b22b00da-e322-3f1a-bb33-b4debe123b1a"
-    },
-    {
-      "title": "ETF Zoo: 6 Pundits Walk Into a Bar",
-      "link": "https://finance.yahoo.com/m/559bda80-e438-38f7-933f-7efb5fd10b85/etf-zoo%3A-6-pundits-walk-into.html",
-      "publisher": "etf.com",
-      "publishedAt": 1790100541,
-      "id": "559bda80-e438-38f7-933f-7efb5fd10b85"
     }
   ]
 }
