@@ -4016,11 +4016,14 @@
           para.push(line);
         }
         flush();
+        // The model is told "no markdown", but a stray **label:** still slips
+        // through now and then — render it as bold instead of showing stars.
+        const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         let html = '';
         for (const b of blocks) {
           if (b.type === 'header') html += '<h4>' + esc(b.text) + '</h4>';
           else if (b.type === 'disclaimer') html += '<p class="disclaimer">' + esc(b.text) + '</p>';
-          else html += '<p' + (b.text.trim().startsWith('[Error]') ? ' class="error"' : '') + '>' + esc(b.text) + '</p>';
+          else html += '<p' + (b.text.trim().startsWith('[Error]') ? ' class="error"' : '') + '>' + inline(b.text) + '</p>';
         }
         if (cursor) html += '<span class="brief-cursor"></span>';
         body.innerHTML = html;

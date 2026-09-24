@@ -155,7 +155,13 @@ function buildContext(et, state, ctx) {
   const q = ctx.quotes;
   const line = (sym, label, opts = {}) => {
     const x = q[sym]; if (!x) return `  ${label}: n/a`;
-    const price = opts.yield ? num(x.price / 10) + '%' : (opts.plain ? num(x.price) : money(x.price));
+    if (opts.yield) {
+      // ^TNX quotes the yield itself in percent (e.g. 4.12). A yield's move
+      // is meaningful in basis points, not as a % of itself.
+      const bp = (Number.isFinite(x.price) && Number.isFinite(x.prevClose)) ? Math.round((x.price - x.prevClose) * 100) : null;
+      return `  ${label}: ${num(x.price)}% (${bp == null ? 'n/a' : (bp >= 0 ? '+' : '') + bp + ' bp vs prior close, from ' + num(x.prevClose) + '%'})`;
+    }
+    const price = opts.plain ? num(x.price) : money(x.price);
     let s = `  ${label}: ${price} (${pct(x.dayChangePct)} vs prior close)`;
     if (x.preMarketPrice != null && x.preMarketChangePercent != null)  s += ` · pre-market ${money(x.preMarketPrice)} (${pct(x.preMarketChangePercent)})`;
     if (x.postMarketPrice != null && x.postMarketChangePercent != null) s += ` · after-hours ${money(x.postMarketPrice)} (${pct(x.postMarketChangePercent)})`;
@@ -261,8 +267,9 @@ EARNINGS IN FOCUS
 TONE & DIRECTION RIGHT NOW
 WHAT TO WATCH NEXT
 
-Under WHAT'S DRIVING MARKETS, touch on rates, energy/the dollar, Washington or policy, and company/CEO news where the headlines support it — one or two sentences each, and say "no fresh headline" where they don't.
-Keep the whole brief under 450 words. Short paragraphs, no bullet lists, no unexplained jargon.
+Under WHAT'S DRIVING MARKETS, touch on rates, energy/the dollar, Washington or policy, and company/CEO news where the headlines support it — one or two sentences each, and say "no fresh headline" where they don't. Start each of those sentences with the topic as a plain word and a colon, e.g. "Rates: ..." — never with asterisks, bold, or bullets.
+Yields are given in percent with their move in basis points (bp); quote them that way (e.g. "the 10-year rose 15 bp to 5.11%"), never as a percentage change of the yield itself.
+Keep the whole brief under 450 words. Plain text only: no markdown, no asterisks, no bullet lists, no unexplained jargon.
 
 End with this exact line on its own, no formatting:
 AI-generated summary of live quotes and published headlines at the time shown. Not investment advice.`;
