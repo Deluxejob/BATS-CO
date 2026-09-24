@@ -1075,6 +1075,49 @@
     }
     .internals-modal-close:hover { color: var(--term-text); border-color: var(--term-amber); }
     .internals-modal-body { padding: 0.85rem 1rem 1rem; overflow: auto; }
+
+    /* AI market brief — a small pill in the page header that opens a
+       pop-up (reuses the internals-modal chrome) and streams a short
+       state-of-the-market note from /api/market-brief. */
+    .brief-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      background: var(--term-amber); color: #0a1218;
+      border: 0; border-radius: 4px; padding: 0.42rem 0.75rem; cursor: pointer;
+      box-shadow: 0 3px 10px rgba(255, 182, 88, 0.22);
+      white-space: nowrap; align-self: center; margin-left: auto;
+    }
+    .brief-btn:hover { filter: brightness(1.08); }
+    .brief-btn:disabled { cursor: wait; opacity: 0.75; box-shadow: none; }
+    .brief-btn.loading { background: var(--term-panel-2); color: var(--term-amber); border: 1px solid var(--term-amber); box-shadow: none; }
+    .brief-btn .lbl-short { display: none; }
+    @media (max-width: 720px) {
+      .brief-btn { margin-left: 0; }
+      .brief-btn .lbl-long { display: none; }
+      .brief-btn .lbl-short { display: inline; }
+    }
+    .brief-modal { max-width: 760px; }
+    .brief-body { color: var(--term-text); font-size: 0.92rem; line-height: 1.55; }
+    .brief-body h4 {
+      margin: 1rem 0 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--term-amber);
+    }
+    .brief-body h4:first-child { margin-top: 0.15rem; }
+    .brief-body p { margin: 0 0 0.6rem; white-space: pre-wrap; }
+    .brief-body p.disclaimer { margin-top: 0.9rem; font-size: 0.74rem; color: var(--term-dim); font-style: italic; }
+    .brief-body p.error { color: var(--term-red); }
+    .brief-cursor { display: inline-block; width: 0.55em; height: 1em; background: var(--term-amber); vertical-align: -0.15em; animation: brief-blink 0.9s steps(1) infinite; }
+    @keyframes brief-blink { 50% { opacity: 0; } }
+    .brief-foot {
+      display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
+      margin-top: 0.85rem; padding-top: 0.6rem; border-top: 1px solid var(--term-border);
+      font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--term-dim);
+    }
+    @media (max-width: 720px) {
+      .internals-modal-backdrop.brief-open { padding: 0; }
+      .internals-modal.brief-modal { max-width: none; max-height: none; height: 100%; border-radius: 0; border: 0; }
+    }
     .internals-cols {
       display: grid;
       grid-template-columns: 1fr;
@@ -1318,6 +1361,12 @@
         <p class="eyebrow">QUOTES // OVERVIEW</p>
         <h1>Look up a ticker or scan today&rsquo;s market</h1>
       </div>
+      <button type="button" class="brief-btn" id="briefBtn" title="AI-generated state-of-the-market note: overnight action, this morning's headlines, what's moving markets, earnings, tone right now">
+        <span aria-hidden="true">🎯</span>
+        <span class="lbl-long" data-role="briefLabel">AI MARKET BRIEF</span>
+        <span class="lbl-short">AI BRIEF</span>
+        <span aria-hidden="true">&rarr;</span>
+      </button>
       <form class="ticker-search" id="tickerSearchForm">
         <input type="text" id="tickerSearchInput" placeholder="Ticker or company (AAPL, Apple, Vanguard…)" autocomplete="off" spellcheck="false" required />
         <button type="submit">GO &rarr;</button>
@@ -1387,6 +1436,23 @@
     <!-- Market-internals detail modal — opens when a breadth card is
          clicked, shows the underlying per-sector detail (which sectors
          pass / fail the criterion the card measures). -->
+    <!-- AI market brief pop-up. Same chrome as the internals modal; body
+         streams from /api/market-brief (shared 10/30-minute cache). -->
+    <div class="internals-modal-backdrop" id="briefModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="briefModalTitle">
+      <div class="internals-modal brief-modal">
+        <div class="internals-modal-head">
+          <h3 id="briefModalTitle">AI Market Brief
+            <span class="sub" id="briefModalSub">Claude Haiku 4.5 &middot; live quotes + published headlines at the moment you clicked &middot; not investment advice</span>
+          </h3>
+          <button type="button" class="internals-modal-close" id="briefModalClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="internals-modal-body">
+          <div class="brief-body" id="briefBody"></div>
+          <div class="brief-foot" id="briefFoot" hidden></div>
+        </div>
+      </div>
+    </div>
+
     <div class="internals-modal-backdrop" id="internalsModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="internalsModalTitle">
       <div class="internals-modal">
         <div class="internals-modal-head">
@@ -3914,6 +3980,138 @@
       load();
     })();
 
+  </script>
+  <script>
+    // AI market brief — the header pill opens a pop-up and streams
+    // /api/market-brief into it. The server keeps one shared brief for
+    // 10 minutes while the market is open (30 after), so most clicks are
+    // instant replays; the page re-asks after 10 minutes so the reader
+    // always gets the current picture.
+    (function () {
+      const btn      = document.getElementById('briefBtn');
+      const backdrop = document.getElementById('briefModalBackdrop');
+      const closeBtn = document.getElementById('briefModalClose');
+      const body     = document.getElementById('briefBody');
+      const foot     = document.getElementById('briefFoot');
+      const lbl      = btn && btn.querySelector('[data-role="briefLabel"]');
+      if (!btn || !backdrop || !closeBtn || !body || !foot) return;
+
+      const HEADERS = ["OVERNIGHT & FUTURES", "TODAY'S HEADLINES", "THIS MORNING'S HEADLINES",
+                       "WHAT'S DRIVING MARKETS", "EARNINGS IN FOCUS", "TONE & DIRECTION RIGHT NOW", "WHAT TO WATCH NEXT"];
+      const headerRe = new RegExp('^(?:\\d+\\.\\s*)?(' + HEADERS.map(h => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\.?:?\\s*$', 'i');
+      const disclaimerRe = /^AI-generated summary of live quotes and published headlines/i;
+      const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+      // Plain text → blocks: known section titles become <h4>, the closing
+      // disclaimer gets its own style, everything else is a paragraph.
+      function render(raw, cursor) {
+        const blocks = []; let para = [];
+        const flush = () => { if (para.length) { blocks.push({ type: 'para', text: para.join('\n') }); para = []; } };
+        for (const line of raw.split(/\r?\n/)) {
+          const t = line.trim().replace(/[‘’]/g, "'");
+          if (!t) { flush(); continue; }
+          if (disclaimerRe.test(t)) { flush(); blocks.push({ type: 'disclaimer', text: t }); continue; }
+          const m = t.match(headerRe);
+          if (m) { flush(); blocks.push({ type: 'header', text: m[1].toUpperCase() }); continue; }
+          para.push(line);
+        }
+        flush();
+        let html = '';
+        for (const b of blocks) {
+          if (b.type === 'header') html += '<h4>' + esc(b.text) + '</h4>';
+          else if (b.type === 'disclaimer') html += '<p class="disclaimer">' + esc(b.text) + '</p>';
+          else html += '<p' + (b.text.trim().startsWith('[Error]') ? ' class="error"' : '') + '>' + esc(b.text) + '</p>';
+        }
+        if (cursor) html += '<span class="brief-cursor"></span>';
+        body.innerHTML = html;
+      }
+
+      let inflight = null, aborted = false, doneAt = 0;
+      const REUSE_MS = 10 * 60 * 1000;
+
+      function setParam(on) {
+        try {
+          const u = new URL(window.location.href);
+          if (on) u.searchParams.set('tool', 'brief'); else u.searchParams.delete('tool');
+          history.replaceState(null, '', u.toString());
+        } catch (e) { /* fine without it */ }
+      }
+      function open() {
+        backdrop.classList.add('open', 'brief-open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        const scroller = body.parentElement; if (scroller) scroller.scrollTop = 0;
+        setParam(true);
+      }
+      function close() {
+        backdrop.classList.remove('open', 'brief-open');
+        backdrop.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (inflight) { aborted = true; inflight.abort(); }
+        setParam(false);
+      }
+
+      async function run() {
+        // A brief finished in the last 10 minutes just re-opens.
+        if (inflight || (doneAt && Date.now() - doneAt < REUSE_MS)) { open(); return; }
+        open();
+        body.innerHTML = '<p>Reading the tape and the latest headlines&hellip; <span class="brief-cursor"></span></p>';
+        foot.hidden = true;
+        btn.disabled = true; btn.classList.add('loading');
+        if (lbl) lbl.textContent = 'WRITING BRIEF…';
+        let raw = '', meta = null;
+        aborted = false;
+        inflight = new AbortController();
+        const startedAt = Date.now();
+        try {
+          const r = await fetch('/api/market-brief', { signal: inflight.signal, headers: { 'Accept': 'text/event-stream' }, cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const reader = r.body.getReader();
+          const dec = new TextDecoder();
+          let buf = '';
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let sep;
+            while ((sep = buf.indexOf('\n\n')) !== -1) {
+              const chunk = buf.slice(0, sep); buf = buf.slice(sep + 2);
+              for (const line of chunk.split(/\r?\n/)) {
+                if (!line.startsWith('data:')) continue;
+                let evt; try { evt = JSON.parse(line.slice(5).trim()); } catch (_) { continue; }
+                if (evt.type === 'text' && typeof evt.text === 'string') { raw += evt.text; render(raw, true); }
+                else if (evt.type === 'meta') meta = evt;
+                else if (evt.type === 'error') { raw += '\n\n[Error] ' + (evt.message || 'unknown'); render(raw, false); }
+              }
+            }
+          }
+        } catch (e) {
+          if (e.name !== 'AbortError') raw += '\n\n[Error] ' + (e.message || e);
+        } finally {
+          inflight = null;
+          if (aborted) {
+            body.innerHTML = ''; aborted = false; doneAt = 0;
+          } else {
+            render(raw, false);
+            const ok = raw.trim().length > 0 && !/\[Error\]/.test(raw);
+            doneAt = ok ? Date.now() : 0;
+            const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
+            const when = meta && meta.asOf ? 'Generated ' + esc(String(meta.asOf)) : 'Generated just now';
+            const how  = meta && meta.cached ? 'shared brief, refreshes every 10–30 min' : 'fresh, ' + secs + 's';
+            foot.innerHTML = '<span>' + when + ' · ' + how + '</span><span>Claude Haiku 4.5 · Not investment advice</span>';
+            foot.hidden = !ok;
+          }
+          btn.disabled = false; btn.classList.remove('loading');
+          if (lbl) lbl.textContent = 'AI MARKET BRIEF';
+        }
+      }
+
+      btn.addEventListener('click', run);
+      closeBtn.addEventListener('click', close);
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
+      if (new URLSearchParams(window.location.search).get('tool') === 'brief') setTimeout(run, 0);
+    })();
   </script>
   <script src="ticker-search.js" defer></script>
 </body>
