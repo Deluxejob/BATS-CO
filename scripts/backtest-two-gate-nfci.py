@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Backtest the iQuant.pro "RSI < 40 OR NFCI < SMA50" QQQ strategy.
+Backtest the Two-Gate "RSI < 40 OR NFCI < SMA50" QQQ strategy.
 
-The rule (per iQuant marketing material dated 2026-09-02):
+The rule (as it circulated in vendor marketing material, 2026-09-02):
     Be LONG QQQ when EITHER
         RSI(QQQ, 14) < 40                       (tech gate: oversold)
       OR
@@ -288,7 +288,7 @@ def main() -> int:
     print_result("Strategy (SMA50 = 50 weeks)",         resB, pct_days_invested(invB, first))
 
     # Scaled to $10,000 starting balance so the numbers line up with
-    # iQuant's marketing ("$10K → $1.16M").
+    # the vendor marketing claim ("$10K → $1.16M").
     print("\nSCALED to $10,000 starting balance:")
     for name, r in [("Buy & Hold QQQ", resBH),
                     ("Strategy (SMA50 = 50 days)", resA),
