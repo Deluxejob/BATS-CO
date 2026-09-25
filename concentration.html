@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Market Concentration — BATS.CO</title>
-  <meta name="description" content="Are the top 10 stocks dominating, or is the broader market winning? Historical return comparison across 1D, 1W, 1M, 1Q, 6M, 1Y for both the S&P 500 and Nasdaq 100." />
+  <meta name="description" content="Are the Magnificent 7 dominating, or is the broader market winning? Historical return comparison across 1D, 1W, 1M, 1Q, 6M, 1Y for both the S&P 500 and Nasdaq 100." />
   <!-- BATS SEO block -->
   <link rel="canonical" href="https://bats.co/concentration.html">
   <meta property="og:site_name" content="BATS.CO">
   <meta property="og:title" content="Market Concentration — BATS.CO">
-  <meta property="og:description" content="Are the top 10 stocks dominating, or is the broader market winning? Historical return comparison across 1D, 1W, 1M, 1Q, 6M, 1Y for both the S&amp;P 500 and Nasdaq 100.">
+  <meta property="og:description" content="Are the Magnificent 7 dominating, or is the broader market winning? Historical return comparison across 1D, 1W, 1M, 1Q, 6M, 1Y for both the S&amp;P 500 and Nasdaq 100.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://bats.co/concentration.html">
   <meta property="og:image" content="https://bats.co/og-card.png?v=2">
   <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="">
-  <meta name="twitter:description" content="Are the top 10 stocks dominating, or is the broader market winning? Historical return comparison across 1D, 1W, 1M, 1Q, 6M, 1Y for both the S&amp;P 500 and Nasdaq 100.">
+  <meta name="twitter:description" content="Are the Magnificent 7 dominating, or is the broader market winning? Historical return comparison across 1D, 1W, 1M, 1Q, 6M, 1Y for both the S&amp;P 500 and Nasdaq 100.">
   <meta name="twitter:image" content="https://bats.co/og-card.png?v=2">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -72,7 +72,7 @@
         The &ldquo;Magnificent 7&rdquo; trade of 2023&ndash;2024 taught investors an uncomfortable lesson:
         a handful of megacaps can drag an entire index up (or down) while the average
         stock does something completely different. This page measures that split two ways
-        &mdash; first with the <strong>top 10 stocks vs the equal-weighted broad market</strong>,
+        &mdash; first with the <strong>Magnificent 7 vs the equal-weighted broad market</strong>,
         then with a purer <strong>cap-weighted vs equal-weighted full-index comparison</strong>
         for both the S&amp;P 500 and Nasdaq 100.
       </p>
@@ -81,7 +81,7 @@
     <section id="conc-gauge-section">
       <div class="section-head">
         <h2>Who's winning right now?</h2>
-        <p>Return gap between the equal-weighted top <span data-top-n>10</span> and the equal-weighted broad market over the selected window. The needle tells the story at a glance.</p>
+        <p>Return gap between the equal-weighted Magnificent 7 and the equal-weighted broad market over the selected window. The needle tells the story at a glance.</p>
       </div>
       <div class="conc-gauge-picker" id="concGaugePicker" role="tablist" aria-label="Time period">
         <button type="button" data-period="d1">1D</button>
@@ -109,11 +109,11 @@
 
     <section id="concentration">
       <div class="section-head">
-        <h2>Top <span data-top-n>10</span> vs Equal Weight</h2>
+        <h2>Magnificent 7 vs Equal Weight</h2>
         <p>
-          Equal-weighted average return of today's top <span data-top-n>10</span> constituents,
-          compared to the equal-weighted broad-market ETF. A large positive gap =
-          megacap dominance. A large negative gap = broadening rally.
+          Equal-weighted average return of the Magnificent 7 &mdash; Apple, Microsoft, Nvidia, Amazon,
+          Alphabet, Meta and Tesla &mdash; compared to the equal-weighted broad-market ETF. A large
+          positive gap = megacap dominance. A large negative gap = broadening rally.
         </p>
       </div>
       <div class="conc-summary" id="concSummary" hidden></div>
@@ -126,7 +126,7 @@
     <section id="tickers">
       <div class="section-head">
         <h2>The tickers being tracked</h2>
-        <p>Today's top constituents by market cap. These change slowly over time &mdash; we use the current list for the entire historical window.</p>
+        <p>The seven megacap tech names that led the 2023&ndash;2024 rally. The same seven are used for the entire historical window, so the list never changes under you.</p>
       </div>
       <div class="ticker-chips" id="concentrationTickers"></div>
     </section>
@@ -136,7 +136,7 @@
         <h2>Cap-weight vs Equal-weight &mdash; full-index concentration</h2>
         <p>
           A cleaner concentration measure that doesn&rsquo;t depend on picking a
-          top-10 list. Each index has a <strong>cap-weighted</strong> version
+          short list of names. Each index has a <strong>cap-weighted</strong> version
           (SPY, QQQ &mdash; the ETFs everyone quotes) and an <strong>equal-weighted</strong>
           version (RSP, QQEW &mdash; each of the 500 or 100 stocks weighted equally).
           When cap-weighted beats equal-weighted, the mega-caps are dragging the whole
@@ -211,27 +211,29 @@
       <ol class="usage-list">
         <li>
           <strong>Gap is the story.</strong>
-          If the top <span data-top-n>10</span> are beating the broad market (positive gap), the index rally is being
+          If the Magnificent 7 are beating the broad market (positive gap), the index rally is being
           led by megacaps &mdash; a "narrow" market. If the broad market is beating the
-          top <span data-top-n>10</span> (negative gap), participation is broadening &mdash; historically a
+          Magnificent 7 (negative gap), participation is broadening &mdash; historically a
           healthier setup.
         </li>
         <li>
-          <strong>Longer windows are less accurate.</strong>
-          We use today's top <span data-top-n>10</span> for the entire lookback. Nvidia wasn't in the top 10
-          before 2023, and Meta hit the top 10 later than most. Over 1D, 1W, 1M, 1Q
-          this is fine; over 6M and 1Y it's approximately right; before that it drifts.
+          <strong>Longer windows measure the group, not the leadership.</strong>
+          The same seven names are used for the entire lookback, so nothing is swapped in or out with
+          hindsight. But the "Magnificent 7" label only dates from 2023; before that, these were seven
+          large tech stocks that had not yet become the market's leaders. Over 1D, 1W, 1M, 1Q the
+          comparison is clean; over 6M and 1Y it is still fair; further back it says less about
+          today's concentration.
         </li>
         <li>
           <strong>Cross-reference with the BATS.</strong>
-          When the top <span data-top-n>10</span> vs broad gap is stretched (either direction), and the BATS
+          When the Magnificent 7 vs broad gap is stretched (either direction), and the BATS
           Breadth component is also flagging extremes, the concentration story is
           especially strong.
         </li>
         <li>
           <strong>Note the sector concentration.</strong>
-          The <span data-market-label>S&amp;P 500</span>'s top <span data-top-n>10</span> is heavily tech.
-          When tech leads the index, this table shows a big positive gap; when
+          The Magnificent 7 are all tech or tech-adjacent. When tech leads the
+          <span data-market-label>S&amp;P 500</span>, this table shows a big positive gap; when
           value/dividend stocks lead, the gap flips negative.
         </li>
       </ol>

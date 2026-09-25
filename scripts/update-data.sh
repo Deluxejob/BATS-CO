@@ -136,9 +136,10 @@ fetch_yahoo_daily "^NDX"  "$DATA_DIR/ndx.csv" "631152000"    # 1990-01-01
 fetch_yahoo_daily "QQQ"   "$DATA_DIR/qqq.csv" "920851200"    # 1999-03-10 (QQQ inception)
 fetch_yahoo_daily "QQEW"  "$DATA_DIR/qqew.csv" "1145404800"  # 2006-04-19 (QQEW inception)
 
-# Top-10 constituent tickers used on the Concentration page.
+# Magnificent 7 tickers used on the Concentration page (folder name kept
+# as top10/ so existing paths in app.js keep working).
 mkdir -p "$DATA_DIR/top10"
-for sym in AAPL MSFT NVDA AMZN GOOGL META BRK-B TSLA LLY JPM AVGO COST NFLX; do
+for sym in AAPL MSFT NVDA AMZN GOOGL META TSLA; do
   fname="$(echo "$sym" | tr 'A-Z' 'a-z').csv"
   fetch_yahoo_daily "$sym" "$DATA_DIR/top10/$fname" "946684800"  # 2000-01-01
 done
@@ -151,10 +152,6 @@ fetch_yahoo_daily "USO" "$DATA_DIR/uso.csv" "1144540800"  # 2006-04-09 (inceptio
 # for the Bond Fear Spike card on market-signals.html. Published once a
 # day after the bond close; Yahoo's daily history starts 2002-11-12.
 fetch_yahoo_daily "^MOVE" "$DATA_DIR/move.csv" "1037059200"  # 2002-11-12
-
-# SpaceX (SPCX) — IPO'd June 2026. Not in the Concentration list until it
-# joins the S&P 500; fetched anyway so the file is ready when it does.
-fetch_yahoo_daily "SPCX" "$DATA_DIR/top10/spcx.csv" "1780272000" 20  # 2026-06-01; accept a short file
 
 # --- Market Ratios page — every symbol used by a card on market-ratios.html ---
 mkdir -p "$DATA_DIR/ratios"

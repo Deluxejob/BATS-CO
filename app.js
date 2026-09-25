@@ -137,15 +137,12 @@ const MARKET_CONFIG = {
 
 const MC = MARKET_CONFIG[MARKET];
 
-// Top 10 constituents by market cap (as of 2026). We use today's top 10 for
-// the whole historical window — introduces mild look-ahead bias at long
-// lookbacks but is accurate for what matters most (recent concentration).
-const TOP10_TICKERS = {
-  // SPCX (SpaceX, IPO June 2026) is top-tier by market cap but not an S&P 500
-  // member yet (12-month seasoning rule) — add it back once it joins.
-  sp500:  ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'BRK-B', 'TSLA', 'LLY',  'JPM'],
-  nasdaq: ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA',  'AVGO', 'COST', 'NFLX'],
-};
+// The "Magnificent 7" — the megacap tech group the Concentration page
+// measures against the equal-weighted broad market. Same seven names for
+// the S&P 500 and Nasdaq 100 views (all seven sit in both indexes); only
+// the broad reference differs (RSP vs QQEW). Using a fixed, named group
+// instead of "today's top 10" keeps the list stable and easy to explain.
+const MAG7_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA'];
 
 // ============================================================
 // INDICATOR SCORING
@@ -2299,7 +2296,7 @@ function renderSubHistory(elemId, computeFn, batsAt, latestIdx) {
 }
 
 // ============================================================
-// CONCENTRATION PAGE — Top 10 constituents vs broad market
+// CONCENTRATION PAGE — Magnificent 7 vs broad market
 // Renders only when the concentration.html page is loaded (detected by
 // presence of the #concentrationTable element).
 // ============================================================
@@ -2319,7 +2316,7 @@ const CONC_BUCKETS = [
   { label: 'Very Broad',            color: 'var(--s6)' },
 ];
 
-// Gap = top10 − broad. Positive gap (megacaps winning) → LOW score.
+// Gap = Mag 7 − broad. Positive gap (megacaps winning) → LOW score.
 // Negative gap (broad winning) → HIGH score. Full-scale at ±10%.
 function scoreConcentration(gap) {
   if (gap == null || isNaN(gap)) return null;
@@ -2327,9 +2324,8 @@ function scoreConcentration(gap) {
   return Math.max(5, Math.min(95, score));
 }
 
-// Number of constituents in the current market's list (11 for S&P, 10 for
-// Nasdaq); renderConcentration sets it before the gauge is drawn.
-let CONC_TOP_N = 10;
+// Short name for the tracked group, used in the gauge readout.
+const CONC_GROUP = 'Mag 7';
 
 function setConcentrationGauge(gap, periodLabel) {
   const marker = document.getElementById('concGaugeMarker');
@@ -2338,7 +2334,7 @@ function setConcentrationGauge(gap, periodLabel) {
   if (!marker) return;
   if (gap == null) {
     if (reading) reading.textContent = 'Not enough data';
-    if (valueEl) valueEl.textContent = periodLabel ? `${periodLabel} Top ${CONC_TOP_N} gap: —` : '';
+    if (valueEl) valueEl.textContent = periodLabel ? `${periodLabel} ${CONC_GROUP} gap: —` : '';
     marker.style.left = '50%';
     return;
   }
@@ -2349,7 +2345,7 @@ function setConcentrationGauge(gap, periodLabel) {
   if (valueEl) {
     const sign = gap >= 0 ? '+' : '';
     const label = periodLabel || '1 Week';
-    valueEl.textContent = `${label} Top ${CONC_TOP_N} gap: ${sign}${gap.toFixed(2)}%`;
+    valueEl.textContent = `${label} ${CONC_GROUP} gap: ${sign}${gap.toFixed(2)}%`;
   }
 }
 
@@ -2388,14 +2384,12 @@ async function renderConcentration() {
   const table = document.getElementById('concentrationTable');
   if (!table) return;
 
-  const tickers = TOP10_TICKERS[MARKET];
-  CONC_TOP_N = tickers.length;
+  const tickers = MAG7_TICKERS;
   const broadCsv = MC.breadthEqualCsv;  // RSP or QQEW
 
-  // Fetch top tickers + the broad reference in parallel. A missing per-ticker
-  // CSV (e.g. a recently-added constituent whose file hasn't landed yet) is
-  // swallowed to null so the whole table doesn't crash — relaxed averaging
-  // below just excludes that ticker.
+  // Fetch the seven tickers + the broad reference in parallel. A missing
+  // per-ticker CSV is swallowed to null so the whole table doesn't crash —
+  // relaxed averaging below just excludes that ticker.
   const [broadText, ...topTexts] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + broadCsv),
     ...tickers.map(t =>
@@ -2407,11 +2401,11 @@ async function renderConcentration() {
 
   const latestDate = broad[broad.length - 1].date;
   const meta = document.getElementById('concentrationMeta');
-  if (meta) meta.textContent = `Latest close: ${latestDate}. Top ${tickers.length} tickers used: ${tickers.join(', ')}.`;
+  if (meta) meta.textContent = `Latest close: ${latestDate}. Magnificent 7 tickers used: ${tickers.join(', ')}.`;
 
-  // For each timeframe, compute top-N equal-weighted avg and broad-market.
+  // For each timeframe, compute the Mag 7 equal-weighted avg and broad-market.
   // Relaxed logic: average whatever tickers have data for that window, so a
-  // recent IPO with a short history drops out of the older rows on its own
+  // name with a short history drops out of the older rows on its own
   // instead of collapsing the whole row to an em-dash.
   const rows = CONC_WINDOWS.map(window => {
     const topReturns = topSeries.map(s => returnOver(s, window)).filter(r => r != null);
@@ -2461,9 +2455,9 @@ async function renderConcentration() {
     <thead>
       <tr>
         <th>Timeframe</th>
-        <th class="num">Top ${tickers.length} (equal-weight avg)</th>
+        <th class="num">Mag 7 (equal-weight avg)</th>
         <th class="num">${broadLabel}</th>
-        <th class="num">Gap (Top ${tickers.length} − Broad)</th>
+        <th class="num">Gap (Mag 7 − Broad)</th>
       </tr>
     </thead>
     <tbody>
@@ -2488,13 +2482,6 @@ async function renderConcentration() {
     ).join('');
   }
 
-  // Any "Top N" copy in the section header uses <span data-top-n>N</span>
-  // so it can be swapped to the live ticker count without hardcoding a
-  // number the sp500 (11) / nasdaq (10) mismatch would make wrong.
-  document.querySelectorAll('[data-top-n]').forEach(el => {
-    el.textContent = String(tickers.length);
-  });
-
   // Concentration stat — combined market cap of these constituents, expressed
   // as a share of the full index. Only shown on the S&P view (the Nasdaq total
   // isn't wired up yet). Fetches live market caps via /api/quote and divides
@@ -2503,7 +2490,7 @@ async function renderConcentration() {
 }
 
 // Approximate total S&P 500 market cap in USD, refreshed manually. Used only
-// to divide our summed top-N market caps into a "% of the index" figure on
+// to divide the summed Mag 7 market caps into a "% of the index" figure on
 // concentration.html. Sourced from S&P Dow Jones factsheet + slickcharts
 // cross-check. Refresh quarterly — a stale figure just makes the ratio drift
 // a few percentage points, it never breaks the page.
