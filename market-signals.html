@@ -902,10 +902,14 @@
             expect in Treasury yields over the next month. When bond fear spikes, stocks are usually already falling
             &mdash; and the top of the spike has tended to land within days of the stock market's low. A
             <strong>spike</strong> here means MOVE closes at least <strong>25% above its own 50-day average</strong>.
-            Since 2003 that has happened <strong data-mv-stat="spikes">&mdash;</strong> times. Buying SPY at the next
-            close, it was higher a month later <strong data-mv-stat="m1Up">&mdash;</strong> of the time, averaging
-            <strong data-mv-stat="m1Avg">&mdash;</strong> against <strong data-mv-stat="b1Avg">&mdash;</strong> for a
-            random month. The edge is short-lived: by six months a spike day looks like any other day.
+            Since 2003 that has happened <strong data-mv-stat="spikes">&mdash;</strong> times. Measured from the day
+            each spike <strong>peaked</strong> &mdash; where the chart below draws its markers &mdash; SPY was higher a
+            month later <strong data-mv-stat="pkM1Up">&mdash;</strong> of the time, averaging
+            <strong data-mv-stat="pkM1Avg">&mdash;</strong> against <strong data-mv-stat="b1Avg">&mdash;</strong> for a
+            random month. The catch: you only know the peak a few days late. Buying the day after the rule
+            <em>fires</em>, which you can actually do, still beat a random month: <strong data-mv-stat="m1Avg">&mdash;</strong>
+            and higher <strong data-mv-stat="m1Up">&mdash;</strong> of the time. Either way the edge is short-lived: by
+            twelve months a spike looks like any other day.
           </p>
 
           <div class="iq-action-wrap">
@@ -938,20 +942,20 @@
 
           <div class="sig-stats iq-stats">
             <div class="sig-stat"><div class="lbl">Spikes since 2003</div><div class="val" data-mv-stat="spikes">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">SPY 1 week later</div><div class="val pos" data-mv-stat="w1Avg">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">SPY 1 month later</div><div class="val pos" data-mv-stat="m1Avg">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Higher after 1 month</div><div class="val pos" data-mv-stat="m1Up">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 week after the peak</div><div class="val pos" data-mv-stat="pkW1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 month after the peak</div><div class="val pos" data-mv-stat="pkM1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Higher a month after</div><div class="val pos" data-mv-stat="pkM1Up">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">Any month (baseline)</div><div class="val" data-mv-stat="b1Avg">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Median days to the low</div><div class="val" data-mv-stat="daysToLow">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Avg further drop</div><div class="val neg" data-mv-stat="dropAvg">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Worst further drop</div><div class="val neg" data-mv-stat="dropWorst">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 month after it fires</div><div class="val pos" data-mv-stat="m1AvgUp">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Avg further drop</div><div class="val neg" data-mv-stat="pkDropAvg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst further drop</div><div class="val neg" data-mv-stat="pkDropWorst">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">Last spike</div><div class="val" data-mv-stat="lastSpike">&mdash;</div></div>
           </div>
 
           <div class="mv-table-wrap">
-            <table class="mv-table" aria-label="SPY returns after a MOVE spike versus any day">
-              <thead><tr><th>Holding period</th><th>After a spike</th><th>Higher</th><th>Any day</th><th>Higher</th><th>Edge</th></tr></thead>
-              <tbody id="mvTableBody"><tr><td colspan="6">&mdash;</td></tr></tbody>
+            <table class="mv-table" aria-label="SPY returns after a MOVE spike, measured from the peak and from the day the rule fires, versus any day">
+              <thead><tr><th>Holding period</th><th>From the peak</th><th>Higher</th><th>After it fires</th><th>Higher</th><th>Any day</th><th>Higher</th></tr></thead>
+              <tbody id="mvTableBody"><tr><td colspan="7">&mdash;</td></tr></tbody>
             </table>
           </div>
 
@@ -982,28 +986,38 @@
             <em>Top panel</em>: SPY (blue) and the MOVE index (white) as percent change from the start of the window,
             the same way the pattern is usually drawn. The <span class="iq-sw iq-sw-amber"></span><strong>amber dashed
             line</strong> is the falling ceiling through the March 2023 and April 2025 spike highs, extended forward.
-            Each <span class="iq-sw iq-sw-magenta"></span><strong>magenta vertical</strong> is a spike trigger day,
-            drawn from the MOVE line up to the SPY line; circles mark where each spike topped out.
+            Each <span class="iq-sw iq-sw-magenta"></span><strong>magenta vertical</strong> marks where a spike topped
+            out (circled), drawn from the MOVE peak up to the SPY line &mdash; the stock market's low has usually come
+            within days of that peak. The rule fires earlier, on the way up.
             <em>Bottom panel</em>: how far MOVE sits above or below its 50-day average. The dashed red line is the +25%
-            spike threshold and each <span class="iq-sw iq-sw-greenband"></span><strong>green band</strong> is the
-            month after a trigger &mdash; the window the stats above measure.
+            spike threshold and each <span class="iq-sw iq-sw-greenband"></span><strong>green band</strong> starts on
+            the day the rule fired and covers the month after it &mdash; the window the stats above measure.
           </div>
 
           <div class="iq-callout">
             <h4>What to expect if you follow this signal</h4>
             <p>
-              <strong>It is a bounce signal, not a bottom call.</strong> The trigger usually fires while stocks are still
-              falling: the low came a median <strong data-mv-stat="daysToLow">&mdash;</strong> trading days after entry, and
-              on the way there SPY dropped another <strong data-mv-stat="dropAvg">&mdash;</strong> on average. Twice it kept
-              falling much further &mdash; <span data-mv-stat="worstTwo">&mdash;</span> &mdash; because those spikes were
-              the start of a crisis, not the end of a scare.
+              <strong>The peak is only known afterwards.</strong> The chart marks each spike where MOVE topped out, and
+              the stock market's low has usually been within days of that point. But MOVE has to stop rising before you
+              can call it a peak. The rule fires on the way up, a median <strong data-mv-stat="fireToPeak">&mdash;</strong>
+              trading days before the top, and buying the day after it fires captured most of the move
+              (<span data-mv-stat="m1Avg">&mdash;</span> a month later vs <span data-mv-stat="pkM1Avg">&mdash;</span> from
+              the exact peak). Waiting for MOVE to turn down first did not help: by the time a 5&ndash;10% drop from the
+              spike high confirmed a peak, the first bounce had usually already happened.
+            </p>
+            <p>
+              <strong>It is a bounce signal, not a bottom call.</strong> Even from the peak, the lowest close of the next
+              three months came a median <strong data-mv-stat="pkDaysToLow">&mdash;</strong> trading days later, with SPY
+              dropping another <strong data-mv-stat="pkDropAvg">&mdash;</strong> on average on the way. Twice it kept
+              falling much further &mdash; <span data-mv-stat="pkWorstTwo">&mdash;</span> &mdash; because those spikes came
+              early in a longer decline, not at the end of a scare.
             </p>
             <p>
               <strong>The edge fades with time.</strong> One-week and one-month returns after a spike beat a random week or
-              month by a wide margin. Three months out the gap is small (<span data-mv-stat="m3Avg">&mdash;</span> vs
-              <span data-mv-stat="b3Avg">&mdash;</span>), six months out it is about even
-              (<span data-mv-stat="m6Avg">&mdash;</span> vs <span data-mv-stat="b6Avg">&mdash;</span>), and at twelve
-              months spike days have done slightly worse than average (<span data-mv-stat="m12Avg">&mdash;</span> vs
+              month by a wide margin. Three months out the gap has narrowed (<span data-mv-stat="pkM3Avg">&mdash;</span> vs
+              <span data-mv-stat="b3Avg">&mdash;</span>), six months out it is smaller still
+              (<span data-mv-stat="pkM6Avg">&mdash;</span> vs <span data-mv-stat="b6Avg">&mdash;</span>), and at twelve
+              months a spike looks like any other day (<span data-mv-stat="pkM12Avg">&mdash;</span> vs
               <span data-mv-stat="b12Avg">&mdash;</span>). Treat it as a reason to buy a dip, not to change a long-term plan.
             </p>
             <p>
@@ -1019,14 +1033,15 @@
             <p>
               <strong>MOVE is published once a day, after the bond market closes</strong> (around 4:30 PM ET). Yahoo posts
               the reading in the evening, so this card picks it up in the nightly refresh (~7:30 PM ET), plus a quick live
-              check when the page loads. Because the number lands after the stock market has closed, the backtest buys SPY
-              at the <em>next</em> day's close &mdash; you cannot act on a spike the day it prints.
+              check when the page loads. Because the number lands after the stock market has closed, the tradable
+              version of the backtest buys SPY at the <em>next</em> day's close &mdash; you cannot act on a spike the day
+              it prints, and you cannot know it has peaked until it turns down.
             </p>
             <ul>
               <li><em>Evening</em>: if the pill says SPIKE ACTIVE and the trigger date is today, plan a SPY buy for
                 tomorrow's close.</li>
               <li><em>Sizing</em>: the historical edge is a few percent over a month. Size the trade so another
-                <span data-mv-stat="dropAvg">&mdash;</span> (the average further drop) or a crisis-sized
+                <span data-mv-stat="dropAvg">&mdash;</span> (the average further drop after a firing) or a crisis-sized
                 <span data-mv-stat="dropWorst">&mdash;</span> is survivable.</li>
               <li><em>Exit</em>: the stats stop at one month and there is no exit rule in the data, so pick your holding
                 period before you buy.</li>
@@ -1037,8 +1052,10 @@
             Study <span data-mv-stat="start">&mdash;</span> &ndash; <span data-mv-stat="end">&mdash;</span>
             (<span data-mv-stat="years">&mdash;</span> yrs) on daily closes of the ICE BofA MOVE index and SPY, price only.
             Spike = MOVE close at least 25% above its 50-day simple average, one event per spike (it re-arms once MOVE
-            falls back under +10%). Returns are measured from the close after the trigger. The same pattern holds at 20%,
-            30% and 35% thresholds; 25% is shown because it is a round number, not because it tested best. The ceiling
+            falls back under +10%). "From the peak" returns start at SPY's close on the day MOVE topped out within that
+            spike, which is only identifiable in hindsight; "after it fires" returns start at the close after the trigger
+            day and are the tradable version. The same pattern holds at 20%, 30% and 35% thresholds; 25% is shown because
+            it is a round number, not because it tested best. The ceiling
             line is drawn through the highest closes of the 2023 and 2025 spikes in this data and is a chart observation,
             not part of the rule. Results ignore trading costs, taxes and dividends. Not investment advice.
           </p>
@@ -2590,52 +2607,73 @@
       // ---- Event study on SPY: buy at the close AFTER the trigger ----
       const spyAtOrAfter = d => { let lo = 0, hi = S; while (lo < hi) { const m = (lo + hi) >> 1; if (spy[m].date < d) lo = m + 1; else hi = m; } return lo; };
       const H = [[5, '1 week'], [21, '1 month'], [63, '3 months'], [126, '6 months'], [252, '12 months']];
+      // Two measurements per spike: "fires" = SPY bought at the close after
+      // the trigger prints (tradable); "peak" = SPY at its close on the day
+      // MOVE topped out within the spike (the chart's marker, hindsight only).
+      const measure = (e) => {
+        const out = { entry: null, fwd: {}, drop: null, daysToLow: null };
+        if (e == null || e >= S) return out;
+        out.entry = e;
+        for (const [h] of H) out.fwd[h] = e + h < S ? px[e + h] / px[e] - 1 : null;
+        if (e + 1 < S) { const seg = px.slice(e, e + 64); let lo = 0; for (let t = 1; t < seg.length; t++) if (seg[t] < seg[lo]) lo = t; out.drop = seg[lo] / seg[0] - 1; out.daysToLow = lo; }
+        return out;
+      };
       const events = trigIdx.map((i, n) => {
-        const k = spyAtOrAfter(move[i].date), e = k + 1;
-        const ev = { trigDate: move[i].date, trigLevel: mv[i], trigRatio: ratio[i], peakDate: move[peakIdx[n]].date, peak: mv[peakIdx[n]], entry: null, fwd: {}, drop: null, daysToLow: null };
-        if (e >= S) return ev;
-        ev.entry = e; ev.entryDate = spy[e].date;
-        for (const [h] of H) ev.fwd[h] = e + h < S ? px[e + h] / px[e] - 1 : null;
-        if (e + 1 < S) { const seg = px.slice(e, e + 64); let lo = 0; for (let t = 1; t < seg.length; t++) if (seg[t] < seg[lo]) lo = t; ev.drop = seg[lo] / seg[0] - 1; ev.daysToLow = lo; }
-        return ev;
+        const k = spyAtOrAfter(move[i].date), pk = spyAtOrAfter(move[peakIdx[n]].date);
+        const fires = measure(k + 1), peak = measure(pk < S ? pk : null);
+        return { trigDate: move[i].date, trigLevel: mv[i], trigRatio: ratio[i], peakDate: move[peakIdx[n]].date, peak: mv[peakIdx[n]],
+                 fireToPeak: peakIdx[n] - i, entry: fires.entry, fwd: fires.fwd, drop: fires.drop, daysToLow: fires.daysToLow, pk: peak };
       });
       const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
       const median = a => { const b = a.slice().sort((x, y) => x - y); const m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
       const upPct = a => a.filter(x => x > 0).length / a.length * 100;
-      const after = {}, base = {};
+      const after = {}, afterPk = {}, base = {};
       for (const [h] of H) {
         const rs = events.map(ev => ev.fwd[h]).filter(x => x != null);
         after[h] = rs.length ? { avg: mean(rs) * 100, up: upPct(rs), n: rs.length } : null;
+        const ps = events.map(ev => ev.pk.fwd[h]).filter(x => x != null);
+        afterPk[h] = ps.length ? { avg: mean(ps) * 100, up: upPct(ps), n: ps.length } : null;
         const bs = []; for (let i = 0; i + h < S; i++) bs.push(px[i + h] / px[i] - 1);
         base[h] = { avg: mean(bs) * 100, up: upPct(bs) };
       }
       const fmtPct = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '%';
       const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const monthYear = iso => MONTHS[parseInt(iso.slice(5, 7), 10) - 1] + ' ' + iso.slice(0, 4);
-      const withDrop = events.filter(ev => ev.drop != null);
-      const drops = withDrop.map(ev => ev.drop), d2l = withDrop.map(ev => ev.daysToLow);
-      const worstTwo = withDrop.slice().sort((a, b) => a.drop - b.drop).slice(0, 2);
-      const A = (h, key) => after[h] ? fmtPct(after[h][key === 'up' ? 'up' : 'avg'], key === 'up' ? 0 : 1) : '—';
+      const dropStats = (list, key) => {
+        const withDrop = list.filter(ev => (key ? ev[key] : ev).drop != null);
+        const drops = withDrop.map(ev => (key ? ev[key] : ev).drop), d2l = withDrop.map(ev => (key ? ev[key] : ev).daysToLow);
+        const worst = withDrop.slice().sort((a, b) => (key ? a[key] : a).drop - (key ? b[key] : b).drop).slice(0, 2);
+        return {
+          daysToLow: d2l.length ? String(Math.round(median(d2l))) : '—',
+          avg: drops.length ? (mean(drops) * 100).toFixed(1) + '%' : '—',
+          worst: drops.length ? (Math.min(...drops) * 100).toFixed(1) + '%' : '—',
+          worstTwo: worst.length === 2 ? `${monthYear(worst[0].trigDate)} (${((key ? worst[0][key] : worst[0]).drop * 100).toFixed(0)}%) and ${monthYear(worst[1].trigDate)} (${((key ? worst[1][key] : worst[1]).drop * 100).toFixed(0)}%)` : '—',
+        };
+      };
+      const dF = dropStats(events, null), dP = dropStats(events, 'pk');
+      const A = (tbl, h) => tbl[h] ? fmtPct(tbl[h].avg) : '—';
+      const U = (tbl, h) => tbl[h] ? Math.round(tbl[h].up) + '%' : '—';
       const stats = {
         spikes: String(trigIdx.length),
-        w1Avg: A(5, 'avg'), w1Up: after[5] ? Math.round(after[5].up) + '%' : '—',
-        m1Avg: A(21, 'avg'), m1Up: after[21] ? Math.round(after[21].up) + '%' : '—',
-        m3Avg: A(63, 'avg'), m6Avg: A(126, 'avg'), m12Avg: A(252, 'avg'),
+        w1Avg: A(after, 5), w1Up: U(after, 5), m1Avg: A(after, 21), m1Up: U(after, 21),
+        m1AvgUp: after[21] ? `${fmtPct(after[21].avg)} · ${Math.round(after[21].up)}%` : '—',
+        m3Avg: A(after, 63), m6Avg: A(after, 126), m12Avg: A(after, 252),
+        pkW1Avg: A(afterPk, 5), pkW1Up: U(afterPk, 5), pkM1Avg: A(afterPk, 21), pkM1Up: U(afterPk, 21),
+        pkM3Avg: A(afterPk, 63), pkM6Avg: A(afterPk, 126), pkM12Avg: A(afterPk, 252),
         b1Avg: fmtPct(base[21].avg), b1Up: Math.round(base[21].up) + '%',
         b3Avg: fmtPct(base[63].avg), b6Avg: fmtPct(base[126].avg), b12Avg: fmtPct(base[252].avg),
-        daysToLow: d2l.length ? String(Math.round(median(d2l))) : '—',
-        dropAvg: drops.length ? (mean(drops) * 100).toFixed(1) + '%' : '—',
-        dropWorst: drops.length ? (Math.min(...drops) * 100).toFixed(1) + '%' : '—',
-        worstTwo: worstTwo.length === 2 ? `${monthYear(worstTwo[0].trigDate)} (${(worstTwo[0].drop * 100).toFixed(0)}%) and ${monthYear(worstTwo[1].trigDate)} (${(worstTwo[1].drop * 100).toFixed(0)}%)` : '—',
+        daysToLow: dF.daysToLow, dropAvg: dF.avg, dropWorst: dF.worst, worstTwo: dF.worstTwo,
+        pkDaysToLow: dP.daysToLow, pkDropAvg: dP.avg, pkDropWorst: dP.worst, pkWorstTwo: dP.worstTwo,
+        fireToPeak: String(Math.round(median(events.map(ev => ev.fireToPeak)))),
         lastSpike: trigIdx.length ? move[trigIdx[trigIdx.length - 1]].date : '—',
         start: spy[0].date.slice(0, 7), end: spy[S - 1].date.slice(0, 7), years: ((S - 1) / 252).toFixed(1),
       };
       card.querySelectorAll('[data-mv-stat]').forEach(el => { const v = stats[el.dataset.mvStat]; if (v != null) el.textContent = v; });
       const tb = $('mvTableBody');
+      const cell = (v, bold) => `<td class="${bold ? 'mv-edge ' : ''}${v >= 0 ? 'pos' : 'neg'}">${fmtPct(v)}</td>`;
       if (tb) tb.innerHTML = H.map(([h, lab]) => {
-        const a = after[h], b = base[h]; if (!a) return '';
-        const edge = a.avg - b.avg;
-        return `<tr><td>${lab}</td><td class="mv-edge ${a.avg >= 0 ? 'pos' : 'neg'}">${fmtPct(a.avg)}</td><td>${Math.round(a.up)}%</td><td>${fmtPct(b.avg)}</td><td>${Math.round(b.up)}%</td><td class="${edge >= 0 ? 'pos' : 'neg'}">${fmtPct(edge)}</td></tr>`;
+        const p = afterPk[h], a = after[h], b = base[h]; if (!p || !a) return '';
+        return `<tr><td>${lab}</td>${cell(p.avg, true)}<td>${Math.round(p.up)}%</td>${cell(a.avg, false)}<td>${Math.round(a.up)}%</td><td>${fmtPct(b.avg)}</td><td>${Math.round(b.up)}%</td></tr>`;
       }).join('');
 
       // ---- Pill, gates, last-spike line ----
@@ -2756,11 +2794,16 @@
         if (ceilVals.length) { let d = '', open = false; for (let i = 0; i < n; i++) { const c = ceil[i]; if (c == null) { open = false; continue; } d += `${open ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(c).toFixed(1)} `; open = true; } parts.push(`<path d="${d.trim()}" class="mv-ceiling" />`); }
         parts.push(`<path d="${ps.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(v).toFixed(1)}`).join(' ')}" class="mv-line-spy" />`);
         parts.push(`<path d="${pm.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(v).toFixed(1)}`).join(' ')}" class="mv-line-move" />`);
+        // Vertical at the spike's PEAK (where the stock low has tended to
+        // be), from the MOVE peak up to the SPY line, circle on the peak.
+        // The firing day comes earlier; the green band below marks it.
         const drawDots = trigs.length <= 14;
         for (const i of trigs) {
-          const x = xFor(i).toFixed(1), y1 = yTop(pm[i]), y2 = yTop(ps[i]);
+          let pk = view[i].peakAbs != null ? view[i].peakAbs - first - startIdx : i;
+          if (pk < 0 || pk >= n) pk = i;
+          const x = xFor(pk).toFixed(1), y1 = yTop(pm[pk]), y2 = yTop(ps[pk]);
           parts.push(`<line x1="${x}" y1="${Math.min(y1, y2).toFixed(1)}" x2="${x}" y2="${Math.max(y1, y2).toFixed(1)}" class="mv-spike-mark" />`);
-          if (drawDots && view[i].peakAbs != null) { const pk = view[i].peakAbs - first - startIdx; if (pk >= 0 && pk < n) parts.push(`<circle cx="${xFor(pk).toFixed(1)}" cy="${yTop(pm[pk]).toFixed(1)}" r="7" class="mv-spike-dot" />`); }
+          if (drawDots) parts.push(`<circle cx="${x}" cy="${yTop(pm[pk]).toFixed(1)}" r="7" class="mv-spike-dot" />`);
         }
         // end labels (nudged apart if they collide)
         let ySpy = yTop(ps[n - 1]), yMv = yTop(pm[n - 1]);
@@ -2774,7 +2817,7 @@
         for (let k = 0; k <= 7; k++) { const i = Math.round(k / 7 * (n - 1)); parts.push(`<text x="${xFor(i).toFixed(1)}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${xl(view[i].date)}</text>`); }
         parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">SPY vs MOVE · % change from window start</text>`);
         parts.push(`<text x="${PAD_L + 6}" y="${botY0 + 14}" class="chart-panel-label">MOVE vs its 50-day average</text>`);
-        parts.push(`<g transform="translate(${PAD_L + plotW - 470}, ${topY0 + 6})"><line x1="0" y1="5" x2="18" y2="5" class="mv-line-spy" /><text x="22" y="9" class="chart-axis-label">SPY</text><line x1="58" y1="5" x2="76" y2="5" class="mv-line-move" /><text x="80" y="9" class="chart-axis-label">MOVE</text><line x1="130" y1="5" x2="148" y2="5" class="mv-ceiling" /><text x="152" y="9" class="chart-axis-label">falling ceiling</text><line x1="262" y1="0" x2="262" y2="10" class="mv-spike-mark" /><text x="268" y="9" class="chart-axis-label">spike trigger</text><rect x="372" y="0" width="14" height="10" class="mv-window" /><text x="390" y="9" class="chart-axis-label">month after</text></g>`);
+        parts.push(`<g transform="translate(${PAD_L + plotW - 470}, ${topY0 + 6})"><line x1="0" y1="5" x2="18" y2="5" class="mv-line-spy" /><text x="22" y="9" class="chart-axis-label">SPY</text><line x1="58" y1="5" x2="76" y2="5" class="mv-line-move" /><text x="80" y="9" class="chart-axis-label">MOVE</text><line x1="130" y1="5" x2="148" y2="5" class="mv-ceiling" /><text x="152" y="9" class="chart-axis-label">falling ceiling</text><line x1="262" y1="0" x2="262" y2="10" class="mv-spike-mark" /><text x="268" y="9" class="chart-axis-label">spike peak</text><rect x="372" y="0" width="14" height="10" class="mv-window" /><text x="390" y="9" class="chart-axis-label">month after</text></g>`);
         chartSvg.innerHTML = parts.join('');
       }
       renderChart({ from: '2022-10-03', to: '9999-12-31' });
