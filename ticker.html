@@ -3344,8 +3344,11 @@
       //   - Toggleable 50 SMA / 200 SMA / RSI
       //   - Always-on drawdown ribbon, 52-week high/low lines, median line
       // Fetches from /api/history with per-range Yahoo intervals so each
-      // view gets right-sized bars (15m for 1D/5D, daily for 1M..1Y,
-      // weekly for 5Y, monthly for All). Caches by slot in memory.
+      // view gets right-sized bars (1m for 1D incl. pre/after-hours, 15m
+      // for 5D, daily for 1M..1Y, weekly for 5Y, monthly for All). Caches
+      // by slot in memory. The 1D view is laid out on a fixed trading-day
+      // axis (4:00 AM – 8:00 PM ET) that fills in through the day and
+      // refreshes once a minute while a session is open.
       // -----------------------------------------------------------------
       function initTickerMainChart(sym) {
         const mount = document.getElementById('chartWidgetMount');
@@ -3430,7 +3433,10 @@
         `;
 
         const RANGE_TO_FETCH = {
-          '1D':  { range: '5d',  interval: '15m' },
+          // 1D: one-minute bars for the current trading day, pre-market
+          // and after-hours included (Yahoo's range=1d rolls to the new
+          // day when its pre-market opens at 4:00 AM ET).
+          '1D':  { range: '1d',  interval: '1m', prepost: true },
           '5D':  { range: '5d',  interval: '15m' },
           '1M':  { range: '1y',  interval: '1d' },
           '3M':  { range: '1y',  interval: '1d' },
@@ -3444,7 +3450,7 @@
           'All': { range: 'max', interval: '1mo' },
         };
         const SLOT_BY_RANGE = {
-          '1D':'intra5d', '5D':'intra5d',
+          '1D':'intra1d', '5D':'intra5d',
           '1M':'daily1y','3M':'daily1y','6M':'daily1y','YTD':'daily1y','1Y':'daily1y',
           '3Y':'weekly5y','5Y':'weekly5y','All':'monthly',
         };
@@ -3565,16 +3571,80 @@
           return s.length ? s[Math.floor(s.length / 2)] : null;
         }
 
+        // Eastern-time UTC offset (seconds) at a given moment: -4h in
+        // daylight time, -5h in standard time. Uses Intl so the browser's
+        // own timezone never leaks in.
+        function etOffsetAt(ts) {
+          try {
+            const parts = new Intl.DateTimeFormat('en-US', {
+              timeZone: 'America/New_York', hour12: false,
+              year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+            }).formatToParts(new Date(ts * 1000));
+            const g = k => parseInt((parts.find(p => p.type === k) || {}).value, 10);
+            const asUtc = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') % 24, g('minute')) / 1000;
+            return Math.round((asUtc - ts) / 60) * 60;
+          } catch (e) { return -4 * 3600; }
+        }
+        // Pre / regular / post boundaries (unix seconds) for the trading
+        // day that contains `refTs`. Yahoo's currentTradingPeriod describes
+        // the CURRENT calendar day, so overnight — when the bars are still
+        // yesterday's — its times of day are shifted back onto the bars'
+        // own day. Falls back to 4:00 / 9:30 / 4:00 / 8:00 ET when the API
+        // did not return boundaries.
+        function sessionFor(ses, refTs) {
+          let off, pre, reg, post;
+          if (ses && ses.pre && ses.regular && ses.post) {
+            off = Number.isFinite(ses.gmtoffset) ? ses.gmtoffset : etOffsetAt(refTs);
+            pre = ses.pre; reg = ses.regular; post = ses.post;
+          } else {
+            off = etOffsetAt(refTs);
+            const base = Math.floor((refTs + off) / 86400) * 86400 - off;   // midnight ET
+            pre  = [base + 4 * 3600,   base + 9.5 * 3600];
+            reg  = [base + 9.5 * 3600, base + 16 * 3600];
+            post = [base + 16 * 3600,  base + 20 * 3600];
+          }
+          const dayBase = ts => Math.floor((ts + off) / 86400) * 86400 - off;
+          const shift = dayBase(refTs) - dayBase(reg[0]);
+          return {
+            pre:     [pre[0]  + shift, pre[1]  + shift],
+            regular: [reg[0]  + shift, reg[1]  + shift],
+            post:    [post[0] + shift, post[1] + shift],
+            off,
+          };
+        }
+
         function sliceForRange(rangeKey, cache) {
+          const intra1d = cache.intra1d   || null;
           const intra   = cache.intra5d   || null;
           const daily1y = cache.daily1y   || null;
           const weekly5y = cache.weekly5y || null;
           const monthly  = cache.monthly  || null;
-          if (rangeKey === '1D' && intra) {
-            if (!intra.length) return [];
-            const lastTs = intra[intra.length - 1][0];
-            const lastDate = new Date(lastTs * 1000).toISOString().slice(0, 10);
-            return intra.filter(([t]) => new Date(t * 1000).toISOString().slice(0, 10) === lastDate);
+          if (rangeKey === '1D') {
+            if (!intra1d || !intra1d.length) return [];
+            // Keep only the bars of the trading day the feed is on (its
+            // last bar decides which day that is) and remember the
+            // session layout on the slice for drawChart.
+            const ses = sessionFor(intra1d.sessions, intra1d[intra1d.length - 1][0]);
+            const inDay = intra1d.filter(([t]) => t >= ses.pre[0] && t < ses.post[1]);
+            // The regular session keeps one-minute bars. Pre-market and
+            // after-hours get only 15% of the width each, so their bars are
+            // merged into 5-minute candles (first open, highest high, lowest
+            // low, last close, summed volume); p[6] carries the bar length.
+            const EXT_BUCKET = 300;
+            const out = []; let cur = null;
+            for (const p of inDay) {
+              const ext = p[0] < ses.regular[0] || p[0] >= ses.regular[1];
+              if (!ext) { cur = null; out.push(p); continue; }
+              const b = Math.floor(p[0] / EXT_BUCKET) * EXT_BUCKET;
+              if (cur && cur[0] === b) {
+                cur[2] = Math.max(cur[2], p[2]); cur[3] = Math.min(cur[3], p[3]); cur[4] = p[4]; cur[5] += p[5] || 0;
+              } else {
+                cur = [b, p[1], p[2], p[3], p[4], p[5] || 0, EXT_BUCKET];
+                out.push(cur);
+              }
+            }
+            out.session = ses;
+            return out;
           }
           if (rangeKey === '5D' && intra) return intra;
           if ((rangeKey === '1M' || rangeKey === '3M' || rangeKey === '6M' ||
@@ -3627,9 +3697,9 @@
           const plotW     = W - M.left - M.right;
           svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
-          if (!pts.length) { svg.innerHTML = ''; return; }
           if (pts.length < 2) {
-            svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-label">Not enough data for this range</text>`;
+            const msg = opts.session ? 'Waiting for the first trades of the day…' : (pts.length ? 'Not enough data for this range' : '');
+            svg.innerHTML = msg ? `<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-label">${msg}</text>` : '';
             return;
           }
 
@@ -3640,7 +3710,9 @@
           const sma200  = opts.show200   ? sma(pts, 200) : null;
           const rsi14   = showRsi      ? rsi(pts, 14)  : null;
           const macdVal = showMacd     ? macd(pts, 12, 26, 9) : null;
-          const wk52    = opts.wk52    || null;
+          // 52-week reference lines are for multi-month views; on the
+          // trading-day (1D) axis they would swamp a day's small range.
+          const wk52    = opts.session ? null : (opts.wk52 || null);
           const closes  = pts.map(p => p[4]);
           const med     = opts.median  != null ? opts.median : median(closes);
 
@@ -3672,41 +3744,94 @@
 
           const first = pts[0][0], last = pts[pts.length - 1][0];
           const nBars = pts.length;
-          // Ordinal X positioning — every bar gets an equal slot regardless
-          // of the calendar time between it and the next bar. Removes the
-          // visual gap that appears between Friday's close and Monday's open
-          // (and around holidays).
-          const xForIdx = (i) => M.left + (i / Math.max(1, nBars - 1)) * plotW;
-          function xForTime(t) {
-            if (nBars < 2) return xForIdx(0);
-            // Extrapolate before the first bar using the spacing of bars[0..1].
-            if (t <= pts[0][0]) {
-              const span = pts[1][0] - pts[0][0];
-              const frac = span > 0 ? (t - pts[0][0]) / span : 0;
-              return xForIdx(frac);
-            }
-            // Extrapolate past the last bar using the spacing of bars[n-2..n-1].
-            if (t >= pts[nBars - 1][0]) {
-              const span = pts[nBars - 1][0] - pts[nBars - 2][0];
-              const frac = span > 0 ? (t - pts[nBars - 1][0]) / span : 0;
-              return xForIdx(nBars - 1 + frac);
-            }
-            // Binary-search for the bar pair that brackets t.
-            let lo = 0, hi = nBars - 1;
-            while (hi - lo > 1) {
-              const mid = (lo + hi) >> 1;
-              if (pts[mid][0] <= t) lo = mid;
-              else hi = mid;
-            }
-            const span = pts[hi][0] - pts[lo][0];
-            const frac = span > 0 ? (t - pts[lo][0]) / span : 0;
-            return xForIdx(lo + frac);
+          const session = opts.session || null;
+          let xForIdx, xForTime, xToTime = null;
+          if (session) {
+            // Fixed trading-day axis for the 1D view. Time-based, so the
+            // bars fill in left to right through the day and the chart
+            // stops changing shape after the last session ends. Pre-market
+            // (5.5h) and after-hours (4h) are compressed to 15% of the
+            // width each so the regular session keeps 70%.
+            const PRE_W = 0.15, REG_W = 0.70;
+            const segs = [
+              { t0: session.pre[0],     t1: session.pre[1],     x0: M.left,                            x1: M.left + plotW * PRE_W },
+              { t0: session.regular[0], t1: session.regular[1], x0: M.left + plotW * PRE_W,            x1: M.left + plotW * (PRE_W + REG_W) },
+              { t0: session.post[0],    t1: session.post[1],    x0: M.left + plotW * (PRE_W + REG_W),  x1: M.left + plotW },
+            ];
+            xForTime = (t) => {
+              let sg = segs[0];
+              for (const g of segs) if (t >= g.t0) sg = g;
+              const f = (t - sg.t0) / Math.max(1, sg.t1 - sg.t0);
+              return sg.x0 + Math.max(0, Math.min(1, f)) * (sg.x1 - sg.x0);
+            };
+            xToTime = (x) => {
+              let sg = segs[0];
+              for (const g of segs) if (x >= g.x0) sg = g;
+              const f = (x - sg.x0) / Math.max(1e-6, sg.x1 - sg.x0);
+              return sg.t0 + Math.max(0, Math.min(1, f)) * (sg.t1 - sg.t0);
+            };
+            // Each bar sits in the middle of its own minute (or 5-minute
+            // bucket for extended hours, whose length rides in p[6]).
+            xForIdx = (i) => { const p = pts[Math.max(0, Math.min(nBars - 1, Math.round(i)))]; return xForTime(p[0] + (p[6] || 60) / 2); };
+          } else {
+            // Ordinal X positioning — every bar gets an equal slot regardless
+            // of the calendar time between it and the next bar. Removes the
+            // visual gap that appears between Friday's close and Monday's open
+            // (and around holidays).
+            xForIdx = (i) => M.left + (i / Math.max(1, nBars - 1)) * plotW;
+            xForTime = function (t) {
+              if (nBars < 2) return xForIdx(0);
+              // Extrapolate before the first bar using the spacing of bars[0..1].
+              if (t <= pts[0][0]) {
+                const span = pts[1][0] - pts[0][0];
+                const frac = span > 0 ? (t - pts[0][0]) / span : 0;
+                return xForIdx(frac);
+              }
+              // Extrapolate past the last bar using the spacing of bars[n-2..n-1].
+              if (t >= pts[nBars - 1][0]) {
+                const span = pts[nBars - 1][0] - pts[nBars - 2][0];
+                const frac = span > 0 ? (t - pts[nBars - 1][0]) / span : 0;
+                return xForIdx(nBars - 1 + frac);
+              }
+              // Binary-search for the bar pair that brackets t.
+              let lo = 0, hi = nBars - 1;
+              while (hi - lo > 1) {
+                const mid = (lo + hi) >> 1;
+                if (pts[mid][0] <= t) lo = mid;
+                else hi = mid;
+              }
+              const span = pts[hi][0] - pts[lo][0];
+              const frac = span > 0 ? (t - pts[lo][0]) / span : 0;
+              return xForIdx(lo + frac);
+            };
           }
           // Backwards-compat alias — most existing callers pass a timestamp.
           const xFor = xForTime;
           const yFor = v => priceTop + priceH - ((v - yLo) / (yHi - yLo)) * priceH;
+          // Width of one bar's slot. Ordinal charts share the plot evenly;
+          // the trading-day axis gives each bar the width of one minute in
+          // its own session segment.
+          const slotWAt = session
+            ? (i) => Math.max(0.8, xForTime(pts[i][0] + (pts[i][6] || 60)) - xForTime(pts[i][0]))
+            : () => plotW / pts.length;
+          // Extended-hours bars are drawn a little lighter than the session.
+          const isExt = (t) => !!session && (t < session.regular[0] || t >= session.regular[1]);
 
           let s = '';
+          if (session) {
+            // Shaded pre-market / after-hours bands behind everything, with
+            // the open and close marked as thin vertical rules.
+            const bands = [[session.pre[0], session.pre[1], 'PRE-MARKET'], [session.post[0], session.post[1], 'AFTER HOURS']];
+            for (const [a, b, label] of bands) {
+              const x0 = xForTime(a), x1 = xForTime(b);
+              s += `<rect x="${x0.toFixed(1)}" y="${priceTop}" width="${(x1 - x0).toFixed(1)}" height="${macdBottom - priceTop}" fill="rgba(139,149,168,0.07)"/>`;
+              s += `<text class="axis-label" x="${((x0 + x1) / 2).toFixed(1)}" y="${priceTop + 11}" text-anchor="middle" opacity="0.6">${label}</text>`;
+            }
+            for (const t of [session.regular[0], session.regular[1]]) {
+              const x = xForTime(t).toFixed(1);
+              s += `<line class="axis-line" x1="${x}" x2="${x}" y1="${priceTop}" y2="${macdBottom}" opacity="0.55"/>`;
+            }
+          }
           // Y grid + right-side labels. Use a "nice step" algorithm targeting
           // ~6 gridlines so the axis stays clean for any price magnitude —
           // works for $1 penny stocks and $100K Bitcoin alike. The old
@@ -3729,30 +3854,53 @@
           }
           const spanDays = (last - first) / 86400;
           let tickCount, labelFmt;
-          if      (spanDays > 1500) { tickCount = 6; labelFmt = 'year'; }
+          if      (session)         { tickCount = 0; labelFmt = 'session'; }
+          else if (spanDays > 1500) { tickCount = 6; labelFmt = 'year'; }
           else if (spanDays > 500)  { tickCount = 6; labelFmt = 'monthYear'; }
           else if (spanDays > 200)  { tickCount = 7; labelFmt = 'monthYear'; }
           else if (spanDays > 45)   { tickCount = 7; labelFmt = 'monthDay'; }
           else if (spanDays > 3)    { tickCount = 6; labelFmt = 'monthDay'; }
           else                      { tickCount = 6; labelFmt = 'hour'; }
+          const ET_HM = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });
+          const ET_H  = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric' });
           function fmtTick(t) {
             const d = new Date(t * 1000);
             if (labelFmt === 'year')      return String(d.getUTCFullYear());
             if (labelFmt === 'monthYear') return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
             if (labelFmt === 'monthDay')  return MONTH_NAMES[d.getUTCMonth()] + ' ' + d.getUTCDate();
+            // Intraday: clock time in Eastern (market) time.
+            try { return ET_HM.format(d).replace(/\s?[AP]M$/, ''); } catch (e) {}
             return String(d.getUTCHours()).padStart(2,'0') + ':' + String(d.getUTCMinutes()).padStart(2,'0');
           }
           const xAxisY = macdBottom;
           const xLabelY = xAxisY + 15;
-          for (let i = 0; i <= tickCount; i++) {
-            const idx = Math.min(nBars - 1, Math.round((nBars - 1) * i / tickCount));
-            const t = pts[idx][0];
-            const x = xForIdx(idx);
+          const drawTick = (x, label, anchor) => {
             s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${priceTop}" y2="${priceBottom}"/>`;
             s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${volTop}" y2="${volBottom}"/>`;
             if (showRsi)  s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${rsiTop}"  y2="${rsiTop + rsiH}"/>`;
             if (showMacd) s += `<line class="grid-line" x1="${x}" x2="${x}" y1="${macdTop}" y2="${macdTop + macdH}"/>`;
-            s += `<text class="axis-label" x="${x}" y="${xLabelY}" text-anchor="middle">${fmtTick(t)}</text>`;
+            s += `<text class="axis-label" x="${x}" y="${xLabelY}" text-anchor="${anchor || 'middle'}">${label}</text>`;
+          };
+          if (session) {
+            // Fixed clock ticks: pre-market start + mid, every hour of the
+            // regular session plus its open and close, then every two
+            // hours of after-hours. Pre/post labels carry AM/PM so 4 AM
+            // and the 4:00 close cannot be confused.
+            const ticks = [];
+            const fmtExt = t => { try { return ET_H.format(new Date(t * 1000)); } catch (e) { return fmtTick(t); } };
+            ticks.push([session.pre[0], fmtExt(session.pre[0]), 'start']);
+            ticks.push([session.pre[0] + 3 * 3600, fmtExt(session.pre[0] + 3 * 3600)]);
+            ticks.push([session.regular[0], fmtTick(session.regular[0])]);
+            for (let t = Math.ceil(session.regular[0] / 3600) * 3600; t < session.regular[1] - 1200; t += 3600) ticks.push([t, fmtTick(t)]);
+            ticks.push([session.regular[1], fmtTick(session.regular[1])]);
+            for (let t = session.regular[1] + 2 * 3600; t < session.post[1]; t += 2 * 3600) ticks.push([t, fmtExt(t)]);
+            ticks.push([session.post[1], fmtExt(session.post[1]), 'end']);
+            for (const [t, label, anchor] of ticks) drawTick(xForTime(t).toFixed(1), label, anchor);
+          } else {
+            for (let i = 0; i <= tickCount; i++) {
+              const idx = Math.min(nBars - 1, Math.round((nBars - 1) * i / tickCount));
+              drawTick(xForIdx(idx), fmtTick(pts[idx][0]));
+            }
           }
           s += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${priceBottom}" y2="${priceBottom}"/>`;
           s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${priceTop}" y2="${priceBottom}"/>`;
@@ -3797,20 +3945,20 @@
           // X position uses xForIdx (ordinal) so weekends and holidays don't
           // leave gaps.
           {
-            const slot = plotW / pts.length;
-            const bodyW = Math.max(1, slot * 0.7);
             for (let i = 0; i < pts.length; i++) {
               const p = pts[i];
               const o = p[1], h = p[2], l = p[3], c = p[4];
               const up = c >= o;
               const col = up ? '#22d39a' : '#ff5374';
               const x  = xForIdx(i);
+              const bodyW = Math.max(1, slotWAt(i) * 0.7);
+              const dim = isExt(p[0]) ? ' opacity="0.7"' : '';
               const yH = yFor(h), yL = yFor(l);
               const yO = yFor(o), yC = yFor(c);
-              s += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${yH.toFixed(1)}" y2="${yL.toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
+              s += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${yH.toFixed(1)}" y2="${yL.toFixed(1)}" stroke="${col}" stroke-width="1"${dim}/>`;
               const bodyTop = Math.min(yO, yC);
               const bodyH   = Math.max(1, Math.abs(yC - yO));
-              s += `<rect x="${(x - bodyW/2).toFixed(1)}" y="${bodyTop.toFixed(1)}" width="${bodyW.toFixed(1)}" height="${bodyH.toFixed(1)}" fill="${col}"/>`;
+              s += `<rect x="${(x - bodyW/2).toFixed(1)}" y="${bodyTop.toFixed(1)}" width="${bodyW.toFixed(1)}" height="${bodyH.toFixed(1)}" fill="${col}"${dim}/>`;
             }
           }
 
@@ -3821,8 +3969,6 @@
           {
             let maxVol = 0;
             for (const p of pts) { const v = p[5] || 0; if (v > maxVol) maxVol = v; }
-            const slot  = plotW / pts.length;
-            const barW  = Math.max(1, slot * 0.7);
             if (maxVol > 0) {
               const yV = (v) => volBottom - (v / maxVol) * VOL_H;
               for (let i = 0; i < pts.length; i++) {
@@ -3832,9 +3978,10 @@
                 const up  = p[4] >= p[1];
                 const col = up ? '#22d39a' : '#ff5374';
                 const x   = xForIdx(i);
+                const barW = Math.max(1, slotWAt(i) * 0.7);
                 const y   = yV(v);
                 const h   = volBottom - y;
-                s += `<rect x="${(x - barW/2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" opacity="0.55"/>`;
+                s += `<rect x="${(x - barW/2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" opacity="${isExt(p[0]) ? 0.35 : 0.55}"/>`;
               }
               const fmtVol = (n) => n >= 1e9 ? (n/1e9).toFixed(1) + 'B'
                                   : n >= 1e6 ? (n/1e6).toFixed(1) + 'M'
@@ -3932,10 +4079,10 @@
               const zeroY = yM(0);
               s += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${zeroY}" y2="${zeroY}" opacity="0.6"/>`;
               // Histogram bars — green above zero, red below.
-              const barW = Math.max(1, plotW / pts.length * 0.7);
               for (let i = 0; i < macdVal.hist.length; i++) {
                 const h = macdVal.hist[i]; if (h == null) continue;
                 const cx = xForIdx(i);
+                const barW = Math.max(1, slotWAt(i) * 0.7);
                 const y1 = yM(h), y2 = zeroY;
                 const top = Math.min(y1, y2), height = Math.abs(y2 - y1);
                 const color = h >= 0 ? 'rgba(34,197,94,0.55)' : 'rgba(239,68,68,0.55)';
@@ -4017,6 +4164,10 @@
             // interpolating between the two adjacent bars.
             timestamps: pts.map(function (p) { return p[0]; }),
             nBars: pts.length,
+            // Trading-day axis (1D): direct time <-> x mappings, so the
+            // click / drag handlers don't have to interpolate between bars.
+            xForTime: session ? xForTime : null,
+            xToTime:  session ? xToTime  : null,
           };
 
           svg.innerHTML = s;
@@ -4039,7 +4190,10 @@
             nBars: nBars,
             W: W,
             H: H,
-            isIntraday: labelFmt === 'hour',
+            // Bars closer together than six hours are intraday — show the
+            // clock time in the tooltip (1D and 5D views).
+            isIntraday: nBars > 1 && (last - first) / (nBars - 1) < 6 * 3600,
+            xToTime: xToTime,
           };
           if (!svg._crosshairInit) installCrosshairHandlers(svg);
         }
@@ -4055,6 +4209,8 @@
           if (!tooltip) return;
 
           const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          let ET_TT = null;
+          try { ET_TT = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) {}
           function fmtDate(t, intraday) {
             const d = new Date(t * 1000);
             const dn  = DAY_NAMES[d.getUTCDay()];
@@ -4062,6 +4218,8 @@
             const day = d.getUTCDate();
             const yr  = d.getUTCFullYear();
             if (intraday) {
+              // Market (Eastern) time, e.g. "Sep 25, 2026, 10:42 AM ET".
+              if (ET_TT) return ET_TT.format(d) + ' ET';
               const hh = String(d.getUTCHours()).padStart(2, '0');
               const mm = String(d.getUTCMinutes()).padStart(2, '0');
               return mon + ' ' + day + ', ' + yr + ' · ' + hh + ':' + mm + ' UTC';
@@ -4103,9 +4261,20 @@
               hideCrosshair();
               return;
             }
-            const frac = ctx.plotW > 0 ? (vx - ctx.mLeft) / ctx.plotW : 0;
-            const rawIdx = Math.round(frac * (ctx.nBars - 1));
-            const idx = Math.max(0, Math.min(ctx.nBars - 1, rawIdx));
+            let idx;
+            if (ctx.xToTime) {
+              // Trading-day axis: pointer x → clock time → nearest bar. In an
+              // empty stretch of the day (no bar within 15 minutes) show nothing.
+              const t = ctx.xToTime(vx);
+              let lo = 0, hi = ctx.nBars - 1;
+              while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (ctx.pts[mid][0] <= t) lo = mid; else hi = mid; }
+              idx = Math.abs(ctx.pts[hi][0] - t) < Math.abs(ctx.pts[lo][0] - t) ? hi : lo;
+              if (Math.abs(ctx.pts[idx][0] - t) > 15 * 60) { hideCrosshair(); return; }
+            } else {
+              const frac = ctx.plotW > 0 ? (vx - ctx.mLeft) / ctx.plotW : 0;
+              const rawIdx = Math.round(frac * (ctx.nBars - 1));
+              idx = Math.max(0, Math.min(ctx.nBars - 1, rawIdx));
+            }
             const p = ctx.pts[idx];
             if (!p) { hideCrosshair(); return; }
             const t = p[0], o = p[1], h = p[2], l = p[3], c = p[4];
@@ -4230,16 +4399,18 @@
           svg.addEventListener('touchcancel', onSvgTouchEnd);
         }
 
-        async function fetchSlice(apiRange, apiInterval) {
+        async function fetchSlice(apiRange, apiInterval, prepost) {
           const url = '/api/history?syms=' + encodeURIComponent(sym) +
                       '&range=' + encodeURIComponent(apiRange) +
                       '&interval=' + encodeURIComponent(apiInterval) +
-                      '&fields=ohlc';
+                      '&fields=ohlc' + (prepost ? '&prepost=1' : '');
           const r = await fetch(url, { cache: 'no-store' });
           if (!r.ok) throw new Error('HTTP ' + r.status);
           const payload = await r.json();
           const series = payload && payload.series && payload.series[sym];
           if (!Array.isArray(series)) throw new Error('no data for ' + sym);
+          // Session boundaries ride along on the array for the 1D layout.
+          if (payload.sessions && payload.sessions[sym]) series.sessions = payload.sessions[sym];
           return series;
         }
 
@@ -4276,7 +4447,7 @@
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
         const state = { range: '1Y', show8ema: false, show20ema: false, show50: false, show100: false, show200: true, showRsi: false, showMacd: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
-        const cache = { intra5d: null, daily1y: null, weekly5y: null, monthly: null };
+        const cache = { intra1d: null, intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
 
         // ---- Hydrate state from shared-URL params ----------------------
@@ -4392,6 +4563,12 @@
           const proj = state.projection; if (!proj) return null;
           const ts = proj.timestamps, n = proj.nBars;
           if (!ts || n < 2) return null;
+          if (proj.xForTime) {
+            return {
+              x: proj.xForTime(t),
+              y: proj.priceTop + proj.priceH - ((p - proj.yLo) / (proj.yHi - proj.yLo)) * proj.priceH,
+            };
+          }
           let bi;
           if (t <= ts[0]) {
             const span = ts[1] - ts[0];
@@ -4417,6 +4594,12 @@
           const proj = state.projection; if (!proj) return null;
           const ts = proj.timestamps, n = proj.nBars;
           if (!ts || n < 2) return null;
+          if (proj.xToTime) {
+            return {
+              t: proj.xToTime(svgX),
+              p: proj.yLo + ((proj.priceTop + proj.priceH - svgY) / proj.priceH) * (proj.yHi - proj.yLo),
+            };
+          }
           // Screen X → fractional bar index → interpolated timestamp.
           const bi = ((svgX - proj.mLeft) / proj.plotW) * (n - 1);
           let t;
@@ -4517,7 +4700,8 @@
           // Only accept clicks inside the price plot rect (not on axes / RSI subplot).
           if (svgX < p.mLeft || svgX > p.mRight)                 return;
           if (svgY < p.priceTop || svgY > p.priceTop + p.priceH) return;
-          const t = p.first + ((svgX - p.mLeft) / p.plotW) * (p.last - p.first);
+          const t = p.xToTime ? p.xToTime(svgX)
+                  : p.first + ((svgX - p.mLeft) / p.plotW) * (p.last - p.first);
           const price = p.yLo + ((p.priceTop + p.priceH - svgY) / p.priceH) * (p.yHi - p.yLo);
           if (!state.pendingPoint) {
             state.pendingPoint = { t: t, p: price };
@@ -4535,16 +4719,18 @@
           const slot = SLOT_BY_RANGE[rangeKey];
           if (cache[slot]) return cache[slot];
           const cfg = RANGE_TO_FETCH[rangeKey];
-          cache[slot] = await fetchSlice(cfg.range, cfg.interval);
+          cache[slot] = await fetchSlice(cfg.range, cfg.interval, cfg.prepost);
           return cache[slot];
         }
 
         function redraw() {
-          drawChart(svgEl, sliceForRange(state.range, cache), {
+          const pts = sliceForRange(state.range, cache);
+          drawChart(svgEl, pts, {
             show8ema: state.show8ema, show20ema: state.show20ema,
             show50: state.show50, show100: state.show100, show200: state.show200,
             showRsi: state.showRsi, showMacd: state.showMacd, wk52,
             lines: state.lines, pending: state.pendingPoint, hover: state.hover,
+            session: state.range === '1D' ? (pts.session || null) : null,
           });
           updateMaValuesStrip();
         }
@@ -4716,6 +4902,10 @@
           perfEl.innerHTML = chip('YTD', ytdPct) + chip('52W', wk52Pct);
         }
 
+        // Latest Yahoo marketState seen by refreshQuote (PRE / REGULAR /
+        // POST / CLOSED …). Drives the 1D chart's once-a-minute refresh.
+        let lastMarketState = '';
+
         // Poll /api/quote to paint the pre-market / after-hours strip that
         // sits right below the last-close price. Hidden during REGULAR hours
         // — the main price row already shows the live regular-session move.
@@ -4760,6 +4950,7 @@
               paintOhl(q.open, q.dayHigh, q.dayLow);
             }
             const state = String(q.marketState || '').toUpperCase();
+            lastMarketState = state;
             let tier = null;
             if (state === 'PRE' || state === 'PREPRE') {
               if (q.preMarketPrice != null) tier = { tag: 'Pre-Market', price: q.preMarketPrice, chg: q.preMarketChange, pct: q.preMarketChangePercent, cls: 'pre' };
@@ -4796,6 +4987,30 @@
         }
         refreshQuote();
         setInterval(refreshQuote, 60000);
+
+        // 1D live refresh. While any session is open (pre-market, regular
+        // or after-hours) the trading-day chart re-pulls its one-minute
+        // bars once a minute; from 8 PM to 4 AM ET and on weekends it sits
+        // idle showing the completed day. Uses the quote feed's market
+        // state when it has one, else the Eastern-time clock.
+        function sessionLikelyOpen() {
+          if (lastMarketState) return lastMarketState === 'PRE' || lastMarketState === 'REGULAR' || lastMarketState === 'POST';
+          try {
+            const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour12: false, weekday: 'short', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date());
+            const g = k => (parts.find(x => x.type === k) || {}).value;
+            const mins = (parseInt(g('hour'), 10) % 24) * 60 + parseInt(g('minute'), 10);
+            const wd = g('weekday');
+            return wd !== 'Sat' && wd !== 'Sun' && mins >= 4 * 60 && mins <= 20 * 60 + 5;
+          } catch (e) { return true; }
+        }
+        setInterval(async () => {
+          if (state.range !== '1D' || !sessionLikelyOpen()) return;
+          try {
+            const cfg = RANGE_TO_FETCH['1D'];
+            cache.intra1d = await fetchSlice(cfg.range, cfg.interval, cfg.prepost);
+            if (state.range === '1D') redraw();
+          } catch (e) { /* keep the last good bars */ }
+        }, 60000);
 
         async function switchTo(rangeKey) {
           state.range = rangeKey;

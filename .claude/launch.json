@@ -7,6 +7,13 @@
       "runtimeArgs": ["-3", "-m", "http.server", "8765"],
       "port": 8765,
       "autoPort": false
+    },
+    {
+      "name": "bats-dev",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3", "scripts/dev-server.py", "8766"],
+      "port": 8766,
+      "autoPort": false
     }
   ]
 }
