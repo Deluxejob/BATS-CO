@@ -147,6 +147,11 @@ done
 # market-signals.html (uses data/hyg.csv + data/nfci.csv alongside it).
 fetch_yahoo_daily "USO" "$DATA_DIR/uso.csv" "1144540800"  # 2006-04-09 (inception 2006-04-10)
 
+# ICE BofA MOVE index (Treasury-market volatility, the bond market's VIX)
+# for the Bond Fear Spike card on market-signals.html. Published once a
+# day after the bond close; Yahoo's daily history starts 2002-11-12.
+fetch_yahoo_daily "^MOVE" "$DATA_DIR/move.csv" "1037059200"  # 2002-11-12
+
 # SpaceX (SPCX) — IPO'd June 2026. Not in the Concentration list until it
 # joins the S&P 500; fetched anyway so the file is ready when it does.
 fetch_yahoo_daily "SPCX" "$DATA_DIR/top10/spcx.csv" "1780272000" 20  # 2026-06-01; accept a short file

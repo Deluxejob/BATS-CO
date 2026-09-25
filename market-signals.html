@@ -218,6 +218,34 @@
     .u3-vote-on    { fill: rgba(34, 211, 154, 0.55); }
     .u3-vote-off   { fill: rgba(139, 149, 168, 0.10); }
     .u3-vote-label { fill: #8b95a8; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+    /* Bond Fear Spike (MOVE) card: performance lines, the falling ceiling,
+       spike markers, the ratio panel and the horizon table. */
+    .mv-line-spy    { fill: none; stroke: #64d3ff; stroke-width: 1.5; }
+    .mv-line-move   { fill: none; stroke: #e8ecf4; stroke-width: 1.2; opacity: 0.9; }
+    .mv-ceiling     { fill: none; stroke: #ffb658; stroke-width: 2; stroke-dasharray: 7 4; }
+    .mv-spike-mark  { stroke: #e879f9; stroke-width: 1.6; opacity: 0.85; }
+    .mv-spike-dot   { fill: none; stroke: #e879f9; stroke-width: 1.6; }
+    .mv-ratio-area  { fill: rgba(232, 236, 244, 0.10); }
+    .mv-ratio-line  { fill: none; stroke: #e8ecf4; stroke-width: 1.1; }
+    .mv-thresh      { stroke: rgba(255, 83, 116, 0.8); stroke-width: 1; stroke-dasharray: 4 3; }
+    .mv-thresh-soft { stroke: rgba(139, 149, 168, 0.4); stroke-width: 1; stroke-dasharray: 2 3; }
+    .mv-window      { fill: rgba(34, 211, 154, 0.16); }
+    .iq-chart-caption .iq-sw-magenta { background: transparent; border-left: 2px solid #e879f9; border-right: 0; margin-right: 0.35rem; width: 0.35em; }
+    .iq-chart-caption .iq-sw-amber   { background: transparent; border-top: 2px dashed #ffb658; height: 0; width: 1.1em; vertical-align: 3px; }
+    .iq-chart-caption .iq-sw-greenband { background: rgba(34, 211, 154, 0.22); border: 1px solid rgba(34, 211, 154, 0.55); }
+    .mv-table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+    .mv-table th, .mv-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border-soft); text-align: right; white-space: nowrap; }
+    .mv-table th { color: var(--text-faint); font-weight: 600; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .mv-table th:first-child, .mv-table td:first-child { text-align: left; color: var(--text-dim); }
+    .mv-table td { color: var(--text); }
+    .mv-table td.pos { color: #22d39a; }
+    .mv-table td.neg { color: #ff5374; }
+    .mv-table td.mv-edge { font-weight: 700; }
+    /* contain: inline-size stops the no-wrap table from widening the card
+       (and, through the shared grid column, every other card) on phones;
+       the table scrolls inside the wrapper instead. */
+    .mv-table-wrap { overflow-x: auto; contain: inline-size; min-width: 0; }
+    @media (max-width: 600px) { .mv-table { font-size: 0.62rem; } .mv-table th, .mv-table td { padding: 0.3rem 0.3rem; } }
     .iq-gate {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-soft);
@@ -860,6 +888,165 @@
                data-share-url="https://bats.co/market-signals.html#sig-two-of-three-uso"
                data-share-title="Two-of-Three Long/Cash USO — BATS.CO"
                data-share-text="A rules-only long/cash signal for crude oil (USO): hold when at least two of three votes agree — price below its 20-day EMA, NFCI below its 50-day average, HYG above its 50-day SMA — otherwise cash. Live daily pill, full backtest and drawdowns on the page."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
+        <!-- SIGNAL: Bond Fear Spike (MOVE index) — Treasury-volatility spikes vs stock-market lows -->
+        <div class="sig-card" id="sig-move-spike">
+          <div class="sig-head">
+            <h2 class="sig-title">Bond Fear Spike (MOVE Index)</h2>
+            <span class="sig-tag">Treasury volatility &middot; spike vs 50-day average &middot; short-term bounce, daily check</span>
+          </div>
+          <p class="sig-desc">
+            The <strong>MOVE index</strong> is the bond market's version of the VIX: it measures how big a swing traders
+            expect in Treasury yields over the next month. When bond fear spikes, stocks are usually already falling
+            &mdash; and the top of the spike has tended to land within days of the stock market's low. A
+            <strong>spike</strong> here means MOVE closes at least <strong>25% above its own 50-day average</strong>.
+            Since 2003 that has happened <strong data-mv-stat="spikes">&mdash;</strong> times. Buying SPY at the next
+            close, it was higher a month later <strong data-mv-stat="m1Up">&mdash;</strong> of the time, averaging
+            <strong data-mv-stat="m1Avg">&mdash;</strong> against <strong data-mv-stat="b1Avg">&mdash;</strong> for a
+            random month. The edge is short-lived: by six months a spike day looks like any other day.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="mvActionPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="mvActionSub">Fetching MOVE and SPY&hellip;</div>
+            <div class="iq-action-asof" id="mvActionAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="mvLevelGate">
+              <div class="iq-gate-label">MOVE index</div>
+              <div class="iq-gate-value" id="mvLevel">&mdash;</div>
+              <div class="iq-gate-cond" id="mvLevelCond">latest close</div>
+              <div class="iq-gate-state iq-gate-off" id="mvLevelState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="mvRatioGate">
+              <div class="iq-gate-label">MOVE vs 50-day average</div>
+              <div class="iq-gate-value" id="mvRatio">&mdash;</div>
+              <div class="iq-gate-cond">&ge; +25% &rarr; spike &middot; re-arms under +10%</div>
+              <div class="iq-gate-state iq-gate-off" id="mvRatioState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="mvCeilGate">
+              <div class="iq-gate-label">Falling ceiling</div>
+              <div class="iq-gate-value" id="mvCeil">&mdash;</div>
+              <div class="iq-gate-cond">line through the 2023 and 2025 spike highs, today</div>
+              <div class="iq-gate-state iq-gate-off" id="mvCeilState">&mdash;</div>
+            </div>
+          </div>
+          <div class="u3-votes" id="mvSpikeLine">&mdash;</div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Spikes since 2003</div><div class="val" data-mv-stat="spikes">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">SPY 1 week later</div><div class="val pos" data-mv-stat="w1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">SPY 1 month later</div><div class="val pos" data-mv-stat="m1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Higher after 1 month</div><div class="val pos" data-mv-stat="m1Up">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Any month (baseline)</div><div class="val" data-mv-stat="b1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Median days to the low</div><div class="val" data-mv-stat="daysToLow">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Avg further drop</div><div class="val neg" data-mv-stat="dropAvg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst further drop</div><div class="val neg" data-mv-stat="dropWorst">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Last spike</div><div class="val" data-mv-stat="lastSpike">&mdash;</div></div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="SPY returns after a MOVE spike versus any day">
+              <thead><tr><th>Holding period</th><th>After a spike</th><th>Higher</th><th>Any day</th><th>Higher</th><th>Edge</th></tr></thead>
+              <tbody id="mvTableBody"><tr><td colspan="6">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Episodes">
+              <span class="iq-range-group-label">Episodes</span>
+              <button type="button" class="iq-range-btn active" data-mv-from="2022-10-03" data-mv-to="9999-12-31" role="tab" title="Since the October 2022 low: the window the falling-ceiling pattern was spotted in">2022 &rarr;</button>
+              <button type="button" class="iq-range-btn" data-mv-from="2007-06-01" data-mv-to="2009-12-31" role="tab" title="Financial crisis: the one spike that kept going">2008</button>
+              <button type="button" class="iq-range-btn" data-mv-from="2020-01-01" data-mv-to="2020-12-31" role="tab" title="COVID: the spike fired early and stocks fell another 31%">COVID</button>
+              <button type="button" class="iq-range-btn" data-mv-from="2021-11-01" data-mv-to="2023-06-30" role="tab" title="Fed-hike bear: repeated spikes into a falling market">2022 bear</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-mv-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="3"  role="tab">3Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="0"  role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="mvChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="SPY and the MOVE index as percent change from the start of the window, with the falling ceiling through the spike highs, spike markers, and MOVE relative to its 50-day average"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: SPY (blue) and the MOVE index (white) as percent change from the start of the window,
+            the same way the pattern is usually drawn. The <span class="iq-sw iq-sw-amber"></span><strong>amber dashed
+            line</strong> is the falling ceiling through the March 2023 and April 2025 spike highs, extended forward.
+            Each <span class="iq-sw iq-sw-magenta"></span><strong>magenta vertical</strong> is a spike trigger day,
+            drawn from the MOVE line up to the SPY line; circles mark where each spike topped out.
+            <em>Bottom panel</em>: how far MOVE sits above or below its 50-day average. The dashed red line is the +25%
+            spike threshold and each <span class="iq-sw iq-sw-greenband"></span><strong>green band</strong> is the
+            month after a trigger &mdash; the window the stats above measure.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>It is a bounce signal, not a bottom call.</strong> The trigger usually fires while stocks are still
+              falling: the low came a median <strong data-mv-stat="daysToLow">&mdash;</strong> trading days after entry, and
+              on the way there SPY dropped another <strong data-mv-stat="dropAvg">&mdash;</strong> on average. Twice it kept
+              falling much further &mdash; <span data-mv-stat="worstTwo">&mdash;</span> &mdash; because those spikes were
+              the start of a crisis, not the end of a scare.
+            </p>
+            <p>
+              <strong>The edge fades with time.</strong> One-week and one-month returns after a spike beat a random week or
+              month by a wide margin. Three months out the gap is small (<span data-mv-stat="m3Avg">&mdash;</span> vs
+              <span data-mv-stat="b3Avg">&mdash;</span>), six months out it is about even
+              (<span data-mv-stat="m6Avg">&mdash;</span> vs <span data-mv-stat="b6Avg">&mdash;</span>), and at twelve
+              months spike days have done slightly worse than average (<span data-mv-stat="m12Avg">&mdash;</span> vs
+              <span data-mv-stat="b12Avg">&mdash;</span>). Treat it as a reason to buy a dip, not to change a long-term plan.
+            </p>
+            <p>
+              <strong>The falling ceiling is a pattern, not a rule.</strong> Every spike since March 2023 has topped out
+              lower than the one before, along a straight line through the 2023 and 2025 highs; the March 2026 spike
+              stopped right at it. If a future spike closes clearly above that line, the calming trend is broken and the
+              2022 playbook &mdash; repeated spikes into a falling market &mdash; becomes the better guide.
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When the signal fires &mdash; and how to actually trade it</h4>
+            <p>
+              <strong>MOVE is published once a day, after the bond market closes</strong> (around 4:30 PM ET). Yahoo posts
+              the reading in the evening, so this card picks it up in the nightly refresh (~7:30 PM ET), plus a quick live
+              check when the page loads. Because the number lands after the stock market has closed, the backtest buys SPY
+              at the <em>next</em> day's close &mdash; you cannot act on a spike the day it prints.
+            </p>
+            <ul>
+              <li><em>Evening</em>: if the pill says SPIKE ACTIVE and the trigger date is today, plan a SPY buy for
+                tomorrow's close.</li>
+              <li><em>Sizing</em>: the historical edge is a few percent over a month. Size the trade so another
+                <span data-mv-stat="dropAvg">&mdash;</span> (the average further drop) or a crisis-sized
+                <span data-mv-stat="dropWorst">&mdash;</span> is survivable.</li>
+              <li><em>Exit</em>: the stats stop at one month and there is no exit rule in the data, so pick your holding
+                period before you buy.</li>
+            </ul>
+          </div>
+
+          <p class="sig-note">
+            Study <span data-mv-stat="start">&mdash;</span> &ndash; <span data-mv-stat="end">&mdash;</span>
+            (<span data-mv-stat="years">&mdash;</span> yrs) on daily closes of the ICE BofA MOVE index and SPY, price only.
+            Spike = MOVE close at least 25% above its 50-day simple average, one event per spike (it re-arms once MOVE
+            falls back under +10%). Returns are measured from the close after the trigger. The same pattern holds at 20%,
+            30% and 35% thresholds; 25% is shown because it is a round number, not because it tested best. The ceiling
+            line is drawn through the highest closes of the 2023 and 2025 spikes in this data and is a chart observation,
+            not part of the rule. Results ignore trading costs, taxes and dividends. Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/market-signals.html#sig-move-spike"
+               data-share-title="Bond Fear Spike (MOVE Index) — BATS.CO"
+               data-share-text="When the MOVE index (bond-market fear) spikes 25% above its 50-day average, SPY has usually bounced over the following month. Live daily reading, the falling-ceiling chart and the since-2003 hit rates on the page."
                style="margin-top: 0.9rem;"></div>
         </div>
 
@@ -2307,6 +2494,296 @@
           btn.classList.add('active');
           if (btn.dataset.u3From && btn.dataset.u3To) renderChart({ from: btn.dataset.u3From, to: btn.dataset.u3To });
           else { const y = parseInt(btn.dataset.u3Years, 10); renderChart(Number.isFinite(y) ? y : 0); }
+        });
+      });
+    })();
+
+    // ==========================================================
+    //  Bond Fear Spike (MOVE index)
+    //
+    //  A "spike" is a MOVE close at least 25% above its own 50-day
+    //  average (one event per spike; it re-arms once MOVE cools back
+    //  under +10%). Event study: SPY bought at the close AFTER the
+    //  trigger (MOVE prints after the bell), forward 1w/1m/3m/6m/12m
+    //  returns vs any day. Chart: SPY vs MOVE % change, the falling
+    //  ceiling through the 2023 and 2025 spike highs, spike markers,
+    //  and MOVE relative to its 50-day average.
+    // ==========================================================
+    (async function initMoveSpike() {
+      const card = document.getElementById('sig-move-spike');
+      const pill = document.getElementById('mvActionPill');
+      if (!card || !pill) return;
+      const sub  = document.getElementById('mvActionSub');
+      const asof = document.getElementById('mvActionAsof');
+      const spikeLine = document.getElementById('mvSpikeLine');
+      const $ = id => document.getElementById(id);
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+      async function loadCsv(path, valueCol) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+          const p = ln.split(',');
+          const v = parseFloat(p[valueCol]);
+          if (p[0] && Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        out.sort((a, b) => a.date < b.date ? -1 : 1);
+        return out;
+      }
+
+      let move, spy;
+      try { [move, spy] = await Promise.all([loadCsv('data/move.csv', 1), loadCsv('data/spy.csv', 1)]); }
+      catch (e) { fail('Could not fetch MOVE or SPY data. Try again in a moment.'); return; }
+      if (move.length < 300 || spy.length < 300) { fail('Not enough history to run the study yet.'); return; }
+
+      // Best-effort: pick up today's MOVE print if the nightly file is a day
+      // behind. MOVE is published once a day after the bond close, so one
+      // check on page load is enough (no polling).
+      try {
+        const todayIso = new Date().toISOString().slice(0, 10);
+        if (move[move.length - 1].date < todayIso) {
+          const r = await fetch('/api/quote?syms=%5EMOVE', { cache: 'no-store' });
+          if (r.ok) {
+            const j = await r.json();
+            const q = j && j.quotes && j.quotes['^MOVE'];
+            if (q && Number.isFinite(q.price) && q.price > 0 && Number.isFinite(q.regularMarketTime)) {
+              const qDay = new Date(q.regularMarketTime * 1000).toISOString().slice(0, 10);
+              if (qDay > move[move.length - 1].date) move.push({ date: qDay, v: q.price, live: true });
+            }
+          }
+        }
+      } catch (e) { /* nightly file only */ }
+
+      // ---- MOVE-side math on its own calendar ----
+      const M = move.length, mv = move.map(r => r.v);
+      const sma50 = new Array(M).fill(null);
+      { let s = 0; for (let i = 0; i < M; i++) { s += mv[i]; if (i >= 50) s -= mv[i - 50]; if (i >= 49) sma50[i] = s / 50; } }
+      const ratio = mv.map((v, i) => sma50[i] == null ? null : v / sma50[i] - 1);
+      const TRIG = 0.25, RESET = 0.10, WINDOW = 21;
+      const S = spy.length, px = spy.map(r => r.v);
+      const trigIdx = [];
+      { let armed = true;
+        for (let i = 0; i < M; i++) {
+          const r = ratio[i]; if (r == null) continue;
+          if (armed && r >= TRIG) { if (move[i].date >= spy[0].date) trigIdx.push(i); armed = false; }
+          else if (!armed && r < RESET) armed = true;
+        } }
+      const peakOf = i => { let j = i; while (j + 1 < M && ratio[j + 1] != null && ratio[j + 1] >= RESET) j++; let p = i; for (let k = i; k <= j; k++) if (mv[k] > mv[p]) p = k; return p; };
+      const peakIdx = trigIdx.map(peakOf);
+
+      // Falling ceiling: a straight line through the 2023 and 2025 spike highs, extended forward.
+      const maxIn = (a, b) => { let p = -1; for (let i = 0; i < M; i++) if (move[i].date >= a && move[i].date <= b && (p < 0 || mv[i] > mv[p])) p = i; return p; };
+      const dayNum = iso => Date.parse(iso + 'T00:00:00Z') / 86400000;
+      const a1 = maxIn('2023-03-01', '2023-04-30'), a2 = maxIn('2025-03-15', '2025-05-15');
+      let ceilAt = null;
+      if (a1 >= 0 && a2 > a1) {
+        const slope = (mv[a2] - mv[a1]) / (dayNum(move[a2].date) - dayNum(move[a1].date));
+        ceilAt = iso => mv[a1] + slope * (dayNum(iso) - dayNum(move[a1].date));
+      }
+
+      // ---- Event study on SPY: buy at the close AFTER the trigger ----
+      const spyAtOrAfter = d => { let lo = 0, hi = S; while (lo < hi) { const m = (lo + hi) >> 1; if (spy[m].date < d) lo = m + 1; else hi = m; } return lo; };
+      const H = [[5, '1 week'], [21, '1 month'], [63, '3 months'], [126, '6 months'], [252, '12 months']];
+      const events = trigIdx.map((i, n) => {
+        const k = spyAtOrAfter(move[i].date), e = k + 1;
+        const ev = { trigDate: move[i].date, trigLevel: mv[i], trigRatio: ratio[i], peakDate: move[peakIdx[n]].date, peak: mv[peakIdx[n]], entry: null, fwd: {}, drop: null, daysToLow: null };
+        if (e >= S) return ev;
+        ev.entry = e; ev.entryDate = spy[e].date;
+        for (const [h] of H) ev.fwd[h] = e + h < S ? px[e + h] / px[e] - 1 : null;
+        if (e + 1 < S) { const seg = px.slice(e, e + 64); let lo = 0; for (let t = 1; t < seg.length; t++) if (seg[t] < seg[lo]) lo = t; ev.drop = seg[lo] / seg[0] - 1; ev.daysToLow = lo; }
+        return ev;
+      });
+      const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+      const median = a => { const b = a.slice().sort((x, y) => x - y); const m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+      const upPct = a => a.filter(x => x > 0).length / a.length * 100;
+      const after = {}, base = {};
+      for (const [h] of H) {
+        const rs = events.map(ev => ev.fwd[h]).filter(x => x != null);
+        after[h] = rs.length ? { avg: mean(rs) * 100, up: upPct(rs), n: rs.length } : null;
+        const bs = []; for (let i = 0; i + h < S; i++) bs.push(px[i + h] / px[i] - 1);
+        base[h] = { avg: mean(bs) * 100, up: upPct(bs) };
+      }
+      const fmtPct = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '%';
+      const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthYear = iso => MONTHS[parseInt(iso.slice(5, 7), 10) - 1] + ' ' + iso.slice(0, 4);
+      const withDrop = events.filter(ev => ev.drop != null);
+      const drops = withDrop.map(ev => ev.drop), d2l = withDrop.map(ev => ev.daysToLow);
+      const worstTwo = withDrop.slice().sort((a, b) => a.drop - b.drop).slice(0, 2);
+      const A = (h, key) => after[h] ? fmtPct(after[h][key === 'up' ? 'up' : 'avg'], key === 'up' ? 0 : 1) : '—';
+      const stats = {
+        spikes: String(trigIdx.length),
+        w1Avg: A(5, 'avg'), w1Up: after[5] ? Math.round(after[5].up) + '%' : '—',
+        m1Avg: A(21, 'avg'), m1Up: after[21] ? Math.round(after[21].up) + '%' : '—',
+        m3Avg: A(63, 'avg'), m6Avg: A(126, 'avg'), m12Avg: A(252, 'avg'),
+        b1Avg: fmtPct(base[21].avg), b1Up: Math.round(base[21].up) + '%',
+        b3Avg: fmtPct(base[63].avg), b6Avg: fmtPct(base[126].avg), b12Avg: fmtPct(base[252].avg),
+        daysToLow: d2l.length ? String(Math.round(median(d2l))) : '—',
+        dropAvg: drops.length ? (mean(drops) * 100).toFixed(1) + '%' : '—',
+        dropWorst: drops.length ? (Math.min(...drops) * 100).toFixed(1) + '%' : '—',
+        worstTwo: worstTwo.length === 2 ? `${monthYear(worstTwo[0].trigDate)} (${(worstTwo[0].drop * 100).toFixed(0)}%) and ${monthYear(worstTwo[1].trigDate)} (${(worstTwo[1].drop * 100).toFixed(0)}%)` : '—',
+        lastSpike: trigIdx.length ? move[trigIdx[trigIdx.length - 1]].date : '—',
+        start: spy[0].date.slice(0, 7), end: spy[S - 1].date.slice(0, 7), years: ((S - 1) / 252).toFixed(1),
+      };
+      card.querySelectorAll('[data-mv-stat]').forEach(el => { const v = stats[el.dataset.mvStat]; if (v != null) el.textContent = v; });
+      const tb = $('mvTableBody');
+      if (tb) tb.innerHTML = H.map(([h, lab]) => {
+        const a = after[h], b = base[h]; if (!a) return '';
+        const edge = a.avg - b.avg;
+        return `<tr><td>${lab}</td><td class="mv-edge ${a.avg >= 0 ? 'pos' : 'neg'}">${fmtPct(a.avg)}</td><td>${Math.round(a.up)}%</td><td>${fmtPct(b.avg)}</td><td>${Math.round(b.up)}%</td><td class="${edge >= 0 ? 'pos' : 'neg'}">${fmtPct(edge)}</td></tr>`;
+      }).join('');
+
+      // ---- Pill, gates, last-spike line ----
+      const last = M - 1, lastTrig = trigIdx.length ? trigIdx[trigIdx.length - 1] : -1;
+      const sinceTrig = lastTrig >= 0 ? last - lastTrig : Infinity;
+      const r = ratio[last];
+      const pctS = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+      let action, cls, subText;
+      if (sinceTrig <= WINDOW && r != null) {
+        action = 'SPIKE ACTIVE'; cls = 'iq-action-buy';
+        subText = sinceTrig === 0
+          ? `MOVE closed ${pctS(r)} above its 50-day average today — a new spike. The backtest buys SPY at tomorrow's close. After the ${trigIdx.length - 1} earlier spikes, SPY was higher a month later ${stats.m1Up} of the time, but the low usually came about ${stats.daysToLow} trading days after entry.`
+          : `MOVE spiked on ${move[lastTrig].date} and sits ${pctS(r)} above its 50-day average (day ${sinceTrig} of the one-month window the stats cover). After past spikes SPY was higher a month later ${stats.m1Up} of the time, with the low arriving a median ${stats.daysToLow} trading days in — expect more wobble first.`;
+      } else if (r != null && r >= 0.15) {
+        action = 'WATCH'; cls = 'iq-action-hold';
+        subText = `MOVE is ${pctS(r)} above its 50-day average — building toward a spike. A close at or above +25% triggers.`;
+      } else {
+        action = 'NO SPIKE'; cls = 'iq-action-stayout';
+        subText = `MOVE is ${r == null ? 'still warming up' : pctS(r) + ' vs its 50-day average'}. A spike needs a close at least 25% above it.`;
+      }
+      const daysSince = iso => Math.floor((Date.now() - new Date(iso + 'T00:00:00Z').getTime()) / 86400000);
+      let asofTxt = `As of ${move[last].date}${move[last].live ? " · today's print (provisional)" : ''} · SPY thru ${spy[S - 1].date}`;
+      if (daysSince(move[last].date) > 4) asofTxt += ' · MOVE stale';
+      pill.textContent = action; pill.className = 'iq-action-pill ' + cls;
+      sub.textContent = subText; asof.textContent = asofTxt;
+
+      // Gate 1: level, change on the day, highest close since when
+      const chg1 = last > 0 ? mv[last] / mv[last - 1] - 1 : 0;
+      let since = last - 1; while (since >= 0 && mv[since] < mv[last]) since--;
+      const bigLevel = since < 0 || last - since > 60;
+      $('mvLevel').textContent = mv[last].toFixed(2);
+      $('mvLevelCond').textContent = since < 0 ? 'highest close on record' : 'highest close since ' + move[since].date;
+      $('mvLevelState').textContent = `${pctS(chg1)} today`;
+      $('mvLevelState').className = 'iq-gate-state ' + (bigLevel ? 'iq-gate-on' : 'iq-gate-off');
+      $('mvLevelGate').classList.toggle('iq-gate-firing', bigLevel);
+      // Gate 2: ratio to the 50-day average
+      const spiking = r != null && r >= TRIG, cooling = !spiking && r != null && r >= RESET && sinceTrig <= 60;
+      $('mvRatio').textContent = r == null ? '—' : pctS(r);
+      $('mvRatioState').textContent = spiking ? 'SPIKE (≥ +25%)' : cooling ? 'cooling · re-arms under +10%' : 'no spike';
+      $('mvRatioState').className = 'iq-gate-state ' + (spiking ? 'iq-gate-on' : 'iq-gate-off');
+      $('mvRatioGate').classList.toggle('iq-gate-firing', spiking);
+      // Gate 3: distance to the falling ceiling
+      if (ceilAt) {
+        const line = ceilAt(move[last].date), diff = mv[last] / line - 1;
+        let txt, on = false, broken = false;
+        if (diff > 0.02) { txt = `ABOVE by ${(diff * 100).toFixed(0)}% · pattern broken`; broken = true; }
+        else if (diff >= -0.06) { txt = 'AT the line'; on = true; }
+        else txt = `${(-diff * 100).toFixed(0)}% below the line`;
+        $('mvCeil').textContent = line.toFixed(1);
+        $('mvCeilState').textContent = txt;
+        $('mvCeilState').className = 'iq-gate-state ' + (on ? 'iq-gate-on' : 'iq-gate-off');
+        $('mvCeilState').style.color = broken ? '#ff5374' : '';
+        $('mvCeilGate').classList.toggle('iq-gate-firing', on);
+      }
+      if (lastTrig >= 0 && spikeLine) {
+        const ev = events[events.length - 1];
+        const f3 = ev.fwd[63] != null ? ` · SPY ${fmtPct(ev.fwd[63] * 100)} three months later` : '';
+        spikeLine.innerHTML = `Last spike: triggered <strong>${ev.trigDate}</strong> at ${ev.trigLevel.toFixed(1)} · peak so far <strong>${ev.peak.toFixed(1)}</strong> on ${ev.peakDate}${f3}`;
+        spikeLine.className = 'u3-votes' + (sinceTrig <= WINDOW ? ' on' : '');
+      }
+
+      // ---- Chart on SPY's calendar (MOVE forward-filled) ----
+      const mvOnSpy = new Array(S).fill(null), ratioOnSpy = new Array(S).fill(null);
+      { let j = 0, lastV = null, lastR = null;
+        for (let i = 0; i < S; i++) { while (j < M && move[j].date <= spy[i].date) { lastV = mv[j]; lastR = ratio[j]; j++; } mvOnSpy[i] = lastV; ratioOnSpy[i] = lastR; } }
+      const trigOnSpy = new Map(); trigIdx.forEach((i, n) => trigOnSpy.set(spyAtOrAfter(move[i].date), spyAtOrAfter(move[peakIdx[n]].date)));
+      let first = 0; while (first < S && (mvOnSpy[first] == null || ratioOnSpy[first] == null)) first++;
+      const viewFull = [];
+      for (let i = first; i < S; i++) viewFull.push({ date: spy[i].date, px: px[i], mv: mvOnSpy[i], r: ratioOnSpy[i], trig: trigOnSpy.has(i), peakAbs: trigOnSpy.get(i) });
+
+      const chartSvg = $('mvChartSvg');
+      function renderChart(spec) {
+        if (!chartSvg) return;
+        let startIdx = 0, endIdx = viewFull.length;
+        if (typeof spec === 'number') startIdx = spec > 0 ? Math.max(0, viewFull.length - spec * 252) : 0;
+        else if (spec && spec.from && spec.to) { const s = viewFull.findIndex(v => v.date >= spec.from), e = viewFull.findIndex(v => v.date > spec.to); startIdx = s >= 0 ? s : 0; endIdx = e >= 0 ? e : viewFull.length; }
+        const view = viewFull.slice(startIdx, endIdx);
+        if (view.length < 2) return;
+
+        const W = 1200, PAD_L = 62, PAD_R = 78, PAD_T = 20, GAP = 24, TOP_H = 330, BOT_H = 130;
+        const plotW = W - PAD_L - PAD_R, topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP, botY1 = botY0 + BOT_H;
+        const n = view.length, xFor = i => PAD_L + plotW * i / Math.max(1, n - 1);
+        const spy0 = view[0].px, mv0 = view[0].mv;
+        const ps = view.map(v => v.px / spy0 - 1), pm = view.map(v => v.mv / mv0 - 1);
+        const ceil = [];
+        if (ceilAt) { const startD = move[a1].date; for (let i = 0; i < n; i++) ceil.push(view[i].date >= startD ? ceilAt(view[i].date) / mv0 - 1 : null); }
+        const ceilVals = ceil.filter(x => x != null);
+        let lo = Math.min(0, ...ps, ...pm), hi = Math.max(0, ...ps, ...pm);
+        if (ceilVals.length) { lo = Math.min(lo, ...ceilVals); hi = Math.max(hi, ...ceilVals); }
+        const pad = (hi - lo) * 0.06 || 0.1; lo -= pad; hi += pad;
+        const yTop = v => topY1 - (v - lo) / (hi - lo) * TOP_H;
+        const rv = view.map(v => v.r);
+        let rlo = Math.min(-0.3, ...rv), rhi = Math.max(0.45, ...rv);
+        const rpad = (rhi - rlo) * 0.06; rlo -= rpad; rhi += rpad;
+        const yBot = v => botY1 - (v - rlo) / (rhi - rlo) * BOT_H;
+        const parts = [];
+
+        // top gridlines
+        const spanPct = (hi - lo) * 100, steps = [5, 10, 20, 25, 50, 100, 200, 250, 500];
+        const step = steps.find(s => spanPct / s <= 8) || 1000;
+        for (let t = Math.ceil(lo * 100 / step) * step; t <= hi * 100; t += step) {
+          const y = yTop(t / 100).toFixed(1);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="${t === 0 ? 'iq-zero-line' : 'chart-grid'}" /><text x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end" class="chart-axis-label">${t > 0 ? '+' : ''}${t}%</text>`);
+        }
+        // bottom: month-after bands, area, line, thresholds
+        const trigs = []; view.forEach((v, i) => { if (v.trig) trigs.push(i); });
+        for (const i of trigs) { const x0 = xFor(i), x1 = xFor(Math.min(n - 1, i + WINDOW)); parts.push(`<rect x="${x0.toFixed(1)}" y="${botY0}" width="${Math.max(x1 - x0, 1).toFixed(1)}" height="${BOT_H}" class="mv-window" />`); }
+        { const y0 = yBot(0).toFixed(1); let d = `M ${xFor(0).toFixed(1)} ${y0} `;
+          for (let i = 0; i < n; i++) d += `L ${xFor(i).toFixed(1)} ${yBot(rv[i]).toFixed(1)} `;
+          d += `L ${xFor(n - 1).toFixed(1)} ${y0} Z`;
+          parts.push(`<path d="${d}" class="mv-ratio-area" />`);
+          parts.push(`<path d="${rv.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yBot(v).toFixed(1)}`).join(' ')}" class="mv-ratio-line" />`); }
+        for (const [lvl, c, label] of [[0, 'iq-zero-line', '0'], [RESET, 'mv-thresh-soft', '+10% re-arm'], [TRIG, 'mv-thresh', '+25% spike']]) {
+          const y = yBot(lvl).toFixed(1);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="${c}" /><text x="${PAD_L + plotW + 4}" y="${(+y + 3).toFixed(1)}" class="chart-axis-label">${label}</text>`);
+        }
+        // top: ceiling, SPY, MOVE, spike markers
+        if (ceilVals.length) { let d = '', open = false; for (let i = 0; i < n; i++) { const c = ceil[i]; if (c == null) { open = false; continue; } d += `${open ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(c).toFixed(1)} `; open = true; } parts.push(`<path d="${d.trim()}" class="mv-ceiling" />`); }
+        parts.push(`<path d="${ps.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(v).toFixed(1)}`).join(' ')}" class="mv-line-spy" />`);
+        parts.push(`<path d="${pm.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(v).toFixed(1)}`).join(' ')}" class="mv-line-move" />`);
+        const drawDots = trigs.length <= 14;
+        for (const i of trigs) {
+          const x = xFor(i).toFixed(1), y1 = yTop(pm[i]), y2 = yTop(ps[i]);
+          parts.push(`<line x1="${x}" y1="${Math.min(y1, y2).toFixed(1)}" x2="${x}" y2="${Math.max(y1, y2).toFixed(1)}" class="mv-spike-mark" />`);
+          if (drawDots && view[i].peakAbs != null) { const pk = view[i].peakAbs - first - startIdx; if (pk >= 0 && pk < n) parts.push(`<circle cx="${xFor(pk).toFixed(1)}" cy="${yTop(pm[pk]).toFixed(1)}" r="7" class="mv-spike-dot" />`); }
+        }
+        // end labels (nudged apart if they collide)
+        let ySpy = yTop(ps[n - 1]), yMv = yTop(pm[n - 1]);
+        if (Math.abs(ySpy - yMv) < 12) { if (ySpy < yMv) { ySpy -= 6; yMv += 6; } else { ySpy += 6; yMv -= 6; } }
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${(ySpy + 3).toFixed(1)}" class="iq-eq-label" style="fill:#64d3ff">${fmtPct(ps[n - 1] * 100, 0)}</text>`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${(yMv + 3).toFixed(1)}" class="iq-eq-label" style="fill:#e8ecf4">${fmtPct(pm[n - 1] * 100, 0)}</text>`);
+        // x axis: month labels for short windows, years for long ones
+        const spanYears = (dayNum(view[n - 1].date) - dayNum(view[0].date)) / 365.25;
+        const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const xl = d => spanYears <= 6 ? `${MON[parseInt(d.slice(5, 7), 10) - 1]} ${d.slice(2, 4)}` : d.slice(0, 4);
+        for (let k = 0; k <= 7; k++) { const i = Math.round(k / 7 * (n - 1)); parts.push(`<text x="${xFor(i).toFixed(1)}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${xl(view[i].date)}</text>`); }
+        parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">SPY vs MOVE · % change from window start</text>`);
+        parts.push(`<text x="${PAD_L + 6}" y="${botY0 + 14}" class="chart-panel-label">MOVE vs its 50-day average</text>`);
+        parts.push(`<g transform="translate(${PAD_L + plotW - 470}, ${topY0 + 6})"><line x1="0" y1="5" x2="18" y2="5" class="mv-line-spy" /><text x="22" y="9" class="chart-axis-label">SPY</text><line x1="58" y1="5" x2="76" y2="5" class="mv-line-move" /><text x="80" y="9" class="chart-axis-label">MOVE</text><line x1="130" y1="5" x2="148" y2="5" class="mv-ceiling" /><text x="152" y="9" class="chart-axis-label">falling ceiling</text><line x1="262" y1="0" x2="262" y2="10" class="mv-spike-mark" /><text x="268" y="9" class="chart-axis-label">spike trigger</text><rect x="372" y="0" width="14" height="10" class="mv-window" /><text x="390" y="9" class="chart-axis-label">month after</text></g>`);
+        chartSvg.innerHTML = parts.join('');
+      }
+      renderChart({ from: '2022-10-03', to: '9999-12-31' });
+      card.querySelectorAll('.iq-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.mvFrom && btn.dataset.mvTo) renderChart({ from: btn.dataset.mvFrom, to: btn.dataset.mvTo });
+          else { const y = parseInt(btn.dataset.mvYears, 10); renderChart(Number.isFinite(y) ? y : 0); }
         });
       });
     })();
