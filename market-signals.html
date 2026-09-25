@@ -204,6 +204,20 @@
       margin-bottom: 0.75rem;
     }
     @media (max-width: 600px) { .iq-gates { grid-template-columns: 1fr; } }
+    /* Two-of-Three USO card: three gates side by side, a vote-count line
+       under them, and the vote strip / EMA line in its chart. */
+    .u3-gates { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 760px) { .u3-gates { grid-template-columns: 1fr; } }
+    .u3-votes {
+      margin: -0.25rem 0 0.9rem; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+      color: var(--text-dim); letter-spacing: 0.04em;
+    }
+    .u3-votes strong { color: var(--text); }
+    .u3-votes.on strong { color: #22d39a; }
+    .u3-line-ema   { fill: none; stroke: #ffb658; stroke-width: 1.1; stroke-dasharray: 4 3; }
+    .u3-vote-on    { fill: rgba(34, 211, 154, 0.55); }
+    .u3-vote-off   { fill: rgba(139, 149, 168, 0.10); }
+    .u3-vote-label { fill: #8b95a8; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
     .iq-gate {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border-soft);
@@ -686,6 +700,166 @@
                data-share-url="https://bats.co/market-signals.html#sig-two-gate-qqq"
                data-share-title="Two-Gate Long/Cash QQQ — BATS.CO"
                data-share-text="A rules-only long/cash signal for QQQ: stay long when credit is easing (NFCI below its 50-day average) or QQQ's 14-day RSI is under 40, otherwise sit in cash. Historically compounded at nearly double buy-and-hold since 1999 (18.3% vs 9.9% CAGR) with a live intraday pill you can act on before market close."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
+        <!-- SIGNAL: Two-of-Three Long/Cash USO (price dip + NFCI regime + HYG credit, majority vote) -->
+        <div class="sig-card" id="sig-two-of-three-uso">
+          <div class="sig-head">
+            <h2 class="sig-title">Two-of-Three Long/Cash USO</h2>
+            <span class="sig-tag">Price dip &middot; credit &middot; financial conditions &middot; majority vote, daily check</span>
+          </div>
+          <p class="sig-desc">
+            A rules-only long/cash strategy for crude oil (<strong>USO</strong>). Three independent votes are
+            checked at each close: (1) <strong>price has dipped</strong> &mdash; USO is below its 20-day EMA;
+            (2) <strong>financial conditions are loosening</strong> &mdash; NFCI is below its 50-day average;
+            (3) <strong>credit is risk-on</strong> &mdash; HYG (junk bonds) is above its 50-day SMA. Hold USO whenever
+            <strong>at least two of the three</strong> say yes; otherwise sit in cash. Since mid-2007 the rule compounded
+            at <strong data-u3-stat="cagr">&mdash;</strong> a year while USO itself lost
+            <strong data-u3-stat="bhCagrAbs">&mdash;</strong> a year, with a worst drawdown of
+            <strong data-u3-stat="mdd">&mdash;</strong> against buy-and-hold's <strong data-u3-stat="bhMdd">&mdash;</strong>.
+            It is in the market about <strong data-u3-stat="invested">&mdash;</strong> of the time.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="u3ActionPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="u3ActionSub">Fetching USO, HYG and NFCI&hellip;</div>
+            <div class="iq-action-asof" id="u3ActionAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="u3DipGate">
+              <div class="iq-gate-label">USO vs 20-day EMA</div>
+              <div class="iq-gate-value" id="u3Dip">&mdash;</div>
+              <div class="iq-gate-cond">price below EMA &rarr; vote</div>
+              <div class="iq-gate-state iq-gate-off" id="u3DipState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="u3NfciGate">
+              <div class="iq-gate-label">NFCI</div>
+              <div class="iq-gate-value" id="u3Nfci">&mdash;</div>
+              <div class="iq-gate-cond">below 50d SMA &rarr; vote</div>
+              <div class="iq-gate-state iq-gate-off" id="u3NfciState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="u3HygGate">
+              <div class="iq-gate-label">HYG vs 50-day SMA</div>
+              <div class="iq-gate-value" id="u3Hyg">&mdash;</div>
+              <div class="iq-gate-cond">price above SMA &rarr; vote</div>
+              <div class="iq-gate-state iq-gate-off" id="u3HygState">&mdash;</div>
+            </div>
+          </div>
+          <div class="u3-votes" id="u3Votes">&mdash;</div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos" data-u3-stat="cagr">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold CAGR</div><div class="val neg" data-u3-stat="bhCagr">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Rule cumulative</div><div class="val pos" data-u3-stat="ruleCum">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold cumulative</div><div class="val neg" data-u3-stat="bhCum">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos" data-u3-stat="alpha">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Beta vs USO</div><div class="val" data-u3-stat="beta">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Sharpe</div><div class="val pos" data-u3-stat="sharpe">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Max drawdown</div><div class="val" data-u3-stat="mdd">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold max DD</div><div class="val neg" data-u3-stat="bhMdd">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst 12 months</div><div class="val" data-u3-stat="worst12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Time invested</div><div class="val" data-u3-stat="invested">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Trades / yr</div><div class="val" data-u3-stat="tradesYr">&mdash;</div></div>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Oil crashes">
+              <span class="iq-range-group-label">Crashes</span>
+              <button type="button" class="iq-range-btn" data-u3-from="2008-05-01" data-u3-to="2009-06-30" role="tab" title="2008: oil from $145 to $35">2008</button>
+              <button type="button" class="iq-range-btn" data-u3-from="2014-06-01" data-u3-to="2016-06-30" role="tab" title="2014-16 supply glut">2014-16</button>
+              <button type="button" class="iq-range-btn" data-u3-from="2020-01-01" data-u3-to="2020-12-31" role="tab" title="COVID: the negative-oil episode">COVID</button>
+              <button type="button" class="iq-range-btn" data-u3-from="2022-03-01" data-u3-to="2023-06-30" role="tab" title="2022 spike and slide">2022</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-u3-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-u3-years="3"  role="tab">3Y</button>
+              <button type="button" class="iq-range-btn active" data-u3-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-u3-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn" data-u3-years="0"  role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="u3ChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="Running equity curve for the rule vs buy and hold, USO price with its 20-day EMA, and the three votes over time"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: $1,000 in the rule (green) vs $1,000 in USO (dashed cyan) from the start of the window.
+            <em>Middle panel</em>: USO on a log scale with its 20-day EMA (dashed amber) &mdash; price under the line is the
+            "dip" vote. <em>Bottom strip</em>: the three votes, one row each, green when that vote is on. The rule is long
+            whenever two or more rows are green. As on the card above,
+            <span class="iq-sw iq-sw-red"></span><strong>red = SELL</strong>,
+            <span class="iq-sw iq-sw-yellow"></span><strong>yellow band</strong> = in cash,
+            <span class="iq-sw iq-sw-green"></span><strong>green = BUY back</strong>. Wide yellow bands in 2008, 2014&ndash;16 and
+            2020 are where the rule stood aside from oil's worst collapses.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>Why the buy-and-hold line is so bad.</strong> USO holds oil <em>futures</em>, not barrels. Rolling
+              those contracts costs money most of the time, and in April 2020 the front contract briefly traded below zero.
+              That is why a decade of roughly flat oil prices turned into a <strong data-u3-stat="bhCum">&mdash;</strong>
+              buy-and-hold result. Beating that is a low bar; the number that matters is the rule's own
+              <strong data-u3-stat="cagr">&mdash;</strong> a year at a Sharpe of <strong data-u3-stat="sharpe">&mdash;</strong>.
+            </p>
+            <p>
+              <strong>The edge is mostly about staying out.</strong> The rule was long only
+              <span data-u3-stat="c08inv">&mdash;</span> of days in the 2008 collapse (rule <span data-u3-stat="c08r">&mdash;</span>
+              vs USO <span data-u3-stat="c08b">&mdash;</span>), and sat out most of the 2014&ndash;16 glut
+              (<span data-u3-stat="c14r">&mdash;</span> vs <span data-u3-stat="c14b">&mdash;</span>) and COVID
+              (<span data-u3-stat="c20r">&mdash;</span> vs <span data-u3-stat="c20b">&mdash;</span>). It also missed part of
+              2022's spike because credit was stressed &mdash; that is the price of the filter.
+            </p>
+            <p>
+              <strong>It is still oil.</strong> Worst drawdown <strong data-u3-stat="mdd">&mdash;</strong>, worst rolling
+              twelve months <strong data-u3-stat="worst12">&mdash;</strong>, and roughly <strong data-u3-stat="tradesYr">&mdash;</strong>
+              round trips a year &mdash; far busier than the Two-Gate QQQ rule above. If you cannot hold a commodity
+              through a &minus;30% stretch, treat the pill as a second opinion rather than a trading plan.
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When the signal fires &mdash; and how to actually trade it</h4>
+            <p>
+              <strong>The signal settles at market close, 4:00 PM ET.</strong> Two of the three votes use closing prices
+              (USO against its EMA, HYG against its SMA); the third, NFCI, is a weekly series the Chicago Fed publishes on
+              Wednesday afternoons for the previous Friday, and the rule only uses a reading once it has been published.
+            </p>
+            <p>
+              <strong>During market hours</strong> the card polls USO and HYG every 60 seconds and rebuilds today's
+              provisional votes on the fly &mdash; the pill is tagged <strong>INTRADAY</strong> until the close. After
+              the nightly data refresh (~7:30 PM ET) it shows the confirmed close.
+            </p>
+            <ul>
+              <li><em>Market-on-close</em>: check the pill at 3:45 PM ET; BUY NOW / SELL NOW means submit a
+                market-on-close order for USO. HOLD / STAY OUT means do nothing.</li>
+              <li><em>Next open</em>: check after 7:30 PM ET and act at the next open if the confirmed signal changed.</li>
+              <li><em>Wednesday evenings</em> are when a fresh NFCI print can flip the macro vote on its own.</li>
+            </ul>
+          </div>
+
+          <p class="sig-note">
+            Backtest <span data-u3-stat="start">&mdash;</span> &ndash; <span data-u3-stat="end">&mdash;</span>
+            (<span data-u3-stat="years">&mdash;</span> yrs) on USO and HYG daily closes + FRED NFCI weekly, using each NFCI
+            reading only from its publication date. Signal on day <em>t</em> earns day <em>t+1</em>'s return; no
+            look-ahead. Over the same window, buy-and-hold SPY compounded at
+            <span data-u3-stat="spyCagr">&mdash;</span> a year (max drawdown <span data-u3-stat="spyMdd">&mdash;</span>)
+            and QQQ at <span data-u3-stat="qqqCagr">&mdash;</span> (<span data-u3-stat="qqqMdd">&mdash;</span>), price only
+            &mdash; dividends add roughly two points a year to SPY and one to QQQ. The rule's daily returns correlate only
+            <span data-u3-stat="spyCorr">&mdash;</span> with the S&amp;P, so it behaves as a diversifier alongside an index
+            fund rather than a replacement for one. Results ignore trading costs, taxes and slippage. Systematic long/cash
+            rule shown for reference only &mdash; not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/market-signals.html#sig-two-of-three-uso"
+               data-share-title="Two-of-Three Long/Cash USO — BATS.CO"
+               data-share-text="A rules-only long/cash signal for crude oil (USO): hold when at least two of three votes agree — price below its 20-day EMA, NFCI below its 50-day average, HYG above its 50-day SMA — otherwise cash. Live daily pill, full backtest and drawdowns on the page."
                style="margin-top: 0.9rem;"></div>
         </div>
 
@@ -1786,9 +1960,10 @@
         // or click a "Crash" preset to jump straight to a bear market
         // where the rule's regime filter did (or didn't) shine.
         renderChart(5);
-        document.querySelectorAll('.iq-range-btn').forEach(btn => {
+        // Scoped to this card — the USO card below shares the button class.
+        document.querySelectorAll('#sig-two-gate-qqq .iq-range-btn').forEach(btn => {
           btn.addEventListener('click', () => {
-            document.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#sig-two-gate-qqq .iq-range-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             if (btn.dataset.from && btn.dataset.to) {
               renderChart({ from: btn.dataset.from, to: btn.dataset.to });
@@ -1799,6 +1974,341 @@
           });
         });
       }
+    })();
+
+    // ==========================================================
+    //  Two-of-Three Long/Cash USO — majority vote of three checks
+    //
+    //  Votes at each close:  dip    = USO close < 20-day EMA
+    //                        macro  = NFCI < 50-day SMA (daily-filled;
+    //                                 each weekly print used only from
+    //                                 its publication date, +5 days)
+    //                        credit = HYG close > 50-day SMA
+    //  Long USO when >= 2 votes are on, else cash. Signal on day t earns
+    //  day t+1's return. Same live-intraday overlay as the Two-Gate card.
+    // ==========================================================
+    (async function initTwoOfThreeUso() {
+      const card = document.getElementById('sig-two-of-three-uso');
+      const pill = document.getElementById('u3ActionPill');
+      if (!card || !pill) return;
+      const sub  = document.getElementById('u3ActionSub');
+      const asof = document.getElementById('u3ActionAsof');
+      const votesEl = document.getElementById('u3Votes');
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+      async function loadCsv(path, valueCol) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+          const p = ln.split(',');
+          const v = parseFloat(p[valueCol]);
+          if (p[0] && Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        out.sort((a, b) => a.date < b.date ? -1 : 1);
+        return out;
+      }
+      const shiftDate = (iso, days) => {
+        const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days);
+        return d.toISOString().slice(0, 10);
+      };
+
+      let uso, hyg, nfci;
+      try {
+        [uso, hyg, nfci] = await Promise.all([loadCsv('data/uso.csv', 1), loadCsv('data/hyg.csv', 1), loadCsv('data/nfci.csv', 1)]);
+      } catch (e) { fail('Could not fetch USO, HYG or NFCI data. Try again in a moment.'); return; }
+      if (uso.length < 120 || hyg.length < 60 || nfci.length < 60) { fail('Not enough history to run the rule yet.'); return; }
+
+      const N = uso.length;
+      const px = uso.map(r => r.v);
+
+      // EMA20 on USO
+      const EMA_N = 20, K = 2 / (EMA_N + 1);
+      const ema = new Array(N).fill(null);
+      { let s = 0; for (let i = 0; i < EMA_N; i++) s += px[i]; let e = s / EMA_N; ema[EMA_N - 1] = e;
+        for (let i = EMA_N; i < N; i++) { e = px[i] * K + e * (1 - K); ema[i] = e; } }
+
+      // Forward-fill a dated series onto USO's calendar
+      function alignTo(series) {
+        const out = new Array(N).fill(null); let last = null, j = 0;
+        for (let i = 0; i < N; i++) {
+          while (j < series.length && series[j].date <= uso[i].date) { last = series[j].v; j++; }
+          out[i] = last;
+        }
+        return out;
+      }
+      function smaOf(daily, n) {
+        const out = new Array(N).fill(null);
+        for (let i = n - 1; i < N; i++) {
+          let s = 0, ok = true;
+          for (let k = 0; k < n; k++) { const v = daily[i - k]; if (v == null) { ok = false; break; } s += v; }
+          if (ok) out[i] = s / n;
+        }
+        return out;
+      }
+      const hygDaily  = alignTo(hyg);
+      const hygSma    = smaOf(hygDaily, 50);
+      const NFCI_LAG  = 5;
+      const nfciDaily = alignTo(nfci.map(r => ({ date: shiftDate(r.date, NFCI_LAG), v: r.v })));
+      const nfciSma   = smaOf(nfciDaily, 50);
+
+      function signalAt(i) {
+        if (i < 0 || i >= N) return null;
+        if (ema[i] == null || nfciDaily[i] == null || nfciSma[i] == null || hygDaily[i] == null || hygSma[i] == null) return null;
+        const dip = px[i] < ema[i], macro = nfciDaily[i] < nfciSma[i], credit = hygDaily[i] > hygSma[i];
+        const votes = (dip ? 1 : 0) + (macro ? 1 : 0) + (credit ? 1 : 0);
+        return { date: uso[i].date, px: px[i], ema: ema[i], dip, nfci: nfciDaily[i], nfciSma: nfciSma[i], macro,
+                 hyg: hygDaily[i], hygSma: hygSma[i], credit, votes, invested: votes >= 2 };
+      }
+
+      const today = signalAt(N - 1), yest = signalAt(N - 2);
+      if (!today || !yest) { fail('Signal is warming up.'); return; }
+
+      // ---- Pill + gate readouts ----
+      const dipEl = document.getElementById('u3Dip'),  dipState = document.getElementById('u3DipState'),  dipGate = document.getElementById('u3DipGate');
+      const nfEl  = document.getElementById('u3Nfci'), nfState  = document.getElementById('u3NfciState'), nfGate  = document.getElementById('u3NfciGate');
+      const hyEl  = document.getElementById('u3Hyg'),  hyState  = document.getElementById('u3HygState'),  hyGate  = document.getElementById('u3HygGate');
+      const money = v => '$' + v.toFixed(2);
+
+      function applySignal(t, y, asofText) {
+        let action, cls, subText;
+        if (t.invested && !y.invested)       { action = 'BUY NOW';  cls = 'iq-action-buy';     subText = "Votes just reached two of three — the rule says go long USO at today's close."; }
+        else if (t.invested && y.invested)   { action = 'HOLD';     cls = 'iq-action-hold';    subText = 'Two or more votes are on — already long, keep the position.'; }
+        else if (!t.invested && y.invested)  { action = 'SELL NOW'; cls = 'iq-action-sell';    subText = "Votes just dropped below two — the rule says exit to cash at today's close."; }
+        else                                 { action = 'STAY OUT'; cls = 'iq-action-stayout'; subText = 'Fewer than two votes are on — remain in cash.'; }
+        pill.textContent = action; pill.className = 'iq-action-pill ' + cls;
+        sub.textContent = subText; asof.textContent = asofText;
+
+        dipEl.textContent = money(t.px) + ' vs EMA ' + money(t.ema);
+        dipState.textContent = t.dip ? 'VOTE (below EMA)' : 'no vote (above EMA)';
+        dipState.className = 'iq-gate-state ' + (t.dip ? 'iq-gate-on' : 'iq-gate-off');
+        dipGate.classList.toggle('iq-gate-firing', t.dip);
+
+        nfEl.textContent = t.nfci.toFixed(3);
+        nfState.textContent = t.macro ? `VOTE (< ${t.nfciSma.toFixed(3)})` : `no vote (SMA50 ${t.nfciSma.toFixed(3)})`;
+        nfState.className = 'iq-gate-state ' + (t.macro ? 'iq-gate-on' : 'iq-gate-off');
+        nfGate.classList.toggle('iq-gate-firing', t.macro);
+
+        hyEl.textContent = money(t.hyg) + ' vs SMA ' + money(t.hygSma);
+        hyState.textContent = t.credit ? 'VOTE (above SMA)' : 'no vote (below SMA)';
+        hyState.className = 'iq-gate-state ' + (t.credit ? 'iq-gate-on' : 'iq-gate-off');
+        hyGate.classList.toggle('iq-gate-firing', t.credit);
+
+        votesEl.innerHTML = `<strong>${t.votes} of 3</strong> votes on &rarr; ${t.invested ? '<strong>INVESTED</strong>' : 'cash'} (needs 2)`;
+        votesEl.className = 'u3-votes' + (t.invested ? ' on' : '');
+      }
+      const daysSince = iso => Math.floor((Date.now() - new Date(iso + 'T00:00:00Z').getTime()) / 86400000);
+      let asofTxt = `As of ${uso[N - 1].date} · NFCI thru ${nfci[nfci.length - 1].date}`;
+      if (daysSince(nfci[nfci.length - 1].date) > 12) asofTxt += ' (stale)';
+      if (daysSince(uso[N - 1].date) > 4) asofTxt += ' · price stale';
+      applySignal(today, yest, asofTxt);
+
+      // ---- Live intraday overlay (USO + HYG spot; NFCI does not move intraday) ----
+      async function tickLive() {
+        try {
+          const r = await fetch('/api/quote?syms=USO,HYG', { cache: 'no-store' });
+          if (!r.ok) return;
+          const j = await r.json(); const q = j && j.quotes; if (!q || !q.USO || !Number.isFinite(q.USO.price)) return;
+          const state = q.USO.marketState || '';
+          const todayIso = new Date().toISOString().slice(0, 10);
+          const useLive = uso[N - 1].date < todayIso && (state === 'REGULAR' || state === 'POST' || state === 'POSTPOST');
+          if (!useLive) return;
+          const livePx  = q.USO.price;
+          const liveEma = livePx * K + ema[N - 1] * (1 - K);
+          const liveHyg = (q.HYG && Number.isFinite(q.HYG.price)) ? q.HYG.price : hygDaily[N - 1];
+          let s = 0; for (let k = N - 49; k < N; k++) s += hygDaily[k]; const liveHygSma = (s + liveHyg) / 50;
+          let sn = 0; for (let k = N - 49; k < N; k++) sn += nfciDaily[k]; const liveNfciSma = (sn + nfciDaily[N - 1]) / 50;
+          const dip = livePx < liveEma, macro = nfciDaily[N - 1] < liveNfciSma, credit = liveHyg > liveHygSma;
+          const votes = (dip ? 1 : 0) + (macro ? 1 : 0) + (credit ? 1 : 0);
+          const live = { px: livePx, ema: liveEma, dip, nfci: nfciDaily[N - 1], nfciSma: liveNfciSma, macro, hyg: liveHyg, hygSma: liveHygSma, credit, votes, invested: votes >= 2 };
+          const label = state === 'REGULAR' ? `INTRADAY · USO ${money(livePx)} · settles at 4:00 PM ET` : `Today's close · USO ${money(livePx)}`;
+          applySignal(live, today, label);
+        } catch (e) { /* keep the CSV pill */ }
+      }
+      tickLive();
+      setInterval(tickLive, 60000);
+
+      // ---- Full-history backtest → stats + chart ----
+      const inv = new Array(N).fill(null);
+      const votesArr = new Array(N).fill(null);
+      for (let i = 0; i < N; i++) { const s = signalAt(i); if (s) { inv[i] = s.invested; votesArr[i] = s; } }
+      let firstIdx = inv.findIndex(s => s !== null); if (firstIdx < 0) firstIdx = 0;
+      const viewFull = [];
+      for (let i = firstIdx; i < N; i++) viewFull.push({ date: uso[i].date, px: px[i], ema: ema[i], inv: inv[i], v: votesArr[i] });
+
+      let ruleW = 1, bhW = 1, rulePeak = 1, bhPeak = 1, ruleDD = 0, bhDD = 0, entries = 0;
+      const ruleRets = [], bhRets = [], ruleCurve = [1];
+      for (let i = 1; i < viewFull.length; i++) {
+        const ret = viewFull[i].px / viewFull[i - 1].px - 1;
+        const wasIn = viewFull[i - 1].inv === true;
+        if (wasIn && viewFull[i - 2] && viewFull[i - 2].inv !== true) entries++;
+        bhW *= 1 + ret; if (wasIn) ruleW *= 1 + ret;
+        ruleRets.push(wasIn ? ret : 0); bhRets.push(ret); ruleCurve.push(ruleW);
+        rulePeak = Math.max(rulePeak, ruleW); bhPeak = Math.max(bhPeak, bhW);
+        ruleDD = Math.min(ruleDD, ruleW / rulePeak - 1); bhDD = Math.min(bhDD, bhW / bhPeak - 1);
+      }
+      const years = (viewFull.length - 1) / 252;
+      const ruleCagr = (Math.pow(ruleW, 1 / years) - 1) * 100, bhCagr = (Math.pow(bhW, 1 / years) - 1) * 100;
+      const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+      const rm = mean(ruleRets), bm = mean(bhRets);
+      let cov = 0, varBh = 0, varRule = 0;
+      for (let i = 0; i < bhRets.length; i++) { cov += (ruleRets[i] - rm) * (bhRets[i] - bm); varBh += (bhRets[i] - bm) ** 2; varRule += (ruleRets[i] - rm) ** 2; }
+      const beta = varBh > 0 ? cov / varBh : NaN;
+      const sharpe = varRule > 0 ? rm / Math.sqrt(varRule / (ruleRets.length - 1)) * Math.sqrt(252) : NaN;
+      let worst12 = 0; for (let i = 252; i < ruleCurve.length; i++) worst12 = Math.min(worst12, ruleCurve[i] / ruleCurve[i - 252] - 1);
+      const investedPct = viewFull.filter(v => v.inv === true).length / viewFull.length * 100;
+
+      const fmtPct = (v, d) => { const s = v >= 0 ? '+' : ''; const a = Math.abs(v); return a >= 1000 ? s + Math.round(v).toLocaleString() + '%' : s + v.toFixed(d != null ? d : (a >= 100 ? 0 : 1)) + '%'; };
+      const idxOf = {}; viewFull.forEach((v, i) => { idxOf[v.date] = i; });
+      const atOrAfter = d => { const k = viewFull.findIndex(v => v.date >= d); return k < 0 ? viewFull.length - 1 : k; };
+      function window_(from, to) {
+        const a = atOrAfter(from), b = atOrAfter(to); let r = 1, h = 1, inDays = 0;
+        for (let i = a + 1; i <= b; i++) { const ret = viewFull[i].px / viewFull[i - 1].px - 1; h *= 1 + ret; if (viewFull[i - 1].inv === true) { r *= 1 + ret; inDays++; } }
+        return { rule: (r - 1) * 100, bh: (h - 1) * 100, inv: inDays / Math.max(1, b - a) * 100 };
+      }
+      const c08 = window_('2008-07-11', '2009-02-18'), c14 = window_('2014-06-20', '2016-02-11'), c20 = window_('2020-01-06', '2020-04-21');
+      const stats = {
+        cagr: fmtPct(ruleCagr, 1), bhCagr: fmtPct(bhCagr, 1), bhCagrAbs: Math.abs(bhCagr).toFixed(1) + '%',
+        ruleCum: fmtPct((ruleW - 1) * 100), bhCum: fmtPct((bhW - 1) * 100), alpha: fmtPct(ruleCagr - bhCagr, 1),
+        beta: Number.isFinite(beta) ? beta.toFixed(2) : '—', sharpe: Number.isFinite(sharpe) ? sharpe.toFixed(2) : '—',
+        mdd: (ruleDD * 100).toFixed(1) + '%', bhMdd: (bhDD * 100).toFixed(1) + '%', worst12: (worst12 * 100).toFixed(1) + '%',
+        invested: Math.round(investedPct) + '%', tradesYr: (entries / years).toFixed(0),
+        start: viewFull[0].date.slice(0, 7), end: viewFull[viewFull.length - 1].date.slice(0, 7), years: years.toFixed(1),
+        c08r: fmtPct(c08.rule, 0), c08b: fmtPct(c08.bh, 0), c08inv: Math.round(c08.inv) + '%',
+        c14r: fmtPct(c14.rule, 0), c14b: fmtPct(c14.bh, 0), c20r: fmtPct(c20.rule, 0), c20b: fmtPct(c20.bh, 0),
+      };
+      card.querySelectorAll('[data-u3-stat]').forEach(el => { const v = stats[el.dataset.u3Stat]; if (v != null) el.textContent = v; });
+
+      // ---- Same-window SPY / QQQ buy-and-hold (price-only closes) and the
+      //      rule's daily correlation with SPY, for the note under the card.
+      (async () => {
+        try {
+          const [spy, qqq] = await Promise.all([loadCsv('data/spy.csv', 1), loadCsv('data/qqq.csv', 1)]);
+          const startDate = viewFull[0].date, endDate = viewFull[viewFull.length - 1].date;
+          const bh = series => {
+            const s = series.filter(r => r.date >= startDate && r.date <= endDate);
+            if (s.length < 252) return null;
+            let eq = 1, peak = 1, dd = 0;
+            for (let i = 1; i < s.length; i++) { eq *= s[i].v / s[i - 1].v; peak = Math.max(peak, eq); dd = Math.min(dd, eq / peak - 1); }
+            return { cagr: (Math.pow(eq, 252 / (s.length - 1)) - 1) * 100, mdd: dd * 100, s };
+          };
+          const S = bh(spy), Q = bh(qqq), extra = {};
+          if (S) { extra.spyCagr = fmtPct(S.cagr, 1); extra.spyMdd = S.mdd.toFixed(1) + '%'; }
+          if (Q) { extra.qqqCagr = fmtPct(Q.cagr, 1); extra.qqqMdd = Q.mdd.toFixed(1) + '%'; }
+          if (S) {
+            const ruleByDate = {};
+            for (let i = 1; i < viewFull.length; i++) ruleByDate[viewFull[i].date] = ruleRets[i - 1];
+            const xs = [], ys = [];
+            for (let i = 1; i < S.s.length; i++) { const d = S.s[i].date; if (d in ruleByDate) { xs.push(ruleByDate[d]); ys.push(S.s[i].v / S.s[i - 1].v - 1); } }
+            const mx = mean(xs), my = mean(ys); let c = 0, vx = 0, vy = 0;
+            for (let i = 0; i < xs.length; i++) { c += (xs[i] - mx) * (ys[i] - my); vx += (xs[i] - mx) ** 2; vy += (ys[i] - my) ** 2; }
+            if (vx > 0 && vy > 0) extra.spyCorr = (c / Math.sqrt(vx * vy)).toFixed(2);
+          }
+          card.querySelectorAll('[data-u3-stat]').forEach(el => { const v = extra[el.dataset.u3Stat]; if (v != null) el.textContent = v; });
+        } catch (e) { /* benchmark line stays blank */ }
+      })();
+
+      // ---- Chart: equity (top) → USO + EMA20 (middle) → three vote rows (bottom) ----
+      const chartSvg = document.getElementById('u3ChartSvg');
+      function renderChart(spec) {
+        if (!chartSvg) return;
+        let startIdx = 0, endIdx = viewFull.length;
+        if (typeof spec === 'number') startIdx = spec > 0 ? Math.max(0, viewFull.length - spec * 252) : 0;
+        else if (spec && spec.from && spec.to) { const s = viewFull.findIndex(v => v.date >= spec.from), e = viewFull.findIndex(v => v.date > spec.to); startIdx = s >= 0 ? s : 0; endIdx = e >= 0 ? e : viewFull.length; }
+        const view = viewFull.slice(startIdx, endIdx);
+        if (view.length < 2) return;
+
+        const W = 1200, PAD_L = 60, PAD_R = 54, PAD_T = 20, PANEL_GAP = 22;
+        const EQ_H = 190, TOP_H = 200, VOTE_H = 66, ROW_H = VOTE_H / 3;
+        const plotW = W - PAD_L - PAD_R;
+        const eqY0 = PAD_T, eqY1 = eqY0 + EQ_H, topY0 = eqY1 + PANEL_GAP, topY1 = topY0 + TOP_H, botY0 = topY1 + PANEL_GAP, botY1 = botY0 + VOTE_H;
+        const n = view.length, xFor = i => PAD_L + plotW * i / Math.max(1, n - 1);
+
+        const pMin = Math.min(...view.map(v => v.px)), pMax = Math.max(...view.map(v => v.px));
+        const lMin = Math.log10(pMin), lMax = Math.log10(pMax);
+        const yForPx = v => topY1 - ((Math.log10(v) - lMin) / (lMax - lMin || 1)) * TOP_H;
+
+        const START = 1000; const ruleEq = [START], bhEq = [START];
+        for (let i = 1; i < n; i++) { const ret = view[i].px / view[i - 1].px - 1; bhEq.push(bhEq[i - 1] * (1 + ret)); ruleEq.push(view[i - 1].inv === true ? ruleEq[i - 1] * (1 + ret) : ruleEq[i - 1]); }
+        let eqMin = Math.min(...ruleEq, ...bhEq, START), eqMax = Math.max(...ruleEq, ...bhEq, START);
+        const eqPad = Math.max((eqMax - eqMin) * 0.08, 10);
+        const useLog = eqMax / Math.max(eqMin, 1) > 8;
+        const sc = useLog ? v => Math.log10(Math.max(v, 1)) : v => v;
+        const eqLo = sc(Math.max(eqMin - eqPad, 1)), eqHi = sc(eqMax + eqPad);
+        const yForEq = v => eqY1 - ((sc(v) - eqLo) / (eqHi - eqLo || 1)) * EQ_H;
+
+        const parts = [];
+        // cash bands (every day out of the market)
+        let cs = null;
+        const cashRuns = [];
+        for (let i = 0; i < n; i++) { if (view[i].inv === false) { if (cs == null) cs = i; } else if (cs != null) { cashRuns.push([cs, i - 1]); cs = null; } }
+        if (cs != null) cashRuns.push([cs, n - 1]);
+        for (const [s, e] of cashRuns) {
+          const x0 = xFor(s), x1 = xFor(Math.min(n - 1, e + 1)), w = Math.max(x1 - x0, 0.6).toFixed(1);
+          parts.push(`<rect x="${x0.toFixed(1)}" y="${eqY0}" width="${w}" height="${EQ_H}" class="iq-cash-band" />`);
+          parts.push(`<rect x="${x0.toFixed(1)}" y="${topY0}" width="${w}" height="${TOP_H}" class="iq-cash-band" />`);
+        }
+        // regime-level SELL / BUY marks: cash stretches of >= 20 days
+        for (const [s, e] of cashRuns) {
+          if (e - s < 20) continue;
+          const xs = xFor(s).toFixed(1); parts.push(`<line x1="${xs}" y1="${eqY0 - 2}" x2="${xs}" y2="${topY1 + 2}" class="iq-mark-sell" />`);
+          if (e < n - 1) { const xb = xFor(e + 1).toFixed(1); parts.push(`<line x1="${xb}" y1="${eqY0 - 2}" x2="${xb}" y2="${topY1 + 2}" class="iq-mark-buy" />`); }
+        }
+        // USO gridlines + price + EMA
+        for (const t of [10, 20, 50, 100, 200, 400]) {
+          if (t < pMin * 0.9 || t > pMax * 1.1) continue;
+          const y = yForPx(t); parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" /><text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">$${t}</text>`);
+        }
+        parts.push(`<path d="${view.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yForPx(v.px).toFixed(1)}`).join(' ')}" class="iq-line-qqq" />`);
+        { let d = '', open = false; for (let i = 0; i < n; i++) { const e = view[i].ema; if (e == null) { open = false; continue; } d += `${open ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yForPx(e).toFixed(1)} `; open = true; } parts.push(`<path d="${d.trim()}" class="u3-line-ema" />`); }
+        // vote rows
+        const rows = [['dip', 'Price dip'], ['macro', 'NFCI easing'], ['credit', 'HYG risk-on']];
+        rows.forEach(([key, label], r) => {
+          const y = botY0 + r * ROW_H;
+          parts.push(`<rect x="${PAD_L}" y="${y}" width="${plotW}" height="${ROW_H - 2}" class="u3-vote-off" />`);
+          let rs = null;
+          for (let i = 0; i <= n; i++) {
+            const on = i < n && view[i].v && view[i].v[key];
+            if (on && rs == null) rs = i;
+            if (!on && rs != null) { const x0 = xFor(rs), x1 = xFor(Math.min(n - 1, i)); parts.push(`<rect x="${x0.toFixed(1)}" y="${y}" width="${Math.max(x1 - x0, 0.6).toFixed(1)}" height="${ROW_H - 2}" class="u3-vote-on" />`); rs = null; }
+          }
+          parts.push(`<text x="${PAD_L - 6}" y="${y + ROW_H / 2 + 3}" text-anchor="end" class="u3-vote-label">${label}</text>`);
+        });
+        // equity: $1,000 reference, grid, lines, end labels
+        const yRef = yForEq(START);
+        parts.push(`<line x1="${PAD_L}" y1="${yRef}" x2="${PAD_L + plotW}" y2="${yRef}" class="iq-ref-1000" /><text x="${PAD_L - 6}" y="${yRef + 3}" text-anchor="end" class="chart-axis-label">$1,000</text>`);
+        for (let k = 0; k <= 3; k++) {
+          const t = useLog ? Math.pow(10, eqLo + (eqHi - eqLo) * k / 3) : eqLo + (eqHi - eqLo) * k / 3;
+          if (Math.abs(t - START) < (eqMax - eqMin) * 0.05) continue;
+          const y = yForEq(t); const label = t >= 10000 ? `$${(t / 1000).toFixed(1)}k` : `$${Math.round(t).toLocaleString()}`;
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" /><text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${label}</text>`);
+        }
+        parts.push(`<path d="${bhEq.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ')}" class="iq-line-eq-bh" />`);
+        parts.push(`<path d="${ruleEq.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yForEq(v).toFixed(1)}`).join(' ')}" class="iq-line-eq-rule" />`);
+        const fmtD = v => v >= 10000 ? `$${(v / 1000).toFixed(1)}k` : `$${Math.round(v).toLocaleString()}`;
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(ruleEq[n - 1]) + 3}" class="iq-eq-label" style="fill:#22d39a">${fmtD(ruleEq[n - 1])}</text>`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${yForEq(bhEq[n - 1]) + 3}" class="iq-eq-label" style="fill:#64d3ff">${fmtD(bhEq[n - 1])}</text>`);
+        for (let k = 0; k <= 7; k++) { const i = Math.round(k / 7 * (n - 1)); parts.push(`<text x="${xFor(i)}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${view[i].date.slice(0, 4)}</text>`); }
+        parts.push(`<text x="${PAD_L + 6}" y="${eqY0 + 14}" class="chart-panel-label">$1,000 → RULE vs BUY &amp; HOLD</text>`);
+        parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">USO · log scale · dashed = 20-day EMA</text>`);
+        parts.push(`<g transform="translate(${PAD_L + plotW - 220}, ${eqY0 + 10})"><line x1="0" y1="5" x2="18" y2="5" class="iq-line-eq-rule" /><text x="22" y="9" class="chart-axis-label">Rule</text><line x1="60" y1="5" x2="78" y2="5" class="iq-line-eq-bh" /><text x="82" y="9" class="chart-axis-label">Buy &amp; Hold</text></g>`);
+        parts.push(`<g transform="translate(${PAD_L + plotW - 340}, ${topY0 + 10})"><line x1="0" y1="0" x2="0" y2="10" class="iq-mark-sell" /><text x="6" y="9" class="chart-axis-label">SELL</text><rect x="46" y="0" width="14" height="10" class="iq-legend-swatch-cash" /><text x="64" y="9" class="chart-axis-label">in cash</text><line x1="118" y1="0" x2="118" y2="10" class="iq-mark-buy" /><text x="124" y="9" class="chart-axis-label">BUY BACK</text></g>`);
+        chartSvg.innerHTML = parts.join('');
+      }
+      renderChart(5);
+      card.querySelectorAll('.iq-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.u3From && btn.dataset.u3To) renderChart({ from: btn.dataset.u3From, to: btn.dataset.u3To });
+          else { const y = parseInt(btn.dataset.u3Years, 10); renderChart(Number.isFinite(y) ? y : 0); }
+        });
+      });
     })();
 
     // ==========================================================

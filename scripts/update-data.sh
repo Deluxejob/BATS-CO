@@ -143,6 +143,10 @@ for sym in AAPL MSFT NVDA AMZN GOOGL META BRK-B TSLA LLY JPM AVGO COST NFLX; do
   fetch_yahoo_daily "$sym" "$DATA_DIR/top10/$fname" "946684800"  # 2000-01-01
 done
 
+# USO — crude oil ETF for the Two-of-Three Long/Cash signal card on
+# market-signals.html (uses data/hyg.csv + data/nfci.csv alongside it).
+fetch_yahoo_daily "USO" "$DATA_DIR/uso.csv" "1144540800"  # 2006-04-09 (inception 2006-04-10)
+
 # SpaceX (SPCX) — IPO'd June 2026. Not in the Concentration list until it
 # joins the S&P 500; fetched anyway so the file is ready when it does.
 fetch_yahoo_daily "SPCX" "$DATA_DIR/top10/spcx.csv" "1780272000" 20  # 2026-06-01; accept a short file
