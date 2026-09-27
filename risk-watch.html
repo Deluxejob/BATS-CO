@@ -122,7 +122,10 @@
     .tw-flags li.on .tw-dot { background: #ef4444; }
     .tw-flags li.warn .tw-dot { background: #f97316; }
     .tw-since { font-size: 0.8rem; color: var(--text-dim); margin: -0.45rem 0 0.6rem; }
-    .tw-watch { grid-column: 1 / -1; }
+    .tw-watch { grid-column: 1 / -1; scroll-margin-top: 80px; }
+    .tw-related { margin-top: 1rem; }
+    .tw-panel .tw-related-intro { font-size: 0.78rem; color: var(--text-dim); line-height: 1.45; margin: 0.3rem 0 0; }
+    .tw-related .tw-flags { margin-top: 0.4rem; }
     .tw-panel .tw-watch-intro { font-size: 0.82rem; color: var(--text-dim); line-height: 1.45; margin: 0 0 0.3rem; }
     @media (min-width: 760px) {
       .tw-watch-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.5rem; }
@@ -1257,6 +1260,14 @@
         note: 'A fast drop warns; a low level alone does not (lows often mark bottoms)' },
     ];
     const nWatch = watch.filter(w => w.on).length;
+    // The three stress signs that also raised pullback odds when CAPE was 30+
+    // (2026-09 tests), repeated on the pullback card for context.
+    const PULLBACK_NOTES = {
+      '10-year Treasury yield': 'Multi-year highs raised pullback odds a little',
+      'Margin debt': 'With CAPE 30+: 46% → 72% chance of a 10%+ drop when surging',
+      'Oil price': 'With CAPE 30+: about 50% → 75% chance of a 10%+ drop after an oil shock',
+    };
+    const pullbackRelated = watch.filter(w => PULLBACK_NOTES[w.name]).map(w => ({ ...w, pullbackNote: PULLBACK_NOTES[w.name] }));
 
     const ladder = (items, active, cap) => `
       <div class="tw-ladder">${items.map((t, i) => `<span class="${i === active ? 'on' : ''}">${t.odds}%</span>`).join('')}</div>
@@ -1277,6 +1288,15 @@
             <span>Valuation (Shiller CAPE)<span class="tw-why">Price vs 10 years of average earnings</span></span>
             <span class="tw-val">${capeNow.v.toFixed(1)}</span></li>
         </ul>
+        <div class="tw-related">
+          <div class="tw-kicker">Related stress signs &middot; not scored</div>
+          <p class="tw-related-intro">When valuations were already high (CAPE 30+), these made a 10%+ drop more likely in testing. They don't change the odds above. <a href="#twWatch">Full stress watch below &darr;</a></p>
+          <ul class="tw-flags">
+            ${pullbackRelated.map(w => `<li class="${w.on ? 'warn' : ''}"><span class="tw-dot"></span>
+              <span>${w.name}<span class="tw-why">${w.pullbackNote}</span></span>
+              <span class="tw-val">${w.val}</span></li>`).join('')}
+          </ul>
+        </div>
         <p class="tw-note">Expensive markets don't cause crashes on their own, but they fall harder and more often when bad news arrives. This reading moves slowly: it describes the climate, not the day a storm hits. Readings of 35+ happened only in 1998-2000, 2021 and 2024-26, so this top band rests on few examples.</p>
       </div>
       <div class="tw-panel ${crash.cls}">
@@ -1295,7 +1315,7 @@
         </ul>
         <p class="tw-note">Big bear markets almost always come with a recession or a credit crunch, and these five readings pick those up early. Sudden shocks that start from calm conditions (1998, 2018, 2025) slip past them; those drops also recovered fastest.</p>
       </div>
-      <div class="tw-panel tw-watch ${nWatch ? 'o' : 'g'}">
+      <div class="tw-panel tw-watch ${nWatch ? 'o' : 'g'}" id="twWatch">
         <div class="tw-kicker">Stress watch &middot; not scored</div>
         <div class="tw-level">${nWatch} of ${watch.length} stress signs on</div>
         <p class="tw-watch-intro">Each of these passed our tests as a <em>confirming</em> sign: when the main readings were already warning, these made a bad outcome more likely. Adding them to the odds made the tables less reliable, not more, because they all track the same recessions. So they are shown here instead of scored.</p>
