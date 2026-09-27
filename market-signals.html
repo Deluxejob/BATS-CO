@@ -36,7 +36,9 @@
     .signals-intro strong { color: var(--text); }
     .sig-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      /* minmax(0, 1fr), not 1fr: a plain 1fr column never shrinks below its
+         widest child, so one wide row stretched every card past a phone screen. */
+      grid-template-columns: minmax(0, 1fr);
       gap: 1.25rem;
       max-width: 1280px;
       margin: 0 auto;
@@ -486,6 +488,13 @@
       padding: 0.15rem 0.4rem;
       border-radius: 999px;
       border: 1px solid transparent;
+    }
+    /* Phones: the fixed desktop columns add up to more than the screen, so
+       tighten them and let long fund names end in "…" instead of widening the row. */
+    @media (max-width: 600px) {
+      .fr-rank-row  { grid-template-columns: 1.2rem 3rem minmax(0, 1fr) auto auto; gap: 0.45rem; padding: 0.4rem 0.5rem; font-size: 0.74rem; }
+      .fr-rank-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .fr-rank-badge { padding: 0.1rem 0.35rem; font-size: 0.55rem; }
     }
     .fr-badge-pick   { color: #22d39a; background: rgba(34, 211, 154, 0.10); border-color: rgba(34, 211, 154, 0.40); }
     .fr-badge-empty  { visibility: hidden; }
