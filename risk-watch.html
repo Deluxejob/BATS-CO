@@ -142,7 +142,7 @@
     #twChart { touch-action: pan-y; }
     .tw-key { margin-top: 0.9rem; display: grid; gap: 0.45rem; font-size: 0.8rem; color: var(--text-dim); }
     .tw-key-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1rem; }
-    .tw-key-name { min-width: 5.5rem; font-weight: 600; color: var(--text); }
+    .tw-key-name { min-width: 6.5rem; font-weight: 600; color: var(--text); }
     .tw-key-row > span { display: inline-flex; align-items: center; gap: 0.35rem; }
     .tw-key i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
     .tw-key i.tw-key-empty { border: 1px solid var(--border); }
@@ -359,11 +359,11 @@
             <span><i style="background:#f97316"></i>Elevated</span>
             <span><i style="background:#ef4444"></i>High</span>
             <span class="tw-key-hint">The shaded sections behind the S&amp;P line show the same reading, named at the top where there's room.</span></div>
-          <div class="tw-key-row"><span class="tw-key-name">Valuation</span>
-            <span><i style="background:#22c55e"></i>CAPE under 25</span>
-            <span><i style="background:#eab308"></i>25&ndash;30</span>
-            <span><i style="background:#f97316"></i>30&ndash;35</span>
-            <span><i style="background:#ef4444"></i>35+</span></div>
+          <div class="tw-key-row"><span class="tw-key-name">Pullback risk</span>
+            <span><i style="background:#22c55e"></i>Low (CAPE under 25)</span>
+            <span><i style="background:#eab308"></i>Normal (25&ndash;30)</span>
+            <span><i style="background:#f97316"></i>Elevated (30&ndash;35)</span>
+            <span><i style="background:#ef4444"></i>High (35+)</span></div>
           <div class="tw-key-row"><span class="tw-key-name">Stress</span>
             <span><i class="tw-key-empty"></i>None</span>
             <span><i style="background:#7c2d12"></i>1 sign on</span>
@@ -1193,7 +1193,6 @@
     const last = (a) => a[a.length - 1];
     const upTo = (rows, cut) => { let i = rows.length; while (i > 0 && rows[i - 1].date > cut) i--; return rows.slice(0, i); };
     const monthName = (d) => new Date(d.slice(0, 7) + '-15').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    const monthsBack = (date, m) => { const d = new Date(date); d.setMonth(d.getMonth() - m); return d.toISOString().slice(0, 10); };
 
     // The five scored crash flags, as they read on date `cut` (latest data on or before it).
     function crashFlagsAt(cut) {
@@ -1219,7 +1218,6 @@
         { on: urRise >= 0.30, name: 'Unemployment', why: 'Unemployment rate climbing', val: `+${urRise.toFixed(2)} pts off 1-yr low (trigger +0.30)` },
       ];
     }
-    const crashTierAt = (cut) => CRASH_TIERS[Math.min(crashFlagsAt(cut).filter(f => f.on).length, 3)];
     const bandFor = (v) => PULLBACK_BANDS.findIndex(b => v < b.max);
 
     const today = last(t3m).date;
@@ -1231,15 +1229,6 @@
     const bandIdx = bandFor(capeNow.v);
     const pull = PULLBACK_BANDS[bandIdx];
 
-    // "Since" dates: step back month by month until the reading's label was different.
-    let crashSince = null;
-    for (let m = 1; m <= 300; m++) {
-      if (crashTierAt(monthsBack(today, m)).label !== crash.label) { crashSince = monthName(monthsBack(today, m - 1)); break; }
-    }
-    let pullSince = null;
-    for (let i = cape.length - 2; i >= 0; i--) {
-      if (PULLBACK_BANDS[bandFor(cape[i].v)].label !== pull.label) { pullSince = monthName(cape[i + 1].date); break; }
-    }
 
     // ------------------------------------------------------------
     // STRESS WATCH: signs that passed testing as confirmers but are NOT
@@ -1310,7 +1299,7 @@
       <div class="tw-panel ${pull.cls}">
         <div class="tw-kicker">Pullback risk &middot; a 10%+ drop</div>
         <div class="tw-level">${pull.label}</div>
-        ${pullSince ? `<div class="tw-since">${pull.label} since ${pullSince}</div>` : ''}
+        <div class="tw-since" id="twPullSince"></div>
         <div class="tw-odds-row">
           <div class="tw-odds">${pull.odds}%</div>
           <div class="tw-odds-text">chance of a 10%+ drop within a year at this valuation, historically. Normal: 31%.</div>
@@ -1335,7 +1324,7 @@
       <div class="tw-panel ${crash.cls}">
         <div class="tw-kicker">Crash risk &middot; a 20%+ bear market</div>
         <div class="tw-level">${crash.label} &middot; ${nOn} of 5 warnings on</div>
-        ${crashSince ? `<div class="tw-since">${crash.label} since ${crashSince}</div>` : ''}
+        <div class="tw-since" id="twCrashSince"></div>
         <div class="tw-odds-row">
           <div class="tw-odds">${crash.odds}%</div>
           <div class="tw-odds-text">chance of a 20%+ drop within a year with ${nOn} warning${nOn === 1 ? '' : 's'} on, historically. Normal: 14%.</div>
@@ -1433,6 +1422,19 @@
                   band: capeV === null ? null : PULLBACK_BANDS[bandFor(capeV)], stress: stressAsOf(r.date) });
     }
 
+    // "Since" lines on the two cards, read from this same weekly history so
+    // the card and the chart always agree on when a level started.
+    function sinceText(elId, keyOf, nowLabel) {
+      const el = document.getElementById(elId); if (!el) return;
+      const cur = keyOf(last(hist));
+      if (cur !== nowLabel) { el.textContent = `Just changed to ${nowLabel}; the chart shows it once it holds for four weeks`; return; }
+      let i = hist.length - 1;
+      while (i > 0 && keyOf(hist[i - 1]) === cur) i--;
+      el.textContent = i > 0 ? `${cur} since ${monthName(hist[i].date)}` : `${cur} throughout the chart's history`;
+    }
+    sinceText('twCrashSince', h => h.tier, crash.label);
+    sinceText('twPullSince', h => h.band && h.band.label, pull.label);
+
     // Declines of 15%+ from a record close (daily data), for the markers.
     const drops = [];
     { let peak = spx[0], trough = null, deep = 0;
@@ -1449,7 +1451,7 @@
     const chart = document.getElementById('twChart');
     const tip = document.getElementById('twTip');
     // Drawn at the chart's real pixel width so text stays readable on phones.
-    const ML = 72, MR = 14, MT = 20, stripH = 14;
+    const ML = 88, MR = 14, MT = 20, stripH = 14;
     let CW = 1200, CH = 430, PH = 290, stripY0, stripY1, stripY2;
     let view = [], period = 'all';
 
@@ -1527,7 +1529,7 @@
         if (h.stress.on) g += `<rect x="${X(h.yf).toFixed(1)}" y="${stripY2}" width="${(w + 0.4).toFixed(1)}" height="${stripH}" fill="${STRESS_COLOR[Math.min(h.stress.on, 4)]}"/>`;
       }
       g += `<rect x="${ML}" y="${stripY2}" width="${CW - ML - MR}" height="${stripH}" fill="none" stroke="var(--border)"/>`;
-      g += `<text class="axis-label" x="${ML - 8}" y="${stripY0 + 11}" text-anchor="end">Crash risk</text><text class="axis-label" x="${ML - 8}" y="${stripY1 + 11}" text-anchor="end">Valuation</text><text class="axis-label" x="${ML - 8}" y="${stripY2 + 11}" text-anchor="end">Stress</text>`;
+      g += `<text class="axis-label" x="${ML - 8}" y="${stripY0 + 11}" text-anchor="end">Crash risk</text><text class="axis-label" x="${ML - 8}" y="${stripY1 + 11}" text-anchor="end">Pullback risk</text><text class="axis-label" x="${ML - 8}" y="${stripY2 + 11}" text-anchor="end">Stress</text>`;
       g += `<line id="twHoverLine" x1="0" x2="0" y1="${MT}" y2="${stripY2 + stripH}" stroke="var(--text)" stroke-width="1" opacity="0"/>`;
       g += `<rect id="twHoverZone" x="${ML}" y="${MT}" width="${CW - ML - MR}" height="${stripY2 + stripH - MT}" fill="transparent"/>`;
       chart.innerHTML = g;
