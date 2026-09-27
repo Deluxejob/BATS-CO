@@ -78,6 +78,53 @@
     .rw-signal.nq  { border-left-color: var(--border); }
     .rw-signal.nq  .rw-sig-value  { color: var(--text-dim); }
 
+    /* --- Top Watch: pullback risk + crash risk panels --- */
+    .tw-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0 1rem;
+    }
+    .tw-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-top-width: 4px;
+      border-radius: 10px;
+      padding: 1.1rem 1.2rem;
+    }
+    .tw-panel.g { border-top-color: #22c55e; } .tw-panel.g .tw-level, .tw-panel.g .tw-odds { color: #22c55e; }
+    .tw-panel.y { border-top-color: #eab308; } .tw-panel.y .tw-level, .tw-panel.y .tw-odds { color: #eab308; }
+    .tw-panel.o { border-top-color: #f97316; } .tw-panel.o .tw-level, .tw-panel.o .tw-odds { color: #f97316; }
+    .tw-panel.r { border-top-color: #ef4444; } .tw-panel.r .tw-level, .tw-panel.r .tw-odds { color: #ef4444; }
+    .tw-kicker {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+    .tw-level { font-size: 1.35rem; font-weight: 700; margin: 0.2rem 0 0.6rem; }
+    .tw-odds-row { display: flex; align-items: baseline; gap: 0.6rem; }
+    .tw-odds { font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 700; line-height: 1; }
+    .tw-odds-text { font-size: 0.85rem; color: var(--text-dim); line-height: 1.4; }
+    .tw-ladder { display: flex; gap: 3px; margin: 0.9rem 0 0.2rem; }
+    .tw-ladder span {
+      flex: 1; text-align: center; font-size: 0.7rem; padding: 0.3rem 0.1rem;
+      border-radius: 4px; background: var(--border-soft, rgba(127,127,127,.12)); color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tw-ladder span.on { background: var(--text); color: var(--bg-card); font-weight: 700; }
+    .tw-ladder-cap { font-size: 0.7rem; color: var(--text-faint, var(--text-dim)); }
+    .tw-flags { list-style: none; padding: 0; margin: 0.9rem 0 0; border-top: 1px solid var(--border); }
+    .tw-flags li {
+      display: grid; grid-template-columns: 14px 1fr; column-gap: 0.5rem; align-items: baseline;
+      padding: 0.45rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem;
+    }
+    .tw-flags li:last-child { border-bottom: 0; }
+    .tw-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); display: inline-block; }
+    .tw-flags li.on .tw-dot { background: #ef4444; }
+    .tw-flags .tw-val { grid-column: 2; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-top: 0.15rem; }
+    .tw-flags .tw-why { display: block; font-size: 0.75rem; color: var(--text-dim); }
+    .tw-panel .tw-note { font-size: 0.8rem; color: var(--text-dim); line-height: 1.45; margin-top: 0.8rem; }
+    #top-watch .tw-foot { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+
     /* --- Chart wrapper (matches valuations page style) --- */
     .rw-chart-wrap {
       background: var(--bg-card);
@@ -243,6 +290,20 @@
         the yield curve, and the labor market are early. This page tracks the
         five signals that historically move <em>before</em> the S&amp;P does,
         with recession shading so you can see the pattern.
+      </p>
+    </section>
+
+    <!-- ================== TOP WATCH ================== -->
+    <section id="top-watch">
+      <div class="section-head">
+        <h2>Top Watch &mdash; how big could the next drop be?</h2>
+        <p>Nobody can call the exact top, and the first leg down is usually set off by surprise news. What we <em>can</em> measure is how fragile the market is when that news hits. Two separate readings, each tested on the S&amp;P 500 from 1991 to 2025.</p>
+      </div>
+      <div class="tw-grid" id="twGrid">
+        <div class="tw-panel nq"><div class="tw-kicker">Loading&hellip;</div></div>
+      </div>
+      <p class="tw-foot">
+        <strong>This is a forecast, not a sell signal.</strong> We also tested selling when crash risk rose and the index broke below its 200-day average. It cut the worst loss roughly in half, but earned less than simply holding (8.4% vs 9.2% a year since 1991), because it kept missing rebounds. Odds are for any 12-month window, measured from each day's close to the lowest close in the following year.
       </p>
     </section>
 
@@ -993,6 +1054,132 @@
     })();
     document.getElementById('curveCallout').innerHTML = curveInterp();
     document.getElementById('empCallout').innerHTML = empInterp();
+  })();
+  </script>
+  <script>
+  // ============================================================
+  // TOP WATCH — two readings, same rules as the 1991-2025 backtest:
+  //   Pullback risk: Shiller CAPE band -> odds of a 10%+ drop within 12 months.
+  //   Crash risk:    count of 5 economic/credit warning flags -> odds of a
+  //                  20%+ drop within 12 months.
+  // The odds below are the backtest results; if a threshold changes here,
+  // the backtest has to be re-run and these numbers updated with it.
+  // ============================================================
+  (async function () {
+    const PULLBACK_BANDS = [   // CAPE upper bound, odds of a 10%+ drop, label, color
+      { max: 20,       odds: 10, label: 'Low',      cls: 'g', cap: '<20' },
+      { max: 25,       odds: 20, label: 'Low',      cls: 'g', cap: '20-25' },
+      { max: 30,       odds: 26, label: 'Normal',   cls: 'y', cap: '25-30' },
+      { max: 35,       odds: 45, label: 'Elevated', cls: 'o', cap: '30-35' },
+      { max: Infinity, odds: 63, label: 'High',     cls: 'r', cap: '35+' },
+    ];
+    const CRASH_TIERS = [      // flags on -> odds of a 20%+ drop
+      { odds: 0,  label: 'Low',      cls: 'g', cap: '0' },
+      { odds: 3,  label: 'Low',      cls: 'g', cap: '1' },
+      { odds: 18, label: 'Elevated', cls: 'o', cap: '2' },
+      { odds: 40, label: 'High',     cls: 'r', cap: '3+' },
+    ];
+
+    async function load(path, col = 1) {
+      const r = await fetch(path, { cache: 'no-store' });
+      if (!r.ok) throw new Error(path + ' -> ' + r.status);
+      return (await r.text()).trim().split(/\r?\n/).slice(1).map(ln => {
+        const p = ln.split(',');
+        return { date: p[0], v: parseFloat(p[col]) };
+      }).filter(x => isFinite(x.v));
+    }
+    const avgOf = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+    const rolling = (vals, n) => vals.map((_, i) => i + 1 >= n ? avgOf(vals.slice(i + 1 - n, i + 1)) : NaN);
+    const daysBefore = (date, n) => { const d = new Date(date); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+
+    let baa, nfci, t3m, claims, unrate, cape, y10;
+    try {
+      [baa, nfci, t3m, claims, unrate, cape, y10] = await Promise.all([
+        load('data/baa10y.csv'), load('data/nfci.csv'), load('data/t10y3m.csv'),
+        load('data/jobless_claims.csv'), load('data/unrate.csv'), load('data/spx_cape.csv'),
+        load('data/yields_history.csv', 2),
+      ]);
+    } catch (e) {
+      console.error('Top Watch: data load failed', e);
+      document.getElementById('twGrid').innerHTML = '<div class="tw-panel nq"><div class="tw-kicker">Data unavailable</div></div>';
+      return;
+    }
+
+    // 1. Credit: Baa corporate spread 0.40+ points above its 1-year low.
+    const baaYear = baa.slice(-252).map(x => x.v);
+    const baaRise = baaYear[baaYear.length - 1] - Math.min(...baaYear);
+    // 2. Stress: NFCI above its 52-week average.
+    const nf = nfci.slice(-52).map(x => x.v);
+    const nfGap = nf[nf.length - 1] - avgOf(nf);
+    // 3. Yield curve: 10Y-3M inverted at any point in the past 24 months.
+    const lastT = t3m[t3m.length - 1].date;
+    const inv = t3m.filter(x => x.date >= daysBefore(lastT, 730) && x.v < 0);
+    // 4. Layoffs: 4-week average claims 20%+ above its 52-week low.
+    const cl4 = rolling(claims.map(x => x.v), 4).slice(-52);
+    const clRise = cl4[cl4.length - 1] / Math.min(...cl4) - 1;
+    // 5. Jobs: 3-month average unemployment 0.3+ points above its 12-month low.
+    const ur3 = rolling(unrate.map(x => x.v), 3).slice(-12);
+    const urRise = ur3[ur3.length - 1] - Math.min(...ur3);
+
+    const flags = [
+      { on: baaRise >= 0.40, name: 'Credit', why: 'Corporate borrowing costs rising vs Treasuries', val: `+${baaRise.toFixed(2)} pts off 1-yr low (trigger +0.40)` },
+      { on: nfGap > 0, name: 'Financial stress', why: 'Chicago Fed stress index above its 1-yr average', val: `${nfGap >= 0 ? '+' : ''}${nfGap.toFixed(2)} vs average` },
+      { on: inv.length > 0, name: 'Yield curve', why: '10Y-3M curve inverted in the past 2 years', val: inv.length ? `last inverted ${inv[inv.length - 1].date.slice(0, 7)}` : 'not inverted' },
+      { on: clRise >= 0.20, name: 'Layoffs', why: 'Jobless claims rising off their low', val: `+${(clRise * 100).toFixed(0)}% off 1-yr low (trigger +20%)` },
+      { on: urRise >= 0.30, name: 'Unemployment', why: 'Unemployment rate climbing', val: `+${urRise.toFixed(2)} pts off 1-yr low (trigger +0.30)` },
+    ];
+    const nOn = flags.filter(f => f.on).length;
+    const crash = CRASH_TIERS[Math.min(nOn, 3)];
+
+    const capeNow = cape[cape.length - 1];
+    const bandIdx = PULLBACK_BANDS.findIndex(b => capeNow.v < b.max);
+    const pull = PULLBACK_BANDS[bandIdx];
+    // Watch item, not scored: 10-year yield change over ~6 months (126 trading days).
+    // Tested and left out of the odds: since 1991 it added nothing on its own.
+    const y10Now = y10[y10.length - 1].v;
+    const y10Chg = y10Now - y10[Math.max(0, y10.length - 127)].v;
+    // Last time before now the yield was at least this high, e.g. "highest since 2007".
+    let y10Since = null;
+    for (let i = y10.length - 2; i >= 0; i--) { if (y10[i].v >= y10Now) { y10Since = y10[i].date.slice(0, 4); break; } }
+    const y10SinceTxt = (y10Since && +y10Since < new Date().getFullYear() - 1) ? `, highest since ${y10Since}` : '';
+    const ladder = (items, active, cap) => `
+      <div class="tw-ladder">${items.map((t, i) => `<span class="${i === active ? 'on' : ''}">${t.odds}%</span>`).join('')}</div>
+      <div class="tw-ladder-cap">${cap}</div>`;
+
+    document.getElementById('twGrid').innerHTML = `
+      <div class="tw-panel ${pull.cls}">
+        <div class="tw-kicker">Pullback risk &middot; a 10%+ drop</div>
+        <div class="tw-level">${pull.label}</div>
+        <div class="tw-odds-row">
+          <div class="tw-odds">${pull.odds}%</div>
+          <div class="tw-odds-text">chance of a 10%+ drop within a year at this valuation, historically. Normal: 31%.</div>
+        </div>
+        ${ladder(PULLBACK_BANDS, bandIdx, 'Odds by Shiller CAPE: ' + PULLBACK_BANDS.map(b => b.cap).join(' · '))}
+        <ul class="tw-flags">
+          <li class="${capeNow.v >= 30 ? 'on' : ''}"><span class="tw-dot"></span>
+            <span>Valuation (Shiller CAPE)<span class="tw-why">Price vs 10 years of average earnings</span></span>
+            <span class="tw-val">${capeNow.v.toFixed(1)}</span></li>
+          <li><span class="tw-dot"></span>
+            <span>Watch: 10-year Treasury yield<span class="tw-why">Not scored: in testing since 1991, fast jumps and multi-year highs in this yield raised pullback odds a little but did not raise crash odds</span></span>
+            <span class="tw-val">${y10Now.toFixed(2)}% (${y10Chg >= 0 ? '+' : ''}${y10Chg.toFixed(2)} in 6 mo${y10SinceTxt})</span></li>
+        </ul>
+        <p class="tw-note">Expensive markets don't cause crashes on their own, but they fall harder and more often when bad news arrives. Readings of 35+ happened only in 1998-2000, 2021 and 2024-26, so this top band rests on few examples.</p>
+      </div>
+      <div class="tw-panel ${crash.cls}">
+        <div class="tw-kicker">Crash risk &middot; a 20%+ bear market</div>
+        <div class="tw-level">${crash.label} &middot; ${nOn} of 5 warnings on</div>
+        <div class="tw-odds-row">
+          <div class="tw-odds">${crash.odds}%</div>
+          <div class="tw-odds-text">chance of a 20%+ drop within a year with ${nOn} warning${nOn === 1 ? '' : 's'} on, historically. Normal: 14%.</div>
+        </div>
+        ${ladder(CRASH_TIERS, Math.min(nOn, 3), 'Odds by number of warnings on: 0 · 1 · 2 · 3+')}
+        <ul class="tw-flags">
+          ${flags.map(f => `<li class="${f.on ? 'on' : ''}"><span class="tw-dot"></span>
+            <span>${f.name}<span class="tw-why">${f.why}</span></span>
+            <span class="tw-val">${f.val}</span></li>`).join('')}
+        </ul>
+        <p class="tw-note">Big bear markets almost always come with a recession or a credit crunch, and these five readings pick those up early. Sudden shocks that start from calm conditions (1998, 2018, 2025) slip past them; those drops also recovered fastest.</p>
+      </div>`;
   })();
   </script>
   <script src="ticker-search.js" defer></script>

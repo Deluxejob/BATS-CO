@@ -11,9 +11,10 @@ Series pulled from FRED:
   ICSA          -> data/jobless_claims.csv   Initial jobless claims (thousands)
   UNRATE        -> data/unrate.csv           Unemployment rate (%)
   USREC         -> data/nber_recession.csv   NBER recession indicator (0/1)
+  BAA10Y        -> data/baa10y.csv           Moody's Baa corporate minus 10Y Treasury (%)
 
-Each series is fetched independently; a failure on one leaves the other
-six CSVs unchanged. Same curl-style User-Agent trick as the Buffett
+Each series is fetched independently; a failure on one leaves the
+other CSVs unchanged. Same curl-style User-Agent trick as the Buffett
 indicator fetch — FRED silently rejects browser-style Mozilla UAs.
 """
 
@@ -37,6 +38,7 @@ SERIES = [
     ("ICSA",         "jobless_claims.csv", "Claims"),
     ("UNRATE",       "unrate.csv",         "Rate"),
     ("USREC",        "nber_recession.csv", "IsRecession"),
+    ("BAA10Y",       "baa10y.csv",         "Spread"),
 ]
 
 # Two fetch paths depending on whether we have a FRED API key:
