@@ -140,7 +140,13 @@
     #top-watch .tw-chart-note { margin-top: 0.75rem; max-width: none; }
     .tw-chart-head .chart-periods { margin: 0; }
     #twChart { touch-action: pan-y; }
-    .rw-legend .swatch.tw-sw { height: 10px; width: 14px; }
+    .tw-key { margin-top: 0.9rem; display: grid; gap: 0.45rem; font-size: 0.8rem; color: var(--text-dim); }
+    .tw-key-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1rem; }
+    .tw-key-name { min-width: 5.5rem; font-weight: 600; color: var(--text); }
+    .tw-key-row > span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .tw-key i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+    .tw-key i.tw-key-empty { border: 1px solid var(--border); }
+    .tw-key-row .tw-key-hint { font-size: 0.75rem; }
     .tw-tip {
       position: absolute; z-index: 5; pointer-events: none; min-width: 200px;
       background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
@@ -330,7 +336,7 @@
         <div class="tw-chart-head">
           <div>
             <h3 class="tw-chart-title">How these readings looked in the past</h3>
-            <p class="tw-chart-sub">S&amp;P 500 (log scale). Background = crash risk at the time. Grey bars = every drop of 15% or more from a record high. Point at the chart for that week's readings.</p>
+            <p class="tw-chart-sub">S&amp;P 500 (log scale), with the three Top Watch readings as they stood each week in the strips below. Point at the chart for that week's readings.</p>
           </div>
           <div class="chart-periods" id="twPeriods" role="tablist" aria-label="Top Watch history time period">
             <button type="button" class="chart-period-btn" data-period="1" role="tab">1Y</button>
@@ -342,14 +348,27 @@
         </div>
         <svg id="twChart" class="rw-chart" viewBox="0 0 1200 430" preserveAspectRatio="xMinYMin meet" aria-label="S&amp;P 500 with historical crash risk, valuation and stress readings"></svg>
         <div class="tw-tip" id="twTip" hidden></div>
-        <div class="rw-legend">
-          <span><span class="swatch tw-sw" style="background:#22c55e"></span> Crash risk low</span>
-          <span><span class="swatch tw-sw" style="background:#f97316"></span> Elevated</span>
-          <span><span class="swatch tw-sw" style="background:#ef4444"></span> High</span>
-          <span><span class="swatch tw-sw" style="background:#94a3b8"></span> 15%+ drop</span>
-          <span>Valuation strip: CAPE band &middot; Stress strip: darker = more stress signs on</span>
+        <div class="tw-key">
+          <div class="tw-key-row"><span class="tw-key-name">Crash risk</span>
+            <span><i style="background:#22c55e"></i>Low</span>
+            <span><i style="background:#f97316"></i>Elevated</span>
+            <span><i style="background:#ef4444"></i>High</span>
+            <span class="tw-key-hint">The faint background behind the S&amp;P line repeats this strip.</span></div>
+          <div class="tw-key-row"><span class="tw-key-name">Valuation</span>
+            <span><i style="background:#22c55e"></i>CAPE under 25</span>
+            <span><i style="background:#eab308"></i>25&ndash;30</span>
+            <span><i style="background:#f97316"></i>30&ndash;35</span>
+            <span><i style="background:#ef4444"></i>35+</span></div>
+          <div class="tw-key-row"><span class="tw-key-name">Stress</span>
+            <span><i class="tw-key-empty"></i>None</span>
+            <span><i style="background:#7c2d12"></i>1 sign on</span>
+            <span><i style="background:#c2410c"></i>2</span>
+            <span><i style="background:#f97316"></i>3</span>
+            <span><i style="background:#fdba74"></i>4+ (brighter = more)</span></div>
+          <div class="tw-key-row"><span class="tw-key-name">Drops</span>
+            <span><i style="background:#94a3b8"></i>Grey bar = a fall of 15%+ from a record high, labeled with its size</span></div>
         </div>
-        <p class="tw-chart-note">Each week is scored only with data that had been published by then (for example, the unemployment rate arrives about five weeks late), so this is what the page would have shown at the time. A risk level has to hold for four weeks before the shading changes, to keep one-week blips from cluttering the chart. Oil history starts in 2000, so the stress strip counts one fewer sign before 2001.</p>
+        <p class="tw-chart-note">Each week is scored only with data that had been published by then (for example, the unemployment rate arrives about five weeks late), so this is what the page would have shown at the time. A crash-risk level has to hold for four weeks before its color changes, to keep one-week blips from cluttering the chart. Oil history starts in 2000, so the stress strip counts one fewer sign before 2001.</p>
       </div>
 
       <p class="tw-foot">
@@ -1412,18 +1431,19 @@
 
     const TIER_COLOR = { Low: '#22c55e', Elevated: '#f97316', High: '#ef4444' };
     const BAND_COLOR = { g: '#22c55e', y: '#eab308', o: '#f97316', r: '#ef4444' };
+    const STRESS_COLOR = [null, '#7c2d12', '#c2410c', '#f97316', '#fdba74'];   // 1, 2, 3, 4+ signs on: brighter = more (dark site)
     const chart = document.getElementById('twChart');
     const tip = document.getElementById('twTip');
     // Drawn at the chart's real pixel width so text stays readable on phones.
-    const ML = 62, MR = 14, MT = 20, stripH = 14;
-    let CW = 1200, CH = 430, PH = 290, stripY1, stripY2;
+    const ML = 72, MR = 14, MT = 20, stripH = 14;
+    let CW = 1200, CH = 430, PH = 290, stripY0, stripY1, stripY2;
     let view = [], period = 'all';
 
     function renderChart(p) {
       if (p) period = p;
       CW = Math.max(260, Math.round(chart.getBoundingClientRect().width || 1200));
       PH = CW < 600 ? 200 : 290;
-      stripY1 = MT + PH + 14; stripY2 = stripY1 + 22; CH = stripY2 + stripH + 28;
+      stripY0 = MT + PH + 14; stripY1 = stripY0 + 22; stripY2 = stripY1 + 22; CH = stripY2 + stripH + 28;
       chart.setAttribute('viewBox', `0 0 ${CW} ${CH}`);
       const lastYf = last(hist).yf;
       view = hist.filter(h => period === 'all' || h.yf >= lastYf - parseFloat(period));
@@ -1446,7 +1466,7 @@
           }
         }
       };
-      spans('tier', h => TIER_COLOR[h.tier], MT, PH, 0.16);
+      spans('tier', h => TIER_COLOR[h.tier], MT, PH, 0.13);
       // Price gridlines on a log scale: 1-2-5 steps that fall inside the range.
       const ticks = [];
       for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
@@ -1474,13 +1494,14 @@
       g += `<path d="${view.map((h, i) => (i ? 'L' : 'M') + X(h.yf).toFixed(1) + ',' + Y(h.px).toFixed(1)).join(' ')}" fill="none" stroke="var(--text)" stroke-width="1.5"/>`;
       g += `<line class="axis-line" x1="${ML}" x2="${CW - MR}" y1="${MT + PH}" y2="${MT + PH}"/>`;
       // Strips under the chart: valuation band and stress-watch count.
-      spans('band', h => h.band && BAND_COLOR[h.band.cls], stripY1, stripH, 0.85);
+      spans('tier', h => TIER_COLOR[h.tier], stripY0, stripH, 1);
+      spans('band', h => h.band && BAND_COLOR[h.band.cls], stripY1, stripH, 1);
       for (let i = 0; i < view.length; i++) {
         const h = view[i], w = (i + 1 < view.length ? X(view[i + 1].yf) : X(h.yf) + 1) - X(h.yf);
-        if (h.stress.on) g += `<rect x="${X(h.yf).toFixed(1)}" y="${stripY2}" width="${(w + 0.4).toFixed(1)}" height="${stripH}" fill="#f97316" opacity="${Math.min(h.stress.on, 4) / 4}"/>`;
+        if (h.stress.on) g += `<rect x="${X(h.yf).toFixed(1)}" y="${stripY2}" width="${(w + 0.4).toFixed(1)}" height="${stripH}" fill="${STRESS_COLOR[Math.min(h.stress.on, 4)]}"/>`;
       }
       g += `<rect x="${ML}" y="${stripY2}" width="${CW - ML - MR}" height="${stripH}" fill="none" stroke="var(--border)"/>`;
-      g += `<text class="axis-label" x="${ML - 8}" y="${stripY1 + 11}" text-anchor="end">Valuation</text><text class="axis-label" x="${ML - 8}" y="${stripY2 + 11}" text-anchor="end">Stress</text>`;
+      g += `<text class="axis-label" x="${ML - 8}" y="${stripY0 + 11}" text-anchor="end">Crash risk</text><text class="axis-label" x="${ML - 8}" y="${stripY1 + 11}" text-anchor="end">Valuation</text><text class="axis-label" x="${ML - 8}" y="${stripY2 + 11}" text-anchor="end">Stress</text>`;
       g += `<line id="twHoverLine" x1="0" x2="0" y1="${MT}" y2="${stripY2 + stripH}" stroke="var(--text)" stroke-width="1" opacity="0"/>`;
       g += `<rect id="twHoverZone" x="${ML}" y="${MT}" width="${CW - ML - MR}" height="${stripY2 + stripH - MT}" fill="transparent"/>`;
       chart.innerHTML = g;
