@@ -12,6 +12,10 @@ Series pulled from FRED:
   UNRATE        -> data/unrate.csv           Unemployment rate (%)
   USREC         -> data/nber_recession.csv   NBER recession indicator (0/1)
   BAA10Y        -> data/baa10y.csv           Moody's Baa corporate minus 10Y Treasury (%)
+  DRTSCILM      -> data/sloos.csv            Net % of banks tightening business loans (quarterly)
+  HTRUCKSSAAR   -> data/heavy_trucks.csv     Heavy truck sales, annualized (millions)
+  DRBLACBS      -> data/biz_delinquency.csv  Business loan delinquency rate (%, quarterly)
+  BOGZ1FL663067003Q -> data/margin_debt.csv  Broker-dealer margin loans ($M, quarterly)
 
 Each series is fetched independently; a failure on one leaves the
 other CSVs unchanged. Same curl-style User-Agent trick as the Buffett
@@ -39,6 +43,10 @@ SERIES = [
     ("UNRATE",       "unrate.csv",         "Rate"),
     ("USREC",        "nber_recession.csv", "IsRecession"),
     ("BAA10Y",       "baa10y.csv",         "Spread"),
+    ("DRTSCILM",     "sloos.csv",          "NetTightening"),
+    ("HTRUCKSSAAR",  "heavy_trucks.csv",   "Sales"),
+    ("DRBLACBS",     "biz_delinquency.csv", "Rate"),
+    ("BOGZ1FL663067003Q", "margin_debt.csv", "MarginLoans"),
 ]
 
 # Two fetch paths depending on whether we have a FRED API key:

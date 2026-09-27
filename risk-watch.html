@@ -120,9 +120,30 @@
     .tw-flags li:last-child { border-bottom: 0; }
     .tw-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); display: inline-block; }
     .tw-flags li.on .tw-dot { background: #ef4444; }
+    .tw-flags li.warn .tw-dot { background: #f97316; }
+    .tw-since { font-size: 0.8rem; color: var(--text-dim); margin: -0.45rem 0 0.6rem; }
+    .tw-watch { grid-column: 1 / -1; }
+    .tw-panel .tw-watch-intro { font-size: 0.82rem; color: var(--text-dim); line-height: 1.45; margin: 0 0 0.3rem; }
+    @media (min-width: 760px) {
+      .tw-watch-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.5rem; }
+    }
     .tw-flags .tw-val { grid-column: 2; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-top: 0.15rem; }
     .tw-flags .tw-why { display: block; font-size: 0.75rem; color: var(--text-dim); }
     .tw-panel .tw-note { font-size: 0.8rem; color: var(--text-dim); line-height: 1.45; margin-top: 0.8rem; }
+    #top-watch .tw-chart-wrap { position: relative; overflow: hidden; }
+    .tw-chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem; }
+    .tw-chart-title { margin: 0; font-size: 1rem; }
+    #top-watch .tw-chart-sub, #top-watch .tw-chart-note { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-dim); line-height: 1.45; max-width: 640px; }
+    #top-watch .tw-chart-note { margin-top: 0.75rem; max-width: none; }
+    .tw-chart-head .chart-periods { margin: 0; }
+    #twChart { touch-action: pan-y; }
+    .rw-legend .swatch.tw-sw { height: 10px; width: 14px; }
+    .tw-tip {
+      position: absolute; z-index: 5; pointer-events: none; min-width: 200px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.55rem 0.7rem; font-size: 0.78rem; line-height: 1.55; color: var(--text);
+      box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    }
     #top-watch .tw-foot { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
 
     /* --- Chart wrapper (matches valuations page style) --- */
@@ -302,6 +323,32 @@
       <div class="tw-grid" id="twGrid">
         <div class="tw-panel nq"><div class="tw-kicker">Loading&hellip;</div></div>
       </div>
+      <div class="rw-chart-wrap tw-chart-wrap">
+        <div class="tw-chart-head">
+          <div>
+            <h3 class="tw-chart-title">How these readings looked in the past</h3>
+            <p class="tw-chart-sub">S&amp;P 500 (log scale). Background = crash risk at the time. Grey bars = every drop of 15% or more from a record high. Point at the chart for that week's readings.</p>
+          </div>
+          <div class="chart-periods" id="twPeriods" role="tablist" aria-label="Top Watch history time period">
+            <button type="button" class="chart-period-btn" data-period="1" role="tab">1Y</button>
+            <button type="button" class="chart-period-btn" data-period="5" role="tab">5Y</button>
+            <button type="button" class="chart-period-btn" data-period="10" role="tab">10Y</button>
+            <button type="button" class="chart-period-btn" data-period="25" role="tab">25Y</button>
+            <button type="button" class="chart-period-btn active" data-period="all" role="tab">All</button>
+          </div>
+        </div>
+        <svg id="twChart" class="rw-chart" viewBox="0 0 1200 430" preserveAspectRatio="xMinYMin meet" aria-label="S&amp;P 500 with historical crash risk, valuation and stress readings"></svg>
+        <div class="tw-tip" id="twTip" hidden></div>
+        <div class="rw-legend">
+          <span><span class="swatch tw-sw" style="background:#22c55e"></span> Crash risk low</span>
+          <span><span class="swatch tw-sw" style="background:#f97316"></span> Elevated</span>
+          <span><span class="swatch tw-sw" style="background:#ef4444"></span> High</span>
+          <span><span class="swatch tw-sw" style="background:#94a3b8"></span> 15%+ drop</span>
+          <span>Valuation strip: CAPE band &middot; Stress strip: darker = more stress signs on</span>
+        </div>
+        <p class="tw-chart-note">Each week is scored only with data that had been published by then (for example, the unemployment rate arrives about five weeks late), so this is what the page would have shown at the time. A risk level has to hold for four weeks before the shading changes, to keep one-week blips from cluttering the chart. Oil history starts in 2000, so the stress strip counts one fewer sign before 2001.</p>
+      </div>
+
       <p class="tw-foot">
         <strong>This is a forecast, not a sell signal.</strong> We also tested selling when crash risk rose and the index broke below its 200-day average. It cut the worst loss roughly in half, but earned less than simply holding (8.4% vs 9.2% a year since 1991), because it kept missing rebounds. Odds are for any 12-month window, measured from each day's close to the lowest close in the following year.
       </p>
@@ -1058,7 +1105,8 @@
   </script>
   <script>
   // ============================================================
-  // TOP WATCH — two readings, same rules as the 1991-2025 backtest:
+  // TOP WATCH — two scored readings plus an unscored stress watch.
+  // Scored readings use the same rules as the 1991-2025 backtest:
   //   Pullback risk: Shiller CAPE band -> odds of a 10%+ drop within 12 months.
   //   Crash risk:    count of 5 economic/credit warning flags -> odds of a
   //                  20%+ drop within 12 months.
@@ -1092,56 +1140,124 @@
     const rolling = (vals, n) => vals.map((_, i) => i + 1 >= n ? avgOf(vals.slice(i + 1 - n, i + 1)) : NaN);
     const daysBefore = (date, n) => { const d = new Date(date); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
 
-    let baa, nfci, t3m, claims, unrate, cape, y10;
+    let baa, nfci, t3m, claims, unrate, cape, y10, margin, oil, sloos, trucks, bizDel, sent, spx;
     try {
-      [baa, nfci, t3m, claims, unrate, cape, y10] = await Promise.all([
+      [baa, nfci, t3m, claims, unrate, cape, y10, margin, oil, sloos, trucks, bizDel, sent, spx] = await Promise.all([
         load('data/baa10y.csv'), load('data/nfci.csv'), load('data/t10y3m.csv'),
         load('data/jobless_claims.csv'), load('data/unrate.csv'), load('data/spx_cape.csv'),
-        load('data/yields_history.csv', 2),
+        load('data/yields_history.csv', 2), load('data/margin_debt.csv'), load('data/oil.csv'),
+        load('data/sloos.csv'), load('data/heavy_trucks.csv'), load('data/biz_delinquency.csv'),
+        load('data/umcsent.csv'), load('data/spx.csv'),
       ]);
     } catch (e) {
       console.error('Top Watch: data load failed', e);
       document.getElementById('twGrid').innerHTML = '<div class="tw-panel nq"><div class="tw-kicker">Data unavailable</div></div>';
       return;
     }
+    const last = (a) => a[a.length - 1];
+    const upTo = (rows, cut) => { let i = rows.length; while (i > 0 && rows[i - 1].date > cut) i--; return rows.slice(0, i); };
+    const monthName = (d) => new Date(d.slice(0, 7) + '-15').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const monthsBack = (date, m) => { const d = new Date(date); d.setMonth(d.getMonth() - m); return d.toISOString().slice(0, 10); };
 
-    // 1. Credit: Baa corporate spread 0.40+ points above its 1-year low.
-    const baaYear = baa.slice(-252).map(x => x.v);
-    const baaRise = baaYear[baaYear.length - 1] - Math.min(...baaYear);
-    // 2. Stress: NFCI above its 52-week average.
-    const nf = nfci.slice(-52).map(x => x.v);
-    const nfGap = nf[nf.length - 1] - avgOf(nf);
-    // 3. Yield curve: 10Y-3M inverted at any point in the past 24 months.
-    const lastT = t3m[t3m.length - 1].date;
-    const inv = t3m.filter(x => x.date >= daysBefore(lastT, 730) && x.v < 0);
-    // 4. Layoffs: 4-week average claims 20%+ above its 52-week low.
-    const cl4 = rolling(claims.map(x => x.v), 4).slice(-52);
-    const clRise = cl4[cl4.length - 1] / Math.min(...cl4) - 1;
-    // 5. Jobs: 3-month average unemployment 0.3+ points above its 12-month low.
-    const ur3 = rolling(unrate.map(x => x.v), 3).slice(-12);
-    const urRise = ur3[ur3.length - 1] - Math.min(...ur3);
+    // The five scored crash flags, as they read on date `cut` (latest data on or before it).
+    function crashFlagsAt(cut) {
+      // 1. Credit: Baa corporate spread 0.40+ points above its 1-year low.
+      const baaYear = upTo(baa, cut).slice(-252).map(x => x.v);
+      const baaRise = last(baaYear) - Math.min(...baaYear);
+      // 2. Stress: NFCI above its 52-week average.
+      const nf = upTo(nfci, cut).slice(-52).map(x => x.v);
+      const nfGap = last(nf) - avgOf(nf);
+      // 3. Yield curve: 10Y-3M inverted at any point in the past 24 months.
+      const inv = upTo(t3m, cut).filter(x => x.date >= daysBefore(cut, 730) && x.v < 0);
+      // 4. Layoffs: 4-week average claims 20%+ above its 52-week low.
+      const cl4 = rolling(upTo(claims, cut).slice(-60).map(x => x.v), 4).slice(-52);
+      const clRise = last(cl4) / Math.min(...cl4) - 1;
+      // 5. Jobs: 3-month average unemployment 0.3+ points above its 12-month low.
+      const ur3 = rolling(upTo(unrate, cut).slice(-16).map(x => x.v), 3).slice(-12);
+      const urRise = last(ur3) - Math.min(...ur3);
+      return [
+        { on: baaRise >= 0.40, name: 'Credit', why: 'Corporate borrowing costs rising vs Treasuries', val: `+${baaRise.toFixed(2)} pts off 1-yr low (trigger +0.40)` },
+        { on: nfGap > 0, name: 'Financial stress', why: 'Chicago Fed stress index above its 1-yr average', val: `${nfGap >= 0 ? '+' : ''}${nfGap.toFixed(2)} vs average` },
+        { on: inv.length > 0, name: 'Yield curve', why: '10Y-3M curve inverted in the past 2 years', val: inv.length ? `last inverted ${last(inv).date.slice(0, 7)}` : 'not inverted' },
+        { on: clRise >= 0.20, name: 'Layoffs', why: 'Jobless claims rising off their low', val: `+${(clRise * 100).toFixed(0)}% off 1-yr low (trigger +20%)` },
+        { on: urRise >= 0.30, name: 'Unemployment', why: 'Unemployment rate climbing', val: `+${urRise.toFixed(2)} pts off 1-yr low (trigger +0.30)` },
+      ];
+    }
+    const crashTierAt = (cut) => CRASH_TIERS[Math.min(crashFlagsAt(cut).filter(f => f.on).length, 3)];
+    const bandFor = (v) => PULLBACK_BANDS.findIndex(b => v < b.max);
 
-    const flags = [
-      { on: baaRise >= 0.40, name: 'Credit', why: 'Corporate borrowing costs rising vs Treasuries', val: `+${baaRise.toFixed(2)} pts off 1-yr low (trigger +0.40)` },
-      { on: nfGap > 0, name: 'Financial stress', why: 'Chicago Fed stress index above its 1-yr average', val: `${nfGap >= 0 ? '+' : ''}${nfGap.toFixed(2)} vs average` },
-      { on: inv.length > 0, name: 'Yield curve', why: '10Y-3M curve inverted in the past 2 years', val: inv.length ? `last inverted ${inv[inv.length - 1].date.slice(0, 7)}` : 'not inverted' },
-      { on: clRise >= 0.20, name: 'Layoffs', why: 'Jobless claims rising off their low', val: `+${(clRise * 100).toFixed(0)}% off 1-yr low (trigger +20%)` },
-      { on: urRise >= 0.30, name: 'Unemployment', why: 'Unemployment rate climbing', val: `+${urRise.toFixed(2)} pts off 1-yr low (trigger +0.30)` },
-    ];
+    const today = last(t3m).date;
+    const flags = crashFlagsAt(today);
     const nOn = flags.filter(f => f.on).length;
     const crash = CRASH_TIERS[Math.min(nOn, 3)];
 
-    const capeNow = cape[cape.length - 1];
-    const bandIdx = PULLBACK_BANDS.findIndex(b => capeNow.v < b.max);
+    const capeNow = last(cape);
+    const bandIdx = bandFor(capeNow.v);
     const pull = PULLBACK_BANDS[bandIdx];
-    // Watch item, not scored: 10-year yield change over ~6 months (126 trading days).
-    // Tested and left out of the odds: since 1991 it added nothing on its own.
-    const y10Now = y10[y10.length - 1].v;
-    const y10Chg = y10Now - y10[Math.max(0, y10.length - 127)].v;
-    // Last time before now the yield was at least this high, e.g. "highest since 2007".
+
+    // "Since" dates: step back month by month until the reading's label was different.
+    let crashSince = null;
+    for (let m = 1; m <= 300; m++) {
+      if (crashTierAt(monthsBack(today, m)).label !== crash.label) { crashSince = monthName(monthsBack(today, m - 1)); break; }
+    }
+    let pullSince = null;
+    for (let i = cape.length - 2; i >= 0; i--) {
+      if (PULLBACK_BANDS[bandFor(cape[i].v)].label !== pull.label) { pullSince = monthName(cape[i + 1].date); break; }
+    }
+
+    // ------------------------------------------------------------
+    // STRESS WATCH: signs that passed testing as confirmers but are NOT
+    // scored (adding them to the odds made the tables noisier, since they
+    // all track the same recessions). Orange = past its line. Thresholds
+    // match the 2026-09 backtests.
+    // ------------------------------------------------------------
+    const y10v = y10.map(x => x.v);
+    const y10Now = last(y10v);
+    const y10Chg6 = y10Now - y10v[Math.max(0, y10v.length - 127)];
+    // "Highest since": last time the yield was this high BEFORE the current
+    // ~3-month run, so a new high set last week doesn't read as "since 2026".
     let y10Since = null;
-    for (let i = y10.length - 2; i >= 0; i--) { if (y10[i].v >= y10Now) { y10Since = y10[i].date.slice(0, 4); break; } }
-    const y10SinceTxt = (y10Since && +y10Since < new Date().getFullYear() - 1) ? `, highest since ${y10Since}` : '';
+    const runMax = Math.max(...y10v.slice(-63));
+    for (let i = y10v.length - 64; i >= 0; i--) { if (y10v[i] >= runMax) { y10Since = y10[i].date.slice(0, 4); break; } }
+    let y10High3y = false;   // made a 3-year high in the last ~3 months
+    for (let i = y10v.length - 63; i < y10v.length; i++) {
+      if (y10v[i] >= Math.max(...y10v.slice(Math.max(0, i - 755), i + 1))) { y10High3y = true; break; }
+    }
+    const marginYoY = last(margin).v / margin[margin.length - 5].v - 1;
+    const oilAvg = rolling(oil.map(x => x.v), 21);
+    const oilYoY = last(oilAvg) / oilAvg[oilAvg.length - 253] - 1;
+    const truck3 = rolling(trucks.map(x => x.v), 3);
+    const truckYoY = last(truck3) / truck3[truck3.length - 13] - 1;
+    const delRise = last(bizDel).v / Math.min(...bizDel.slice(-4).map(x => x.v)) - 1;
+    const sentDrop = last(sent).v - Math.max(...sent.slice(-12).map(x => x.v));
+    const pct = (x) => `${x >= 0 ? '+' : ''}${(x * 100).toFixed(0)}%`;
+    const quarter = (d) => `Q${Math.floor((+d.slice(5, 7) - 1) / 3) + 1} ${d.slice(0, 4)}`;
+
+    const watch = [
+      { on: y10High3y || y10Chg6 >= 1.0, name: '10-year Treasury yield', line: 'a 3-year high, or +1.0 in 6 months',
+        val: `${y10Now.toFixed(2)}% (${y10Chg6 >= 0 ? '+' : ''}${y10Chg6.toFixed(2)} in 6 mo${y10Since && +y10Since < new Date().getFullYear() - 1 ? `; recent high ${runMax.toFixed(2)}% was the highest since ${y10Since}` : ''})`,
+        note: 'Raised pullback odds a little; did not raise crash odds' },
+      { on: marginYoY >= 0.30, name: 'Margin debt', line: '+30% vs a year earlier',
+        val: `${pct(marginYoY)} vs a year earlier (${quarter(last(margin).date)})`,
+        note: 'Money borrowed to buy stocks. Surges came before 2000 and 2022' },
+      { on: oilYoY >= 0.40, name: 'Oil price', line: '+40% vs a year earlier',
+        val: `$${last(oil).v.toFixed(2)}, ${pct(oilYoY)} vs a year earlier`,
+        note: 'Squeezes consumers through gas, diesel and heating costs' },
+      { on: last(sloos).v >= 20, name: 'Banks tightening loans', line: 'net 20%+ of banks',
+        val: `net ${last(sloos).v.toFixed(0)}% tightening (${quarter(last(sloos).date)} survey)`,
+        note: 'Fed survey of bank loan officers' },
+      { on: truckYoY <= -0.15, name: 'Heavy truck sales', line: '-15% vs a year earlier',
+        val: `${pct(truckYoY)} vs a year earlier (${monthName(last(trucks).date)})`,
+        note: 'Companies stop buying trucks before they cut jobs' },
+      { on: delRise >= 0.20, name: 'Business loan delinquencies', line: '+20% off the 1-yr low',
+        val: `${last(bizDel).v.toFixed(2)}%, ${pct(delRise)} off 1-yr low (${quarter(last(bizDel).date)})`,
+        note: 'Share of bank business loans behind on payments' },
+      { on: sentDrop <= -15, name: 'Consumer sentiment falling fast', line: '-15 points from its 1-yr high',
+        val: `${last(sent).v.toFixed(1)}, ${sentDrop.toFixed(1)} from 1-yr high`,
+        note: 'A fast drop warns; a low level alone does not (lows often mark bottoms)' },
+    ];
+    const nWatch = watch.filter(w => w.on).length;
+
     const ladder = (items, active, cap) => `
       <div class="tw-ladder">${items.map((t, i) => `<span class="${i === active ? 'on' : ''}">${t.odds}%</span>`).join('')}</div>
       <div class="tw-ladder-cap">${cap}</div>`;
@@ -1150,6 +1266,7 @@
       <div class="tw-panel ${pull.cls}">
         <div class="tw-kicker">Pullback risk &middot; a 10%+ drop</div>
         <div class="tw-level">${pull.label}</div>
+        ${pullSince ? `<div class="tw-since">${pull.label} since ${pullSince}</div>` : ''}
         <div class="tw-odds-row">
           <div class="tw-odds">${pull.odds}%</div>
           <div class="tw-odds-text">chance of a 10%+ drop within a year at this valuation, historically. Normal: 31%.</div>
@@ -1159,15 +1276,13 @@
           <li class="${capeNow.v >= 30 ? 'on' : ''}"><span class="tw-dot"></span>
             <span>Valuation (Shiller CAPE)<span class="tw-why">Price vs 10 years of average earnings</span></span>
             <span class="tw-val">${capeNow.v.toFixed(1)}</span></li>
-          <li><span class="tw-dot"></span>
-            <span>Watch: 10-year Treasury yield<span class="tw-why">Not scored: in testing since 1991, fast jumps and multi-year highs in this yield raised pullback odds a little but did not raise crash odds</span></span>
-            <span class="tw-val">${y10Now.toFixed(2)}% (${y10Chg >= 0 ? '+' : ''}${y10Chg.toFixed(2)} in 6 mo${y10SinceTxt})</span></li>
         </ul>
-        <p class="tw-note">Expensive markets don't cause crashes on their own, but they fall harder and more often when bad news arrives. Readings of 35+ happened only in 1998-2000, 2021 and 2024-26, so this top band rests on few examples.</p>
+        <p class="tw-note">Expensive markets don't cause crashes on their own, but they fall harder and more often when bad news arrives. This reading moves slowly: it describes the climate, not the day a storm hits. Readings of 35+ happened only in 1998-2000, 2021 and 2024-26, so this top band rests on few examples.</p>
       </div>
       <div class="tw-panel ${crash.cls}">
         <div class="tw-kicker">Crash risk &middot; a 20%+ bear market</div>
         <div class="tw-level">${crash.label} &middot; ${nOn} of 5 warnings on</div>
+        ${crashSince ? `<div class="tw-since">${crash.label} since ${crashSince}</div>` : ''}
         <div class="tw-odds-row">
           <div class="tw-odds">${crash.odds}%</div>
           <div class="tw-odds-text">chance of a 20%+ drop within a year with ${nOn} warning${nOn === 1 ? '' : 's'} on, historically. Normal: 14%.</div>
@@ -1179,7 +1294,212 @@
             <span class="tw-val">${f.val}</span></li>`).join('')}
         </ul>
         <p class="tw-note">Big bear markets almost always come with a recession or a credit crunch, and these five readings pick those up early. Sudden shocks that start from calm conditions (1998, 2018, 2025) slip past them; those drops also recovered fastest.</p>
+      </div>
+      <div class="tw-panel tw-watch ${nWatch ? 'o' : 'g'}">
+        <div class="tw-kicker">Stress watch &middot; not scored</div>
+        <div class="tw-level">${nWatch} of ${watch.length} stress signs on</div>
+        <p class="tw-watch-intro">Each of these passed our tests as a <em>confirming</em> sign: when the main readings were already warning, these made a bad outcome more likely. Adding them to the odds made the tables less reliable, not more, because they all track the same recessions. So they are shown here instead of scored.</p>
+        <ul class="tw-flags tw-watch-list">
+          ${watch.map(w => `<li class="${w.on ? 'warn' : ''}"><span class="tw-dot"></span>
+            <span>${w.name}<span class="tw-why">${w.note}. Lights at ${w.line}.</span></span>
+            <span class="tw-val">${w.val}</span></li>`).join('')}
+        </ul>
       </div>`;
+
+    // ============================================================
+    // HISTORY CHART — S&P 500 with the Top Watch readings behind it.
+    // Each week since 1991 is re-scored with the data that was public
+    // at the time (same publication lags as the backtest), so the chart
+    // shows what the page would have said then, hits and misses alike.
+    // ============================================================
+    const bisect = (rows, cut) => { let lo = 0, hi = rows.length; while (lo < hi) { const m = (lo + hi) >> 1; if (rows[m].date <= cut) lo = m + 1; else hi = m; } return lo; };
+    const tail = (rows, cut, n) => { const i = bisect(rows, cut); return rows.slice(Math.max(0, i - n), i); };
+    const yearFrac = (d) => { const [y, m, day] = d.split('-').map(Number); return y + (m - 1) / 12 + (day - 1) / 365; };
+
+    // Precomputed helpers so each week costs a few small slices, not full scans.
+    let lastNeg = null;
+    const t3mLastInv = t3m.map(r => (r.v < 0 ? (lastNeg = r.date) : lastNeg));
+    const y10RecentHigh = (() => {           // made a 3-year high within the last 63 trading days
+      const hitHigh = y10v.map((v, i) => { let m = -Infinity; for (let j = Math.max(0, i - 755); j <= i; j++) if (y10v[j] > m) m = y10v[j]; return i >= 500 && v >= m; });
+      const out = []; let lastHit = -1e9;
+      hitHigh.forEach((h, i) => { if (h) lastHit = i; out.push(i - lastHit < 63); });
+      return out;
+    })();
+
+    function crashCountAsOf(d) {
+      const b = tail(baa, daysBefore(d, 1), 252).map(x => x.v);
+      const n = tail(nfci, daysBefore(d, 5), 52).map(x => x.v);
+      const ti = bisect(t3m, daysBefore(d, 1));
+      const c = rolling(tail(claims, daysBefore(d, 5), 55).map(x => x.v), 4).slice(-52);
+      const u = rolling(tail(unrate, daysBefore(d, 38), 14).map(x => x.v), 3).slice(-12);
+      if (b.length < 200 || n.length < 52 || ti < 1 || c.length < 52 || u.length < 12) return null;
+      let k = 0;
+      if (last(b) - Math.min(...b) >= 0.40) k++;
+      if (last(n) - avgOf(n) > 0) k++;
+      if (t3mLastInv[ti - 1] && t3mLastInv[ti - 1] >= daysBefore(daysBefore(d, 1), 730)) k++;
+      if (last(c) / Math.min(...c) - 1 >= 0.20) k++;
+      if (last(u) - Math.min(...u) >= 0.30) k++;
+      return k;
+    }
+    function stressAsOf(d) {
+      let on = 0, avail = 0;
+      const test = (ok, cond) => { if (ok) { avail++; if (cond()) on++; } };
+      const yi = bisect(y10, daysBefore(d, 1)) - 1;
+      test(yi >= 126, () => y10RecentHigh[yi] || y10v[yi] - y10v[yi - 126] >= 1.0);
+      const mi = bisect(margin, daysBefore(d, 150)) - 1;
+      test(mi >= 4, () => margin[mi].v / margin[mi - 4].v - 1 >= 0.30);
+      const oi = bisect(oil, daysBefore(d, 1)) - 1;
+      test(oi >= 272, () => oilAvg[oi] / oilAvg[oi - 252] - 1 >= 0.40);
+      const si = bisect(sloos, daysBefore(d, 45)) - 1;
+      test(si >= 0, () => sloos[si].v >= 20);
+      const ki = bisect(trucks, daysBefore(d, 45)) - 1;
+      test(ki >= 14, () => truck3[ki] / truck3[ki - 12] - 1 <= -0.15);
+      const bi = bisect(bizDel, daysBefore(d, 150)) - 1;
+      test(bi >= 3, () => bizDel[bi].v / Math.min(...bizDel.slice(bi - 3, bi + 1).map(x => x.v)) - 1 >= 0.20);
+      const ui = bisect(sent, daysBefore(d, 30)) - 1;
+      test(ui >= 11, () => sent[ui].v - Math.max(...sent.slice(ui - 11, ui + 1).map(x => x.v)) <= -15);
+      return { on, avail };
+    }
+
+    // Weekly points (every 5th trading day) from 1991, plus the latest day.
+    const pts = [];
+    const spxFrom = spx.filter(r => r.date >= '1991-01-01');
+    for (let i = 0; i < spxFrom.length; i += 5) pts.push(spxFrom[i]);
+    if (last(pts) !== last(spxFrom)) pts.push(last(spxFrom));
+    const hist = [];
+    let shown = null, streak = 0, prevRaw = null;
+    for (const r of pts) {
+      const n = crashCountAsOf(r.date);
+      if (n === null) continue;
+      const raw = CRASH_TIERS[Math.min(n, 3)].label;
+      streak = raw === prevRaw ? streak + 1 : 1; prevRaw = raw;
+      if (shown === null || streak >= 4) shown = raw;   // a tier must hold 4 weeks before the shading changes
+      const ci = bisect(cape, daysBefore(r.date, 35)) - 1;
+      const capeV = ci >= 0 ? cape[ci].v : null;
+      hist.push({ date: r.date, yf: yearFrac(r.date), px: r.v, n, tier: shown, cape: capeV,
+                  band: capeV === null ? null : PULLBACK_BANDS[bandFor(capeV)], stress: stressAsOf(r.date) });
+    }
+
+    // Declines of 15%+ from a record close (daily data), for the markers.
+    const drops = [];
+    { let peak = spx[0], trough = null, deep = 0;
+      for (const r of spx) {
+        if (r.v >= peak.v) { if (deep <= -0.15) drops.push({ peak, trough, deep }); peak = r; trough = null; deep = 0; }
+        else { const dd = r.v / peak.v - 1; if (dd < deep) { deep = dd; trough = r; } }
+      }
+      if (deep <= -0.15) drops.push({ peak, trough, deep, ongoing: true });
+    }
+
+    const TIER_COLOR = { Low: '#22c55e', Elevated: '#f97316', High: '#ef4444' };
+    const BAND_COLOR = { g: '#22c55e', y: '#eab308', o: '#f97316', r: '#ef4444' };
+    const chart = document.getElementById('twChart');
+    const tip = document.getElementById('twTip');
+    // Drawn at the chart's real pixel width so text stays readable on phones.
+    const ML = 62, MR = 14, MT = 20, stripH = 14;
+    let CW = 1200, CH = 430, PH = 290, stripY1, stripY2;
+    let view = [], period = 'all';
+
+    function renderChart(p) {
+      if (p) period = p;
+      CW = Math.max(260, Math.round(chart.getBoundingClientRect().width || 1200));
+      PH = CW < 600 ? 200 : 290;
+      stripY1 = MT + PH + 14; stripY2 = stripY1 + 22; CH = stripY2 + stripH + 28;
+      chart.setAttribute('viewBox', `0 0 ${CW} ${CH}`);
+      const lastYf = last(hist).yf;
+      view = hist.filter(h => period === 'all' || h.yf >= lastYf - parseFloat(period));
+      if (view.length < 2) return;
+      const x0 = view[0].yf, x1 = last(view).yf;
+      const X = (yf) => ML + (yf - x0) / (x1 - x0) * (CW - ML - MR);
+      let lo = Infinity, hi = -Infinity;
+      for (const h of view) { if (h.px < lo) lo = h.px; if (h.px > hi) hi = h.px; }
+      lo *= 0.95; hi *= 1.03;
+      const Y = (v) => MT + PH - (Math.log(v) - Math.log(lo)) / (Math.log(hi) - Math.log(lo)) * PH;
+      let g = '';
+      // Background: crash-risk tier as colored spans.
+      const spans = (key, colorOf, y, h, op) => {
+        let s = 0;
+        for (let i = 1; i <= view.length; i++) {
+          if (i === view.length || colorOf(view[i]) !== colorOf(view[s])) {
+            const c = colorOf(view[s]);
+            if (c) g += `<rect x="${X(view[s].yf).toFixed(1)}" y="${y}" width="${Math.max(0.6, X(view[Math.min(i, view.length - 1)].yf) - X(view[s].yf)).toFixed(1)}" height="${h}" fill="${c}" opacity="${op}"/>`;
+            s = i;
+          }
+        }
+      };
+      spans('tier', h => TIER_COLOR[h.tier], MT, PH, 0.16);
+      // Price gridlines on a log scale: 1-2-5 steps that fall inside the range.
+      const ticks = [];
+      for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+        for (const m of [1, 2, 5]) { const t = m * 10 ** e; if (t >= lo && t <= hi) ticks.push(t); }
+      if (ticks.length < 3) {   // short windows: fall back to evenly spaced round numbers
+        ticks.length = 0; const step = 10 ** Math.floor(Math.log10((hi - lo) / 4));
+        const st = [1, 2, 5, 10].map(m => m * step).find(s => (hi - lo) / s <= 6);
+        for (let t = Math.ceil(lo / st) * st; t <= hi; t += st) ticks.push(t);
+      }
+      for (const t of ticks) g += `<line class="grid-line" x1="${ML}" x2="${CW - MR}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}"/><text class="axis-label" x="${ML - 8}" y="${(Y(t) + 4).toFixed(1)}" text-anchor="end">${t.toLocaleString()}</text>`;
+      // Year labels: the smallest step that leaves ~60px between labels.
+      const span = x1 - x0, step = [0.25, 0.5, 1, 2, 5, 10].find(st => st / span * (CW - ML - MR) >= 60) || 10;
+      for (let yr = Math.ceil(x0 / step) * step; yr <= x1; yr += step) {
+        const lbl = step >= 1 ? String(Math.round(yr)) : new Date(Math.floor(yr), Math.round((yr % 1) * 12), 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        g += `<line class="grid-line" x1="${X(yr).toFixed(1)}" x2="${X(yr).toFixed(1)}" y1="${MT}" y2="${stripY2 + stripH}"/><text class="axis-label" x="${X(yr).toFixed(1)}" y="${stripY2 + stripH + 18}" text-anchor="middle">${lbl}</text>`;
+      }
+      // Past declines of 15%+: a bar along the bottom of the plot, labeled with the size.
+      for (const d of drops) {
+        const a = yearFrac(d.peak.date), b = yearFrac(d.trough.date);
+        if (b < x0 || a > x1) continue;
+        const xa = X(Math.max(a, x0)), xb = X(Math.min(b, x1));
+        g += `<rect x="${xa.toFixed(1)}" y="${MT + PH - 7}" width="${Math.max(2, xb - xa).toFixed(1)}" height="7" fill="#94a3b8" opacity="0.8"/>`;
+        if (CW >= 600 || d.deep <= -0.3) g += `<text class="axis-label" x="${((xa + xb) / 2).toFixed(1)}" y="${MT + PH - 11}" text-anchor="middle" style="font-size:10px;font-weight:600">${(d.deep * 100).toFixed(0)}%</text>`;
+      }
+      g += `<path d="${view.map((h, i) => (i ? 'L' : 'M') + X(h.yf).toFixed(1) + ',' + Y(h.px).toFixed(1)).join(' ')}" fill="none" stroke="var(--text)" stroke-width="1.5"/>`;
+      g += `<line class="axis-line" x1="${ML}" x2="${CW - MR}" y1="${MT + PH}" y2="${MT + PH}"/>`;
+      // Strips under the chart: valuation band and stress-watch count.
+      spans('band', h => h.band && BAND_COLOR[h.band.cls], stripY1, stripH, 0.85);
+      for (let i = 0; i < view.length; i++) {
+        const h = view[i], w = (i + 1 < view.length ? X(view[i + 1].yf) : X(h.yf) + 1) - X(h.yf);
+        if (h.stress.on) g += `<rect x="${X(h.yf).toFixed(1)}" y="${stripY2}" width="${(w + 0.4).toFixed(1)}" height="${stripH}" fill="#f97316" opacity="${Math.min(h.stress.on, 4) / 4}"/>`;
+      }
+      g += `<rect x="${ML}" y="${stripY2}" width="${CW - ML - MR}" height="${stripH}" fill="none" stroke="var(--border)"/>`;
+      g += `<text class="axis-label" x="${ML - 8}" y="${stripY1 + 11}" text-anchor="end">Valuation</text><text class="axis-label" x="${ML - 8}" y="${stripY2 + 11}" text-anchor="end">Stress</text>`;
+      g += `<line id="twHoverLine" x1="0" x2="0" y1="${MT}" y2="${stripY2 + stripH}" stroke="var(--text)" stroke-width="1" opacity="0"/>`;
+      g += `<rect id="twHoverZone" x="${ML}" y="${MT}" width="${CW - ML - MR}" height="${stripY2 + stripH - MT}" fill="transparent"/>`;
+      chart.innerHTML = g;
+      chart._X = X;
+    }
+
+    function showTip(evt) {
+      const rect = chart.getBoundingClientRect();
+      const sx = (evt.clientX - rect.left) * CW / rect.width;
+      const X = chart._X; if (!X || !view.length) return;
+      let best = view[0];
+      for (const h of view) if (Math.abs(X(h.yf) - sx) < Math.abs(X(best.yf) - sx)) best = h;
+      const line = document.getElementById('twHoverLine');
+      line.setAttribute('x1', X(best.yf)); line.setAttribute('x2', X(best.yf)); line.setAttribute('opacity', 0.6);
+      const dt = new Date(best.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      tip.innerHTML = `<strong>${dt}</strong><br>S&amp;P 500: ${best.px.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+        <br><span style="color:${TIER_COLOR[CRASH_TIERS[Math.min(best.n, 3)].label]}">&#9632;</span> Crash risk: ${CRASH_TIERS[Math.min(best.n, 3)].label} (${best.n} of 5 warnings)
+        ${best.band ? `<br><span style="color:${BAND_COLOR[best.band.cls]}">&#9632;</span> Pullback risk: ${best.band.label} (CAPE ${best.cape.toFixed(1)})` : ''}
+        <br><span style="color:#f97316">&#9632;</span> Stress watch: ${best.stress.on} of ${best.stress.avail} on`;
+      tip.hidden = false;
+      const px = (X(best.yf) / CW) * rect.width;
+      const wrapRect = chart.parentElement.getBoundingClientRect();
+      const left = rect.left - wrapRect.left + px + (px > rect.width * 0.6 ? -tip.offsetWidth - 12 : 12);
+      tip.style.left = Math.max(4, Math.min(left, wrapRect.width - tip.offsetWidth - 4)) + 'px';
+      tip.style.top = (rect.top - wrapRect.top + 12) + 'px';
+    }
+    chart.addEventListener('pointermove', showTip);
+    chart.addEventListener('pointerleave', () => {
+      tip.hidden = true;
+      const line = document.getElementById('twHoverLine'); if (line) line.setAttribute('opacity', 0);
+    });
+    document.getElementById('twPeriods').addEventListener('click', (e) => {
+      const btn = e.target.closest('.chart-period-btn'); if (!btn) return;
+      document.querySelectorAll('#twPeriods .chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+      renderChart(btn.dataset.period);
+    });
+    renderChart('all');
+    let resizeTimer = null;
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => renderChart(), 150); });
   })();
   </script>
   <script src="ticker-search.js" defer></script>
