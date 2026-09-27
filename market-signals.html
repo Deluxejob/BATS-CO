@@ -560,8 +560,8 @@
             sharp rallies you get inside bear markets). Sit in cash only when <strong>both</strong>
             fail &mdash; credit is tightening <em>and</em> nothing is oversold enough for a mean-reversion
             bounce. Historically that combination side-steps the worst legs of every major bear,
-            compounding at nearly double the buy-and-hold rate (18.3% vs 9.9% CAGR since 1999).
-            Drawdowns are still real &mdash; max &minus;66% &mdash; just meaningfully less painful
+            compounding about 6 points a year faster than buy-and-hold (16.1% vs 10.1% CAGR since 1999).
+            Drawdowns are still real &mdash; max &minus;72% &mdash; just meaningfully less painful
             than buy-and-hold's &minus;83%.
           </p>
 
@@ -587,14 +587,14 @@
           </div>
 
           <div class="sig-stats iq-stats">
-            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos">+18.3%</div></div>
-            <div class="sig-stat"><div class="lbl">Buy &amp; Hold CAGR</div><div class="val">+9.9%</div></div>
+            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos">+16.1%</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold CAGR</div><div class="val">+10.1%</div></div>
             <div class="sig-stat"><div class="lbl">Rule cumulative</div><div class="val pos" id="iqRuleCum">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">Buy &amp; Hold cumulative</div><div class="val" id="iqBhCum">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos" id="iqAlpha">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">Beta vs QQQ</div><div class="val" id="iqBeta">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Sharpe</div><div class="val pos">0.86</div></div>
-            <div class="sig-stat"><div class="lbl">Max drawdown</div><div class="val">-66.3%</div></div>
+            <div class="sig-stat"><div class="lbl">Sharpe</div><div class="val pos">0.78</div></div>
+            <div class="sig-stat"><div class="lbl">Max drawdown</div><div class="val">-71.8%</div></div>
             <div class="sig-stat"><div class="lbl">Buy &amp; Hold max DD</div><div class="val neg">-83.0%</div></div>
           </div>
 
@@ -646,10 +646,10 @@
               <em>less wrong on average</em> across hundreds of them.
             </p>
             <p>
-              <strong>The rule still loses money in bear markets &mdash; just less.</strong> During the dot-com bust,
-              $1,000 in the rule fell to about $692 (a 31% loss). Buy &amp; Hold fell to $259 (74% loss). Same
-              shape in 2008: &minus;27% vs &minus;50%. In 2022: &minus;33% vs &minus;35%. It is not a shield; it is
-              a smaller loss.
+              <strong>The rule still loses money in bear markets &mdash; just less.</strong> From QQQ's dot-com peak
+              to its bottom, $1,000 in the rule fell to about $455 (a 55% loss). Buy &amp; Hold fell to $175 (an 82%
+              loss). Same shape in 2008: &minus;34% vs &minus;52%. In 2022 the rule was roughly flat (&minus;0.5%) while
+              QQQ fell 35%. It is not a shield; it is a smaller loss.
             </p>
             <p><strong>The outperformance comes from two places:</strong></p>
             <ul>
@@ -667,7 +667,7 @@
             <p>
               <strong>How to actually use it:</strong> if you cannot hold through the whipsaws, do not trade this
               rule live. Treat the action pill as a <strong>second opinion</strong> &mdash; an unemotional gut-check
-              against your own instincts. The <strong>+8.4% annualized alpha</strong> only exists for someone who
+              against your own instincts. The <strong>+6.0% annualized alpha</strong> only exists for someone who
               follows <em>every</em> signal, including the ones that feel wrong the moment they fire. Paper-trade it
               through a full up-and-down cycle before committing real money.
             </p>
@@ -717,17 +717,20 @@
           </div>
 
           <p class="sig-note">
-            Backtest 1999&ndash;2026 (~27 yrs) on QQQ closes + FRED NFCI weekly. Bear-market side-steps:
-            dot-com bust &minus;19% (vs &minus;83% B&amp;H), 2008 &minus;27% (vs &minus;50%),
-            COVID &minus;14% (vs &minus;28%), 2022 &minus;33% (vs &minus;35%). Same rule on SMH
-            22.2% CAGR (vs 9.8% B&amp;H). Systematic long/cash rule shown for reference only
+            Backtest 1999&ndash;2026 (~27 yrs) on QQQ closes + FRED NFCI weekly. Each NFCI reading is used only
+            from its publish date, about 5 days after the week it covers (without that delay the backtest
+            overstates the rule: 18.2% vs 16.1% CAGR). The signal at each close sets the next day's position;
+            cash earns 0%. Bear markets, QQQ peak to bottom: dot-com &minus;55% (vs &minus;82% B&amp;H),
+            2008 &minus;34% (vs &minus;52%), COVID &minus;10% (vs &minus;28%), 2022 &minus;0.5% (vs &minus;35%).
+            Same rule on SMH 20.2% CAGR (vs 9.8% B&amp;H). Reproduce with
+            <code>scripts/backtest-two-gate-nfci.py</code>. Systematic long/cash rule shown for reference only
             &mdash; not investment advice; results ignore trading costs and taxes.
           </p>
 
           <div data-share-strip
                data-share-url="https://bats.co/market-signals.html#sig-two-gate-qqq"
                data-share-title="Two-Gate Long/Cash QQQ — BATS.CO"
-               data-share-text="A rules-only long/cash signal for QQQ: stay long when credit is easing (NFCI below its 50-day average) or QQQ's 14-day RSI is under 40, otherwise sit in cash. Historically compounded at nearly double buy-and-hold since 1999 (18.3% vs 9.9% CAGR) with a live intraday pill you can act on before market close."
+               data-share-text="A rules-only long/cash signal for QQQ: stay long when credit is easing (NFCI below its 50-day average) or QQQ's 14-day RSI is under 40, otherwise sit in cash. Historically compounded about 6 points a year faster than buy-and-hold since 1999 (16.1% vs 10.1% CAGR) with a live intraday pill you can act on before market close."
                style="margin-top: 0.9rem;"></div>
         </div>
 
@@ -1549,12 +1552,19 @@
       }
 
       // ---- Forward-fill NFCI onto QQQ's daily calendar ----
+      // NFCI is dated to the Friday it covers but published the next
+      // Wednesday, so each reading only counts from its publish date
+      // (date + 5 days). Same convention as scripts/backtest-two-gate-nfci.py
+      // and the USO card; without it the history "knows" NFCI early.
+      const NFCI_PUB_LAG = 5;
+      const addDays = (iso, n) => { const t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+      const nfciPub = nfci.map(r => ({ date: addDays(r.date, NFCI_PUB_LAG), v: r.v }));
       const nfciDaily = new Array(qqq.length).fill(null);
       let last = null, ni = 0;
       for (let i = 0; i < qqq.length; i++) {
         const d = qqq[i].date;
-        while (ni < nfci.length && nfci[ni].date <= d) {
-          last = nfci[ni].v;
+        while (ni < nfciPub.length && nfciPub[ni].date <= d) {
+          last = nfciPub[ni].v;
           ni++;
         }
         nfciDaily[i] = last;

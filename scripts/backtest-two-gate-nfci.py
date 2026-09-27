@@ -20,17 +20,25 @@ We test both interpretations of "SMA50":
 
 Data sources:
     - QQQ daily closes from data/qqq.csv (already in the repo).
-    - NFCI weekly from the St. Louis Fed FRED CSV endpoint (no key
-      required): https://fred.stlouisfed.org/graph/fredgraph.csv?id=NFCI
-      Weekly, published Wednesday for the previous Friday's data.
+    - NFCI weekly from data/nfci.csv (the same file the website reads,
+      refreshed nightly). Falls back to the St. Louis Fed FRED CSV
+      endpoint if the file is missing.
 
-Prints a full metrics comparison + a period-by-period breakdown of
-each major bear market so we can see whether the strategy actually
-side-stepped the drawdowns it claims to.
+Publication delay (added 2026-09-26):
+    NFCI is dated to the Friday it covers but published the following
+    Wednesday. The rule can only act on a reading once it is public, so
+    each reading is shifted forward NFCI_LAG_DAYS (default 5) before it
+    is used. Without the shift the backtest quietly "knows" NFCI five
+    days early and overstates results (18.1% vs 16.0% CAGR since 1999).
+    Override with --lag N (e.g. --lag 0 to reproduce the old numbers).
 
-Read-only. Writes nothing to disk; NFCI is fetched fresh each run
-so a re-run picks up new weekly prints. (If we productionize this
-we'll add a persistent data/nfci.csv updated by a cron.)
+Trading convention: the signal at day t's close decides whether day
+t+1's return is captured (act at the close). Cash earns 0%.
+
+Prints a full metrics comparison, a publication-delay sensitivity
+table, per-period CAGRs, and a breakdown of each major bear market.
+
+Read-only. Writes nothing to disk.
 """
 from __future__ import annotations
 import csv
@@ -51,6 +59,15 @@ for i, a in enumerate(sys.argv[1:]):
     elif a.startswith("--symbol="):
         SYMBOL = a.split("=", 1)[1].upper()
 ASSET_PATH = os.path.join(DATA_DIR, f"{SYMBOL.lower()}.csv")
+
+# CLI: --lag N days of NFCI publication delay (default 5).
+NFCI_LAG_DAYS = 5
+for i, a in enumerate(sys.argv[1:]):
+    if a == "--lag" and i + 2 <= len(sys.argv) - 1:
+        NFCI_LAG_DAYS = int(sys.argv[i + 2])
+    elif a.startswith("--lag="):
+        NFCI_LAG_DAYS = int(a.split("=", 1)[1])
+NFCI_PATH = os.path.join(DATA_DIR, "nfci.csv")
 
 FRED_NFCI = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NFCI"
 
@@ -95,6 +112,22 @@ def fetch_nfci() -> list[tuple[str, float]]:
             out.append((d, v))
     print(f"  {len(out):,} weekly NFCI readings ({out[0][0]} to {out[-1][0]})")
     return out
+
+
+def load_nfci() -> list[tuple[str, float]]:
+    """NFCI from data/nfci.csv (col 1 = NFCI), else fetch from FRED."""
+    if os.path.exists(NFCI_PATH):
+        rows = load_date_close(NFCI_PATH, 1)
+        if rows:
+            print(f"  {len(rows):,} weekly NFCI readings from data/nfci.csv ({rows[0][0]} to {rows[-1][0]})")
+            return rows
+    return fetch_nfci()
+
+
+def shift_dates(rows: list[tuple[str, float]], days: int) -> list[tuple[str, float]]:
+    """Move each reading to the date it became public (date + days)."""
+    from datetime import date, timedelta
+    return [((date.fromisoformat(d) + timedelta(days=days)).isoformat(), v) for d, v in rows]
 
 
 # --------------------------- indicators -----------------------------------
@@ -182,15 +215,25 @@ def main() -> int:
     print(f"{SYMBOL}: {len(qqq_rows):,} daily closes  ({qqq_dates[0]} to {qqq_dates[-1]})")
 
     try:
-        nfci_rows = fetch_nfci()
+        nfci_raw = load_nfci()
     except Exception as e:
-        print(f"::error::Failed to fetch NFCI: {e}"); return 1
-    if not nfci_rows:
+        print(f"::error::Failed to load NFCI: {e}"); return 1
+    if not nfci_raw:
         print("NFCI returned empty"); return 1
+    print(f"NFCI publication delay: {NFCI_LAG_DAYS} days (use --lag N to change)")
 
     # RSI on QQQ (14-day Wilder).
     rsi = compute_rsi_wilder(qqq_close, 14)
 
+    def build_signals(nfci_rows: list[tuple[str, float]]):
+        return _build_signals(qqq_dates, rsi, nfci_rows)
+
+    invA, invB, firstA, firstB = build_signals(shift_dates(nfci_raw, NFCI_LAG_DAYS))
+    return report(qqq_dates, qqq_close, rsi, nfci_raw, invA, invB, firstA, firstB, build_signals)
+
+
+def _build_signals(qqq_dates, rsi, nfci_rows):
+    """Both SMA interpretations for one (already delay-shifted) NFCI series."""
     # Forward-fill NFCI to daily. Weekly readings map to every trading day
     # from that reading's date until the next weekly reading arrives.
     nfci_map = dict(nfci_rows)
@@ -204,8 +247,6 @@ def main() -> int:
             last_val = nfci_map[nfci_dates_sorted[j]]
             j += 1
         nfci_daily[i] = last_val
-    n_missing = sum(1 for v in nfci_daily if v is None)
-    print(f"NFCI: forward-filled to daily, {n_missing:,} days missing (early QQQ history before first NFCI reading)")
 
     # Interpretation A: SMA50 on the daily forward-filled NFCI (50 trading days = ~10 weeks).
     # Compute over non-None slice only.
@@ -252,6 +293,10 @@ def main() -> int:
 
     invA, firstA = build_invested(smaA_daily)
     invB, firstB = build_invested(smaB_daily)
+    return invA, invB, firstA, firstB
+
+
+def report(qqq_dates, qqq_close, rsi, nfci_raw, invA, invB, firstA, firstB, build_signals) -> int:
 
     # Trim to whichever start date is later so the two comparisons run on
     # the same aligned window (fairness).
@@ -320,6 +365,23 @@ def main() -> int:
         rA = strat_return(invA)
         rB = strat_return(invB)
         print(f"  {label:<20} {start} -> {end}   QQQ B&H {bh * 100:>+7.1f}%   A {rA * 100:>+7.1f}%   B {rB * 100:>+7.1f}%")
+
+    # Per-period CAGR for strategy A vs buy & hold (same delay as above).
+    print(f"\nBY START YEAR (strategy A, {NFCI_LAG_DAYS}-day NFCI delay):")
+    for start in ["2003-01-02", "2010-01-04", "2013-01-02"]:
+        i0 = next(i for i, d in enumerate(qqq_dates) if d >= start)
+        rA_ = run_backtest(qqq_dates[i0:], qqq_close[i0:], invA[i0:])
+        rH_ = run_backtest(qqq_dates[i0:], qqq_close[i0:], [True] * (len(qqq_dates) - i0))
+        print(f"  from {start[:4]}   strategy CAGR {rA_['cagr']:>5.2f}%   buy & hold {rH_['cagr']:>5.2f}%   max DD {rA_['max_dd']:>6.1f}%")
+
+    # How much the publication delay matters (strategy A).
+    print("\nPUBLICATION-DELAY SENSITIVITY (strategy A, full aligned window):")
+    for lag in [0, 3, 5, 7]:
+        iA, _, fA, fB = build_signals(shift_dates(nfci_raw, lag))
+        f0 = max(fA, fB)
+        rr = run_backtest(qqq_dates[f0:], qqq_close[f0:], iA[f0:])
+        tag = "  <- used above" if lag == NFCI_LAG_DAYS else ("  (no delay: overstated)" if lag == 0 else "")
+        print(f"  {lag} days   CAGR {rr['cagr']:>5.2f}%   Sharpe {rr['sharpe']:>5.2f}   max DD {rr['max_dd']:>6.1f}%{tag}")
 
     return 0
 
