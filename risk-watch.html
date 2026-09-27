@@ -406,7 +406,7 @@
           <button type="button" class="chart-period-btn" data-period="25"  role="tab">25Y</button>
           <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
         </div>
-        <svg id="creditChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="US high-yield and investment-grade credit spreads"></svg>
+        <svg id="creditChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="xMinYMin meet" aria-label="US high-yield and investment-grade credit spreads"></svg>
         <div class="rw-legend">
           <span><span class="swatch" style="background:var(--s5)"></span> HY OAS (%)</span>
           <span><span class="swatch" style="background:#64d3ff"></span> IG OAS (%)</span>
@@ -459,7 +459,7 @@
           <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
           <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
         </div>
-        <svg id="curveChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="10Y-2Y and 10Y-3M Treasury spreads"></svg>
+        <svg id="curveChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="xMinYMin meet" aria-label="10Y-2Y and 10Y-3M Treasury spreads"></svg>
         <div class="rw-legend">
           <span><span class="swatch" style="background:var(--s5)"></span> 10Y &minus; 2Y (%)</span>
           <span><span class="swatch" style="background:#64d3ff"></span> 10Y &minus; 3M (%)</span>
@@ -491,7 +491,7 @@
           <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
           <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
         </div>
-        <svg id="empChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="Initial jobless claims and unemployment rate"></svg>
+        <svg id="empChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="xMinYMin meet" aria-label="Initial jobless claims and unemployment rate"></svg>
         <div class="rw-legend">
           <span><span class="swatch" style="background:var(--s5)"></span> Initial jobless claims (k, left axis)</span>
           <span><span class="swatch" style="background:#64d3ff"></span> Unemployment rate (%, right axis)</span>
@@ -755,10 +755,10 @@
     function makeChart(cfg) {
       const svg  = document.getElementById(cfg.svgId);
       const bar  = document.getElementById(cfg.periodsId);
-      const W = 1200, H = 460;
-      const M = { top: 24, right: cfg.rightAxis ? 55 : 55, bottom: 40, left: 60 };
-      const plotW = W - M.left - M.right;
-      const plotH = H - M.top - M.bottom;
+      // Drawn at the chart's real pixel width (set in render) so axis text
+      // stays readable on phones instead of being shrunk from 1200px.
+      let W = 1200, H = 460, plotW = 0, plotH = 0, curPeriod = null;
+      const M = { top: 24, right: 55, bottom: 40, left: 60 };
 
       // For-loop min/max — Math.min(...huge_array) is O(n) AND spreads a
       // 12,000-point series into the argument list, which is slow to
@@ -789,6 +789,13 @@
       }
 
       function render(period) {
+        if (period) curPeriod = period; else period = curPeriod;
+        W = Math.max(300, Math.round(svg.getBoundingClientRect().width || 1200));
+        H = W < 600 ? 300 : Math.min(460, Math.round(W * 460 / 1200));   // desktop keeps the original 1200x460 shape
+        M.left = W < 600 ? 46 : 60; M.right = W < 600 ? 40 : 55;
+        plotW = W - M.left - M.right;
+        plotH = H - M.top - M.bottom;
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
         // Compute the x-window from period. Use the LATEST yf across ALL series
         // so a chart that mixes weekly + monthly + daily lines shares one range.
         let latestYf = -Infinity;
@@ -906,7 +913,7 @@
 
         // ---- X-axis year labels ----
         const span = last - first;
-        const tickStep = span <= 3 ? 0.5 : span <= 6 ? 1 : span <= 15 ? 2 : span <= 30 ? 5 : span <= 75 ? 10 : 20;
+        const tickStep = [0.5, 1, 2, 5, 10, 20, 50].find(st => st / span * plotW >= 60) || 50;
         const tickStart = Math.ceil(first / tickStep) * tickStep;
         for (let yr = tickStart; yr <= last; yr += tickStep) {
           if (yr < first) continue;
@@ -946,7 +953,7 @@
         // ---- Axis titles ----
         svgHtml += `<text class="axis-label" x="${M.left - 40}" y="${M.top - 8}" text-anchor="start">${cfg.leftTitle}</text>`;
         if (cfg.rightTitle && yFor2) {
-          svgHtml += `<text class="axis-label" x="${W - M.right + 8}" y="${M.top - 8}" text-anchor="start" style="fill:#64d3ff">${cfg.rightTitle}</text>`;
+          svgHtml += `<text class="axis-label" x="${W - 4}" y="${M.top - 8}" text-anchor="end" style="fill:#64d3ff">${cfg.rightTitle}</text>`;
         }
 
         svg.innerHTML = svgHtml;
@@ -980,6 +987,8 @@
       });
       const startBtn = bar.querySelector('.chart-period-btn.active');
       render(startBtn ? startBtn.dataset.period : '10');
+      let resizeTimer = null;
+      window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => render(), 150); });
     }
 
     // ---- Credit spreads chart (HY + IG on same left axis, both in %) ----
