@@ -358,7 +358,7 @@
             <span><i style="background:#22c55e"></i>Low</span>
             <span><i style="background:#f97316"></i>Elevated</span>
             <span><i style="background:#ef4444"></i>High</span>
-            <span class="tw-key-hint">The faint background behind the S&amp;P line repeats this strip.</span></div>
+            <span class="tw-key-hint">The shaded sections behind the S&amp;P line show the same reading, named at the top where there's room.</span></div>
           <div class="tw-key-row"><span class="tw-key-name">Valuation</span>
             <span><i style="background:#22c55e"></i>CAPE under 25</span>
             <span><i style="background:#eab308"></i>25&ndash;30</span>
@@ -1467,6 +1467,7 @@
       let lo = Infinity, hi = -Infinity;
       for (const h of view) { if (h.px < lo) lo = h.px; if (h.px > hi) hi = h.px; }
       lo *= 0.95; hi *= 1.03;
+      hi = Math.exp(Math.log(hi) + (Math.log(hi) - Math.log(lo)) * 22 / (PH - 22));   // keep the top 22px free for section names
       const Y = (v) => MT + PH - (Math.log(v) - Math.log(lo)) / (Math.log(hi) - Math.log(lo)) * PH;
       let g = '';
       // Background: crash-risk tier as colored spans.
@@ -1481,6 +1482,17 @@
         }
       };
       spans('tier', h => TIER_COLOR[h.tier], MT, PH, 0.13);
+      // Name each shaded section at the top of the chart ("Low" / "Elevated" /
+      // "High") in its strip color, where the section is wide enough to fit.
+      for (let a = 0, i = 1; i <= view.length; i++) {
+        if (i < view.length && view[i].tier === view[a].tier) continue;
+        const xa = X(view[a].yf), xb = X(view[Math.min(i, view.length - 1)].yf), tier = view[a].tier;
+        // Full name if it fits, else a short form ("Elev."), else no label.
+        const label = [tier, tier === 'Elevated' ? 'Elev.' : null].find(t => t && xb - xa >= t.length * 6.2 + 6);
+        if (label)
+          g += `<text x="${((xa + xb) / 2).toFixed(1)}" y="${MT + 14}" text-anchor="middle" style="font-size:10.5px;font-weight:700;letter-spacing:0.04em;fill:${TIER_COLOR[tier]}">${label}</text>`;
+        a = i;
+      }
       // Price gridlines on a log scale: 1-2-5 steps that fall inside the range.
       const ticks = [];
       for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
