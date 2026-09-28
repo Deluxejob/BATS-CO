@@ -5,17 +5,22 @@ Serves the repo's static files exactly like `python -m http.server`, and
 answers GET /api/history?syms=...&range=...&interval=...&fields=ohlc&prepost=1
 by proxying Yahoo Finance's chart API with the same response shape as
 api/history.js (bars per symbol plus the pre/regular/post `sessions`).
-Other /api/* routes return 404 so pages fall back the same way they do
-when a Vercel function is unreachable.
+Also answers GET /api/earnings-dates?sym=... like api/earnings-dates.js
+(SEC 8-K Item 2.02 filings). Other /api/* routes return 404 so pages fall
+back the same way they do when a Vercel function is unreachable.
 
 Usage:  py -3 scripts/dev-server.py 8766
 """
+import datetime
 import json
+import socket
 import sys
+import threading
 import urllib.parse
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 RANGES = {'1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'max'}
@@ -67,6 +72,48 @@ def yahoo_chart(sym, rng, interval, want_ohlc, prepost):
     return {'bars': out, 'sessions': sessions} if out else None
 
 
+SEC_UA = {'User-Agent': 'BATS.CO research (deluxejob@yahoo.com)'}
+
+
+def sec_json(url):
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=SEC_UA), timeout=20) as r:
+            return json.load(r)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def earnings_dates(raw):
+    """Mirror of api/earnings-dates.js: 8-K Item 2.02 filings → release dates."""
+    sym = raw.upper().replace('.', '').replace('-', '')
+    tick = sec_json('https://www.sec.gov/files/company_tickers.json') or {}
+    cik = next((str(v['cik_str']).zfill(10) for v in tick.values()
+                if str(v.get('ticker', '')).upper().replace('.', '').replace('-', '') == sym), None)
+    if not cik:
+        return {'ticker': raw, 'cik': None, 'source': 'sec-8k-2.02', 'count': 0, 'dates': []}
+    sub = sec_json(f'https://data.sec.gov/submissions/CIK{cik}.json') or {}
+    blocks = [(sub.get('filings') or {}).get('recent') or {}]
+    for f in ((sub.get('filings') or {}).get('files') or [])[:2]:
+        blocks.append(sec_json(f"https://data.sec.gov/submissions/{f['name']}") or {})
+    et = ZoneInfo('America/New_York')
+    by_date = {}
+    for b in blocks:
+        for i, form in enumerate(b.get('form') or []):
+            if form != '8-K' or '2.02' not in [s.strip() for s in str((b.get('items') or [''])[i] or '').split(',')]:
+                continue
+            acc = (b.get('acceptanceDateTime') or [None])[i]
+            if not acc:
+                continue
+            t = datetime.datetime.fromisoformat(acc.replace('Z', '+00:00')).astimezone(et)
+            mins = t.hour * 60 + t.minute
+            rec = {'date': t.strftime('%Y-%m-%d'), 'time': 'bmo' if mins < 570 else 'amc' if mins >= 960 else 'dmh',
+                   'accepted': datetime.datetime.fromisoformat(acc.replace('Z', '+00:00')).strftime('%Y-%m-%dT%H:%M:%S.000Z')}
+            if rec['date'] not in by_date or rec['accepted'] < by_date[rec['date']]['accepted']:
+                by_date[rec['date']] = rec
+    dates = sorted(by_date.values(), key=lambda d: d['date'])
+    return {'ticker': raw, 'cik': cik, 'source': 'sec-8k-2.02', 'count': len(dates), 'dates': dates}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=str(ROOT), **kw)
@@ -79,6 +126,9 @@ class Handler(SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == '/api/history':
             return self.history(urllib.parse.parse_qs(parsed.query))
+        if parsed.path == '/api/earnings-dates':
+            sym = (urllib.parse.parse_qs(parsed.query).get('sym') or [''])[0]
+            return self.send_json(200, earnings_dates(sym))
         if parsed.path.startswith('/api/'):
             self.send_response(404); self.end_headers(); return
         return super().do_GET()
@@ -116,7 +166,21 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_json(200, {'range': rng, 'interval': interval, 'count': len(series), 'series': series, 'sessions': sessions})
 
 
+class _V6Server(ThreadingHTTPServer):
+    address_family = socket.AF_INET6
+
+
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8766
-    print(f'BATS.CO dev server on http://localhost:{port}  (static + /api/history)')
-    ThreadingHTTPServer(('127.0.0.1', port), Handler).serve_forever()
+    # Listen on both loopback addresses (127.0.0.1 and ::1) so
+    # http://localhost:<port> works whichever one the browser picks.
+    # Loopback only — nothing is exposed to the local network.
+    servers = [ThreadingHTTPServer(('127.0.0.1', port), Handler)]
+    try:
+        servers.append(_V6Server(('::1', port), Handler))
+    except OSError:
+        pass
+    for extra in servers[1:]:
+        threading.Thread(target=extra.serve_forever, daemon=True).start()
+    print(f'BATS.CO dev server on http://localhost:{port}  (static + /api/history + /api/earnings-dates)')
+    servers[0].serve_forever()

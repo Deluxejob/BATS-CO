@@ -2153,6 +2153,10 @@
     .tk-ma-toggles button[data-ma="macd"].active {
       background: rgba(96, 165, 250, 0.15); color: #60a5fa; border-color: #60a5fa;
     }
+    .tk-ma-toggles button[data-ma="earn"].active {
+      background: rgba(192, 132, 252, 0.15); color: #c084fc; border-color: #c084fc;
+    }
+    .tk-earn-mark { cursor: help; }
     .tk-ma-toggles button[data-draw="toggle"].active {
       background: rgba(255, 182, 88, 0.22); color: #0a1218; border-color: var(--term-amber);
       background: var(--term-amber);
@@ -3385,6 +3389,8 @@
                 <button type="button" data-ma="200">200 SMA</button>
                 <button type="button" data-ma="rsi">RSI</button>
                 <button type="button" data-ma="macd">MACD</button>
+                <button type="button" data-ma="earn" hidden
+                        title="Mark past earnings releases (from the company's SEC 8-K filings). Hover a badge for the timing and the stock's move.">Earnings</button>
               </div>
             </div>
             <div class="tk-ma-values" data-role="maValues" hidden></div>
@@ -4117,6 +4123,76 @@
             s += `<line class="axis-line" x1="${W - M.right}" x2="${W - M.right}" y1="${macdTop}" y2="${macdTop + macdH}"/>`;
           }
 
+          // Earnings markers — an "E" badge for each past earnings release in
+          // the visible window, just above the bottom of the price pane, with
+          // a faint rule up through the candles when there are few enough.
+          // Hover text gives the date, the timing and the stock's move (same
+          // day for pre-open / intraday releases, next day after the close).
+          const earnAt = {};
+          if (opts.earnings && opts.earnings.length) {
+            const spacing = (last - first) / Math.max(1, nBars - 1);
+            const intradayBars = spacing < 6 * 3600;
+            const barAtOrBefore = (t) => {
+              if (t < pts[0][0]) return -1;
+              let lo = 0, hi = nBars - 1;
+              while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (pts[mid][0] <= t) lo = mid; else hi = mid; }
+              return pts[hi][0] <= t ? hi : lo;
+            };
+            const TIMING = { bmo: 'before the open', dmh: 'during market hours', amc: 'after the close' };
+            const daily = opts.dailyBars || null;
+            const dIdx = {};
+            if (daily) daily.forEach((b, i) => { dIdx[new Date(b[0] * 1000).toISOString().slice(0, 10)] = i; });
+            const reactionOf = (ev) => {
+              if (!daily) return null;
+              const i = dIdx[ev.date]; if (i == null) return null;
+              const a = ev.time === 'amc' ? i : i - 1, b = ev.time === 'amc' ? i + 1 : i;
+              if (a < 0 || b >= daily.length) return null;
+              return { pct: (daily[b][4] / daily[a][4] - 1) * 100, label: ev.time === 'amc' ? 'next day' : 'that day' };
+            };
+            const fmtEvDate = d => MONTH_NAMES[parseInt(d.slice(5, 7), 10) - 1] + ' ' + parseInt(d.slice(8, 10), 10) + ', ' + d.slice(0, 4);
+            const marks = [];
+            for (const ev of opts.earnings) {
+              let idx, x;
+              if (session) {
+                if (ev.ts < session.pre[0] || ev.ts >= session.post[1]) continue;
+                x = xForTime(ev.ts); idx = barAtOrBefore(ev.ts);
+              } else if (intradayBars) {
+                if (ev.ts < first || ev.ts > last + 3600) continue;
+                idx = barAtOrBefore(ev.ts); if (idx < 0) continue;
+                x = xForIdx(idx);
+              } else {
+                // Daily / weekly / monthly: the bar whose period holds the
+                // release date (Eastern calendar day).
+                const dayEnd = Date.parse(ev.date + 'T23:59:59Z') / 1000;
+                idx = barAtOrBefore(dayEnd);
+                if (idx < 0 || dayEnd - pts[idx][0] > spacing * 1.6 + 86400) continue;
+                x = xForIdx(idx);
+              }
+              const rx = reactionOf(ev);
+              const rxText = rx ? ' · ' + rx.label + ' ' + (rx.pct >= 0 ? '+' : '') + rx.pct.toFixed(1) + '%' : '';
+              marks.push({ x, text: 'Earnings release · ' + fmtEvDate(ev.date) + ' · ' + (TIMING[ev.time] || '') + rxText });
+              if (idx >= 0) earnAt[idx] = { text: (TIMING[ev.time] || '') + rxText };
+            }
+            const showRules = marks.length <= 16;
+            // Lettered badges need ~16px each; on crowded views (e.g. All,
+            // monthly bars since 2004) draw slim ticks instead so the
+            // quarterly rhythm stays readable without overlapping.
+            const compact = marks.length > 1 && (marks[marks.length - 1].x - marks[0].x) / (marks.length - 1) < 16;
+            const yE = priceBottom - 9;
+            for (const m of marks) {
+              const xs = m.x.toFixed(1);
+              if (showRules) s += `<line x1="${xs}" x2="${xs}" y1="${priceTop}" y2="${yE - 7}" stroke="#c084fc" stroke-width="1" stroke-dasharray="2 3" opacity="0.3"/>`;
+              if (compact) {
+                s += `<g class="tk-earn-mark"><title>${m.text}</title>` +
+                     `<rect x="${(m.x - 1.5).toFixed(1)}" y="${priceBottom - 10}" width="3" height="9" rx="1" fill="#c084fc" opacity="0.85"/></g>`;
+              } else {
+                s += `<g class="tk-earn-mark"><title>${m.text}</title>` +
+                     `<circle cx="${xs}" cy="${yE}" r="6.5" fill="#c084fc" stroke="#0a1218" stroke-width="1"/>` +
+                     `<text x="${xs}" y="${yE + 3}" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0a1218" font-family="JetBrains Mono, monospace">E</text></g>`;
+              }
+            }
+          }
+
           // User-drawn trend lines. Anchored to (timestamp, price) pairs
           // so they move with the data through range/indicator changes.
           // Wrapped in a <clipPath>-scoped group so a line whose endpoint
@@ -4194,6 +4270,7 @@
             // clock time in the tooltip (1D and 5D views).
             isIntraday: nBars > 1 && (last - first) / (nBars - 1) < 6 * 3600,
             xToTime: xToTime,
+            earnAt: earnAt,
           };
           if (!svg._crosshairInit) installCrosshairHandlers(svg);
         }
@@ -4303,6 +4380,10 @@
             const volRow = (vol != null)
               ? '<div class="tt-row"><span class="tt-lbl">Vol</span><span class="tt-val">' + fmtV(vol) + '</span></div>'
               : '';
+            const earn = ctx.earnAt && ctx.earnAt[idx];
+            const earnRow = earn
+              ? '<div class="tt-row"><span class="tt-lbl" style="color:#c084fc">Earnings</span><span class="tt-val">' + earn.text + '</span></div>'
+              : '';
             tooltip.innerHTML =
               '<div class="tt-date">' + fmtDate(t, ctx.isIntraday) + '</div>' +
               '<div class="tt-row"><span class="tt-lbl">O</span><span class="tt-val">' + fmtP(o) + '</span></div>' +
@@ -4312,7 +4393,8 @@
               volRow +
               '<div class="tt-chg"><span class="tt-lbl">Chg</span><span class="tt-val ' + chgCls + '">' +
                 chgSign + Math.abs(chg).toFixed(2) + ' (' + chgSign + Math.abs(chgPct).toFixed(2) + '%)' +
-              '</span></div>';
+              '</span></div>' +
+              earnRow;
             tooltip.hidden = false;
 
             // Position the HTML tooltip in wrap-relative coords, flipping
@@ -4446,7 +4528,10 @@
         const footerL   = mount.querySelector('[data-role="footerLeft"]');
         const footerR   = mount.querySelector('[data-role="footerRight"]');
 
-        const state = { range: '1Y', show8ema: false, show20ema: false, show50: false, show100: false, show200: true, showRsi: false, showMacd: false, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
+        const state = { range: '1Y', show8ema: false, show20ema: false, show50: false, show100: false, show200: true, showRsi: false, showMacd: false, showEarn: true, drawMode: false, pendingPoint: null, lines: [], projection: null, hover: null, dragging: null, justDragged: false };
+        // Past earnings releases ([{date, time, accepted, ts}]); null until
+        // /api/earnings-dates answers, [] when the company has none on file.
+        let earnDates = null;
         const cache = { intra1d: null, intra5d: null, daily1y: null, weekly5y: null, monthly: null };
         let wk52 = null;
 
@@ -4731,6 +4816,8 @@
             showRsi: state.showRsi, showMacd: state.showMacd, wk52,
             lines: state.lines, pending: state.pendingPoint, hover: state.hover,
             session: state.range === '1D' ? (pts.session || null) : null,
+            earnings: state.showEarn ? earnDates : null,
+            dailyBars: cache.daily1y,
           });
           updateMaValuesStrip();
         }
@@ -5044,6 +5131,7 @@
           if (btn.dataset.ma === '200')   state.show200   = btn.classList.contains('active');
           if (btn.dataset.ma === 'rsi')   state.showRsi   = btn.classList.contains('active');
           if (btn.dataset.ma === 'macd')  state.showMacd  = btn.classList.contains('active');
+          if (btn.dataset.ma === 'earn')  state.showEarn  = btn.classList.contains('active');
           redraw();
         });
 
@@ -5056,7 +5144,26 @@
         if (state.show200)   maEl.querySelector('[data-ma="200"]').classList.add('active');
         if (state.showRsi)   maEl.querySelector('[data-ma="rsi"]').classList.add('active');
         if (state.showMacd)  maEl.querySelector('[data-ma="macd"]').classList.add('active');
+        if (state.showEarn)  maEl.querySelector('[data-ma="earn"]').classList.add('active');
         updateClearBtn();
+
+        // Past earnings release dates for the "E" badges. One fetch per
+        // page; the Earnings toggle only appears when the company has
+        // releases on file (US filers — foreign issuers, ETFs and indices
+        // get an empty list and no button).
+        (async () => {
+          try {
+            const r = await fetch('/api/earnings-dates?sym=' + encodeURIComponent(sym));
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const j = await r.json();
+            earnDates = (j && Array.isArray(j.dates) ? j.dates : [])
+              .map(d => Object.assign({}, d, { ts: Date.parse(d.accepted) / 1000 }))
+              .filter(d => Number.isFinite(d.ts));
+          } catch (e) { earnDates = []; }
+          const b = maEl.querySelector('[data-ma="earn"]');
+          if (b) b.hidden = !earnDates.length;
+          if (earnDates.length) redraw();
+        })();
 
         // ---- Share bar wiring ----------------------------------------
         // Serializes the current chart state into a shareable URL, wires
