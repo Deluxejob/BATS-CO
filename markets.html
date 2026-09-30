@@ -591,33 +591,10 @@
 </head>
 <body>
 
-  <!-- Live ticker tape across the top -->
+  <!-- BATS.CO ticker tape (ticker-tape.js): live quotes, each item links to its chart -->
   <div class="ticker-bar">
-    <div class="tradingview-widget-container">
-      <div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-      {
-        "symbols": [
-          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
-          {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"},
-          {"proName": "FOREXCOM:DJI", "title": "Dow Jones"},
-          {"proName": "FX:US2000", "title": "Russell 2000"},
-          {"proName": "AMEX:SPY", "title": "SPY"},
-          {"proName": "NASDAQ:QQQ", "title": "QQQ"},
-          {"proName": "PYTH:US10Y", "title": "10Y Yield"},
-          {"proName": "TVC:GOLD", "title": "Gold"},
-          {"proName": "TVC:USOIL", "title": "Crude Oil"},
-          {"proName": "BITSTAMP:BTCUSD", "title": "Bitcoin"},
-          {"proName": "BITSTAMP:ETHUSD", "title": "Ethereum"}
-        ],
-        "showSymbolLogo": true,
-        "isTransparent": true,
-        "displayMode": "adaptive",
-        "colorTheme": "dark",
-        "locale": "en"
-      }
-      </script>
-    </div>
+    <div class="bats-tape" data-bats-tape></div>
+    <script src="ticker-tape.js" defer></script>
   </div>
 
   <header class="site-header">
