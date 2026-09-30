@@ -6,8 +6,9 @@ answers GET /api/history?syms=...&range=...&interval=...&fields=ohlc&prepost=1
 by proxying Yahoo Finance's chart API with the same response shape as
 api/history.js (bars per symbol plus the pre/regular/post `sessions`).
 Also answers GET /api/earnings-dates?sym=... like api/earnings-dates.js
-(SEC 8-K Item 2.02 filings). Other /api/* routes return 404 so pages fall
-back the same way they do when a Vercel function is unreachable.
+(SEC 8-K Item 2.02 filings) and GET /api/quote?syms=... like api/quote.js
+(Yahoo v7 quotes). Other /api/* routes return 404 so pages fall back the
+same way they do when a Vercel function is unreachable.
 
 Usage:  py -3 scripts/dev-server.py 8766
 """
@@ -72,6 +73,46 @@ def yahoo_chart(sym, rng, interval, want_ohlc, prepost):
     return {'bars': out, 'sessions': sessions} if out else None
 
 
+_crumb = {'opener': None, 'crumb': None}
+
+
+def yahoo_quotes(syms):
+    """Mirror of api/quote.js: Yahoo v7 quote (cookie + crumb) → compact fields."""
+    import http.cookiejar
+    ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'}
+    for attempt in (0, 1):
+        if not _crumb['crumb'] or attempt:
+            op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+            try: op.open(urllib.request.Request('https://fc.yahoo.com/', headers=ua), timeout=15)
+            except Exception: pass  # noqa: E701 — the 404 still sets the cookie
+            _crumb['opener'] = op
+            _crumb['crumb'] = op.open(urllib.request.Request('https://query1.finance.yahoo.com/v1/test/getcrumb', headers=ua), timeout=15).read().decode()
+        url = ('https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + urllib.parse.quote(','.join(syms))
+               + '&crumb=' + urllib.parse.quote(_crumb['crumb']))
+        try:
+            with _crumb['opener'].open(urllib.request.Request(url, headers=ua), timeout=20) as r:
+                res = (json.load(r).get('quoteResponse') or {}).get('result') or []
+            break
+        except Exception:
+            if attempt: raise
+    num = lambda q, k: q.get(k) if isinstance(q.get(k), (int, float)) else None
+    out = {}
+    for q in res:
+        out[q.get('symbol')] = {
+            'symbol': q.get('symbol'), 'shortName': q.get('shortName') or q.get('longName'),
+            'price': num(q, 'regularMarketPrice'), 'prevClose': num(q, 'regularMarketPreviousClose'),
+            'dayChange': num(q, 'regularMarketChange'), 'dayChangePct': num(q, 'regularMarketChangePercent'),
+            'open': num(q, 'regularMarketOpen'), 'dayHigh': num(q, 'regularMarketDayHigh'), 'dayLow': num(q, 'regularMarketDayLow'),
+            'regularMarketTime': num(q, 'regularMarketTime'), 'marketState': q.get('marketState'),
+            'marketCap': num(q, 'marketCap'),
+            'preMarketPrice': num(q, 'preMarketPrice'), 'preMarketChange': num(q, 'preMarketChange'),
+            'preMarketChangePercent': num(q, 'preMarketChangePercent'), 'preMarketTime': num(q, 'preMarketTime'),
+            'postMarketPrice': num(q, 'postMarketPrice'), 'postMarketChange': num(q, 'postMarketChange'),
+            'postMarketChangePercent': num(q, 'postMarketChangePercent'), 'postMarketTime': num(q, 'postMarketTime'),
+        }
+    return {'symbols': syms, 'count': len(out), 'quotes': out}
+
+
 SEC_UA = {'User-Agent': 'BATS.CO research (deluxejob@yahoo.com)'}
 
 
@@ -129,6 +170,24 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == '/api/earnings-dates':
             sym = (urllib.parse.parse_qs(parsed.query).get('sym') or [''])[0]
             return self.send_json(200, earnings_dates(sym))
+        if parsed.path == '/api/quote':
+            raw = (urllib.parse.parse_qs(parsed.query).get('syms') or [''])[0].upper()
+            syms = list(dict.fromkeys(s.strip() for s in raw.split(',') if s.strip()))[:20]
+            if not syms:
+                return self.send_json(400, {'error': 'no valid symbols'})
+            try:
+                return self.send_json(200, yahoo_quotes(syms))
+            except Exception as e:  # noqa: BLE001
+                return self.send_json(502, {'error': str(e)})
+        if parsed.path == '/api/earnings-calendar':
+            # Needs the Finnhub key, which only lives on Vercel — pass the
+            # request through to the live site's copy of the same endpoint.
+            try:
+                req = urllib.request.Request('https://bats.co' + self.path, headers={'User-Agent': UA})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    return self.send_json(200, json.loads(resp.read().decode('utf-8')))
+            except Exception as e:  # noqa: BLE001
+                return self.send_json(502, {'error': str(e)})
         if parsed.path.startswith('/api/'):
             self.send_response(404); self.end_headers(); return
         return super().do_GET()

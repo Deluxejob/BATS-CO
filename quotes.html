@@ -574,6 +574,18 @@
     @media (min-width: 900px) {
       .ea-grid { grid-template-columns: 1fr 1fr; }
     }
+    @media (min-width: 1300px) {
+      .ea-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .ea-head .ea-tag {
+      font-size: 0.56rem;
+      letter-spacing: 0.08em;
+      color: var(--term-dim);
+      border: 1px solid var(--term-border);
+      border-radius: 3px;
+      padding: 0 0.3rem;
+      margin-left: 0.4rem;
+    }
     .ea-box {
       background: var(--term-panel);
       border: 1px solid var(--term-border);
@@ -1626,6 +1638,28 @@
           </div>
           <div class="ea-scroll">
             <table class="ea-tbl" id="eaBmoTbl">
+              <thead>
+                <tr>
+                  <th class="col-sym">Ticker</th>
+                  <th class="col-name">Company</th>
+                  <th>Est EPS</th>
+                  <th>Actual</th>
+                  <th>Surp %</th>
+                  <th>Price</th>
+                  <th>Chg $</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="7" class="ea-loading">Loading&hellip;</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ea-box">
+          <div class="ea-head">
+            <span><span class="ea-title" id="eaNextTitle">AFTER TODAY&rsquo;S CLOSE</span><span class="ea-title ea-tag">UPCOMING</span></span>
+            <span class="ea-count" id="eaNextCount"></span>
+          </div>
+          <div class="ea-scroll">
+            <table class="ea-tbl" id="eaNextTbl">
               <thead>
                 <tr>
                   <th class="col-sym">Ticker</th>
@@ -3172,6 +3206,9 @@
     //     opening/day session.
     //   • After 4pm ET on a trading day: shift to today's BMO + today's
     //     AMC — all of today's earnings, morning + upcoming evening.
+    //   • A third "upcoming" box always shows the next slot after those
+    //     two (tonight's AMC by day, tomorrow's BMO in the evening) so a
+    //     big report due after the close is visible during the session.
     // Company names come from a batched /api/quote lookup so we get
     // shortName without adding a backend field. Row click opens
     // ticker.html for the drill-down.
@@ -3182,7 +3219,10 @@
       const titleRight = document.getElementById('eaBmoTitle');
       const countLeft  = document.getElementById('eaAmcCount');
       const countRight = document.getElementById('eaBmoCount');
-      if (!tbodyLeft || !tbodyRight) return;
+      const tbodyNext  = document.querySelector('#eaNextTbl tbody'); // third box: next slot, not reported yet
+      const titleNext  = document.getElementById('eaNextTitle');
+      const countNext  = document.getElementById('eaNextCount');
+      if (!tbodyLeft || !tbodyRight || !tbodyNext) return;
 
       // ET-local YYYY-MM-DD for `d`.
       function ymdET(d) {
@@ -3230,24 +3270,32 @@
       const eveningMode = !isWeekend && hr >= 16;
 
       const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-      let leftDate, leftHour, rightDate, rightHour;
+      // Next trading day (Fri → Mon, else +1).
+      const next = addDays(today, dow(today) === 5 ? 3 : 1);
+      let leftDate, leftHour, rightDate, rightHour, nextDate, nextHour;
       if (eveningMode) {
-        // Today's full-session earnings: BMO (this morning) + AMC (tonight).
+        // Today's full-session earnings: BMO (this morning) + AMC (tonight),
+        // plus tomorrow morning's reports as the upcoming slot.
         leftDate  = today; leftHour  = 'bmo';
         rightDate = today; rightHour = 'amc';
+        nextDate  = next;  nextHour  = 'bmo';
         titleLeft.textContent  = `BEFORE ${dayNames[dow(today)]} OPEN`;
         titleRight.textContent = `AFTER ${dayNames[dow(today)]} CLOSE`;
+        titleNext.textContent  = `BEFORE ${dayNames[dow(next)]} OPEN`;
       } else {
-        // Earnings driving today's session: yesterday's AMC + today's BMO.
+        // Earnings driving today's session: yesterday's AMC + today's BMO,
+        // plus tonight's reports as the upcoming slot.
         leftDate  = prev;  leftHour  = 'amc';
         rightDate = today; rightHour = 'bmo';
+        nextDate  = today; nextHour  = 'amc';
         titleLeft.textContent  = `AFTER ${dayNames[dow(prev)]} CLOSE`;
         titleRight.textContent = `BEFORE ${dayNames[dow(today)]} OPEN`;
+        titleNext.textContent  = `AFTER ${dayNames[dow(today)]} CLOSE`;
       }
 
       // Fetch the earnings window (from=earliest date, to=latest date).
-      const fromDate = leftDate <= rightDate ? leftDate : rightDate;
-      const toDate   = leftDate >= rightDate ? leftDate : rightDate;
+      const fromDate = leftDate;   // slots run in time order: left, right, next
+      const toDate   = nextDate;
       let rows = [];
       try {
         const r = await fetch(`/api/earnings-calendar?from=${fromDate}&to=${toDate}`, { cache: 'no-store' });
@@ -3258,12 +3306,14 @@
         const err = `<tr><td colspan="7" class="ea-empty">Failed to load: ${(e.message || e)}</td></tr>`;
         tbodyLeft.innerHTML  = err;
         tbodyRight.innerHTML = err;
+        tbodyNext.innerHTML  = err;
         return;
       }
 
       // Bucket
       const amc = rows.filter(r => r.date === leftDate  && String(r.hour || '').toLowerCase() === leftHour);
       const bmo = rows.filter(r => r.date === rightDate && String(r.hour || '').toLowerCase() === rightHour);
+      const upcoming = rows.filter(r => r.date === nextDate && String(r.hour || '').toLowerCase() === nextHour);
 
       // Company-name + price lookup — batch /api/quote for the symbols
       // in both buckets. Chunk by 20 (same cap the endpoint enforces).
@@ -3271,7 +3321,7 @@
       // (post-market change wins during POST/POSTPOST, then pre-market
       // during PRE/PREPRE, else regular-session change) so post-earnings
       // reaction shows up promptly.
-      const syms = [...new Set([...amc, ...bmo].map(r => r.symbol).filter(Boolean))];
+      const syms = [...new Set([...amc, ...bmo, ...upcoming].map(r => r.symbol).filter(Boolean))];
       const quoteMap = {};
       const CHUNK = 20;
       for (let i = 0; i < syms.length; i += CHUNK) {
@@ -3352,6 +3402,7 @@
       }
       render(tbodyLeft,  amc, countLeft);
       render(tbodyRight, bmo, countRight);
+      render(tbodyNext,  upcoming, countNext);
     })();
 
     (function initMovers() {
