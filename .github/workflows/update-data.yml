@@ -51,6 +51,9 @@ jobs:
       - name: Refresh Shiller CAPE (monthly — tolerant of no-new-data)
         run: python scripts/update-shiller-cape.py
 
+      - name: Build trailing 10-year S&P return series (Shiller seed + sp500tr.csv)
+        run: python scripts/update-cagr10.py
+
       - name: Refresh Buffett Indicator (quarterly — tolerant of no-new-data)
         run: python scripts/update-buffett-indicator.py
 

@@ -571,6 +571,15 @@
           <a href="https://fred.stlouisfed.org/series/UNRATE" style="color:#64d3ff">UNRATE</a>
           (civilian unemployment rate, monthly). Both seasonally adjusted.
         </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Trailing 10-year return:</strong> the S&amp;P 500's annualised
+          total return (dividends reinvested) over the past 10 years, compared
+          with every 10-year window ending since 1936 (so the windows start in
+          1926). History comes from
+          <a href="http://www.econ.yale.edu/~shiller/data.htm" style="color:#64d3ff">Robert Shiller's</a>
+          monthly price and dividend data, extended to today with the S&amp;P
+          500 Total Return index. The current month uses the latest close.
+        </p>
         <p style="margin:0;">
           <strong>Recession shading:</strong>
           <a href="https://fred.stlouisfed.org/series/USREC" style="color:#64d3ff">USREC</a>
@@ -1219,14 +1228,14 @@
     const rolling = (vals, n) => vals.map((_, i) => i + 1 >= n ? avgOf(vals.slice(i + 1 - n, i + 1)) : NaN);
     const daysBefore = (date, n) => { const d = new Date(date); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
 
-    let baa, nfci, t3m, claims, unrate, cape, y10, margin, oil, sloos, trucks, bizDel, sent, spx;
+    let baa, nfci, t3m, claims, unrate, cape, y10, margin, oil, sloos, trucks, bizDel, sent, spx, cagr10;
     try {
-      [baa, nfci, t3m, claims, unrate, cape, y10, margin, oil, sloos, trucks, bizDel, sent, spx] = await Promise.all([
+      [baa, nfci, t3m, claims, unrate, cape, y10, margin, oil, sloos, trucks, bizDel, sent, spx, cagr10] = await Promise.all([
         load('data/baa10y.csv'), load('data/nfci.csv'), load('data/t10y3m.csv'),
         load('data/jobless_claims.csv'), load('data/unrate.csv'), load('data/spx_cape.csv'),
         load('data/yields_history.csv', 2), load('data/margin_debt.csv'), load('data/oil.csv'),
         load('data/sloos.csv'), load('data/heavy_trucks.csv'), load('data/biz_delinquency.csv'),
-        load('data/umcsent.csv'), load('data/spx.csv'),
+        load('data/umcsent.csv'), load('data/spx.csv'), load('data/spx_cagr10.csv'),
       ]);
     } catch (e) {
       console.error('Top Watch: data load failed', e);
@@ -1333,6 +1342,20 @@
       'Oil price': 'With CAPE 30+: about 50% → 75% chance of a 10%+ drop after an oil shock',
     };
     const pullbackRelated = watch.filter(w => PULLBACK_NOTES[w.name]).map(w => ({ ...w, pullbackNote: PULLBACK_NOTES[w.name] }));
+    // Trailing 10-year S&P return (dividends reinvested) vs every 10-year
+    // window since 1926. 2026-09 test: the top 10% of decades with CAPE 30+
+    // preceded bear markets (1998-2000, 2021) — two examples, so shown only.
+    const cagrNow = last(cagr10).v;
+    const cagrPct = cagr10.filter(x => x.v < cagrNow).length / cagr10.length;
+    const cagrSorted = cagr10.map(x => x.v).sort((a, b) => a - b);
+    const cagrMedian = cagrSorted[Math.floor(cagrSorted.length / 2)];
+    const cagrP90 = cagrSorted[Math.floor(cagrSorted.length * 0.9)];
+    const ordinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][Math.min(n % 10, 4)] || 'th');
+    pullbackRelated.push({
+      on: cagrPct >= 0.90, name: 'Trailing 10-year return',
+      pullbackNote: 'Top-10% decades: 46% chance of a 20%+ drop within 3 years vs 33% normally; with CAPE 30+ it was 89%, but from just two examples (2000, 2022)',
+      val: `${cagrNow.toFixed(1)}%/yr, ${ordinal(Math.round(cagrPct * 100))} percentile since 1926 (typical ${cagrMedian.toFixed(1)}%, top 10% starts at ${cagrP90.toFixed(1)}%)`,
+    });
 
     const ladder = (items, active, cap) => `
       <div class="tw-ladder">${items.map((t, i) => `<span class="${i === active ? 'on' : ''}">${t.odds}%</span>`).join('')}</div>
@@ -1355,7 +1378,7 @@
         </ul>
         <div class="tw-related">
           <div class="tw-kicker">Related stress signs &middot; not scored</div>
-          <p class="tw-related-intro">When valuations were already high (CAPE 30+), these made a 10%+ drop more likely in testing. They don't change the odds above. <a href="#twWatch">Full stress watch below &darr;</a></p>
+          <p class="tw-related-intro">When valuations were already high (CAPE 30+), these made a 10%+ drop (or, for the last one, a bear market) more likely in testing. They don't change the odds above. <a href="#twWatch">Full stress watch below &darr;</a></p>
           <ul class="tw-flags">
             ${pullbackRelated.map(w => `<li class="${w.on ? 'warn' : ''}"><span class="tw-dot"></span>
               <span>${w.name}<span class="tw-why">${w.pullbackNote}</span></span>
