@@ -1,9 +1,93 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1790786459,
-  "latestPublishedAt": 1790785753,
+  "fetchedAt": 1790802837,
+  "latestPublishedAt": 1790796931,
   "items": [
+    {
+      "title": "Big Pharma Got Its Tariff Exemption. The Biotech ETF Barely Blinked",
+      "link": "https://finance.yahoo.com/healthcare/articles/big-pharma-got-tariff-exemption-193531704.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790796931,
+      "id": "34d726f6-3bd7-3682-a4b6-59ca41fe2b60"
+    },
+    {
+      "title": "Which Buy Now Pay Later Stock Dominated in September: Klarna, Affirm, or Sezzle?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/buy-now-pay-later-stock-191613525.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790795773,
+      "id": "e8eeadf0-35e0-32bc-8b3b-5fe79e1566ed"
+    },
+    {
+      "title": "Most Interesting New ETFs of Q3",
+      "link": "https://finance.yahoo.com/markets/options/articles/most-interesting-etfs-q3-190600967.html",
+      "publisher": "Zacks",
+      "publishedAt": 1790795160,
+      "id": "90c259ac-ac47-3f27-b1d5-3b757abc04df"
+    },
+    {
+      "title": "Which Airline Stock Dominated in September: American, United, or Delta?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/airline-stock-dominated-september-american-190340765.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790795020,
+      "id": "20b878f4-22f6-3fef-9600-5ed34d5e1245"
+    },
+    {
+      "title": "Which Automaker Stock Dominated in September: Tesla, Ford, or General Motors?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/automaker-stock-dominated-september-tesla-185328122.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790794408,
+      "id": "afd2c986-1ecf-3d34-aaf7-b9c723e6fd62"
+    },
+    {
+      "title": "EXCLUSIVE: Another Warsh Rate Hike Is Hard to Justify After Core PCE Undershoots, Says Truflation's Oliver Rust",
+      "link": "https://finance.yahoo.com/economy/policy/articles/exclusive-another-warsh-rate-hike-184458622.html",
+      "publisher": "Benzinga Prediction Markets",
+      "publishedAt": 1790793898,
+      "id": "ba838f8a-c70a-3a8d-8cb1-76567cbb9bfe"
+    },
+    {
+      "title": "Unity Software Surges 5% as Traders Weigh Meta Platforms VR Glasses Support; Adobe Rises 3%, Intuit Adds 2%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/unity-software-surges-5-traders-181202063.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790791922,
+      "id": "f5f975f4-5e36-3a10-9e9d-2fb7f6f1e7df"
+    },
+    {
+      "title": "MP Materials Surges 6% as Traders Weigh Critical Minerals Growth Story; USA Rare Earth Rises 3%, Critical Metals Stays Flat",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/mp-materials-surges-6-traders-175622130.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790790982,
+      "id": "eb4fe61b-837f-32a1-8be1-f7c28d4ce59a"
+    },
+    {
+      "title": "ChargePoint Jumps 7% as Electric September Run Persists; EVgo Falls 3%, Blink Charging Slips",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/chargepoint-jumps-7-electric-september-174233875.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790790153,
+      "id": "b9953734-69fa-3979-9455-25c80d121eeb"
+    },
+    {
+      "title": "GameStop Pops 4% on Ryan Cohen’s Buying Binge; Take-Two Interactive and Roblox Advance 3%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/gamestop-pops-4-ryan-cohen-170348544.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790787828,
+      "id": "5be62cda-498e-37ef-a229-ee18fd84ca50"
+    },
+    {
+      "title": "“SoundHound AI Jumps 5% on India Product Launch; BigBear.ai Rises 3%, Pony AI Stays Flat",
+      "link": "https://finance.yahoo.com/technology/ai/articles/soundhound-ai-jumps-5-india-165246345.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790787166,
+      "id": "8cfe2949-85b0-3714-8f85-52ed0a4590e1"
+    },
+    {
+      "title": "“Cleveland-Cliffs Rises 3% as Steel-Stock Selloff Subsides; Nucor and Steel Dynamics Tick Higher",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/cleveland-cliffs-rises-3-steel-164249184.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790786569,
+      "id": "55e994c2-6d23-3d81-a977-dd94c0875100"
+    },
     {
       "title": "Intel Rises 3% as Chip Contender Caps Off Surprisingly Strong September; NVIDIA Ticks Up, AMD Slips",
       "link": "https://finance.yahoo.com/markets/stocks/articles/intel-rises-3-chip-contender-162913840.html",
@@ -24,90 +108,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1790784455,
       "id": "0aa7bb9e-5a0e-3f21-97c6-386236138a93"
-    },
-    {
-      "title": "UiPath and Snowflake Jump 5% on UiPath’s BDO and Snowflake Updates; Salesforce Moves Up 3%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/uipath-snowflake-jump-5-uipath-155147300.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790783507,
-      "id": "98aa087b-7b7a-3d97-83a1-6c2318fe7ab4"
-    },
-    {
-      "title": "BlackBerry Advances 5% on Continued QNX Momentum; Palo Alto Networks Gains 4%, CrowdStrike Edges Up 2%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/blackberry-advances-5-continued-qnx-154153572.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790782913,
-      "id": "86014e81-1163-3687-9339-a37ba6f7b18c"
-    },
-    {
-      "title": "NuScale Power Rises 4% Despite Dilution Concerns; Uranium Energy Advances 4%, Oklo Gains 2%",
-      "link": "https://finance.yahoo.com/energy/articles/nuscale-power-rises-4-despite-152733130.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790782053,
-      "id": "f307206f-d507-3c57-818f-ef8908f4fa5a"
-    },
-    {
-      "title": "Plug Power Advances 4% on Electrolyzer Supply Agreement; Bloom Energy Sinks 3%, FuelCell Energy Treads Water",
-      "link": "https://finance.yahoo.com/energy/articles/plug-power-advances-4-electrolyzer-151603724.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790781363,
-      "id": "19384f81-f4f2-3398-933d-fb604f7c5c4c"
-    },
-    {
-      "title": "IonQ Jumps 4% on BoA Buy Rating; Rigetti and D-Wave Quantum Gain 2%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/ionq-jumps-4-boa-buy-150540017.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790780740,
-      "id": "db38e10d-e9ea-356a-80d1-a2d6cd4ceae1"
-    },
-    {
-      "title": "Hewlett Packard Enterprise Jumps 5% on AMD Order; Dell and Super Micro Barely Move",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/hewlett-packard-enterprise-jumps-5-144133368.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790779293,
-      "id": "3419c08d-6d35-3193-b579-fa37d48df640"
-    },
-    {
-      "title": "Snap Jumps 6% as Fundamentals Outweigh Regulatory Pressure; Reddit Gains 4%, Meta Platforms Dips",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/snap-jumps-6-fundamentals-outweigh-141842823.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790777922,
-      "id": "3eaee94e-50dd-36d8-b624-b1f21b6920c7"
-    },
-    {
-      "title": "Total Return Investors Better Open Their Eyes About Pepsi",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/total-return-investors-better-open-141531938.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790777731,
-      "id": "220fd804-aa8a-36be-835a-30ff2316da8a"
-    },
-    {
-      "title": "AST SpaceMobile Jumps 5% on Takeover Speculation; Rocket Lab Rises 5%, SpaceX Treads Water",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/ast-spacemobile-jumps-5-takeover-140347296.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790777027,
-      "id": "e29d8e82-120c-39bc-9698-f18aa8785d68"
-    },
-    {
-      "title": "Moderna Sinks 6% on Citi Downgrade; Merck and Pfizer Stay Flat",
-      "link": "https://finance.yahoo.com/healthcare/articles/moderna-sinks-6-citi-downgrade-134217530.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790775737,
-      "id": "8dc438b7-a5ac-36b3-bdb4-604626ad73b2"
-    },
-    {
-      "title": "Exchange-Traded Funds, Equity Futures Lower Pre-Bell Wednesday Amid Inflation Data Release",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/exchange-traded-funds-equity-futures-132034377.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1790774434,
-      "id": "0281c295-2774-3ed2-b4ae-f451a1272ab9"
-    },
-    {
-      "title": "Pre-Markets Up on Excellent Data from PCE and ADP",
-      "link": "https://finance.yahoo.com/economy/articles/pre-markets-excellent-data-pce-131700684.html",
-      "publisher": "Zacks",
-      "publishedAt": 1790774220,
-      "id": "05387849-539b-37a1-a1b6-7e6c51513a04"
     }
   ]
 }
