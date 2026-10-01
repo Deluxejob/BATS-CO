@@ -2268,12 +2268,15 @@
     }
     .tk-chart-svg.panning { cursor: grabbing; }
     /* Trend-line drawing needs precise clicks — impractical on touch. Hide
-       the floating toolbar on mobile so it doesn't crowd out the chart. */
+       the drawing buttons and the mouse hint on mobile so they don't crowd
+       out the chart; the Latest button stays since swiping needs it. */
     @media (max-width: 720px) {
-      .tk-draw-toolbar { display: none; }
+      .tk-draw-toolbar button[data-draw], .tk-draw-toolbar .tk-nav-hint { display: none; }
     }
 
-    .tk-chart-svg { width: 100%; height: auto; display: block; }
+    /* Sideways touches scroll the chart and two fingers pinch it; the
+       browser keeps up-and-down swipes for scrolling the page. */
+    .tk-chart-svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
     .tk-chart-svg .grid-line { stroke: var(--term-border); stroke-width: 1; opacity: 0.35; stroke-dasharray: 2 3; }
     .tk-chart-svg .axis-line { stroke: var(--term-border); stroke-width: 1; }
     .tk-chart-svg .axis-label { fill: #c9d3e0; font-size: 11px; font-family: ui-monospace, monospace; }
@@ -4556,25 +4559,82 @@
             updateCrosshair(e.clientX, e.clientY);
           }, { passive: false });
 
-          // Touch: touchstart begins the drag, touchmove updates while
-          // pressed, touchend/cancel ends it. Same "skip when drawing"
-          // guard as the mouse path.
-          let touching = false;
+          // Touch. On the scrollable views one finger slides the chart
+          // through time, two fingers pinch to zoom (and slide), and a
+          // press held still for a moment brings up the crosshair, which
+          // then follows the finger. Up-and-down swipes still scroll the
+          // page: the SVG's touch-action is pan-y, so the browser keeps
+          // those and hands us the sideways ones. The 1D view keeps the
+          // old behaviour — touch shows the crosshair straight away.
+          const HOLD_MS = 350, HOLD_SLOP = 8;
+          let touch = null;   // { mode: 'wait' | 'pan' | 'pinch' | 'cross', x, y, dist, timer }
+          const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          const clearHold = () => { if (touch && touch.timer) { clearTimeout(touch.timer); touch.timer = null; } };
           function onSvgTouchStart(e) {
             if (state.drawMode || state.dragging) return;
-            if (!e.touches[0]) return;
-            touching = true;
-            updateCrosshair(e.touches[0].clientX, e.touches[0].clientY);
+            const t0 = e.touches[0]; if (!t0) return;
+            if (!canScroll()) {   // 1D: crosshair under the finger, as before
+              touch = { mode: 'cross' };
+              updateCrosshair(t0.clientX, t0.clientY);
+              return;
+            }
+            if (e.touches.length >= 2) {
+              clearHold();
+              hideCrosshair();
+              const t1 = e.touches[1];
+              touch = { mode: 'pinch', x: (t0.clientX + t1.clientX) / 2, dist: dist(t0, t1) };
+              return;
+            }
+            touch = { mode: 'wait', x: t0.clientX, y: t0.clientY, timer: null };
+            touch.timer = setTimeout(function () {
+              if (!touch || touch.mode !== 'wait') return;
+              touch.mode = 'cross';
+              updateCrosshair(touch.x, touch.y);
+            }, HOLD_MS);
           }
           function onSvgTouchMove(e) {
-            if (!touching || !e.touches[0]) return;
-            e.preventDefault();
-            updateCrosshair(e.touches[0].clientX, e.touches[0].clientY);
+            if (!touch) return;
+            const t0 = e.touches[0]; if (!t0) return;
+            if (touch.mode === 'cross') {
+              if (e.cancelable) e.preventDefault();
+              updateCrosshair(t0.clientX, t0.clientY);
+              return;
+            }
+            if (touch.mode === 'pinch') {
+              const t1 = e.touches[1]; if (!t1) return;
+              if (e.cancelable) e.preventDefault();
+              const rect = svg.getBoundingClientRect(), ctx = svg._crosshair;
+              const d = dist(t0, t1), mid = (t0.clientX + t1.clientX) / 2;
+              if (touch.dist > 0 && d > 0) {
+                const vx = (mid - rect.left) / rect.width * ctx.W;
+                const at = Math.max(0, Math.min(1, (vx - ctx.mLeft) / ctx.plotW));
+                zoomView(touch.dist / d, at);   // fingers apart = fewer bars
+              }
+              if (mid !== touch.x) panView((mid - touch.x) * barsPerPx());
+              touch.dist = d; touch.x = mid;
+              return;
+            }
+            const dx = t0.clientX - touch.x, dy = t0.clientY - touch.y;
+            if (touch.mode === 'wait') {
+              if (Math.abs(dx) < HOLD_SLOP && Math.abs(dy) < HOLD_SLOP) return;
+              clearHold();
+              if (Math.abs(dy) > Math.abs(dx)) { touch = null; return; }   // vertical: the page scrolls
+              touch.mode = 'pan';
+            }
+            if (e.cancelable) e.preventDefault();
+            panView(dx * barsPerPx());
+            touch.x = t0.clientX; touch.y = t0.clientY;
           }
-          function onSvgTouchEnd() {
-            if (!touching) return;
-            touching = false;
-            hideCrosshair();
+          function onSvgTouchEnd(e) {
+            if (!touch) return;
+            clearHold();
+            if (touch.mode === 'pinch' && e.touches.length === 1) {
+              // One finger lifted: carry on as a slide with the other.
+              touch = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
+              return;
+            }
+            if (touch.mode === 'cross') hideCrosshair();
+            touch = null;
           }
           svg.addEventListener('touchstart',  onSvgTouchStart, { passive: true });
           svg.addEventListener('touchmove',   onSvgTouchMove,  { passive: false });
