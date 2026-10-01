@@ -2253,6 +2253,20 @@
       color: #fff; background: rgba(255, 83, 116, 0.2); border-color: var(--term-red);
     }
     .tk-draw-toolbar svg { display: block; }
+    .tk-draw-toolbar button[data-role="latestBtn"] {
+      color: #ffb658; border-color: rgba(255, 182, 88, 0.55);
+    }
+    .tk-draw-toolbar .tk-nav-hint {
+      align-self: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.04em;
+      color: var(--term-dim);
+      opacity: 0.8;
+      padding-left: 0.2rem;
+      white-space: nowrap;
+    }
+    .tk-chart-svg.panning { cursor: grabbing; }
     /* Trend-line drawing needs precise clicks — impractical on touch. Hide
        the floating toolbar on mobile so it doesn't crowd out the chart. */
     @media (max-width: 720px) {
@@ -3390,6 +3404,8 @@
                   <span>Draw trend line</span>
                 </button>
                 <button type="button" data-draw="clear" data-role="clearBtn" hidden>CLEAR</button>
+                <button type="button" data-role="latestBtn" hidden title="Jump back to the most recent bars">Latest &rarr;</button>
+                <span class="tk-nav-hint" aria-hidden="true">drag to scroll &middot; wheel to zoom</span>
               </div>
               <svg class="tk-chart-svg" data-role="chart" viewBox="0 0 900 320" preserveAspectRatio="none" aria-label="${sym} chart"></svg>
               <!-- Crosshair OHLC tooltip — floats over the SVG, positioned
@@ -3422,23 +3438,33 @@
           </div>
         `;
 
+        // Each range button picks a bar size and an opening window; the
+        // reader can then drag left to see older bars and use the wheel
+        // to zoom, so the daily and weekly slots load far more history
+        // than any button shows at once (ten years of daily bars, every
+        // weekly and monthly bar Yahoo has).
         const RANGE_TO_FETCH = {
           // 1D: one-minute bars for the current trading day, pre-market
           // and after-hours included (Yahoo's range=1d rolls to the new
           // day when its pre-market opens at 4:00 AM ET).
           '1D':  { range: '1d',  interval: '1m', prepost: true },
           '5D':  { range: '5d',  interval: '15m' },
-          '1M':  { range: '1y',  interval: '1d' },
-          '3M':  { range: '1y',  interval: '1d' },
-          '6M':  { range: '1y',  interval: '1d' },
-          'YTD': { range: '1y',  interval: '1d' },
-          '1Y':  { range: '1y',  interval: '1d' },
-          // 3Y reuses the 5Y fetch (Yahoo has no native 3y range) and
-          // trims to the last ~156 weekly bars in sliceForRange.
-          '3Y':  { range: '5y',  interval: '1wk' },
-          '5Y':  { range: '5y',  interval: '1wk' },
+          '1M':  { range: '10y', interval: '1d' },
+          '3M':  { range: '10y', interval: '1d' },
+          '6M':  { range: '10y', interval: '1d' },
+          'YTD': { range: '10y', interval: '1d' },
+          '1Y':  { range: '10y', interval: '1d' },
+          '3Y':  { range: 'max', interval: '1wk' },
+          '5Y':  { range: 'max', interval: '1wk' },
           'All': { range: 'max', interval: '1mo' },
         };
+        // Opening window per button, in bars of that button's slot
+        // (daily: 1M = 22 trading days … weekly: 5Y = 260 weeks). YTD and
+        // All are worked out from the data in sliceForRange.
+        const RANGE_BARS = { '1M': 22, '3M': 66, '6M': 132, '1Y': 252, '3Y': 156, '5Y': 260 };
+        const MIN_VIEW_BARS = 10;
+        // Cache slots. The names are historical: daily1y now holds ten
+        // years of daily bars and weekly5y every weekly bar Yahoo has.
         const SLOT_BY_RANGE = {
           '1D':'intra1d', '5D':'intra5d',
           '1M':'daily1y','3M':'daily1y','6M':'daily1y','YTD':'daily1y','1Y':'daily1y',
@@ -3636,25 +3662,71 @@
             out.session = ses;
             return out;
           }
-          if (rangeKey === '5D' && intra) return intra;
-          if ((rangeKey === '1M' || rangeKey === '3M' || rangeKey === '6M' ||
-               rangeKey === 'YTD' || rangeKey === '1Y') && daily1y) {
-            if (rangeKey === '1M')  return daily1y.slice(-22);
-            if (rangeKey === '3M')  return daily1y.slice(-66);
-            if (rangeKey === '6M')  return daily1y.slice(-132);
+          // Every other range is a window onto one of the three long
+          // series. The window (state.view) is a bar count plus the index
+          // just past the last visible bar; the range button sets it and
+          // dragging / zooming moves it. The returned slice remembers
+          // where it sits in the full series (offset) and the full series
+          // itself, so indicators can warm up on the bars to its left and
+          // trend lines can be placed by timestamp outside the window.
+          let full = null;
+          if (rangeKey === '5D') full = intra;
+          else if (rangeKey === '3Y' || rangeKey === '5Y') full = weekly5y;
+          else if (rangeKey === 'All') full = monthly;
+          else full = daily1y;
+          if (!full || !full.length) return [];
+          const total = full.length;
+          let view = state.view;
+          if (!view || view.slot !== SLOT_BY_RANGE[rangeKey]) {
+            // First look at this slot (or a range button was pressed):
+            // open on the button's window, anchored to the latest bar.
+            let count = RANGE_BARS[rangeKey] || total;
             if (rangeKey === 'YTD') {
-              const yr = String(new Date(daily1y[daily1y.length - 1][0] * 1000).getUTCFullYear());
-              return daily1y.filter(([t]) => new Date(t * 1000).toISOString().slice(0, 10) >= yr + '-01-01');
+              const yr = String(new Date(full[total - 1][0] * 1000).getUTCFullYear());
+              count = full.filter(([t]) => new Date(t * 1000).toISOString().slice(0, 10) >= yr + '-01-01').length;
             }
-            return daily1y;
+            view = state.view = { slot: SLOT_BY_RANGE[rangeKey], count, end: total, anchored: true };
           }
-          // 3Y shares the weekly5y cache with 5Y — trim to last ~3 years
-          // (52 weekly bars × 3 = 156). Cheaper than a second fetch and
-          // gives 5Y-quality resolution over a tighter window.
-          if (rangeKey === '3Y'  && weekly5y) return weekly5y.slice(-156);
-          if (rangeKey === '5Y'  && weekly5y) return weekly5y;
-          if (rangeKey === 'All' && monthly)  return monthly;
-          return [];
+          view.total = total;
+          if (view.anchored) view.end = total;   // follow new bars while sitting at the right edge
+          view.count = Math.max(Math.min(MIN_VIEW_BARS, total), Math.min(view.count, total));
+          view.end = Math.max(view.count, Math.min(total, view.end));
+          const end = Math.round(view.end), start = Math.max(0, end - Math.round(view.count));
+          const out = full.slice(start, end);
+          out.full = full;
+          out.offset = start;
+          return out;
+        }
+        // Move the window by `dBars` (positive = toward older bars) or
+        // rescale it around the visible bar at fraction `at` (0 = left
+        // edge, 1 = right edge). Both leave the range button lit only if
+        // the window still matches it.
+        function panView(dBars) {
+          const v = state.view; if (!v) return;
+          const total = v.total || 0;
+          v.end = Math.max(v.count, Math.min(total, v.end - dBars));
+          v.anchored = v.end >= total;
+          markCustomView();
+          redraw();
+        }
+        function zoomView(factor, at) {
+          const v = state.view; if (!v) return;
+          const total = v.total || 0;
+          const count = Math.max(Math.min(MIN_VIEW_BARS, total), Math.min(total, v.count * factor));
+          if (count === v.count) return;
+          // Keep the bar under the pointer where it is.
+          const pivot = v.end - (1 - at) * v.count;
+          v.end = Math.max(count, Math.min(total, pivot + (1 - at) * count));
+          v.count = count;
+          v.anchored = v.end >= total;
+          markCustomView();
+          redraw();
+        }
+        function markCustomView() {
+          state.customView = true;
+          rangeEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          const latest = mount.querySelector('[data-role="latestBtn"]');
+          if (latest) latest.hidden = !!state.view.anchored;
         }
 
         function drawChart(svg, pts, opts) {
@@ -3693,13 +3765,20 @@
             return;
           }
 
-          const ema8    = opts.show8ema  ? ema(pts, 8)   : null;
-          const ema20   = opts.show20ema ? ema(pts, 20)  : null;
-          const sma50   = opts.show50    ? sma(pts, 50)  : null;
-          const sma100  = opts.show100   ? sma(pts, 100) : null;
-          const sma200  = opts.show200   ? sma(pts, 200) : null;
-          const rsi14   = showRsi      ? rsi(pts, 14)  : null;
-          const macdVal = showMacd     ? macd(pts, 12, 26, 9) : null;
+          // Indicators run over the whole loaded series and are then cut
+          // to the window, so a 200-day average is already settled at the
+          // left edge of a one-year view instead of missing its first 199
+          // bars. `pts` is that window; `full` / `off` say where it sits.
+          const full = pts.full || pts;
+          const off  = pts.offset || 0;
+          const cut  = (arr) => (arr && full !== pts) ? arr.slice(off, off + pts.length) : arr;
+          const ema8    = opts.show8ema  ? cut(ema(full, 8))   : null;
+          const ema20   = opts.show20ema ? cut(ema(full, 20))  : null;
+          const sma50   = opts.show50    ? cut(sma(full, 50))  : null;
+          const sma100  = opts.show100   ? cut(sma(full, 100)) : null;
+          const sma200  = opts.show200   ? cut(sma(full, 200)) : null;
+          const rsi14   = showRsi      ? cut(rsi(full, 14))  : null;
+          const macdVal = showMacd     ? (() => { const m = macd(full, 12, 26, 9); return { line: cut(m.line), signal: cut(m.signal), hist: cut(m.hist) }; })() : null;
           // 52-week reference lines are for multi-month views; on the
           // trading-day (1D) axis they would swamp a day's small range.
           const wk52    = opts.session ? null : (opts.wk52 || null);
@@ -3769,30 +3848,30 @@
             // visual gap that appears between Friday's close and Monday's open
             // (and around holidays).
             xForIdx = (i) => M.left + (i / Math.max(1, nBars - 1)) * plotW;
+            // Timestamp → x, located against the whole loaded series so a
+            // trend line anchored on a bar that has scrolled out of view
+            // still lands on the right bar.
+            const nFull = full.length;
             xForTime = function (t) {
-              if (nBars < 2) return xForIdx(0);
-              // Extrapolate before the first bar using the spacing of bars[0..1].
-              if (t <= pts[0][0]) {
-                const span = pts[1][0] - pts[0][0];
-                const frac = span > 0 ? (t - pts[0][0]) / span : 0;
-                return xForIdx(frac);
+              if (nFull < 2) return xForIdx(0);
+              let bi;
+              if (t <= full[0][0]) {
+                const span = full[1][0] - full[0][0];
+                bi = span > 0 ? (t - full[0][0]) / span : 0;
+              } else if (t >= full[nFull - 1][0]) {
+                const span = full[nFull - 1][0] - full[nFull - 2][0];
+                bi = nFull - 1 + (span > 0 ? (t - full[nFull - 1][0]) / span : 0);
+              } else {
+                let lo = 0, hi = nFull - 1;
+                while (hi - lo > 1) {
+                  const mid = (lo + hi) >> 1;
+                  if (full[mid][0] <= t) lo = mid;
+                  else hi = mid;
+                }
+                const span = full[hi][0] - full[lo][0];
+                bi = lo + (span > 0 ? (t - full[lo][0]) / span : 0);
               }
-              // Extrapolate past the last bar using the spacing of bars[n-2..n-1].
-              if (t >= pts[nBars - 1][0]) {
-                const span = pts[nBars - 1][0] - pts[nBars - 2][0];
-                const frac = span > 0 ? (t - pts[nBars - 1][0]) / span : 0;
-                return xForIdx(nBars - 1 + frac);
-              }
-              // Binary-search for the bar pair that brackets t.
-              let lo = 0, hi = nBars - 1;
-              while (hi - lo > 1) {
-                const mid = (lo + hi) >> 1;
-                if (pts[mid][0] <= t) lo = mid;
-                else hi = mid;
-              }
-              const span = pts[hi][0] - pts[lo][0];
-              const frac = span > 0 ? (t - pts[lo][0]) / span : 0;
-              return xForIdx(lo + frac);
+              return xForIdx(bi - off);
             };
           }
           // Backwards-compat alias — most existing callers pass a timestamp.
@@ -4219,10 +4298,12 @@
             mLeft: M.left, mRight: W - M.right,
             plotW: plotW,
             priceTop: priceTop, priceH: priceH,
-            // Ordinal X-axis support — timestamps array lets the click /
-            // drag handlers invert screen X back to a real timestamp by
-            // interpolating between the two adjacent bars.
-            timestamps: pts.map(function (p) { return p[0]; }),
+            // Ordinal X-axis support — timestamps of the whole loaded
+            // series plus the window's place in it, so the click / drag
+            // handlers can turn screen X into a real timestamp (and back)
+            // even for points outside the visible window.
+            timestamps: full.map(function (p) { return p[0]; }),
+            offset: off,
             nBars: pts.length,
             // Trading-day axis (1D): direct time <-> x mappings, so the
             // click / drag handlers don't have to interpolate between bars.
@@ -4403,41 +4484,77 @@
             tooltip.style.top  = topPx + 'px';
           }
 
-          // Click-and-drag activation (not plain hover) — reader has to
-          // press the mouse and drag to summon the crosshair. Keeps the
-          // chart clean under a passive hover and, more importantly, gets
-          // completely out of the way when the trend-line draw tool is
-          // active or when an existing trend-endpoint is being dragged.
-          let dragging = false;
-          function onWindowMove(e) {
-            if (!dragging) return;
+          // Mouse: the crosshair follows a plain hover; pressing and
+          // dragging scrolls the chart through older bars (the drag used
+          // to summon the crosshair before the chart could scroll). The
+          // wheel zooms around the pointer; a sideways wheel or trackpad
+          // swipe scrolls. The 1D view keeps its fixed trading-day axis
+          // and ignores all of that. Trend-line endpoint drags (state.
+          // dragging) are handled by their own listeners and win here.
+          const canScroll = () => svg._crosshair && !svg._crosshair.xToTime && state.view;
+          // Visible plot width in screen pixels → bars per pixel.
+          const barsPerPx = () => {
+            const ctx = svg._crosshair, rect = svg.getBoundingClientRect();
+            const plotPx = rect.width * ctx.plotW / ctx.W;
+            return plotPx > 0 ? state.view.count / plotPx : 0;
+          };
+          let pan = null;   // { x0, moved } while the button is held
+          svg.addEventListener('mousemove', function (e) {
+            if (state.dragging) { hideCrosshair(); return; }
+            if (pan) {
+              const dx = e.clientX - pan.x0;
+              if (!pan.moved && Math.abs(dx) < 3) return;
+              pan.moved = true;
+              pan.x0 = e.clientX;
+              hideCrosshair();
+              panView(dx * barsPerPx());
+              return;
+            }
             updateCrosshair(e.clientX, e.clientY);
-          }
-          function endDrag() {
-            if (!dragging) return;
-            dragging = false;
-            hideCrosshair();
-            window.removeEventListener('mousemove', onWindowMove);
-            window.removeEventListener('mouseup',   endDrag);
-          }
+          });
           svg.addEventListener('mousedown', function (e) {
-            // Defer to draw-line tool: skip crosshair when in DRAW mode
-            // or when a trend-line endpoint drag is starting.
-            if (state.drawMode || state.dragging) return;
+            if (state.dragging || !canScroll()) return;
             if (e.button !== undefined && e.button !== 0) return;   // left button only
-            dragging = true;
+            pan = { x0: e.clientX, moved: false };
+            svg.classList.add('panning');
+          });
+          function endPan() {
+            if (!pan) return;
+            if (pan.moved) {
+              // Swallow the click that follows a drag so the draw tool
+              // doesn't drop a point where the drag ended.
+              state.justDragged = true;
+              setTimeout(function () { state.justDragged = false; }, 60);
+            }
+            pan = null;
+            svg.classList.remove('panning');
+          }
+          window.addEventListener('mouseup', endPan);
+          window.addEventListener('mousemove', function (e) {
+            // Keep scrolling while the button is held off the chart.
+            if (!pan || !pan.moved) return;
+            const dx = e.clientX - pan.x0;
+            if (!dx) return;
+            pan.x0 = e.clientX;
+            panView(dx * barsPerPx());
+          });
+          svg.addEventListener('mouseleave', function () { hideCrosshair(); });
+          svg.addEventListener('wheel', function (e) {
+            if (!canScroll()) return;   // 1D: let the page scroll
+            e.preventDefault();
+            const ctx = svg._crosshair, rect = svg.getBoundingClientRect();
+            if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+              panView(-e.deltaX * barsPerPx());
+              return;
+            }
+            // Wheel notches are ~100 per click; trackpads send a stream of
+            // small values. Both map to a smooth exponential zoom.
+            const factor = Math.exp(Math.max(-300, Math.min(300, e.deltaY)) * 0.0025);
+            const vx = (e.clientX - rect.left) / rect.width * ctx.W;
+            const at = Math.max(0, Math.min(1, (vx - ctx.mLeft) / ctx.plotW));
+            zoomView(factor, at);
             updateCrosshair(e.clientX, e.clientY);
-            window.addEventListener('mousemove', onWindowMove);
-            window.addEventListener('mouseup',   endDrag);
-          });
-          // If the pointer leaves the SVG mid-drag we keep tracking via
-          // the window listener until mouseup — endDrag hides on release.
-          svg.addEventListener('mouseleave', function () {
-            // Do NOT hide mid-drag — the window mousemove still updates
-            // while the reader drags off-chart. hide happens on mouseup.
-            if (dragging) return;
-            hideCrosshair();
-          });
+          }, { passive: false });
 
           // Touch: touchstart begins the drag, touchmove updates while
           // pressed, touchend/cancel ends it. Same "skip when drawing"
@@ -4606,6 +4723,13 @@
         updateClearBtn();
 
         drawBtn.addEventListener('click', function () { setDrawMode(!state.drawMode); });
+        const latestBtn = mount.querySelector('[data-role="latestBtn"]');
+        if (latestBtn) latestBtn.addEventListener('click', function () {
+          if (!state.view) return;
+          state.view.anchored = true;
+          latestBtn.hidden = true;
+          redraw();
+        });
         clearBtn.addEventListener('click', function () {
           state.lines = [];
           state.pendingPoint = null;
@@ -4628,10 +4752,13 @@
             y: (e.clientY - rect.top)  * (vb.height / rect.height),
           };
         }
+        // Timestamp ↔ x goes through the whole loaded series (proj.timestamps,
+        // n bars) and the window's place in it (proj.offset, proj.nBars
+        // visible), matching drawChart's xForTime.
         function tpToSvg(t, p) {
           const proj = state.projection; if (!proj) return null;
-          const ts = proj.timestamps, n = proj.nBars;
-          if (!ts || n < 2) return null;
+          const ts = proj.timestamps, n = ts ? ts.length : 0;
+          if (!ts || n < 2 || proj.nBars < 2) return null;
           if (proj.xForTime) {
             return {
               x: proj.xForTime(t),
@@ -4655,22 +4782,22 @@
             const span = ts[hi] - ts[lo];
             bi = lo + (span > 0 ? (t - ts[lo]) / span : 0);
           }
-          const x = proj.mLeft + (bi / Math.max(1, n - 1)) * proj.plotW;
+          const x = proj.mLeft + ((bi - (proj.offset || 0)) / Math.max(1, proj.nBars - 1)) * proj.plotW;
           const y = proj.priceTop + proj.priceH - ((p - proj.yLo) / (proj.yHi - proj.yLo)) * proj.priceH;
           return { x: x, y: y };
         }
         function svgToTP(svgX, svgY) {
           const proj = state.projection; if (!proj) return null;
-          const ts = proj.timestamps, n = proj.nBars;
-          if (!ts || n < 2) return null;
+          const ts = proj.timestamps, n = ts ? ts.length : 0;
+          if (!ts || n < 2 || proj.nBars < 2) return null;
           if (proj.xToTime) {
             return {
               t: proj.xToTime(svgX),
               p: proj.yLo + ((proj.priceTop + proj.priceH - svgY) / proj.priceH) * (proj.yHi - proj.yLo),
             };
           }
-          // Screen X → fractional bar index → interpolated timestamp.
-          const bi = ((svgX - proj.mLeft) / proj.plotW) * (n - 1);
+          // Screen X → fractional bar index in the full series → timestamp.
+          const bi = (proj.offset || 0) + ((svgX - proj.mLeft) / proj.plotW) * (proj.nBars - 1);
           let t;
           if (bi <= 0) {
             const span = ts[1] - ts[0];
@@ -4769,9 +4896,8 @@
           // Only accept clicks inside the price plot rect (not on axes / RSI subplot).
           if (svgX < p.mLeft || svgX > p.mRight)                 return;
           if (svgY < p.priceTop || svgY > p.priceTop + p.priceH) return;
-          const t = p.xToTime ? p.xToTime(svgX)
-                  : p.first + ((svgX - p.mLeft) / p.plotW) * (p.last - p.first);
-          const price = p.yLo + ((p.priceTop + p.priceH - svgY) / p.priceH) * (p.yHi - p.yLo);
+          const tp = svgToTP(svgX, svgY); if (!tp) return;
+          const t = tp.t, price = tp.p;
           if (!state.pendingPoint) {
             state.pendingPoint = { t: t, p: price };
             redraw();
@@ -4818,18 +4944,22 @@
           const pills = [];
           const fmtV = (v) => (v == null || !Number.isFinite(v)) ? '—'
             : (v >= 100 ? v.toFixed(2) : v.toFixed(2));
+          // Averages run over the whole loaded series (same as the chart)
+          // and are read at the last visible bar.
+          const full = pts.full || pts;
+          const endIdx = (pts.offset || 0) + pts.length - 1;
           const last = (arr) => {
             if (!arr) return null;
-            for (let i = arr.length - 1; i >= 0; i--) {
+            for (let i = Math.min(endIdx, arr.length - 1); i >= 0; i--) {
               if (arr[i] != null && Number.isFinite(arr[i])) return arr[i];
             }
             return null;
           };
-          if (state.show8ema)  pills.push(['8ema',  '8 EMA',   last(ema(pts, 8))]);
-          if (state.show20ema) pills.push(['20ema', '20 EMA',  last(ema(pts, 20))]);
-          if (state.show50)    pills.push(['50',    '50 SMA',  last(sma(pts, 50))]);
-          if (state.show100)   pills.push(['100',   '100 SMA', last(sma(pts, 100))]);
-          if (state.show200)   pills.push(['200',   '200 SMA', last(sma(pts, 200))]);
+          if (state.show8ema)  pills.push(['8ema',  '8 EMA',   last(ema(full, 8))]);
+          if (state.show20ema) pills.push(['20ema', '20 EMA',  last(ema(full, 20))]);
+          if (state.show50)    pills.push(['50',    '50 SMA',  last(sma(full, 50))]);
+          if (state.show100)   pills.push(['100',   '100 SMA', last(sma(full, 100))]);
+          if (state.show200)   pills.push(['200',   '200 SMA', last(sma(full, 200))]);
           if (!pills.length) { maValsEl.hidden = true; maValsEl.innerHTML = ''; return; }
           maValsEl.innerHTML = pills.map(([key, label, val]) =>
             `<span class="ma-pill ma-${key}"><span class="lbl">${label}</span><span class="val">$${fmtV(val)}</span></span>`
@@ -4876,7 +5006,7 @@
           }
           if (w && w.length) {
             out['3Y'] = pctFrom(closeAtOrBefore(w, monthsAgo(36)) ?? w[0][4]);
-            out['5Y'] = pctFrom(w[0][4]);
+            out['5Y'] = pctFrom(closeAtOrBefore(w, monthsAgo(60)) ?? w[0][4]);
           }
           if (m && m.length) out['All'] = pctFrom(m[0][4]);
           rangeEl.querySelectorAll('button[data-range]').forEach(b => {
@@ -4944,7 +5074,9 @@
           const bars = cache.daily1y;
           if (!bars || bars.length < 2) { perfEl.innerHTML = ''; return; }
           const lastClose = bars[bars.length - 1][4];
-          const wk52First = bars[0][4];
+          // 52 weeks ≈ 252 trading days back (the daily series now runs
+          // ten years, so its first bar is no longer the 52-week base).
+          const wk52First = bars[Math.max(0, bars.length - 253)][4];
           const wk52Pct = (isFinite(wk52First) && wk52First)
             ? ((lastClose - wk52First) / wk52First) * 100 : null;
           // YTD base = the last close of the prior calendar year (the way
@@ -5085,6 +5217,10 @@
 
         async function switchTo(rangeKey) {
           state.range = rangeKey;
+          state.view = null;          // a button always reopens its own window, latest bar at the right
+          state.customView = false;
+          const latest = mount.querySelector('[data-role="latestBtn"]');
+          if (latest) latest.hidden = true;
           rangeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.range === rangeKey));
           try {
             await ensureData(rangeKey);

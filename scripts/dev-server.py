@@ -17,6 +17,7 @@ import json
 import socket
 import sys
 import threading
+import time
 import urllib.parse
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -30,8 +31,11 @@ UA = 'Mozilla/5.0 (BATS.CO dev server)'
 
 
 def yahoo_chart(sym, rng, interval, want_ohlc, prepost):
+    # range=max comes back as quarterly bars whatever the interval; an
+    # explicit start/end returns full history at the interval asked for.
+    span = f'period1=0&period2={int(time.time())}' if rng == 'max' else 'range=' + rng
     url = ('https://query1.finance.yahoo.com/v8/finance/chart/' + urllib.parse.quote(sym)
-           + '?range=' + rng + '&interval=' + interval + ('&includePrePost=true' if prepost else ''))
+           + '?' + span + '&interval=' + interval + ('&includePrePost=true' if prepost else ''))
     req = urllib.request.Request(url, headers={'User-Agent': UA})
     with urllib.request.urlopen(req, timeout=20) as r:
         data = json.load(r)

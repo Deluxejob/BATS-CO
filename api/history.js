@@ -23,9 +23,15 @@ const RANGES = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y'
 const INTERVALS = new Set(['1m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo']);
 
 async function fetchYahooChart(sym, range, interval, wantOhlc, prepost) {
+  // Yahoo answers range=max with quarterly bars whatever interval is
+  // asked for; an explicit start/end (the whole epoch) returns the full
+  // history at the requested interval instead.
+  const span = range === 'max'
+    ? 'period1=0&period2=' + Math.floor(Date.now() / 1000)
+    : 'range=' + encodeURIComponent(range);
   const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
     encodeURIComponent(sym) +
-    '?range=' + encodeURIComponent(range) +
+    '?' + span +
     '&interval=' + encodeURIComponent(interval) +
     (prepost ? '&includePrePost=true' : '');
   try {
