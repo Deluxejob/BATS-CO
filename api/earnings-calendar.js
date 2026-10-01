@@ -68,7 +68,10 @@ export default async function handler(req, res) {
     const r = await fetch(url, { headers: { 'User-Agent': FINNHUB_UA } });
     if (!r.ok) throw new Error('finnhub http ' + r.status);
     const payload = await r.json();
-    return Array.isArray(payload && payload.earningsCalendar) ? payload.earningsCalendar : [];
+    // A throttled or malformed answer must not be mistaken for a day
+    // with no reporters — it would be cached as one.
+    if (!payload || !Array.isArray(payload.earningsCalendar)) throw new Error('finnhub: no calendar in response');
+    return payload.earningsCalendar;
   }
 
   try {
@@ -111,7 +114,11 @@ export default async function handler(req, res) {
       return a.symbol < b.symbol ? -1 : 1;
     });
 
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=900, stale-while-revalidate=120');
+    // An empty window is sometimes real (a weekend) and sometimes Finnhub
+    // having a throttled moment; keep empties for a minute, not fifteen,
+    // so a bad answer can't blank the earnings boxes for everyone.
+    const sMaxAge = rows.length ? 900 : 60;
+    res.setHeader('Cache-Control', `public, max-age=0, s-maxage=${sMaxAge}, stale-while-revalidate=120`);
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(200).json({ from, to, count: rows.length, earnings: rows });
   } catch (err) {
