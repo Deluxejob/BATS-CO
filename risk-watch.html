@@ -572,8 +572,10 @@
           (civilian unemployment rate, monthly). Both seasonally adjusted.
         </p>
         <p style="margin:0 0 0.75rem;">
-          <strong>Trailing 10-year return:</strong> the S&amp;P 500's annualised
-          total return (dividends reinvested) over the past 10 years, compared
+          <strong>Trailing 10-year CAGR:</strong> the S&amp;P 500's compound
+          annual growth rate (total return, dividends reinvested) over the
+          past 10 years &mdash; what the index earned per year, on average,
+          with each year's gains building on the last &mdash; compared
           with every 10-year window ending since 1936 (so the windows start in
           1926). History comes from
           <a href="http://www.econ.yale.edu/~shiller/data.htm" style="color:#64d3ff">Robert Shiller's</a>
@@ -1352,7 +1354,7 @@
     const cagrP90 = cagrSorted[Math.floor(cagrSorted.length * 0.9)];
     const ordinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][Math.min(n % 10, 4)] || 'th');
     pullbackRelated.push({
-      on: cagrPct >= 0.90, name: 'Trailing 10-year return',
+      on: cagrPct >= 0.90, name: 'Trailing 10-year CAGR (compound annual growth rate)',
       pullbackNote: 'Top-10% decades: 46% chance of a 20%+ drop within 3 years vs 33% normally; with CAPE 30+ it was 89%, but from just two examples (2000, 2022)',
       val: `${cagrNow.toFixed(1)}%/yr, ${ordinal(Math.round(cagrPct * 100))} percentile since 1926 (typical ${cagrMedian.toFixed(1)}%, top 10% starts at ${cagrP90.toFixed(1)}%)`,
     });
