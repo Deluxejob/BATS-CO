@@ -3717,9 +3717,15 @@
           const total = v.total || 0;
           const count = Math.max(Math.min(MIN_VIEW_BARS, total), Math.min(total, v.count * factor));
           if (count === v.count) return;
-          // Keep the bar under the pointer where it is.
-          const pivot = v.end - (1 - at) * v.count;
-          v.end = Math.max(count, Math.min(total, pivot + (1 - at) * count));
+          // Sitting at the latest bar: keep it pinned to the right edge so
+          // zooming in never pushes today off the chart. Back in history:
+          // keep the bar under the pointer where it is.
+          if (v.anchored) {
+            v.end = total;
+          } else {
+            const pivot = v.end - (1 - at) * v.count;
+            v.end = Math.max(count, Math.min(total, pivot + (1 - at) * count));
+          }
           v.count = count;
           v.anchored = v.end >= total;
           markCustomView();
