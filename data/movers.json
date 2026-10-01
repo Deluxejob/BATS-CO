@@ -1,690 +1,1368 @@
 {
-  "generatedAt": 1790867091,
+  "generatedAt": 1790885951,
   "gainers": [
+    {
+      "symbol": "MAT",
+      "shortName": "Mattel, Inc.",
+      "price": 15.04,
+      "changePct": 18.79937,
+      "change": 2.38,
+      "volume": 35598289,
+      "marketCap": 4296927744
+    },
     {
       "symbol": "ACN",
       "shortName": "Accenture plc",
-      "price": 216.825,
-      "changePct": 18.244535,
-      "change": 33.455,
-      "volume": 15349621,
-      "marketCap": 132684341248
-    },
-    {
-      "symbol": "EFXT",
-      "shortName": "Enerflex Ltd",
-      "price": 26.27,
-      "changePct": 15.269852,
-      "change": 3.4799995,
-      "volume": 629212,
-      "marketCap": 3207642624
-    },
-    {
-      "symbol": "VICR",
-      "shortName": "Vicor Corporation",
-      "price": 322.33,
-      "changePct": 11.556027,
-      "change": 33.389984,
-      "volume": 686232,
-      "marketCap": 14861582336
+      "price": 212.3,
+      "changePct": 15.7768,
+      "change": 28.93,
+      "volume": 28761896,
+      "marketCap": 129915305984
     },
     {
       "symbol": "SNPS",
       "shortName": "Synopsys, Inc.",
-      "price": 480.41,
-      "changePct": 10.454315,
-      "change": 45.47,
-      "volume": 2825284,
-      "marketCap": 92064161792
-    },
-    {
-      "symbol": "COHR",
-      "shortName": "Coherent Corp.",
-      "price": 316.4,
-      "changePct": 9.933635,
-      "change": 28.589996,
-      "volume": 4652270,
-      "marketCap": 61961318400
-    },
-    {
-      "symbol": "LITE",
-      "shortName": "Lumentum Holdings Inc.",
-      "price": 1062.96,
-      "changePct": 9.4413395,
-      "change": 91.69995,
-      "volume": 3347056,
-      "marketCap": 95347507200
+      "price": 490.54,
+      "changePct": 12.783374,
+      "change": 55.600006,
+      "volume": 6313161,
+      "marketCap": 94005436416
     },
     {
       "symbol": "FICO",
       "shortName": "Fair Isaac Corporation",
-      "price": 644.32,
-      "changePct": 8.751209,
-      "change": 51.850037,
-      "volume": 1037206,
-      "marketCap": 13915789312
+      "price": 661.75,
+      "changePct": 11.6934,
+      "change": 69.28,
+      "volume": 2914430,
+      "marketCap": 14292235264
+    },
+    {
+      "symbol": "EFXT",
+      "shortName": "Enerflex Ltd",
+      "price": 25.44,
+      "changePct": 11.6279,
+      "change": 2.65,
+      "volume": 1829421,
+      "marketCap": 3106297344
+    },
+    {
+      "symbol": "COHR",
+      "shortName": "Coherent Corp.",
+      "price": 319.19,
+      "changePct": 10.903,
+      "change": 31.38,
+      "volume": 11213633,
+      "marketCap": 62507692032
+    },
+    {
+      "symbol": "INOD",
+      "shortName": "Innodata Inc.",
+      "price": 71.85,
+      "changePct": 9.260942,
+      "change": 6.0899963,
+      "volume": 2427270,
+      "marketCap": 2470393600
     },
     {
       "symbol": "GWRE",
       "shortName": "Guidewire Software, Inc.",
-      "price": 152.535,
-      "changePct": 6.982046,
-      "change": 9.955002,
-      "volume": 452925,
-      "marketCap": 12506753024
-    },
-    {
-      "symbol": "TSEM",
-      "shortName": "Tower Semiconductor Ltd.",
-      "price": 242.97,
-      "changePct": 6.8328757,
-      "change": 15.540009,
-      "volume": 597538,
-      "marketCap": 27463200768
-    },
-    {
-      "symbol": "CTSH",
-      "shortName": "Cognizant Technology Solutions ",
-      "price": 61.21,
-      "changePct": 6.5633717,
-      "change": 3.7700005,
-      "volume": 6170524,
-      "marketCap": 28952330240
-    },
-    {
-      "symbol": "AXTI",
-      "shortName": "AXT Inc",
-      "price": 82.49,
-      "changePct": 6.562452,
-      "change": 5.079994,
-      "volume": 3834319,
-      "marketCap": 5409134080
-    },
-    {
-      "symbol": "HURN",
-      "shortName": "Huron Consulting Group Inc.",
-      "price": 166.9451,
-      "changePct": 6.449721,
-      "change": 10.115097,
-      "volume": 185283,
-      "marketCap": 2656108544
-    },
-    {
-      "symbol": "UTHR",
-      "shortName": "United Therapeutics Corporation",
-      "price": 576.835,
-      "changePct": 6.448727,
-      "change": 34.945007,
-      "volume": 582828,
-      "marketCap": 24740853760
-    },
-    {
-      "symbol": "INFY",
-      "shortName": "Infosys Limited",
-      "price": 11.45,
-      "changePct": 6.412635,
-      "change": 0.6899996,
-      "volume": 22145228,
-      "marketCap": 46376435712
-    },
-    {
-      "symbol": "EPAM",
-      "shortName": "EPAM Systems, Inc.",
-      "price": 114.98,
-      "changePct": 6.1092677,
-      "change": 6.6200027,
-      "volume": 495909,
-      "marketCap": 5931471360
+      "price": 155.32,
+      "changePct": 8.93534,
+      "change": 12.74,
+      "volume": 1556662,
+      "marketCap": 12735101952
     },
     {
       "symbol": "AAOI",
       "shortName": "Applied Optoelectronics, Inc.",
-      "price": 105.175,
-      "changePct": 5.957598,
-      "change": 5.915001,
-      "volume": 3951125,
-      "marketCap": 8930019328
-    },
-    {
-      "symbol": "WIT",
-      "shortName": "Wipro Limited",
-      "price": 1.745,
-      "changePct": 5.7575774,
-      "change": 0.09500003,
-      "volume": 9664828,
-      "marketCap": 17263878144
-    },
-    {
-      "symbol": "EXLS",
-      "shortName": "ExlService Holdings, Inc.",
-      "price": 36.29,
-      "changePct": 5.555555,
-      "change": 1.9099998,
-      "volume": 684855,
-      "marketCap": 5544492544
-    },
-    {
-      "symbol": "SYRE",
-      "shortName": "Spyre Therapeutics, Inc.",
-      "price": 93.755,
-      "changePct": 5.307198,
-      "change": 4.7249985,
-      "volume": 500899,
-      "marketCap": 8141801472
-    },
-    {
-      "symbol": "PTC",
-      "shortName": "PTC Inc.",
-      "price": 147.685,
-      "changePct": 5.2637167,
-      "change": 7.3849945,
-      "volume": 354644,
-      "marketCap": 16024747008
-    },
-    {
-      "symbol": "XENE",
-      "shortName": "Xenon Pharmaceuticals Inc.",
-      "price": 39.14,
-      "changePct": 5.243347,
-      "change": 1.9500008,
-      "volume": 1098399,
-      "marketCap": 3790334464
-    },
-    {
-      "symbol": "BSTZ",
-      "shortName": "BlackRock Science and Technolog",
-      "price": 30.92,
-      "changePct": 5.0985723,
-      "change": 1.5,
-      "volume": 287179,
-      "marketCap": 2125569152
+      "price": 107.32,
+      "changePct": 8.120086,
+      "change": 8.059998,
+      "volume": 11219235,
+      "marketCap": 9112142848
     },
     {
       "symbol": "CRDO",
       "shortName": "Credo Technology Group Holding ",
-      "price": 204.3001,
-      "changePct": 4.882233,
-      "change": 9.510101,
-      "volume": 2889099,
-      "marketCap": 38398595072
+      "price": 210.17,
+      "changePct": 7.895685,
+      "change": 15.380005,
+      "volume": 9346600,
+      "marketCap": 39501852672
     },
     {
       "symbol": "CIEN",
       "shortName": "Ciena Corporation",
-      "price": 368.9309,
-      "changePct": 4.8635383,
-      "change": 17.1109,
-      "volume": 632663,
-      "marketCap": 52317548544
+      "price": 379.14,
+      "changePct": 7.76534,
+      "change": 27.32,
+      "volume": 2559197,
+      "marketCap": 53765287936
     },
     {
-      "symbol": "FN",
-      "shortName": "Fabrinet",
-      "price": 444.62,
-      "changePct": 4.7964754,
-      "change": 20.350006,
-      "volume": 308624,
-      "marketCap": 15932897280
+      "symbol": "LITE",
+      "shortName": "Lumentum Holdings Inc.",
+      "price": 1045.78,
+      "changePct": 7.6725097,
+      "change": 74.52002,
+      "volume": 7460083,
+      "marketCap": 93806469120
+    },
+    {
+      "symbol": "KD",
+      "shortName": "Kyndryl Holdings, Inc.",
+      "price": 12.12,
+      "changePct": 7.63765,
+      "change": 0.86,
+      "volume": 10544363,
+      "marketCap": 2639957248
+    },
+    {
+      "symbol": "STLA",
+      "shortName": "Stellantis N.V.",
+      "price": 4.69,
+      "changePct": 7.56881,
+      "change": 0.33,
+      "volume": 54036439,
+      "marketCap": 17668749312
+    },
+    {
+      "symbol": "UI",
+      "shortName": "Ubiquiti Inc.",
+      "price": 609.64,
+      "changePct": 7.41987,
+      "change": 42.11,
+      "volume": 112130,
+      "marketCap": 36900524032
+    },
+    {
+      "symbol": "HURN",
+      "shortName": "Huron Consulting Group Inc.",
+      "price": 168.42,
+      "changePct": 7.3901653,
+      "change": 11.589996,
+      "volume": 605701,
+      "marketCap": 2679574272
+    },
+    {
+      "symbol": "APPN",
+      "shortName": "Appian Corporation",
+      "price": 37.77,
+      "changePct": 7.0881767,
+      "change": 2.5,
+      "volume": 880884,
+      "marketCap": 2705374464
+    },
+    {
+      "symbol": "LIND",
+      "shortName": "Lindblad Expeditions Holdings I",
+      "price": 33.63,
+      "changePct": 6.9996843,
+      "change": 2.2000008,
+      "volume": 1800095,
+      "marketCap": 2206790144
+    },
+    {
+      "symbol": "PBF",
+      "shortName": "PBF Energy Inc.",
+      "price": 82.34,
+      "changePct": 6.99064,
+      "change": 5.38,
+      "volume": 3766550,
+      "marketCap": 9760323584
+    },
+    {
+      "symbol": "IPGP",
+      "shortName": "IPG Photonics Corporation",
+      "price": 83.66,
+      "changePct": 6.872771,
+      "change": 5.380005,
+      "volume": 433837,
+      "marketCap": 3558439680
+    },
+    {
+      "symbol": "EXPO",
+      "shortName": "Exponent, Inc.",
+      "price": 69.9,
+      "changePct": 6.848064,
+      "change": 4.4800034,
+      "volume": 860191,
+      "marketCap": 3323471360
+    },
+    {
+      "symbol": "VIAV",
+      "shortName": "Viavi Solutions Inc.",
+      "price": 44.78,
+      "changePct": 6.8225203,
+      "change": 2.8600006,
+      "volume": 7251533,
+      "marketCap": 11049456640
+    },
+    {
+      "symbol": "VICR",
+      "shortName": "Vicor Corporation",
+      "price": 308.59,
+      "changePct": 6.800718,
+      "change": 19.649994,
+      "volume": 1459893,
+      "marketCap": 14228076544
+    },
+    {
+      "symbol": "GPI",
+      "shortName": "Group 1 Automotive, Inc.",
+      "price": 256.7,
+      "changePct": 6.76261,
+      "change": 16.26,
+      "volume": 320203,
+      "marketCap": 3060435200
+    },
+    {
+      "symbol": "NCNO",
+      "shortName": "nCino, Inc.",
+      "price": 19.35,
+      "changePct": 6.7291846,
+      "change": 1.2200012,
+      "volume": 2023408,
+      "marketCap": 2045995008
     }
   ],
   "losers": [
     {
       "symbol": "CTVA",
       "shortName": "Corteva, Inc.",
-      "price": 12.495,
-      "changePct": -83.90856,
-      "change": -65.155,
-      "volume": 31144581,
-      "marketCap": 8336614400
-    },
-    {
-      "symbol": "LQDA",
-      "shortName": "Liquidia Corporation",
-      "price": 26.22,
-      "changePct": -13.328937,
-      "change": -4.040001,
-      "volume": 11029298,
-      "marketCap": 2346923008
-    },
-    {
-      "symbol": "GRND",
-      "shortName": "Grindr Inc.",
-      "price": 13.584,
-      "changePct": -11.963711,
-      "change": -1.8460007,
-      "volume": 948430,
-      "marketCap": 2361179392
-    },
-    {
-      "symbol": "ENLT",
-      "shortName": "Enlight Renewable Energy Ltd.",
-      "price": 64.62,
-      "changePct": -6.901024,
-      "change": -4.790001,
-      "volume": 60997,
-      "marketCap": 9040615424
-    },
-    {
-      "symbol": "AMC",
-      "shortName": "AMC Entertainment Holdings, Inc",
-      "price": 2.8,
-      "changePct": -6.666668,
-      "change": -0.20000005,
-      "volume": 11041737,
-      "marketCap": 2499292928
-    },
-    {
-      "symbol": "SECZ",
-      "shortName": "Securitize Corp.",
-      "price": 13.6519,
-      "changePct": -6.429745,
-      "change": -0.93809986,
-      "volume": 1278253,
-      "marketCap": 2228886784
-    },
-    {
-      "symbol": "VRDN",
-      "shortName": "Viridian Therapeutics, Inc.",
-      "price": 19.33,
-      "changePct": -6.1194763,
-      "change": -1.2600002,
-      "volume": 664663,
-      "marketCap": 2189939712
-    },
-    {
-      "symbol": "NWG",
-      "shortName": "NatWest Group plc",
-      "price": 17.045,
-      "changePct": -6.0864754,
-      "change": -1.1049995,
-      "volume": 1630350,
-      "marketCap": 67598970880
-    },
-    {
-      "symbol": "TGB",
-      "shortName": "Trekor Metals Limited",
-      "price": 8.37,
-      "changePct": -6.0606055,
-      "change": -0.53999996,
-      "volume": 1948598,
-      "marketCap": 3063615232
-    },
-    {
-      "symbol": "FRMI",
-      "shortName": "Fermi Inc.",
-      "price": 3.96,
-      "changePct": -5.9382424,
-      "change": -0.25,
-      "volume": 8870197,
-      "marketCap": 2536250624
-    },
-    {
-      "symbol": "SPHR",
-      "shortName": "Sphere Entertainment Co.",
-      "price": 127.135,
-      "changePct": -5.4336505,
-      "change": -7.3050003,
-      "volume": 159400,
-      "marketCap": 4565876736
-    },
-    {
-      "symbol": "CARG",
-      "shortName": "CarGurus, Inc.",
-      "price": 29.47,
-      "changePct": -5.423622,
-      "change": -1.6900005,
-      "volume": 466494,
-      "marketCap": 2624995328
-    },
-    {
-      "symbol": "MP",
-      "shortName": "MP Materials Corp.",
-      "price": 44.79,
-      "changePct": -5.28653,
-      "change": -2.5,
-      "volume": 2419240,
-      "marketCap": 7977169920
-    },
-    {
-      "symbol": "ACCV",
-      "shortName": "Accelevation Holdings Corp. Class A Ordinary Shares",
-      "price": 17.005,
-      "changePct": -5.2646327,
-      "change": -0.9450016,
-      "volume": 1773690,
-      "marketCap": 3802915840
-    },
-    {
-      "symbol": "WLK",
-      "shortName": "Westlake Corporation",
-      "price": 59.165,
-      "changePct": -5.0473447,
-      "change": -3.1450005,
-      "volume": 377564,
-      "marketCap": 7561082880
-    },
-    {
-      "symbol": "PONY",
-      "shortName": "Pony AI Inc.",
-      "price": 6.21,
-      "changePct": -5.0458703,
-      "change": -0.32999992,
-      "volume": 2167264,
-      "marketCap": 2702493696
-    },
-    {
-      "symbol": "TEO",
-      "shortName": "Telecom Argentina SA",
-      "price": 11.66,
-      "changePct": -4.97148,
-      "change": -0.6100006,
-      "volume": 70588,
-      "marketCap": 5022400512
-    },
-    {
-      "symbol": "BBAR",
-      "shortName": "Banco BBVA Argentina S.A.",
-      "price": 12.2201,
-      "changePct": -4.901945,
-      "change": -0.6299,
-      "volume": 117262,
-      "marketCap": 2495792896
-    },
-    {
-      "symbol": "ABVX",
-      "shortName": "Abivax SA",
-      "price": 94.2,
-      "changePct": -4.8677034,
-      "change": -4.8199997,
-      "volume": 386238,
-      "marketCap": 8220977664
-    },
-    {
-      "symbol": "RIOT",
-      "shortName": "Riot Platforms, Inc.",
-      "price": 19.17,
-      "changePct": -4.8635216,
-      "change": -0.97999954,
-      "volume": 5835701,
-      "marketCap": 7193714176
-    },
-    {
-      "symbol": "MFG",
-      "shortName": "Mizuho Financial Group, Inc. Sp",
-      "price": 10.515,
-      "changePct": -4.8416276,
-      "change": -0.53499985,
-      "volume": 1264307,
-      "marketCap": 127263457280
-    },
-    {
-      "symbol": "CVNA",
-      "shortName": "Carvana Co.",
-      "price": 59.52,
-      "changePct": -4.8289104,
-      "change": -3.0200005,
-      "volume": 2376249,
-      "marketCap": 65975762944
-    },
-    {
-      "symbol": "CIFR",
-      "shortName": "Cipher Digital Inc.",
-      "price": 15.075,
-      "changePct": -4.7393365,
-      "change": -0.75,
-      "volume": 13504467,
-      "marketCap": 6256587776
-    },
-    {
-      "symbol": "CELC",
-      "shortName": "Celcuity Inc.",
-      "price": 75.77,
-      "changePct": -4.715795,
-      "change": -3.75,
-      "volume": 238914,
-      "marketCap": 3707570432
-    },
-    {
-      "symbol": "LYG",
-      "shortName": "Lloyds Banking Group Plc",
-      "price": 5.365,
-      "changePct": -4.706933,
-      "change": -0.26500034,
-      "volume": 7078323,
-      "marketCap": 77133119488
-    }
-  ],
-  "actives": [
-    {
-      "symbol": "INTC",
-      "shortName": "Intel Corporation",
-      "price": 119.36,
-      "changePct": -0.72355574,
-      "change": -0.87000275,
-      "volume": 34966651,
-      "marketCap": 630949478400
-    },
-    {
-      "symbol": "NU",
-      "shortName": "Nu Holdings Ltd.",
-      "price": 12.87,
-      "changePct": 1.658768,
-      "change": 0.21000004,
-      "volume": 33311841,
-      "marketCap": 62170963968
-    },
-    {
-      "symbol": "NVDA",
-      "shortName": "NVIDIA Corporation",
-      "price": 228.705,
-      "changePct": 0.14230534,
-      "change": 0.32499695,
-      "volume": 31664391,
-      "marketCap": 5522539413504
-    },
-    {
-      "symbol": "CTVA",
-      "shortName": "Corteva, Inc.",
-      "price": 12.495,
-      "changePct": -83.90856,
-      "change": -65.155,
-      "volume": 31144581,
-      "marketCap": 8336614400
-    },
-    {
-      "symbol": "NOK",
-      "shortName": "Nokia Corporation Sponsored",
-      "price": 10.23,
-      "changePct": 0.8880038,
-      "change": 0.0899992,
-      "volume": 23839542,
-      "marketCap": 57274134528
-    },
-    {
-      "symbol": "INFY",
-      "shortName": "Infosys Limited",
-      "price": 11.45,
-      "changePct": 6.412635,
-      "change": 0.6899996,
-      "volume": 22145228,
-      "marketCap": 46376435712
-    },
-    {
-      "symbol": "GRAB",
-      "shortName": "Grab Holdings Limited",
-      "price": 3.09,
-      "changePct": -0.64308625,
-      "change": -0.01999998,
-      "volume": 21704449,
-      "marketCap": 12642122752
-    },
-    {
-      "symbol": "SPCX",
-      "shortName": "Space Exploration Technologies ",
-      "price": 153.235,
-      "changePct": 1.5743073,
-      "change": 2.375,
-      "volume": 21685155,
-      "marketCap": 2018746564608
-    },
-    {
-      "symbol": "RIG",
-      "shortName": "Transocean Ltd (Switzerland)",
-      "price": 5.2199,
-      "changePct": -0.38358092,
-      "change": -0.02009964,
-      "volume": 18804382,
-      "marketCap": 5830002688
-    },
-    {
-      "symbol": "AGNC",
-      "shortName": "AGNC Investment Corp.",
-      "price": 8.9224,
-      "changePct": -1.6273344,
-      "change": -0.14759922,
-      "volume": 17835303,
-      "marketCap": 10577340416
-    },
-    {
-      "symbol": "MU",
-      "shortName": "Micron Technology, Inc.",
-      "price": 1041.5701,
-      "changePct": -2.2100925,
-      "change": -23.539917,
-      "volume": 17757394,
-      "marketCap": 1176342102016
-    },
-    {
-      "symbol": "BAC",
-      "shortName": "Bank of America Corporation",
-      "price": 52.905,
-      "changePct": -2.8017666,
-      "change": -1.5250015,
-      "volume": 16038765,
-      "marketCap": 369951342592
-    },
-    {
-      "symbol": "WBD",
-      "shortName": "Warner Bros. Discovery, Inc. - ",
-      "price": 30.9431,
-      "changePct": -0.022295197,
-      "change": -0.0069007874,
-      "volume": 15544499,
-      "marketCap": 77578584064
-    },
-    {
-      "symbol": "ACN",
-      "shortName": "Accenture plc",
-      "price": 216.825,
-      "changePct": 18.244535,
-      "change": 33.455,
-      "volume": 15349621,
-      "marketCap": 132684341248
-    },
-    {
-      "symbol": "IREN",
-      "shortName": "IREN LIMITED",
-      "price": 39.94,
-      "changePct": -2.299419,
-      "change": -0.94000244,
-      "volume": 14123924,
-      "marketCap": 15738701824
-    },
-    {
-      "symbol": "NKE",
-      "shortName": "Nike, Inc.",
-      "price": 35.7099,
-      "changePct": 0.87541664,
-      "change": 0.30989838,
-      "volume": 13655334,
-      "marketCap": 52882329600
-    },
-    {
-      "symbol": "CIFR",
-      "shortName": "Cipher Digital Inc.",
-      "price": 15.075,
-      "changePct": -4.7393365,
-      "change": -0.75,
-      "volume": 13504467,
-      "marketCap": 6256587776
+      "price": 12.5674,
+      "changePct": -83.8153,
+      "change": -65.0826,
+      "volume": 87803565,
+      "marketCap": 8384919552
     },
     {
       "symbol": "PSKY",
       "shortName": "Paramount Skydance Corporation",
-      "price": 9.845,
-      "changePct": -4.69506,
-      "change": -0.48499966,
-      "volume": 13182850,
-      "marketCap": 11018259456
+      "price": 9.34,
+      "changePct": -9.5837345,
+      "change": -0.9899998,
+      "volume": 44119917,
+      "marketCap": 10478972928
     },
     {
-      "symbol": "SOFI",
-      "shortName": "SoFi Technologies, Inc.",
-      "price": 15.5999,
-      "changePct": -0.76399505,
-      "change": -0.12010002,
-      "volume": 13026610,
-      "marketCap": 20148367360
+      "symbol": "GRND",
+      "shortName": "Grindr Inc.",
+      "price": 14.17,
+      "changePct": -8.16591,
+      "change": -1.26,
+      "volume": 4678634,
+      "marketCap": 2463038208
     },
     {
-      "symbol": "PLUG",
-      "shortName": "Plug Power, Inc.",
-      "price": 1.875,
-      "changePct": -3.3505182,
-      "change": -0.06500006,
-      "volume": 12855961,
-      "marketCap": 2619741184
+      "symbol": "AMC",
+      "shortName": "AMC Entertainment Holdings, Inc",
+      "price": 2.76,
+      "changePct": -8.0,
+      "change": -0.24,
+      "volume": 33686991,
+      "marketCap": 2463588608
     },
     {
-      "symbol": "HLN",
-      "shortName": "Haleon plc",
-      "price": 8.685,
-      "changePct": -3.4999952,
-      "change": -0.31499958,
-      "volume": 12285375,
-      "marketCap": 38193307648
+      "symbol": "SLS",
+      "shortName": "SELLAS Life Sciences Group, Inc",
+      "price": 11.33,
+      "changePct": -7.961011,
+      "change": -0.9800005,
+      "volume": 6166655,
+      "marketCap": 2288044800
+    },
+    {
+      "symbol": "RGEN",
+      "shortName": "Repligen Corporation",
+      "price": 177.23,
+      "changePct": -7.8031526,
+      "change": -15.0,
+      "volume": 1945674,
+      "marketCap": 10002084864
+    },
+    {
+      "symbol": "VRDN",
+      "shortName": "Viridian Therapeutics, Inc.",
+      "price": 18.99,
+      "changePct": -7.770764,
+      "change": -1.6000004,
+      "volume": 2964474,
+      "marketCap": 2151420160
+    },
+    {
+      "symbol": "LQDA",
+      "shortName": "Liquidia Corporation",
+      "price": 27.99,
+      "changePct": -7.5016537,
+      "change": -2.2700005,
+      "volume": 21524767,
+      "marketCap": 2505353728
+    },
+    {
+      "symbol": "CAI",
+      "shortName": "Caris Life Sciences, Inc.",
+      "price": 28.35,
+      "changePct": -7.4436793,
+      "change": -2.2799988,
+      "volume": 4401727,
+      "marketCap": 8013998080
+    },
+    {
+      "symbol": "GPCR",
+      "shortName": "Structure Therapeutics Inc.",
+      "price": 28.98,
+      "changePct": -7.3233156,
+      "change": -2.290001,
+      "volume": 1976087,
+      "marketCap": 2066559616
+    },
+    {
+      "symbol": "TGB",
+      "shortName": "Trekor Metals Limited",
+      "price": 8.31,
+      "changePct": -6.734,
+      "change": -0.599999,
+      "volume": 6502300,
+      "marketCap": 3041654016
+    },
+    {
+      "symbol": "PPC",
+      "shortName": "Pilgrim's Pride Corporation",
+      "price": 25.2,
+      "changePct": -6.70122,
+      "change": -1.8099995,
+      "volume": 2209515,
+      "marketCap": 6000334848
+    },
+    {
+      "symbol": "TEM",
+      "shortName": "Tempus AI, Inc.",
+      "price": 76.5,
+      "changePct": -6.5934086,
+      "change": -5.4000015,
+      "volume": 7071602,
+      "marketCap": 13803258880
+    },
+    {
+      "symbol": "VKTX",
+      "shortName": "Viking Therapeutics, Inc.",
+      "price": 30.51,
+      "changePct": -6.4110374,
+      "change": -2.0899982,
+      "volume": 6718001,
+      "marketCap": 3834760704
+    },
+    {
+      "symbol": "ALNY",
+      "shortName": "Alnylam Pharmaceuticals, Inc.",
+      "price": 231.18,
+      "changePct": -6.3062387,
+      "change": -15.560013,
+      "volume": 2010017,
+      "marketCap": 30933991424
+    },
+    {
+      "symbol": "ENLT",
+      "shortName": "Enlight Renewable Energy Ltd.",
+      "price": 65.3,
+      "changePct": -5.9213376,
+      "change": -4.1100006,
+      "volume": 165396,
+      "marketCap": 9135750144
+    },
+    {
+      "symbol": "BIO",
+      "shortName": "Bio-Rad Laboratories, Inc.",
+      "price": 355.57,
+      "changePct": -5.86164,
+      "change": -22.14,
+      "volume": 264577,
+      "marketCap": 9507293184
+    },
+    {
+      "symbol": "SECZ",
+      "shortName": "Securitize Corp.",
+      "price": 13.74,
+      "changePct": -5.82591,
+      "change": -0.85,
+      "volume": 3134508,
+      "marketCap": 2243270400
+    },
+    {
+      "symbol": "TMDX",
+      "shortName": "TransMedics Group, Inc.",
+      "price": 78.64,
+      "changePct": -5.763928,
+      "change": -4.8099976,
+      "volume": 865031,
+      "marketCap": 2726853376
+    },
+    {
+      "symbol": "PBLS",
+      "shortName": "Parabilis Medicines, Inc.",
+      "price": 30.44,
+      "changePct": -5.7293286,
+      "change": -1.8500004,
+      "volume": 804961,
+      "marketCap": 3760352000
+    },
+    {
+      "symbol": "MLYS",
+      "shortName": "Mineralys Therapeutics, Inc.",
+      "price": 23.72,
+      "changePct": -5.610823,
+      "change": -1.4099998,
+      "volume": 1654162,
+      "marketCap": 2097011328
+    },
+    {
+      "symbol": "CELC",
+      "shortName": "Celcuity Inc.",
+      "price": 75.13,
+      "changePct": -5.520623,
+      "change": -4.3899994,
+      "volume": 990564,
+      "marketCap": 3676254208
+    },
+    {
+      "symbol": "AERO",
+      "shortName": "Grupo Aeromexico, S.A.B. de C.V",
+      "price": 14.92,
+      "changePct": -5.50982,
+      "change": -0.87,
+      "volume": 558768,
+      "marketCap": 2176878848
+    },
+    {
+      "symbol": "GRAL",
+      "shortName": "GRAIL, Inc.",
+      "price": 132.56,
+      "changePct": -5.395374,
+      "change": -7.5599976,
+      "volume": 1085620,
+      "marketCap": 5920955392
+    },
+    {
+      "symbol": "ADPT",
+      "shortName": "Adaptive Biotechnologies Corpor",
+      "price": 27.37,
+      "changePct": -5.2941136,
+      "change": -1.5299988,
+      "volume": 5844474,
+      "marketCap": 4368138240
+    }
+  ],
+  "actives": [
+    {
+      "symbol": "NU",
+      "shortName": "Nu Holdings Ltd.",
+      "price": 13.29,
+      "changePct": 4.9763,
+      "change": 0.63,
+      "volume": 128242269,
+      "marketCap": 64199852032
+    },
+    {
+      "symbol": "INTC",
+      "shortName": "Intel Corporation",
+      "price": 120.0,
+      "changePct": -0.19130279,
+      "change": -0.23000336,
+      "volume": 100882663,
+      "marketCap": 634332643328
+    },
+    {
+      "symbol": "NVDA",
+      "shortName": "NVIDIA Corporation",
+      "price": 230.86,
+      "changePct": 1.0859076,
+      "change": 2.4799957,
+      "volume": 97235961,
+      "marketCap": 5574576046080
+    },
+    {
+      "symbol": "CTVA",
+      "shortName": "Corteva, Inc.",
+      "price": 12.5674,
+      "changePct": -83.8153,
+      "change": -65.0826,
+      "volume": 87803565,
+      "marketCap": 8384919552
+    },
+    {
+      "symbol": "NKE",
+      "shortName": "Nike, Inc.",
+      "price": 35.15,
+      "changePct": -0.706215,
+      "change": -0.25,
+      "volume": 74679321,
+      "marketCap": 52144984064
+    },
+    {
+      "symbol": "SPCX",
+      "shortName": "Space Exploration Technologies ",
+      "price": 148.07,
+      "changePct": -1.8493923,
+      "change": -2.7899933,
+      "volume": 67225633,
+      "marketCap": 1951826313216
+    },
+    {
+      "symbol": "NOK",
+      "shortName": "Nokia Corporation Sponsored",
+      "price": 10.37,
+      "changePct": 2.26824,
+      "change": 0.23,
+      "volume": 60731476,
+      "marketCap": 58057945088
+    },
+    {
+      "symbol": "BAC",
+      "shortName": "Bank of America Corporation",
+      "price": 53.73,
+      "changePct": -1.28606,
+      "change": -0.700001,
+      "volume": 59822831,
+      "marketCap": 375720378368
+    },
+    {
+      "symbol": "GRAB",
+      "shortName": "Grab Holdings Limited",
+      "price": 3.12,
+      "changePct": 0.32154313,
+      "change": 0.00999999,
+      "volume": 59094183,
+      "marketCap": 12764861440
+    },
+    {
+      "symbol": "AAL",
+      "shortName": "American Airlines Group, Inc.",
+      "price": 13.13,
+      "changePct": -1.7950618,
+      "change": -0.23999977,
+      "volume": 54649691,
+      "marketCap": 8691664896
+    },
+    {
+      "symbol": "STLA",
+      "shortName": "Stellantis N.V.",
+      "price": 4.69,
+      "changePct": 7.56881,
+      "change": 0.33,
+      "volume": 54036439,
+      "marketCap": 17668749312
+    },
+    {
+      "symbol": "RKT",
+      "shortName": "Rocket Companies, Inc.",
+      "price": 11.97,
+      "changePct": 3.99653,
+      "change": 0.46,
+      "volume": 51469767,
+      "marketCap": 33894760448
     },
     {
       "symbol": "ITUB",
       "shortName": "Itau Unibanco Banco Holding SA",
-      "price": 8.3501,
-      "changePct": -2.109029,
-      "change": -0.17990017,
-      "volume": 12219417,
-      "marketCap": 92033728512
+      "price": 8.45,
+      "changePct": -0.937865,
+      "change": -0.0799999,
+      "volume": 50918994,
+      "marketCap": 93134815232
+    },
+    {
+      "symbol": "AGNC",
+      "shortName": "AGNC Investment Corp.",
+      "price": 8.95,
+      "changePct": -1.3230418,
+      "change": -0.119999886,
+      "volume": 50471003,
+      "marketCap": 10610059264
+    },
+    {
+      "symbol": "RIG",
+      "shortName": "Transocean Ltd (Switzerland)",
+      "price": 5.24,
+      "changePct": 0.0,
+      "change": 0.0,
+      "volume": 47674870,
+      "marketCap": 5852451840
+    },
+    {
+      "symbol": "SNAP",
+      "shortName": "Snap Inc.",
+      "price": 5.65,
+      "changePct": 4.6296296,
+      "change": 0.25,
+      "volume": 46075348,
+      "marketCap": 9555267584
+    },
+    {
+      "symbol": "PLUG",
+      "shortName": "Plug Power, Inc.",
+      "price": 1.89,
+      "changePct": -2.5773232,
+      "change": -0.05000007,
+      "volume": 44990085,
+      "marketCap": 2640699136
+    },
+    {
+      "symbol": "F",
+      "shortName": "Ford Motor Company",
+      "price": 12.28,
+      "changePct": 1.82421,
+      "change": 0.219999,
+      "volume": 44706648,
+      "marketCap": 48967675904
+    },
+    {
+      "symbol": "MU",
+      "shortName": "Micron Technology, Inc.",
+      "price": 1097.39,
+      "changePct": 3.0306756,
+      "change": 32.28003,
+      "volume": 44604211,
+      "marketCap": 1239384719360
+    },
+    {
+      "symbol": "PSKY",
+      "shortName": "Paramount Skydance Corporation",
+      "price": 9.34,
+      "changePct": -9.5837345,
+      "change": -0.9899998,
+      "volume": 44119917,
+      "marketCap": 10478972928
+    },
+    {
+      "symbol": "WBD",
+      "shortName": "Warner Bros. Discovery, Inc. - ",
+      "price": 30.95,
+      "changePct": 0.0,
+      "change": 0.0,
+      "volume": 43930644,
+      "marketCap": 77595885568
+    },
+    {
+      "symbol": "PATH",
+      "shortName": "UiPath, Inc.",
+      "price": 13.32,
+      "changePct": 3.73831,
+      "change": 0.48,
+      "volume": 42451379,
+      "marketCap": 6941790208
     },
     {
       "symbol": "BBD",
       "shortName": "Banco Bradesco Sa",
-      "price": 3.455,
-      "changePct": -1.8465925,
-      "change": -0.06500006,
-      "volume": 12169061,
-      "marketCap": 36585607168
+      "price": 3.51,
+      "changePct": -0.284091,
+      "change": -0.00999999,
+      "volume": 41732913,
+      "marketCap": 37168009216
+    },
+    {
+      "symbol": "ONDS",
+      "shortName": "Ondas Inc",
+      "price": 7.12,
+      "changePct": -2.8649392,
+      "change": -0.21000004,
+      "volume": 40610934,
+      "marketCap": 4145995264
     },
     {
       "symbol": "NFLX",
       "shortName": "Netflix, Inc.",
-      "price": 68.18,
-      "changePct": -2.0120745,
-      "change": -1.4000015,
-      "volume": 12050913,
-      "marketCap": 283897397248
-    },
-    {
-      "symbol": "TSLA",
-      "shortName": "Tesla, Inc.",
-      "price": 359.43,
-      "changePct": 1.3022122,
-      "change": 4.619995,
-      "volume": 12045142,
-      "marketCap": 1419585781760
+      "price": 67.85,
+      "changePct": -2.4863513,
+      "change": -1.7300034,
+      "volume": 40329315,
+      "marketCap": 282523303936
     }
   ],
   "preGainers": [],
   "preLosers": [],
   "preActives": [],
-  "postGainers": [],
-  "postLosers": [],
-  "postActives": []
+  "postGainers": [
+    {
+      "symbol": "KD",
+      "shortName": "Kyndryl Holdings, Inc.",
+      "price": 12.48,
+      "changePct": 2.8854034,
+      "change": 0.34999943,
+      "volume": 10544363,
+      "marketCap": 2639957248
+    },
+    {
+      "symbol": "INFY",
+      "shortName": "Infosys Limited",
+      "price": 11.64,
+      "changePct": 2.5550656,
+      "change": 0.28999996,
+      "volume": 38317300,
+      "marketCap": 45971402752
+    },
+    {
+      "symbol": "SRRK",
+      "shortName": "Scholar Rock Holding Corporatio",
+      "price": 46.76,
+      "changePct": 1.2998234,
+      "change": 0.5999985,
+      "volume": 1061371,
+      "marketCap": 5621608448
+    },
+    {
+      "symbol": "BFLY",
+      "shortName": "Butterfly Network, Inc.",
+      "price": 8.62,
+      "changePct": 1.0551015,
+      "change": 0.09000015,
+      "volume": 5526360,
+      "marketCap": 2271412480
+    },
+    {
+      "symbol": "VICR",
+      "shortName": "Vicor Corporation",
+      "price": 311.5,
+      "changePct": 0.943,
+      "change": 2.9100037,
+      "volume": 1459893,
+      "marketCap": 14228076544
+    },
+    {
+      "symbol": "ABCL",
+      "shortName": "AbCellera Biologics Inc.",
+      "price": 14.04,
+      "changePct": 0.93458027,
+      "change": 0.13000011,
+      "volume": 7758788,
+      "marketCap": 4507498496
+    },
+    {
+      "symbol": "CTVA",
+      "shortName": "Corteva, Inc.",
+      "price": 12.67,
+      "changePct": 0.81639874,
+      "change": 0.1026001,
+      "volume": 87803565,
+      "marketCap": 8384919552
+    },
+    {
+      "symbol": "CDE",
+      "shortName": "Coeur Mining, Inc.",
+      "price": 17.7,
+      "changePct": 0.76857513,
+      "change": 0.13500023,
+      "volume": 29944179,
+      "marketCap": 18050537472
+    },
+    {
+      "symbol": "CBRS",
+      "shortName": "Cerebras Systems Inc.",
+      "price": 170.82,
+      "changePct": 0.76687294,
+      "change": 1.300003,
+      "volume": 11936668,
+      "marketCap": 40271859712
+    },
+    {
+      "symbol": "PSKY",
+      "shortName": "Paramount Skydance Corporation",
+      "price": 9.4085,
+      "changePct": 0.73340005,
+      "change": 0.068499565,
+      "volume": 44119917,
+      "marketCap": 10478972928
+    },
+    {
+      "symbol": "ARM",
+      "shortName": "Arm Holdings plc",
+      "price": 294.4,
+      "changePct": 0.70465815,
+      "change": 2.0599976,
+      "volume": 3250121,
+      "marketCap": 312218714112
+    },
+    {
+      "symbol": "TGB",
+      "shortName": "Trekor Metals Limited",
+      "price": 8.4087,
+      "changePct": 0.66682994,
+      "change": 0.055700302,
+      "volume": 6502300,
+      "marketCap": 3041654016
+    },
+    {
+      "symbol": "PCG",
+      "shortName": "Pacific Gas & Electric Co.",
+      "price": 12.25,
+      "changePct": 0.6573535,
+      "change": 0.07999992,
+      "volume": 31471762,
+      "marketCap": 36538806272
+    },
+    {
+      "symbol": "IREN",
+      "shortName": "IREN LIMITED",
+      "price": 40.9006,
+      "changePct": 0.61647946,
+      "change": 0.2505989,
+      "volume": 36074423,
+      "marketCap": 16018485248
+    },
+    {
+      "symbol": "SNPS",
+      "shortName": "Synopsys, Inc.",
+      "price": 493.4575,
+      "changePct": 0.59474874,
+      "change": 2.9174805,
+      "volume": 6313161,
+      "marketCap": 94005436416
+    },
+    {
+      "symbol": "TMDX",
+      "shortName": "TransMedics Group, Inc.",
+      "price": 79.1,
+      "changePct": 0.5849429,
+      "change": 0.45999908,
+      "volume": 865031,
+      "marketCap": 2726853376
+    },
+    {
+      "symbol": "NVS",
+      "shortName": "Novartis AG",
+      "price": 141.81,
+      "changePct": 0.53168863,
+      "change": 0.75,
+      "volume": 1959274,
+      "marketCap": 268095832064
+    },
+    {
+      "symbol": "DDOG",
+      "shortName": "Datadog, Inc.",
+      "price": 277.9,
+      "changePct": 0.52087194,
+      "change": 1.4400024,
+      "volume": 2929508,
+      "marketCap": 99269869568
+    },
+    {
+      "symbol": "GILD",
+      "shortName": "Gilead Sciences, Inc.",
+      "price": 148.26,
+      "changePct": 0.5152505,
+      "change": 0.7599945,
+      "volume": 4326189,
+      "marketCap": 182893395968
+    },
+    {
+      "symbol": "CMCSA",
+      "shortName": "Comcast Corporation",
+      "price": 21.8,
+      "changePct": 0.46082243,
+      "change": 0.099998474,
+      "volume": 20030389,
+      "marketCap": 77005414400
+    },
+    {
+      "symbol": "TEM",
+      "shortName": "Tempus AI, Inc.",
+      "price": 76.826,
+      "changePct": 0.4261391,
+      "change": 0.3259964,
+      "volume": 7071602,
+      "marketCap": 13803258880
+    },
+    {
+      "symbol": "AMGN",
+      "shortName": "Amgen Inc.",
+      "price": 409.0,
+      "changePct": 0.42478234,
+      "change": 1.730011,
+      "volume": 2490382,
+      "marketCap": 220183183360
+    },
+    {
+      "symbol": "ONDS",
+      "shortName": "Ondas Inc",
+      "price": 7.15,
+      "changePct": 0.42135125,
+      "change": 0.03000021,
+      "volume": 40610934,
+      "marketCap": 4145995264
+    },
+    {
+      "symbol": "GRAL",
+      "shortName": "GRAIL, Inc.",
+      "price": 133.1015,
+      "changePct": 0.4084972,
+      "change": 0.5415039,
+      "volume": 1085620,
+      "marketCap": 5920955392
+    },
+    {
+      "symbol": "VRTX",
+      "shortName": "Vertex Pharmaceuticals Incorpor",
+      "price": 508.75,
+      "changePct": 0.39665505,
+      "change": 2.0100098,
+      "volume": 1148372,
+      "marketCap": 128438788096
+    }
+  ],
+  "postLosers": [
+    {
+      "symbol": "NKE",
+      "shortName": "Nike, Inc.",
+      "price": 33.05,
+      "changePct": -5.9744015,
+      "change": -2.1000023,
+      "volume": 74679321,
+      "marketCap": 52144984064
+    },
+    {
+      "symbol": "FICO",
+      "shortName": "Fair Isaac Corporation",
+      "price": 624.8,
+      "changePct": -5.5836816,
+      "change": -36.950012,
+      "volume": 2914430,
+      "marketCap": 14292235264
+    },
+    {
+      "symbol": "SHEL",
+      "shortName": "Shell PLC",
+      "price": 93.8,
+      "changePct": -1.8931048,
+      "change": -1.8099976,
+      "volume": 9469180,
+      "marketCap": 272574693376
+    },
+    {
+      "symbol": "NN",
+      "shortName": "NextNav Inc.",
+      "price": 13.5,
+      "changePct": -1.8895365,
+      "change": -0.26000023,
+      "volume": 2388930,
+      "marketCap": 2322824192
+    },
+    {
+      "symbol": "SLDE",
+      "shortName": "Slide Insurance Holdings, Inc.",
+      "price": 23.22,
+      "changePct": -1.7350819,
+      "change": -0.40999985,
+      "volume": 2319401,
+      "marketCap": 2760260864
+    },
+    {
+      "symbol": "GTLB",
+      "shortName": "GitLab Inc.",
+      "price": 49.2709,
+      "changePct": -1.3595597,
+      "change": -0.67910004,
+      "volume": 4578338,
+      "marketCap": 8322419712
+    },
+    {
+      "symbol": "WIT",
+      "shortName": "Wipro Limited",
+      "price": 1.75,
+      "changePct": -1.1299424,
+      "change": -0.01999998,
+      "volume": 32397470,
+      "marketCap": 17412278272
+    },
+    {
+      "symbol": "ABNB",
+      "shortName": "Airbnb, Inc.",
+      "price": 158.965,
+      "changePct": -0.93787307,
+      "change": -1.5050049,
+      "volume": 4800033,
+      "marketCap": 96087138304
+    },
+    {
+      "symbol": "APPN",
+      "shortName": "Appian Corporation",
+      "price": 37.43,
+      "changePct": -0.9001857,
+      "change": -0.34000015,
+      "volume": 880884,
+      "marketCap": 2705374464
+    },
+    {
+      "symbol": "OPEN",
+      "shortName": "Opendoor Technologies Inc",
+      "price": 2.3801,
+      "changePct": -0.8291701,
+      "change": -0.019900084,
+      "volume": 39415594,
+      "marketCap": 2330618624
+    },
+    {
+      "symbol": "LQDA",
+      "shortName": "Liquidia Corporation",
+      "price": 27.77,
+      "changePct": -0.78599256,
+      "change": -0.21999931,
+      "volume": 21524767,
+      "marketCap": 2505353728
+    },
+    {
+      "symbol": "FN",
+      "shortName": "Fabrinet",
+      "price": 448.0,
+      "changePct": -0.77302074,
+      "change": -3.4901123,
+      "volume": 958776,
+      "marketCap": 16177291264
+    },
+    {
+      "symbol": "SO",
+      "shortName": "Southern Company (The)",
+      "price": 82.853,
+      "changePct": -0.7510859,
+      "change": -0.62700653,
+      "volume": 6564029,
+      "marketCap": 96020799488
+    },
+    {
+      "symbol": "SECZ",
+      "shortName": "Securitize Corp.",
+      "price": 13.58,
+      "changePct": -0.60020334,
+      "change": -0.08199978,
+      "volume": 3134508,
+      "marketCap": 2243270400
+    },
+    {
+      "symbol": "CDNS",
+      "shortName": "Cadence Design Systems, Inc.",
+      "price": 349.08,
+      "changePct": -0.4704543,
+      "change": -1.6500244,
+      "volume": 3278384,
+      "marketCap": 96588587008
+    },
+    {
+      "symbol": "AAOI",
+      "shortName": "Applied Optoelectronics, Inc.",
+      "price": 106.8209,
+      "changePct": -0.46505752,
+      "change": -0.49909973,
+      "volume": 11219235,
+      "marketCap": 9112142848
+    },
+    {
+      "symbol": "NEE",
+      "shortName": "NextEra Energy, Inc.",
+      "price": 76.0,
+      "changePct": -0.4518976,
+      "change": -0.34500122,
+      "volume": 17007873,
+      "marketCap": 159264440320
+    },
+    {
+      "symbol": "LULU",
+      "shortName": "lululemon athletica inc.",
+      "price": 95.4491,
+      "changePct": -0.42865005,
+      "change": -0.41090393,
+      "volume": 5313461,
+      "marketCap": 10612663296
+    },
+    {
+      "symbol": "STLA",
+      "shortName": "Stellantis N.V.",
+      "price": 4.67,
+      "changePct": -0.4264388,
+      "change": -0.01999998,
+      "volume": 54036439,
+      "marketCap": 17668749312
+    },
+    {
+      "symbol": "CRDO",
+      "shortName": "Credo Technology Group Holding ",
+      "price": 209.35,
+      "changePct": -0.39015657,
+      "change": -0.81999207,
+      "volume": 9346600,
+      "marketCap": 39501852672
+    },
+    {
+      "symbol": "GSK",
+      "shortName": "GSK plc",
+      "price": 47.0,
+      "changePct": -0.38151824,
+      "change": -0.1800003,
+      "volume": 7896067,
+      "marketCap": 94492368896
+    },
+    {
+      "symbol": "MU",
+      "shortName": "Micron Technology, Inc.",
+      "price": 1093.3,
+      "changePct": -0.37269938,
+      "change": -4.089966,
+      "volume": 44604211,
+      "marketCap": 1239384719360
+    },
+    {
+      "symbol": "FRVO",
+      "shortName": "Fervo Energy Company",
+      "price": 14.41,
+      "changePct": -0.3457828,
+      "change": -0.05000019,
+      "volume": 8707980,
+      "marketCap": 4262275840
+    },
+    {
+      "symbol": "GM",
+      "shortName": "General Motors Company",
+      "price": 79.08,
+      "changePct": -0.3151393,
+      "change": -0.25,
+      "volume": 8189241,
+      "marketCap": 71732043776
+    },
+    {
+      "symbol": "HUBS",
+      "shortName": "HubSpot, Inc.",
+      "price": 216.9,
+      "changePct": -0.2185192,
+      "change": -0.4750061,
+      "volume": 1340737,
+      "marketCap": 11127579648
+    }
+  ],
+  "postActives": [
+    {
+      "symbol": "NKE",
+      "shortName": "Nike, Inc.",
+      "price": 33.05,
+      "changePct": -5.9744015,
+      "change": -2.1000023,
+      "volume": 74679321,
+      "marketCap": 52144984064
+    },
+    {
+      "symbol": "FICO",
+      "shortName": "Fair Isaac Corporation",
+      "price": 624.8,
+      "changePct": -5.5836816,
+      "change": -36.950012,
+      "volume": 2914430,
+      "marketCap": 14292235264
+    },
+    {
+      "symbol": "KD",
+      "shortName": "Kyndryl Holdings, Inc.",
+      "price": 12.48,
+      "changePct": 2.8854034,
+      "change": 0.34999943,
+      "volume": 10544363,
+      "marketCap": 2639957248
+    },
+    {
+      "symbol": "INFY",
+      "shortName": "Infosys Limited",
+      "price": 11.64,
+      "changePct": 2.5550656,
+      "change": 0.28999996,
+      "volume": 38317300,
+      "marketCap": 45971402752
+    },
+    {
+      "symbol": "SHEL",
+      "shortName": "Shell PLC",
+      "price": 93.8,
+      "changePct": -1.8931048,
+      "change": -1.8099976,
+      "volume": 9469180,
+      "marketCap": 272574693376
+    },
+    {
+      "symbol": "NN",
+      "shortName": "NextNav Inc.",
+      "price": 13.5,
+      "changePct": -1.8895365,
+      "change": -0.26000023,
+      "volume": 2388930,
+      "marketCap": 2322824192
+    },
+    {
+      "symbol": "SLDE",
+      "shortName": "Slide Insurance Holdings, Inc.",
+      "price": 23.22,
+      "changePct": -1.7350819,
+      "change": -0.40999985,
+      "volume": 2319401,
+      "marketCap": 2760260864
+    },
+    {
+      "symbol": "GTLB",
+      "shortName": "GitLab Inc.",
+      "price": 49.2709,
+      "changePct": -1.3595597,
+      "change": -0.67910004,
+      "volume": 4578338,
+      "marketCap": 8322419712
+    },
+    {
+      "symbol": "SRRK",
+      "shortName": "Scholar Rock Holding Corporatio",
+      "price": 46.76,
+      "changePct": 1.2998234,
+      "change": 0.5999985,
+      "volume": 1061371,
+      "marketCap": 5621608448
+    },
+    {
+      "symbol": "WIT",
+      "shortName": "Wipro Limited",
+      "price": 1.75,
+      "changePct": -1.1299424,
+      "change": -0.01999998,
+      "volume": 32397470,
+      "marketCap": 17412278272
+    },
+    {
+      "symbol": "BFLY",
+      "shortName": "Butterfly Network, Inc.",
+      "price": 8.62,
+      "changePct": 1.0551015,
+      "change": 0.09000015,
+      "volume": 5526360,
+      "marketCap": 2271412480
+    },
+    {
+      "symbol": "VICR",
+      "shortName": "Vicor Corporation",
+      "price": 311.5,
+      "changePct": 0.943,
+      "change": 2.9100037,
+      "volume": 1459893,
+      "marketCap": 14228076544
+    },
+    {
+      "symbol": "ABNB",
+      "shortName": "Airbnb, Inc.",
+      "price": 158.965,
+      "changePct": -0.93787307,
+      "change": -1.5050049,
+      "volume": 4800033,
+      "marketCap": 96087138304
+    },
+    {
+      "symbol": "ABCL",
+      "shortName": "AbCellera Biologics Inc.",
+      "price": 14.04,
+      "changePct": 0.93458027,
+      "change": 0.13000011,
+      "volume": 7758788,
+      "marketCap": 4507498496
+    },
+    {
+      "symbol": "APPN",
+      "shortName": "Appian Corporation",
+      "price": 37.43,
+      "changePct": -0.9001857,
+      "change": -0.34000015,
+      "volume": 880884,
+      "marketCap": 2705374464
+    },
+    {
+      "symbol": "OPEN",
+      "shortName": "Opendoor Technologies Inc",
+      "price": 2.3801,
+      "changePct": -0.8291701,
+      "change": -0.019900084,
+      "volume": 39415594,
+      "marketCap": 2330618624
+    },
+    {
+      "symbol": "CTVA",
+      "shortName": "Corteva, Inc.",
+      "price": 12.67,
+      "changePct": 0.81639874,
+      "change": 0.1026001,
+      "volume": 87803565,
+      "marketCap": 8384919552
+    },
+    {
+      "symbol": "LQDA",
+      "shortName": "Liquidia Corporation",
+      "price": 27.77,
+      "changePct": -0.78599256,
+      "change": -0.21999931,
+      "volume": 21524767,
+      "marketCap": 2505353728
+    },
+    {
+      "symbol": "FN",
+      "shortName": "Fabrinet",
+      "price": 448.0,
+      "changePct": -0.77302074,
+      "change": -3.4901123,
+      "volume": 958776,
+      "marketCap": 16177291264
+    },
+    {
+      "symbol": "CDE",
+      "shortName": "Coeur Mining, Inc.",
+      "price": 17.7,
+      "changePct": 0.76857513,
+      "change": 0.13500023,
+      "volume": 29944179,
+      "marketCap": 18050537472
+    },
+    {
+      "symbol": "CBRS",
+      "shortName": "Cerebras Systems Inc.",
+      "price": 170.82,
+      "changePct": 0.76687294,
+      "change": 1.300003,
+      "volume": 11936668,
+      "marketCap": 40271859712
+    },
+    {
+      "symbol": "SO",
+      "shortName": "Southern Company (The)",
+      "price": 82.853,
+      "changePct": -0.7510859,
+      "change": -0.62700653,
+      "volume": 6564029,
+      "marketCap": 96020799488
+    },
+    {
+      "symbol": "PSKY",
+      "shortName": "Paramount Skydance Corporation",
+      "price": 9.4085,
+      "changePct": 0.73340005,
+      "change": 0.068499565,
+      "volume": 44119917,
+      "marketCap": 10478972928
+    },
+    {
+      "symbol": "ARM",
+      "shortName": "Arm Holdings plc",
+      "price": 294.4,
+      "changePct": 0.70465815,
+      "change": 2.0599976,
+      "volume": 3250121,
+      "marketCap": 312218714112
+    },
+    {
+      "symbol": "TGB",
+      "shortName": "Trekor Metals Limited",
+      "price": 8.4087,
+      "changePct": 0.66682994,
+      "change": 0.055700302,
+      "volume": 6502300,
+      "marketCap": 3041654016
+    }
+  ]
 }
