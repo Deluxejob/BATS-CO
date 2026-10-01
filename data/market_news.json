@@ -1,14 +1,21 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1790816723,
-  "latestPublishedAt": 1790815737,
+  "fetchedAt": 1790821102,
+  "latestPublishedAt": 1790820384,
   "items": [
+    {
+      "title": "Asian stocks dip, bonds in focus after torrid September",
+      "link": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-dip-bonds-focus-015645052.html",
+      "publisher": "Reuters",
+      "publishedAt": 1790820384,
+      "id": "d896d8dc-4774-30c4-9ea8-e6a8791e1a94"
+    },
     {
       "title": "Dow Jones Futures: Micron Earnings Crush Views, S&P 500 At Critical Level As Treasury Yields Rise",
       "link": "https://finance.yahoo.com/m/958fb542-74b3-3d16-bde8-baba1e31461e/dow-jones-futures%3A-micron.html",
       "publisher": "Investor's Business Daily",
-      "publishedAt": 1790815737,
+      "publishedAt": 1790819596,
       "id": "958fb542-74b3-3d16-bde8-baba1e31461e"
     },
     {
@@ -262,13 +269,6 @@
       "publisher": "Zacks",
       "publishedAt": 1790802006,
       "id": "ed0ab533-c53e-3e89-b7f9-85130846a392"
-    },
-    {
-      "title": "Paccar (PCAR) Registers a Bigger Fall Than the Market: Important Facts to Note",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/paccar-pcar-registers-bigger-fall-210005118.html",
-      "publisher": "Zacks",
-      "publishedAt": 1790802005,
-      "id": "02f4e68c-e4aa-3d56-a1fd-9baf43d3826e"
     }
   ]
 }
