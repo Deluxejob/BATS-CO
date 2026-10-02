@@ -3018,7 +3018,17 @@
       pill.querySelector('.fr-verb').textContent = verb;
       pill.querySelector('.fr-ticker').textContent = ticker;
       sub.textContent = subText;
-      asof.textContent = `As of month-end ${spy[now].date}`;
+      // Yahoo's monthly bars are dated the 1st of their month; the latest
+      // one is the month still in progress, so say so rather than
+      // calling today a month-end.
+      {
+        const d = spy[now].date;
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+        const monthName = new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        asof.textContent = d.slice(0, 7) === today.slice(0, 7)
+          ? `As of ${today} (${monthName} in progress)`
+          : `As of month-end, ${monthName}`;
+      }
 
       // Populate rankings table
       rankings.innerHTML = liveRanked.map((r, i) => `
@@ -3396,7 +3406,17 @@
       pill.querySelector('.fr-verb').textContent = verb;
       pill.querySelector('.fr-ticker').textContent = ticker;
       sub.textContent = subText;
-      asof.textContent = `As of month-end ${bench[now].date}`;
+      // Yahoo's monthly bars are dated the 1st of their month; the latest
+      // one is the month still in progress, so say so rather than
+      // calling today a month-end.
+      {
+        const d = bench[now].date;
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+        const monthName = new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        asof.textContent = d.slice(0, 7) === today.slice(0, 7)
+          ? `As of ${today} (${monthName} in progress)`
+          : `As of month-end, ${monthName}`;
+      }
 
       // Populate rankings — show every country ETF's momentum + trend status
       const holdingSet = new Set(currentPicks);
