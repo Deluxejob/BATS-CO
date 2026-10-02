@@ -1263,7 +1263,7 @@
             <strong>trading above their 10-month moving average</strong> (the monthly-bar equivalent
             of the classic 200-day trend filter). Rank the survivors by trailing 6-month return
             and hold the <strong>top 3 equal-weighted</strong>. Rebalance monthly. Historically
-            this has beaten the EFA developed-international benchmark by <strong>+4.22% CAGR</strong>
+            this has beaten the EFA developed-international benchmark by <strong><span data-ic-stat="alpha">+4.22%</span> CAGR</strong>
             over ~19.5 years, at a max drawdown roughly in line with EFA itself.
           </p>
 
@@ -1287,14 +1287,14 @@
           </div>
 
           <div class="sig-stats iq-stats">
-            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos">+9.9%</div></div>
-            <div class="sig-stat"><div class="lbl">EFA CAGR</div><div class="val">+5.7%</div></div>
+            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos" data-ic-stat="cagrRule">+9.9%</div></div>
+            <div class="sig-stat"><div class="lbl">EFA CAGR</div><div class="val" data-ic-stat="cagrBench">+5.7%</div></div>
             <div class="sig-stat"><div class="lbl">Rule cumulative</div><div class="val pos" id="icRuleCum">&mdash;</div></div>
             <div class="sig-stat"><div class="lbl">EFA cumulative</div><div class="val" id="icBenchCum">&mdash;</div></div>
-            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos">+4.22%</div></div>
-            <div class="sig-stat"><div class="lbl">Rule max DD</div><div class="val">-34%</div></div>
-            <div class="sig-stat"><div class="lbl">EFA max DD</div><div class="val neg">-30%</div></div>
-            <div class="sig-stat"><div class="lbl">Rebalances/yr</div><div class="val">~9.6</div></div>
+            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos" data-ic-stat="alpha">+4.22%</div></div>
+            <div class="sig-stat"><div class="lbl">Rule max DD</div><div class="val" data-ic-stat="ddRule">-34%</div></div>
+            <div class="sig-stat"><div class="lbl">EFA max DD</div><div class="val neg" data-ic-stat="ddBench">-30%</div></div>
+            <div class="sig-stat"><div class="lbl">Rebalances/yr</div><div class="val" data-ic-stat="rebal">~9.6</div></div>
           </div>
 
           <div class="iq-range-bar" role="tablist" aria-label="Chart time range" style="margin-top: 0.75rem;">
@@ -1332,14 +1332,21 @@
             <p>
               <strong>This is an international-exposure strategy, not a US-beater.</strong> The alpha
               is measured vs EFA (developed international). Over the last 20 years EFA has returned
-              ~5.7% CAGR while SPY has done ~9.4%. The rotation matches SPY roughly (~9.9%) but its
+              ~<span data-ic-stat="cagrBenchAbs">5.7%</span> CAGR while SPY has done ~9.4%. The rotation has done ~<span data-ic-stat="cagrRuleAbs">9.9%</span>, but its
               purpose is diversification: if you want US exposure, buy SPY. This card exists for the
               slice of a portfolio dedicated to international.
             </p>
             <p>
-              <strong>Country ETFs are volatile.</strong> Max drawdown -34% vs EFA's -30%. That's the
+              <strong>Country ETFs are volatile.</strong> Max drawdown <span data-ic-stat="ddRule">-34%</span> vs EFA's <span data-ic-stat="ddBench">-30%</span>. That's the
               cost of concentrating in just 3 countries at a time. If EM or a single country cracks
               hard (2008, 2015 China, 2020, 2022) you'll feel it more than a diversified basket.
+            </p>
+            <p>
+              <strong>Prices only, no dividends.</strong> Every figure on this card &mdash; the
+              rule, EFA and the chart &mdash; is built from closing prices and leaves dividends
+              out. EFA pays roughly 3% a year and the country ETFs pay too, so real total returns on
+              both sides run higher than the CAGRs shown; the gap between them is roughly fair, but
+              neither number is what an investor would actually have earned.
             </p>
             <p>
               <strong>What the rule does mechanically</strong>: two gates, applied to each country ETF
@@ -1366,7 +1373,7 @@
               ROTATE, sell whatever fell out of the top 3 and buy what came in, equal-weighted.
             </p>
             <p>
-              <strong>Turnover is moderate.</strong> ~9.6 rebalances/year historically. Not every
+              <strong>Turnover is moderate.</strong> ~<span data-ic-stat="rebalPlain">9.6</span> rebalances/year historically. Not every
               rebalance is a full swap &mdash; usually just one of the three positions rotates,
               meaning ~3-6 trades/year per name.
             </p>
@@ -3403,6 +3410,28 @@
       const fmtPct = v => (v >= 0 ? '+' : '') + Math.round(v).toLocaleString() + '%';
       ruleCumEl.textContent  = fmtPct((ruleW / 1000 - 1) * 100);
       benchCumEl.textContent = fmtPct((bhW   / 1000 - 1) * 100);
+      // Live stats grid + the figures quoted in the prose, all from the
+      // walk above so the page never shows a stale number.
+      {
+        const years = (equityRule.length - 1) / 12;
+        const cagr = w => (Math.pow(w / 1000, 1 / years) - 1) * 100;
+        const cagrRule = cagr(ruleW), cagrBench = cagr(bhW), alpha = cagrRule - cagrBench;
+        const rebalPerYr = Math.max(0, pickHistory.length - 1) / years;
+        const signed = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d) + '%';
+        const stats = {
+          cagrRule: signed(cagrRule, 1), cagrBench: signed(cagrBench, 1),
+          cagrRuleAbs: cagrRule.toFixed(1) + '%', cagrBenchAbs: cagrBench.toFixed(1) + '%',
+          alpha: signed(alpha, 2),
+          ddRule: (ruleMinDD * 100).toFixed(0) + '%', ddBench: (bhMinDD * 100).toFixed(0) + '%',
+          rebal: '~' + rebalPerYr.toFixed(1), rebalPlain: rebalPerYr.toFixed(1),
+        };
+        document.querySelectorAll('[data-ic-stat]').forEach(el => {
+          const v = stats[el.dataset.icStat];
+          if (v != null) el.textContent = v;
+        });
+        const alphaEl = document.querySelector('.sig-stat [data-ic-stat="alpha"]');
+        if (alphaEl) alphaEl.className = 'val ' + (alpha >= 0 ? 'pos' : 'neg');
+      }
 
       // ---- Chart rendering, wrapped so the time-range buttons above
       //      can re-render with a slice of the equity walk. `spec` is
