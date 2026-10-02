@@ -2895,7 +2895,7 @@
 
       async function fetchHist(sym) {
         try {
-          const r = await fetch(`/api/history?syms=${sym}&range=max&interval=1d`, {cache: 'no-store'});
+          const r = await fetch(`/api/history?syms=${sym}&range=max&interval=1mo`, {cache: 'no-store'});
           if (!r.ok) return null;
           const j = await r.json();
           const s = j && j.series && j.series[sym];
@@ -3232,7 +3232,7 @@
 
       async function fetchHist(sym) {
         try {
-          const r = await fetch(`/api/history?syms=${sym}&range=max&interval=1d`, {cache: 'no-store'});
+          const r = await fetch(`/api/history?syms=${sym}&range=max&interval=1mo`, {cache: 'no-store'});
           if (!r.ok) return null;
           const j = await r.json();
           const s = j && j.series && j.series[sym];
