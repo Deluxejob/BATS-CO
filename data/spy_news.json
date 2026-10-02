@@ -1,9 +1,93 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "symbol": "SPY",
-  "fetchedAt": 1790958645,
-  "latestPublishedAt": 1790956051,
+  "fetchedAt": 1790975451,
+  "latestPublishedAt": 1790973211,
   "items": [
+    {
+      "title": "3 Option Income ETFs That Pay You 12 Times a Year. Here’s How the Monthly Check Is Generated",
+      "link": "https://finance.yahoo.com/markets/options/articles/3-option-income-etfs-pay-203331155.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790973211,
+      "id": "ca22c45e-71cc-3340-b7f8-f14a2769f65b"
+    },
+    {
+      "title": "How Much Does a 58-Year-Old Need Invested to Replace a $160,000 Salary With Dividends?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/much-does-58-old-invested-193956064.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790969996,
+      "id": "8b652a39-df7f-3c46-b042-022989ddc730"
+    },
+    {
+      "title": "Cramer Warned Viewers That Meta’s AI Would Crush This Stock, and Someone Just Bet Millions It Won’t",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/intuit-wasn-t-cramer-muse-191031381.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790968231,
+      "id": "d5742dff-f371-3df4-81d5-c1f91a2db875"
+    },
+    {
+      "title": "‘Compounding at a Whopping 5%’: Adviser Warns the 11% on Your Statement Is Not What You Keep",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/compounding-whopping-5-adviser-warns-190721976.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790968041,
+      "id": "c94c5143-7045-37ce-be16-259977717120"
+    },
+    {
+      "title": "I Sold NVIDIA, Google and Microsoft Over a $2 Trillion AI Gap. Was I Wrong?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/sold-nvidia-google-microsoft-over-190531978.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790967931,
+      "id": "a9e94385-be47-327d-b2c9-2a97e884694a"
+    },
+    {
+      "title": "I Told My Boss I’m Done. Now I Have to Choose Between a 1.73% CD and a 5.26% Treasury",
+      "link": "https://finance.yahoo.com/markets/currencies/articles/told-boss-m-done-now-190006662.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790967606,
+      "id": "334729b6-7837-331a-a61d-9ef495e377c6"
+    },
+    {
+      "title": "Which Drone Stock Is Dominating in 2026: Red Cat, Ondas, or AeroVironment?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/drone-stock-dominating-2026-red-181815038.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790965095,
+      "id": "80719b53-e46f-32d0-a384-2101f825ebee"
+    },
+    {
+      "title": "Webull Jumps 5% as Trading Platforms Advance; Interactive Brokers Climbs 3%, Robinhood Advances 2%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/webull-jumps-5-trading-platforms-175649180.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790963809,
+      "id": "79a6ac43-2058-3f20-a541-c381ad0b7b6c"
+    },
+    {
+      "title": "FuelCell Jumps 7%, Bloom Energy Climbs 3% as Hydrogen Stocks Rally; Plug Power Sits Out",
+      "link": "https://finance.yahoo.com/energy/articles/fuelcell-jumps-7-bloom-energy-174951219.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790963391,
+      "id": "6af2edfd-df4c-3ad0-b940-5fd44c24c123"
+    },
+    {
+      "title": "Dell Climbs 4% on AI Server Backlog; Hewlett Packard Enterprise Jumps 8%",
+      "link": "https://finance.yahoo.com/technology/ai/articles/dell-climbs-4-ai-server-165907911.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790960347,
+      "id": "c7f130c1-8970-3c69-b0f7-f7c061219b77"
+    },
+    {
+      "title": "Stellantis Sinks 7% as Jeep Weakness Offsets Ram Strength; Ford Drops 2%, General Motors Slips",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stellantis-sinks-7-jeep-weakness-165243920.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790959963,
+      "id": "f0b6f557-bfa5-370b-bc84-a5854ba57f90"
+    },
+    {
+      "title": "EVgo Jumps 10% and Blink Charging Climbs 6% as ChargePoint Slides 5%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/evgo-jumps-10-blink-charging-164836172.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1790959716,
+      "id": "e8fd910b-1152-382f-aef7-93ae87d67f4c"
+    },
     {
       "title": "AMD Climbs 3% as Chip Stocks Extend Their Run; Arm Jumps 8%, NVIDIA Rises 2%",
       "link": "https://finance.yahoo.com/markets/stocks/articles/amd-climbs-3-chip-stocks-154731873.html",
@@ -24,90 +108,6 @@
       "publisher": "24/7 Wall St.",
       "publishedAt": 1790953097,
       "id": "ccb1a65a-d977-3046-8381-00bc550074b8"
-    },
-    {
-      "title": "Tesla Surges 5% as 486,532 Deliveries Top Company Consensus; Rivian Slides 3%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/tesla-surges-5-486-532-145042966.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790952642,
-      "id": "ea0da002-adda-37e1-8b04-b71fd5a2d6e6"
-    },
-    {
-      "title": "SpaceX Climbs 6% on Fresh Falcon 9 Rideshare Launch; Rocket Lab Jumps 7%, AST SpaceMobile Ticks Up",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/spacex-climbs-6-fresh-falcon-144728481.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790952448,
-      "id": "40242d6f-8cfb-3276-bed2-7712a88c7559"
-    },
-    {
-      "title": "Applied Digital Spikes 7% as Another 75 MW Comes Online at Polaris Forge 1; IREN Advances 6%",
-      "link": "https://finance.yahoo.com/technology/ai/articles/applied-digital-spikes-7-another-134047872.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790948447,
-      "id": "2a76e447-8993-3c88-b8b4-8991b04c6770"
-    },
-    {
-      "title": "Exchange-Traded Funds, Equity Futures Higher Pre-Bell Friday Amid Jobs Data",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/exchange-traded-funds-equity-futures-133147980.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1790947907,
-      "id": "1f0b6aad-912d-308f-b171-9856708d1a4c"
-    },
-    {
-      "title": "Rivian Jumps 4% After Delivering 19,248 Vehicles and Reaffirming Full-Year Guidance; Tesla Rises 2%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/rivian-jumps-4-delivering-19-133049040.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790947849,
-      "id": "197ab255-2819-311a-a580-cf09b1fd6668"
-    },
-    {
-      "title": "Nike Sinks 8% as Weak Outlook and Layoffs Follow Revenue Miss; Lululemon and On Holding Remain Flat",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/nike-sinks-8-weak-outlook-130134609.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790946094,
-      "id": "7dda0bbb-61f9-348a-9d8f-b9189be8c329"
-    },
-    {
-      "title": "IWM Has Trailed the S&P 500 for a Decade While Carrying More Risk: The Small-Cap Premium That Never Fully Arrived",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/iwm-trailed-p-500-decade-113317679.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790940797,
-      "id": "2ab4c4c1-edc2-3db5-9779-3773763c456f"
-    },
-    {
-      "title": "Accenture Lost 15% Over a Year: One Analyst Says It Will Rise 30% on AI and Digital Transformation",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/accenture-lost-15-over-one-111524389.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790939724,
-      "id": "f3893889-e888-39f9-8bda-eba42b3a4a15"
-    },
-    {
-      "title": "Stock Market: Will S&P 500 Open Up or Down Today?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-p-500-open-054725536.html",
-      "publisher": "Benzinga Prediction Markets",
-      "publishedAt": 1790920045,
-      "id": "91a857c9-599c-340e-a9f2-b3458dd1a3e8"
-    },
-    {
-      "title": "ETF Inflows Top Last Year's Record With a Quarter to Spare",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/etf-inflows-top-last-years-043228801.html",
-      "publisher": "etf.com",
-      "publishedAt": 1790915548,
-      "id": "ce0975bf-2ef3-3bcf-a13f-88626a447e91"
-    },
-    {
-      "title": "The Hidden Cost of Owning Every Stock: $167,050 of a $500,000 VTI Position Sits in Its Top Ten Names",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/hidden-cost-owning-every-stock-003342923.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1790901222,
-      "id": "a190e43e-6c00-3ef6-8771-559956bdd8eb"
-    },
-    {
-      "title": "S&P 500, Nasdaq, Dow Futures Inch Higher As Investors Cheer Cooling Yields — GOOGL, MU, MAT, NVDA In Focus",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-nasdaq-dow-futures-232759547.html",
-      "publisher": "Stocktwits",
-      "publishedAt": 1790897279,
-      "id": "1eeae551-0114-37b2-ab79-6a559246ade3"
     }
   ]
 }
