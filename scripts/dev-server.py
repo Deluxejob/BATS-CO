@@ -78,6 +78,7 @@ def yahoo_chart(sym, rng, interval, want_ohlc, prepost):
 
 
 _crumb = {'opener': None, 'crumb': None}
+_crumb_lock = threading.Lock()
 
 
 def yahoo_quotes(syms):
@@ -85,12 +86,13 @@ def yahoo_quotes(syms):
     import http.cookiejar
     ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'}
     for attempt in (0, 1):
-        if not _crumb['crumb'] or attempt:
-            op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
-            try: op.open(urllib.request.Request('https://fc.yahoo.com/', headers=ua), timeout=15)
-            except Exception: pass  # noqa: E701 — the 404 still sets the cookie
-            _crumb['opener'] = op
-            _crumb['crumb'] = op.open(urllib.request.Request('https://query1.finance.yahoo.com/v1/test/getcrumb', headers=ua), timeout=15).read().decode()
+        with _crumb_lock:   # pages fire several quote calls at once; set the session up once
+            if not _crumb['crumb'] or attempt:
+                op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+                try: op.open(urllib.request.Request('https://fc.yahoo.com/', headers=ua), timeout=15)
+                except Exception: pass  # noqa: E701 — the 404 still sets the cookie
+                _crumb['opener'] = op
+                _crumb['crumb'] = op.open(urllib.request.Request('https://query1.finance.yahoo.com/v1/test/getcrumb', headers=ua), timeout=15).read().decode()
         url = ('https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + urllib.parse.quote(','.join(syms))
                + '&crumb=' + urllib.parse.quote(_crumb['crumb']))
         try:

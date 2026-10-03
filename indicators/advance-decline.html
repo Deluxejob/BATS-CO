@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advance/Decline Line — BATS.CO Indicator Explainer</title>
+  <meta name="description" content="The advance/decline line for the S&P 500, Nasdaq 100 and Dow 30, built nightly from every member's daily close: how many stocks are really rising, and when the index is being carried by a few." />
+  <!-- BATS SEO block -->
+  <link rel="canonical" href="https://bats.co/indicators/advance-decline.html">
+  <meta property="og:site_name" content="BATS.CO">
+  <meta property="og:title" content="Advance/Decline Line — BATS.CO Indicator Explainer">
+  <meta property="og:description" content="The advance/decline line for the S&P 500, Nasdaq 100 and Dow 30, built nightly from every member's daily close: how many stocks are really rising, and when the index is being carried by a few.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bats.co/indicators/advance-decline.html">
+  <meta property="og:image" content="https://bats.co/og-card.png?v=2">
+  <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Advance/Decline Line — BATS.CO Indicator Explainer">
+  <meta name="twitter:description" content="The advance/decline line for the S&P 500, Nasdaq 100 and Dow 30, built nightly from every member's daily close.">
+  <meta name="twitter:image" content="https://bats.co/og-card.png?v=2">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Teko:wght@600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    .ad-pickers { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; justify-content: center; align-items: center; margin: 0 0 0.9rem; }
+    .ad-pickers .conc-gauge-picker { margin: 0; }
+    .ad-pickers .conc-gauge-picker button.active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+    .ad-picker-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin-right: 0.4rem; align-self: center; }
+    .ad-reading { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: stretch; }
+    @media (max-width: 720px) { .ad-reading { grid-template-columns: 1fr; } }
+    .ad-verdict { display: flex; flex-direction: column; justify-content: center; gap: 0.5rem; }
+    .ad-tag { display: inline-block; align-self: flex-start; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid; }
+    .ad-tag.confirm { color: var(--bull); border-color: rgba(34,211,154,.5); background: rgba(34,211,154,.1); }
+    .ad-tag.neg     { color: var(--bear); border-color: rgba(255,83,116,.5); background: rgba(255,83,116,.1); }
+    .ad-tag.pos     { color: var(--accent); border-color: rgba(110,231,255,.5); background: rgba(110,231,255,.1); }
+    .ad-tag.neutral { color: var(--text-dim); border-color: var(--border); background: rgba(255,255,255,.03); }
+    .ad-verdict h3 { margin: 0; font-size: 1.05rem; }
+    .ad-verdict p { margin: 0; color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
+    .ad-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .ad-stat { background: rgba(255,255,255,.02); border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.5rem 0.6rem; text-align: center; }
+    .ad-stat .lbl { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 0.2rem; }
+    .ad-stat .val { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+    .ad-stat .val.pos { color: var(--bull); } .ad-stat .val.neg { color: var(--bear); }
+    .ad-stat .sub { font-size: 0.68rem; color: var(--text-dim); margin-top: 0.15rem; }
+    .ad-chart-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 0.5rem 0.4rem; }
+    .ad-chart { width: 100%; height: auto; display: block; }
+    .ad-chart .grid { stroke: rgba(139,149,168,.14); stroke-width: 1; }
+    .ad-chart .axis { fill: var(--text-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; }
+    .ad-chart .panel-label { fill: var(--text); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .ad-chart .line-index { fill: none; stroke: #64d3ff; stroke-width: 1.6; }
+    .ad-chart .line-ad { fill: none; stroke: #22d39a; stroke-width: 1.8; }
+    .ad-chart .line-high { stroke: rgba(139,149,168,.5); stroke-width: 1; stroke-dasharray: 3 4; }
+    .ad-chart .band-neg { fill: rgba(255,83,116,.16); }
+    .ad-chart .band-pos { fill: rgba(110,231,255,.14); }
+    .ad-chart .end-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 700; }
+    .ad-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; justify-content: center; margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--text-dim); }
+    .ad-legend .sw { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 2px; vertical-align: -2px; margin-right: 0.3rem; }
+    .ad-legend .sw.ln { height: 2px; width: 1.2em; vertical-align: 3px; }
+    .ad-caption { margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; }
+    .ad-note { font-size: 0.75rem; color: var(--text-faint); font-style: italic; line-height: 1.45; margin-top: 0.6rem; }
+    .ad-episodes-summary { margin: 0 0 0.75rem; color: var(--text-dim); }
+    .ad-episodes-summary strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="../index.html" class="brand-link">
+        <img src="/stock-market-sentiment-bull-logo.png" alt="BATS bull logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+      <p class="breadcrumb"><a href="../markets.html">← Back to the dashboard</a></p>
+    </div>
+    <div class="market-toggle" role="tablist" aria-label="Choose market">
+      <a href="../index.html?market=sp500"  class="market-toggle-btn" data-market-toggle="sp500"  role="tab">S&amp;P 500</a>
+      <a href="../index.html?market=nasdaq" class="market-toggle-btn" data-market-toggle="nasdaq" role="tab">Nasdaq 100</a>
+    </div>
+    <nav class="site-nav">
+      <a href="../index.html#gauge">Score</a>
+      <a href="../quotes.html">Quotes</a>
+      <a href="../watchlist.html">Watchlist</a>
+      <a href="../markets.html">Dashboard</a>
+      <a href="../sector-rotation.html">Sector Rotation</a>
+      <a href="../concentration.html">Concentration</a>
+      <a href="../risk-watch.html">Risk Watch</a>
+      <a href="../market-ratios.html">Market Ratios</a>
+      <a href="../valuations.html">Valuations</a>
+      <a href="../market-signals.html">Mkt Signals</a>
+      <a href="../divergences.html">Divergences</a>
+      <a href="../consumer.html">Consumer</a>
+      <a href="../pe.html">Private Equity</a>
+      <a href="../pelosi.html">Pelosi</a>
+    </nav>
+    <script>
+      (function(){
+        const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+        const isHome = here === 'index.html';
+        document.querySelectorAll('.site-nav a').forEach(a => {
+          const raw = (a.getAttribute('href') || '').toLowerCase();
+          const target = raw.split('/').pop().split('#')[0];
+          if (isHome && raw.startsWith('#'))       a.classList.add('active');
+          else if (target && target === here)       a.classList.add('active');
+        });
+      })();
+    </script>
+  </header>
+
+  <main class="explainer">
+
+    <section class="explainer-hero">
+      <p class="eyebrow">MARKET BREADTH · ADVANCE/DECLINE LINE</p>
+      <h1>Advance/Decline Line &mdash; how many stocks are really rising?</h1>
+      <p class="lede">
+        An index can climb while most of its members fall, if a few giants do the lifting. The
+        advance/decline line keeps score of the members themselves: every day it counts how many
+        stocks closed up and how many closed down, and adds the difference to a running total.
+        <strong>When the index and the A/D line rise together, the rally is broad. When the index
+        makes new highs and the A/D line does not, fewer and fewer stocks are carrying it.</strong>
+        Built nightly for the S&amp;P 500, Nasdaq 100 and Dow 30 from every member's daily close.
+      </p>
+    </section>
+
+    <section id="current-reading-section">
+      <div class="section-head">
+        <h2>Today's reading</h2>
+        <p>Pick an index. The card compares the index and its A/D line against their own one-year highs.</p>
+      </div>
+      <div class="ad-pickers">
+        <div class="conc-gauge-picker" id="adIndexPicker" role="tablist" aria-label="Index">
+          <span class="ad-picker-label">Index</span>
+          <button type="button" data-idx="spx" class="active">S&amp;P 500</button>
+          <button type="button" data-idx="ndx">Nasdaq 100</button>
+          <button type="button" data-idx="dow">Dow 30</button>
+        </div>
+      </div>
+      <div id="adReading" class="card"><em>Loading advance/decline data&hellip;</em></div>
+    </section>
+
+    <section id="chart-section">
+      <div class="section-head">
+        <h2>Index vs its advance/decline line</h2>
+        <p>Top: the index. Bottom: the running count of advancers minus decliners. Shaded stretches mark the divergences described below.</p>
+      </div>
+      <div class="ad-pickers">
+        <div class="conc-gauge-picker" id="adRangePicker" role="tablist" aria-label="Time range">
+          <span class="ad-picker-label">Range</span>
+          <button type="button" data-range="126">6M</button>
+          <button type="button" data-range="252" class="active">1Y</button>
+          <button type="button" data-range="756">3Y</button>
+          <button type="button" data-range="1260">5Y</button>
+          <button type="button" data-range="0">All</button>
+        </div>
+      </div>
+      <div class="ad-chart-wrap">
+        <svg class="ad-chart" id="adChart" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet" aria-label="Index price and advance/decline line"></svg>
+        <div class="ad-legend">
+          <span><span class="sw ln" style="background:#64d3ff"></span>Index</span>
+          <span><span class="sw ln" style="background:#22d39a"></span>A/D line</span>
+          <span><span class="sw ln" style="background:rgba(139,149,168,.7)"></span>One-year high</span>
+          <span><span class="sw" style="background:rgba(255,83,116,.35)"></span>Negative divergence</span>
+          <span><span class="sw" style="background:rgba(110,231,255,.3)"></span>Positive divergence</span>
+        </div>
+      </div>
+      <p class="ad-caption" id="adCaption"></p>
+    </section>
+
+    <section id="whatis">
+      <h2>What the advance/decline line measures</h2>
+      <p>
+        Each trading day, take every member of the index and ask one question: did it close higher or
+        lower than yesterday? Subtract the decliners from the advancers and add the result to a running
+        total. That total is the advance/decline line. A day when 350 S&amp;P stocks rose and 150 fell adds
+        +200; a day when 100 rose and 400 fell subtracts 300. The level of the line means nothing on its
+        own &mdash; it starts at zero on the first day we track &mdash; but its direction, and whether it
+        keeps pace with the index, means a lot.
+      </p>
+      <p>
+        The index itself is weighted by company size, so a handful of giant stocks can move it. The A/D
+        line gives every member one vote. That is exactly why the two can disagree, and the disagreement
+        is the signal.
+      </p>
+      <div class="key-thresholds card">
+        <h3>How this page defines a divergence</h3>
+        <ul>
+          <li><span class="range">Negative</span> the index is within 1% of its one-year high while the A/D line sits more than a quarter of its one-year range below its own high &mdash; new highs on narrowing participation.</li>
+          <li><span class="range">Positive</span> the A/D line is at a one-year high while the index is still more than 3% below its own &mdash; broad strength the headline number has not caught up with.</li>
+          <li><span class="range">Confirmed</span> index and A/D line are both at or near their highs &mdash; the rally is broad.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="episodes">
+      <h2>Negative divergences since 2016 &mdash; what happened next</h2>
+      <p class="ad-episodes-summary" id="adEpisodesSummary">Loading&hellip;</p>
+      <div class="backtest-table-wrap">
+        <table class="backtest-table" id="adEpisodesTable"></table>
+      </div>
+      <p class="ad-note">
+        An episode is a run of at least five trading days that meet the negative-divergence definition above
+        (gaps of up to three days are bridged). "Index 3 months later" is the index's price change 63 trading
+        days after the episode began, which is the earliest point you could have acted on it. Baseline is the
+        same figure measured from every trading day since 2016.
+      </p>
+    </section>
+
+    <section id="howtouse">
+      <h2>How to use this information</h2>
+      <ol class="usage-list">
+        <li>
+          <strong>Confirmation is the normal state.</strong>
+          Most of the time the A/D line and the index move together, and a rising A/D line alongside
+          new index highs is the healthiest picture there is. It is not a timing tool for buying.
+        </li>
+        <li>
+          <strong>Negative divergences are a yellow flag, not a sell order.</strong>
+          A market led by fewer stocks is more fragile, but it can stay that way for months. Use the table
+          above to judge how much the warning has actually been worth, and read it together with the
+          BATS gauge and the other breadth measures rather than on its own.
+        </li>
+        <li>
+          <strong>Positive divergences tend to appear near lows.</strong>
+          When more stocks are rising than the index lets on, the average stock has already turned.
+          It is one of the more reliable "the worst may be over" clues in market breadth.
+        </li>
+        <li>
+          <strong>Compare the three indexes.</strong>
+          The Dow has only 30 members, so its line is choppy and a few names dominate. The S&amp;P 500's
+          line is the broadest and smoothest; the Nasdaq 100's shows whether the tech rally is broad or
+          just the biggest names.
+        </li>
+        <li>
+          <strong>Caveats.</strong>
+          We apply today's members to the whole history, so stocks that were removed along the way are
+          missing and the early years flatter the line a little; that is why the series starts in 2016.
+          Every member counts once, with no size weighting. The classic Wall Street version uses every
+          stock on the NYSE, including bond funds and foreign listings; ours is index-only, so the levels
+          will not match other sources, but the behaviour is the same.
+        </li>
+      </ol>
+      <p class="disclaimer">
+        <strong>Reminder:</strong> None of this is investment advice. Historical patterns
+        are not guarantees. Always do your own research or talk to a financial professional.
+      </p>
+    </section>
+
+    <div class="next-nav">
+      <a class="btn-primary" href="../markets.html">&larr; Back to the dashboard</a>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+      const yearEl = document.getElementById('footerYear');
+      if (yearEl) yearEl.textContent = new Date().getUTCFullYear();
+
+      const SRC = {
+        spx: { label: 'S&P 500',    file: '../data/ad_line_spx.csv', members: 'about 500 members' },
+        ndx: { label: 'Nasdaq 100', file: '../data/ad_line_ndx.csv', members: 'about 100 members' },
+        dow: { label: 'Dow 30',     file: '../data/ad_line_dow.csv', members: '30 members' },
+      };
+      const LOOK = 252;          // one trading year
+      const NEG_GAP = 0.25;      // A/D more than 25% of its 1y range below its high
+      const NEAR_HIGH = 0.99;    // index within 1% of its 1y high
+      const POS_LAG = 0.97;      // index more than 3% below its high
+      const state = { idx: 'spx', range: 252 };
+      const cache = {};
+
+      const fmtInt = v => Math.round(v).toLocaleString('en-US');
+      const fmtPct = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '%';
+      const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDate = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + parseInt(d.slice(8, 10), 10) + ', ' + d.slice(0, 4);
+
+      async function load(key) {
+        if (cache[key]) return cache[key];
+        const r = await fetch(SRC[key].file, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const lines = (await r.text()).trim().split(/\r?\n/);
+        const hdr = lines[0].split(',');
+        const col = n => hdr.indexOf(n);
+        const rows = [];
+        for (const ln of lines.slice(1)) {
+          const p = ln.split(',');
+          const row = { d: p[col('Date')], adv: +p[col('Adv')], dec: +p[col('Dec')], unch: +p[col('Unch')],
+                        net: +p[col('Net')], ad: +p[col('ADLine')], cov: +p[col('Coverage')], px: +p[col('Index')] };
+          if (row.d && Number.isFinite(row.ad) && Number.isFinite(row.px)) rows.push(row);
+        }
+        // Rolling one-year highs/lows and the divergence flags.
+        for (let i = 0; i < rows.length; i++) {
+          const s = Math.max(0, i - LOOK + 1);
+          let pxH = -Infinity, adH = -Infinity, adL = Infinity;
+          for (let k = s; k <= i; k++) { pxH = Math.max(pxH, rows[k].px); adH = Math.max(adH, rows[k].ad); adL = Math.min(adL, rows[k].ad); }
+          const r = rows[i];
+          r.pxHigh = pxH; r.adHigh = adH; r.adLow = adL;
+          r.pxGap = r.px / pxH - 1;                                   // 0 at a new high, negative below
+          r.adGap = adH > adL ? (adH - r.ad) / (adH - adL) : 0;      // 0 at a new high, 1 at the low
+          r.warm = i >= LOOK - 1;
+          r.neg = r.warm && r.px >= pxH * NEAR_HIGH && r.adGap > NEG_GAP;
+          r.pos = r.warm && r.ad >= adH && r.px < pxH * POS_LAG;
+        }
+        cache[key] = rows;
+        return rows;
+      }
+
+      // ---------- reading card ----------
+      function renderReading(rows) {
+        const el = document.getElementById('adReading');
+        const r = rows[rows.length - 1];
+        const src = SRC[state.idx];
+        let tag, cls, head, body;
+        if (r.neg) {
+          tag = 'Negative divergence'; cls = 'neg';
+          head = 'The index is near its high, but fewer stocks are carrying it.';
+          body = `The ${src.label} is within ${(Math.abs(r.pxGap) * 100).toFixed(1)}% of its one-year high while its A/D line sits ${Math.round(r.adGap * 100)}% of its one-year range below its own high. Participation has narrowed.`;
+        } else if (r.pos) {
+          tag = 'Positive divergence'; cls = 'pos';
+          head = 'More stocks are rising than the index shows.';
+          body = `The A/D line is at a one-year high while the ${src.label} is still ${(Math.abs(r.pxGap) * 100).toFixed(1)}% below its own. The average member has already turned up.`;
+        } else if (r.warm && r.px >= r.pxHigh * NEAR_HIGH && r.adGap <= 0.1) {
+          tag = 'Breadth confirms'; cls = 'confirm';
+          head = 'Index and A/D line are both at or near their highs.';
+          body = `The rally is broad: most of the ${src.members} are participating, not just the largest.`;
+        } else if (r.warm && r.px >= r.pxHigh * 0.97 && r.adGap > 0.35) {
+          tag = 'Breadth lagging'; cls = 'neg';
+          head = 'The index is close to its high; the average stock is not.';
+          body = `The ${src.label} is only ${(Math.abs(r.pxGap) * 100).toFixed(1)}% below its one-year high, but its A/D line sits ${Math.round(r.adGap * 100)}% of its one-year range below its own. Not a full divergence by this page's rule, but participation has thinned.`;
+        } else {
+          tag = 'No divergence'; cls = 'neutral';
+          head = 'Index and A/D line are telling the same story.';
+          body = `The ${src.label} is ${(Math.abs(r.pxGap) * 100).toFixed(1)}% below its one-year high and the A/D line is ${Math.round(r.adGap * 100)}% of its range below its own. Neither is out of step with the other.`;
+        }
+        const netCls = r.net > 0 ? 'pos' : r.net < 0 ? 'neg' : '';
+        el.innerHTML = `
+          <div class="ad-reading">
+            <div class="ad-verdict">
+              <span class="ad-tag ${cls}">${tag}</span>
+              <h3>${head}</h3>
+              <p>${body}</p>
+              <p style="font-size:.78rem;color:var(--text-faint)">As of ${fmtDate(r.d)} · ${r.cov} of the ${src.members} counted</p>
+            </div>
+            <div class="ad-stats">
+              <div class="ad-stat"><div class="lbl">Advanced</div><div class="val pos">${fmtInt(r.adv)}</div><div class="sub">closed up</div></div>
+              <div class="ad-stat"><div class="lbl">Declined</div><div class="val neg">${fmtInt(r.dec)}</div><div class="sub">closed down</div></div>
+              <div class="ad-stat"><div class="lbl">Net today</div><div class="val ${netCls}">${r.net > 0 ? '+' : ''}${fmtInt(r.net)}</div><div class="sub">advancers minus decliners</div></div>
+              <div class="ad-stat"><div class="lbl">A/D line</div><div class="val">${fmtInt(r.ad)}</div><div class="sub">${r.adGap <= 0.001 ? 'at a one-year high' : Math.round(r.adGap * 100) + '% of its range below the high'}</div></div>
+              <div class="ad-stat"><div class="lbl">${src.label}</div><div class="val">${r.px.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div><div class="sub">${r.pxGap >= -0.0005 ? 'at a one-year high' : (Math.abs(r.pxGap) * 100).toFixed(1) + '% below its high'}</div></div>
+              <div class="ad-stat"><div class="lbl">Up days (last 20)</div><div class="val">${rows.slice(-20).filter(x => x.net > 0).length} / 20</div><div class="sub">days with more advancers</div></div>
+            </div>
+          </div>`;
+      }
+
+      // ---------- chart ----------
+      function renderChart(rows) {
+        const svg = document.getElementById('adChart');
+        const n0 = state.range > 0 ? Math.max(0, rows.length - state.range) : 0;
+        const view = rows.slice(n0);
+        if (view.length < 2) { svg.innerHTML = ''; return; }
+        const W = 1000, PAD_L = 16, PAD_R = 78, PAD_T = 18, GAP = 26, TOP_H = 236, BOT_H = 236;
+        const plotW = W - PAD_L - PAD_R;
+        const topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP, botY1 = botY0 + BOT_H;
+        const n = view.length, xFor = i => PAD_L + plotW * i / (n - 1);
+        const scale = (vals, y0, y1) => {
+          let lo = Math.min(...vals), hi = Math.max(...vals);
+          const pad = (hi - lo) * 0.07 || Math.abs(hi) * 0.01 || 1; lo -= pad; hi += pad;
+          return { lo, hi, y: v => y1 - (v - lo) / (hi - lo) * (y1 - y0) };
+        };
+        const pxS = scale(view.map(r => r.px), topY0, topY1);
+        const adS = scale(view.map(r => r.ad), botY0, botY1);
+        const parts = [];
+        // divergence bands across both panels
+        const bands = (flag, cls) => {
+          let s = null;
+          for (let i = 0; i <= n; i++) {
+            const on = i < n && view[i][flag];
+            if (on && s == null) s = i;
+            if (!on && s != null) {
+              const x0 = xFor(s), x1 = xFor(Math.min(n - 1, i));
+              parts.push(`<rect class="${cls}" x="${x0.toFixed(1)}" y="${topY0}" width="${Math.max(1.5, x1 - x0).toFixed(1)}" height="${botY1 - topY0}"/>`);
+              s = null;
+            }
+          }
+        };
+        bands('neg', 'band-neg'); bands('pos', 'band-pos');
+        // gridlines + y labels
+        const grid = (sc, y0, y1, fmt) => {
+          const range = sc.hi - sc.lo, raw = range / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const nice = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => range / s <= 5.5) || mag * 10;
+          for (let v = Math.ceil(sc.lo / nice) * nice; v <= sc.hi; v += nice) {
+            const y = sc.y(v).toFixed(1);
+            parts.push(`<line class="grid" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="axis" x="${PAD_L + plotW + 6}" y="${(+y + 4).toFixed(1)}">${fmt(v)}</text>`);
+          }
+        };
+        grid(pxS, topY0, topY1, v => v.toLocaleString('en-US', { maximumFractionDigits: 0 }));
+        grid(adS, botY0, botY1, v => fmtInt(v));
+        // one-year-high trails
+        const trail = (key, sc) => {
+          let d = '', open = false;
+          for (let i = 0; i < n; i++) { if (!view[i].warm) { open = false; continue; } d += `${open ? 'L' : 'M'}${xFor(i).toFixed(1)},${sc.y(view[i][key]).toFixed(1)} `; open = true; }
+          if (d) parts.push(`<path class="line-high" fill="none" d="${d.trim()}"/>`);
+        };
+        trail('pxHigh', pxS); trail('adHigh', adS);
+        // lines
+        parts.push(`<path class="line-index" d="${view.map((r, i) => `${i ? 'L' : 'M'}${xFor(i).toFixed(1)},${pxS.y(r.px).toFixed(1)}`).join(' ')}"/>`);
+        parts.push(`<path class="line-ad" d="${view.map((r, i) => `${i ? 'L' : 'M'}${xFor(i).toFixed(1)},${adS.y(r.ad).toFixed(1)}`).join(' ')}"/>`);
+        // end labels
+        const last = view[n - 1];
+        parts.push(`<text class="end-label" fill="#64d3ff" x="${PAD_L + plotW + 6}" y="${(pxS.y(last.px) + 4).toFixed(1)}">${last.px.toLocaleString('en-US', { maximumFractionDigits: 0 })}</text>`);
+        parts.push(`<text class="end-label" fill="#22d39a" x="${PAD_L + plotW + 6}" y="${(adS.y(last.ad) + 4).toFixed(1)}">${fmtInt(last.ad)}</text>`);
+        // x axis
+        const spanDays = (Date.parse(last.d) - Date.parse(view[0].d)) / 86400000;
+        const lab = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + (spanDays > 900 ? d.slice(0, 4) : d.slice(2, 4));
+        for (let k = 0; k <= 6; k++) {
+          const i = Math.round(k / 6 * (n - 1)); const x = xFor(i).toFixed(1);
+          parts.push(`<line class="grid" x1="${x}" x2="${x}" y1="${topY0}" y2="${botY1}"/><text class="axis" x="${x}" y="${botY1 + 16}" text-anchor="${k === 0 ? 'start' : k === 6 ? 'end' : 'middle'}">${lab(view[i].d)}</text>`);
+        }
+        parts.push(`<text class="panel-label" x="${PAD_L + 6}" y="${topY0 + 14}">${SRC[state.idx].label}</text>`);
+        parts.push(`<text class="panel-label" x="${PAD_L + 6}" y="${botY0 + 14}">Advance/decline line</text>`);
+        svg.innerHTML = parts.join('');
+        const negDays = view.filter(r => r.neg).length, posDays = view.filter(r => r.pos).length;
+        document.getElementById('adCaption').textContent =
+          `${fmtDate(view[0].d)} to ${fmtDate(last.d)}: the ${SRC[state.idx].label} ${last.px >= view[0].px ? 'rose' : 'fell'} ${fmtPct((last.px / view[0].px - 1) * 100)} while its A/D line moved ${last.ad - view[0].ad >= 0 ? '+' : ''}${fmtInt(last.ad - view[0].ad)}. ` +
+          `${negDays} day${negDays === 1 ? '' : 's'} of negative divergence and ${posDays} of positive divergence in this window. Dashed lines are each series' trailing one-year high.`;
+      }
+
+      // ---------- divergence episodes ----------
+      function renderEpisodes(rows) {
+        const H = 63;
+        const eps = [];
+        let start = null, lastOn = -10;
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i].neg) { if (start == null) start = i; lastOn = i; }
+          else if (start != null && i - lastOn > 3) { eps.push([start, lastOn]); start = null; }
+        }
+        if (start != null) eps.push([start, lastOn]);
+        const real = eps.filter(([s, e]) => e - s + 1 >= 5);
+        const fwd = i => i + H < rows.length ? (rows[i + H].px / rows[i].px - 1) * 100 : null;
+        const base = []; for (let i = 0; i + H < rows.length; i++) base.push((rows[i + H].px / rows[i].px - 1) * 100);
+        const baseAvg = base.reduce((a, b) => a + b, 0) / base.length, baseUp = base.filter(v => v > 0).length / base.length * 100;
+        const done = real.map(([s, e]) => ({ s, e, f: fwd(s) })).filter(x => x.f != null);
+        const avg = done.length ? done.reduce((a, x) => a + x.f, 0) / done.length : null;
+        const up = done.length ? done.filter(x => x.f > 0).length / done.length * 100 : null;
+        const src = SRC[state.idx];
+        const sum = document.getElementById('adEpisodesSummary');
+        if (!real.length) {
+          sum.innerHTML = `The ${src.label} has had <strong>no</strong> negative-divergence stretch of five days or more since 2016 by this definition.`;
+        } else {
+          sum.innerHTML = `Since 2016 the ${src.label} has shown <strong>${real.length}</strong> negative-divergence stretch${real.length === 1 ? '' : 'es'} of a week or more. ` +
+            (avg != null ? `Three months after they began, the index averaged <strong>${fmtPct(avg)}</strong> and was higher <strong>${Math.round(up)}%</strong> of the time, against <strong>${fmtPct(baseAvg)}</strong> and <strong>${Math.round(baseUp)}%</strong> for any day since 2016. ` : '') +
+            (avg != null && avg < baseAvg - 1 ? 'The warning has been worth something here.' : avg != null && avg > baseAvg + 1 ? 'The warning has not cost anything here; narrow rallies kept going.' : avg != null ? 'The difference from baseline is small.' : '');
+        }
+        const tbl = document.getElementById('adEpisodesTable');
+        const shown = real.slice(-10).reverse();
+        tbl.innerHTML = `<thead><tr><th>Began</th><th class="num">Days</th><th class="num">${src.label} at start</th><th class="num">Index 3 months later</th><th class="num">Worst dip within 6 months</th></tr></thead><tbody>` +
+          shown.map(([s, e]) => {
+            const f = fwd(s);
+            let worst = 0; for (let k = s + 1; k < Math.min(rows.length, s + 127); k++) worst = Math.min(worst, (rows[k].px / rows[s].px - 1) * 100);
+            const cls = v => v == null ? '' : v >= 0 ? 'pos' : 'neg';
+            return `<tr><td>${fmtDate(rows[s].d)}</td><td class="num">${e - s + 1}</td><td class="num">${rows[s].px.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>` +
+                   `<td class="num ${cls(f)}">${f == null ? 'still running' : fmtPct(f)}</td><td class="num ${worst < 0 ? 'neg' : ''}">${s + 2 < rows.length ? fmtPct(worst) : '—'}</td></tr>`;
+          }).join('') +
+          `</tbody><tfoot><tr class="baseline-row"><td>Any day since 2016</td><td class="num">—</td><td class="num">—</td><td class="num">${fmtPct(baseAvg)}</td><td class="num">—</td></tr></tfoot>`;
+      }
+
+      async function show() {
+        try {
+          const rows = await load(state.idx);
+          renderReading(rows); renderChart(rows); renderEpisodes(rows);
+        } catch (e) {
+          document.getElementById('adReading').innerHTML = '<em>Advance/decline data is not available right now.</em>';
+          document.getElementById('adChart').innerHTML = '';
+        }
+      }
+      document.getElementById('adIndexPicker').addEventListener('click', e => {
+        const b = e.target.closest('button[data-idx]'); if (!b) return;
+        state.idx = b.dataset.idx;
+        document.querySelectorAll('#adIndexPicker button').forEach(x => x.classList.toggle('active', x === b));
+        show();
+      });
+      document.getElementById('adRangePicker').addEventListener('click', e => {
+        const b = e.target.closest('button[data-range]'); if (!b) return;
+        state.range = parseInt(b.dataset.range, 10) || 0;
+        document.querySelectorAll('#adRangePicker button').forEach(x => x.classList.toggle('active', x === b));
+        if (cache[state.idx]) renderChart(cache[state.idx]);
+      });
+      const q = new URLSearchParams(location.search).get('index');
+      if (q && SRC[q]) { state.idx = q; document.querySelectorAll('#adIndexPicker button').forEach(x => x.classList.toggle('active', x.dataset.idx === q)); }
+      show();
+    })();
+  </script>
+</body>
+</html>
