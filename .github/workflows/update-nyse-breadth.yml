@@ -1,0 +1,67 @@
+name: Save NYSE breadth counts
+
+# Saves the day's real NYSE and Nasdaq advance/decline counts from the Wall
+# Street Journal's Markets Diary into data/nyse_breadth.csv and
+# data/nasdaq_breadth.csv. The Journal only shows the last few days, so a
+# day nobody saved is gone for good; this job builds the history one day
+# at a time. Nothing on the site reads these files yet.
+#
+# It is its own small job (a few seconds) rather than a step in the big
+# nightly data job, so a problem here can never hold back the other data.
+#
+# Three tries per trading day: after the close, late evening, and the next
+# morning. Each try also re-saves the previous day, so one missed night
+# heals itself. If the feed stays unreadable long enough that a day is
+# about to be lost, the run fails and GitHub e-mails the repo owner.
+#
+# Also runs when the script or this file is edited, as a quick self-test.
+# Manual trigger available from the Actions tab (workflow_dispatch).
+
+on:
+  schedule:
+    - cron: '40 22 * * 1-5'   # 22:40 UTC weekdays   (~6:40pm ET EDT / 5:40pm ET EST)
+    - cron: '40  1 * * 2-6'   # 01:40 UTC next day   (late-evening catch-up)
+    - cron: '40 12 * * 2-6'   # 12:40 UTC next day   (morning catch-up, before the open)
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/update-nyse-breadth.py'
+      - '.github/workflows/update-nyse-breadth.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed for the bot to push the updated CSVs back
+
+concurrency:
+  group: update-nyse-breadth
+  cancel-in-progress: false
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Save the latest NYSE and Nasdaq counts (WSJ Markets Diary)
+        # Scheduled runs tolerate a bad night; manual and on-edit runs are strict.
+        run: python scripts/update-nyse-breadth.py ${{ github.event_name != 'schedule' && '--strict' || '' }}
+
+      - name: Commit and push if a day was added or corrected
+        run: |
+          if [ -n "$(git status --porcelain data/nyse_breadth.csv data/nasdaq_breadth.csv)" ]; then
+            git config user.name  "BATS.CO Update Bot"
+            git config user.email "bot@bats.co"
+            git add data/nyse_breadth.csv data/nasdaq_breadth.csv
+            git commit -m "chore: save NYSE breadth counts $(date -u +'%Y-%m-%d')"
+            # Another bot may have pushed in the meantime; replay on top and try once more.
+            git push || { git pull --rebase origin main && git push; }
+            echo "::notice::Pushed saved breadth counts."
+          else
+            echo "::notice::Nothing new to save."
+          fi
