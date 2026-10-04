@@ -45,6 +45,9 @@ jobs:
       - name: Refresh advance/decline lines (daily — every S&P 500, Nasdaq-100 and Dow member from Yahoo)
         run: python scripts/update-ad-line.py
 
+      - name: Refresh weekly S&P 500 close and volume (Weekly Force Index card — always exits 0)
+        run: python scripts/update-spx-weekly.py
+
       - name: Refresh NAAIM (weekly — tolerant of no-new-data)
         run: python scripts/update-naaim.py
 

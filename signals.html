@@ -518,6 +518,21 @@
     .iq-chart-caption .iq-sw-thrust { background: transparent; border-left: 2px solid #22d39a; border-right: 0; margin-right: 0.35rem; width: 0.35em; }
     .iq-chart-caption .iq-sw-armed  { background: rgba(34, 211, 238, 0.22); border: 1px solid rgba(34, 211, 238, 0.55); }
     .iq-action-armed { color: #22d3ee; background: rgba(34, 211, 238, 0.10); border-color: rgba(34, 211, 238, 0.45); }
+
+    /* Weekly Force Index card: S&P 500 on top, the 13-week Force Index
+       below as a green (above zero) / red (below zero) area. Faint red
+       bands on the price panel mark every stretch below zero. */
+    .fx-line-price { fill: none; stroke: #e8ecf4; stroke-width: 1.3; opacity: 0.92; }
+    .fx-area-pos   { fill: rgba(34, 211, 154, 0.42); }
+    .fx-area-neg   { fill: rgba(255, 83, 116, 0.45); }
+    .fx-line       { fill: none; stroke: rgba(232, 236, 244, 0.5); stroke-width: 0.8; }
+    .fx-zero       { stroke: rgba(232, 236, 244, 0.6); stroke-width: 1; }
+    .fx-neg-band   { fill: rgba(255, 83, 116, 0.10); }
+    .iq-chart-caption .iq-sw-fxpos  { background: rgba(34, 211, 154, 0.42); border: 1px solid rgba(34, 211, 154, 0.7); }
+    .iq-chart-caption .iq-sw-fxneg  { background: rgba(255, 83, 116, 0.45); border: 1px solid rgba(255, 83, 116, 0.7); }
+    .iq-chart-caption .iq-sw-fxband { background: rgba(255, 83, 116, 0.12); border: 1px solid rgba(255, 83, 116, 0.35); }
+    /* A descriptive "sellers in control" pill: red, but without the glow of a sell call. */
+    .iq-action-soft-red { color: #ff8fa3; background: rgba(255, 83, 116, 0.08); border-color: rgba(255, 83, 116, 0.35); }
   </style>
 </head>
 <body>
@@ -948,6 +963,137 @@
                data-share-url="https://bats.co/signals.html#sig-zweig-thrust"
                data-share-title="Zweig Breadth Thrust — BATS.CO"
                data-share-text="The 10-day average of advancers vs decliners, with the 0.40 washout line and the 0.615 thrust line. Live reading, the countdown when a thrust is possible, and what stocks did after every past one."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
+        <!-- SIGNAL: Weekly Force Index (Elder) — 13-week average of weekly price change x weekly volume -->
+        <div class="sig-card" id="sig-force-index">
+          <div class="sig-head">
+            <h2 class="sig-title">Weekly Force Index</h2>
+            <span class="sig-tag">S&amp;P 500 &middot; price change &times; volume &middot; 13-week average &middot; weekly check</span>
+          </div>
+          <p class="sig-desc">
+            Alexander Elder's Force Index asks one question: when the market moved, how much volume was behind it?
+            Each week, multiply how far the S&amp;P 500 moved by how many shares traded, then smooth the result over
+            13 weeks. <strong>Above zero</strong>, the heavy-volume weeks have mostly been up weeks, so buyers are in
+            control. <strong>Below zero</strong>, sellers are. It is a clean read of the market's tone.
+            It has <strong>not</strong> worked as a timing tool, and the table below shows every crossing since
+            <span data-fx-stat="startYear">1951</span>, not only the ones that look good on a chart.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="fxPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="fxSub">Fetching weekly S&amp;P 500 closes and volume&hellip;</div>
+            <div class="iq-action-asof" id="fxAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="fxNowGate">
+              <div class="iq-gate-label">Force Index (13-week)</div>
+              <div class="iq-gate-value" id="fxNow">&mdash;</div>
+              <div class="iq-gate-cond">above zero = buyers in control</div>
+              <div class="iq-gate-state iq-gate-off" id="fxNowState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="fxSinceGate">
+              <div class="iq-gate-label" id="fxSinceLabel">On this side of zero since</div>
+              <div class="iq-gate-value" id="fxSince">&mdash;</div>
+              <div class="iq-gate-cond">the last cross of the zero line</div>
+              <div class="iq-gate-state iq-gate-off" id="fxSinceState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="fxMoveGate">
+              <div class="iq-gate-label">S&amp;P 500 since that cross</div>
+              <div class="iq-gate-value" id="fxMove">&mdash;</div>
+              <div class="iq-gate-cond">from that week's close</div>
+              <div class="iq-gate-state iq-gate-off" id="fxMoveState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Zero-line crosses a year</div><div class="val" data-fx-stat="perYear">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Time above zero</div><div class="val" data-fx-stat="timeAbove">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 yr after a cross above</div><div class="val" data-fx-stat="u12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 yr after a cross below</div><div class="val" data-fx-stat="d12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 yr after any week</div><div class="val" data-fx-stat="b12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Above-zero only vs hold</div><div class="val" data-fx-stat="ruleVsHold">&mdash;</div></div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="S&amp;P 500 returns after the Force Index crosses above zero, after it crosses below zero, and after any week">
+              <thead><tr><th>Holding period</th><th>After a cross above zero</th><th>Higher</th><th>After a cross below zero</th><th>Higher</th><th>Any week</th><th>Higher</th></tr></thead>
+              <tbody id="fxTableBody"><tr><td colspan="7">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-fx-years="2" role="tab">2Y</button>
+              <button type="button" class="iq-range-btn active" data-fx-years="5" role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-fx-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn" data-fx-years="20" role="tab">20Y</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="fxChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="S&amp;P 500 weekly close on top and the 13-week Force Index below, green above zero and red below zero"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: the S&amp;P 500's weekly close.
+            <em>Bottom panel</em>: the Force Index.
+            <span class="iq-sw iq-sw-fxpos"></span><strong>Green</strong> above the zero line means buyers are in control;
+            <span class="iq-sw iq-sw-fxneg"></span><strong>red</strong> below it means sellers are.
+            The <span class="iq-sw iq-sw-fxband"></span><strong>faint red bands</strong> on the price panel mark every
+            week the index was below zero, so you can see where stocks were each time. Every crossing is shown.
+            The table and statistics above cover the full history since <span data-fx-stat="startYear">1951</span>,
+            not only the window on the chart.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>It crosses zero a lot.</strong> About <span data-fx-stat="perYear">&mdash;</span> times a year
+              since <span data-fx-stat="startYear">1951</span>, and many of those crossings reverse within a week
+              or two. Charts of this indicator often mark only the handful of crossings that worked. This card
+              counts all <span data-fx-stat="nCross">&mdash;</span> of them.
+            </p>
+            <p>
+              <strong>Buying when it turns positive has not beaten buying on any week.</strong> One year after a
+              cross above zero the S&amp;P 500 gained <span data-fx-stat="u12avg">&mdash;</span> on average, against
+              <span data-fx-stat="b12avg">&mdash;</span> for any week. Selling when it turns negative gave up return:
+              owning stocks only while the index was above zero earned <span data-fx-stat="ruleCagr">&mdash;</span>
+              a year, against <span data-fx-stat="holdCagr">&mdash;</span> for holding the whole time. The one benefit
+              was a smaller worst drop, <span data-fx-stat="ruleDD">&mdash;</span> against
+              <span data-fx-stat="holdDD">&mdash;</span>.
+            </p>
+            <p id="fxBelowPara">
+              <strong>Below zero has often been the better time to buy.</strong> Since 2010, weeks when the index was
+              below zero were followed by <span data-fx-stat="below2010">&mdash;</span> a year later, against
+              <span data-fx-stat="above2010">&mdash;</span> for weeks above zero. A negative reading says sellers have
+              had the upper hand, which is also what the market looks like near a low.
+            </p>
+            <p>
+              <strong>What it is good for.</strong> A plain answer to "who has the upper hand right now, and for how
+              long?" Use it to describe the market's tone, not to time it.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Weekly S&amp;P 500 closes and volume from <span data-fx-stat="start">&mdash;</span> to
+            <span data-fx-stat="end">&mdash;</span> (Yahoo Finance; other charting sites count volume differently, so
+            their Force Index is a different size but crosses zero on the same weeks). Force = (this week's close
+            &minus; last week's close) &times; this week's volume, smoothed with a 13-week exponential average. Only
+            completed weeks are used, so the reading changes after Friday's close. The first 60 weeks are left out
+            of the statistics while the average settles. Returns are S&amp;P 500 price changes measured from the close
+            of the week of the event. The above-zero-only comparison trades at that week's close, earns nothing while
+            in cash and ignores dividends, costs and taxes. Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/signals.html#sig-force-index"
+               data-share-title="Weekly Force Index — BATS.CO"
+               data-share-text="Elder's Force Index on the S&P 500, weekly: who has the upper hand, buyers or sellers, and what stocks did after every cross of the zero line since 1951."
                style="margin-top: 0.9rem;"></div>
         </div>
 
@@ -1866,6 +2012,218 @@
           card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           const y = parseInt(btn.dataset.zbtYears, 10); renderChart(Number.isFinite(y) ? y : 0);
+        });
+      });
+    })();
+
+    // ==========================================================
+    //  Weekly Force Index (Alexander Elder)
+    //  Force = (this week's close - last week's close) x this week's
+    //  volume, smoothed with a 13-week EMA. Above zero = buyers in
+    //  control, below zero = sellers. Shown as a description of the
+    //  market's tone: the statistics count EVERY zero-line cross since
+    //  1951 and the crossings have had no timing edge.
+    //  Data: data/spx_weekly.csv (completed weeks only), built nightly
+    //  by scripts/update-spx-weekly.py.
+    // ==========================================================
+    (async function initForceIndex() {
+      const card = document.getElementById('sig-force-index');
+      const pill = document.getElementById('fxPill');
+      if (!card || !pill) return;
+      const $ = id => document.getElementById(id);
+      const sub = $('fxSub'), asof = $('fxAsof');
+      const SPAN = 13, K = 2 / (SPAN + 1);
+      const WARM = 60;            // weeks skipped in the statistics while the average settles
+      const WEEKS_PER_YEAR = 52.18;
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+
+      let rows;
+      try {
+        const r = await fetch('data/spx_weekly.csv', { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch');
+        rows = (await r.text()).trim().split(/\r?\n/).slice(1)
+          .map(ln => { const p = ln.split(','); return { date: p[0], close: +p[1], vol: +p[2] }; })
+          .filter(r => r.date && r.close > 0 && Number.isFinite(r.vol));
+      } catch (e) { fail('Could not fetch the weekly S&P 500 data. Try again in a moment.'); return; }
+      const N = rows.length;
+      if (N < 300) { fail('Not enough history to run the reading yet.'); return; }
+
+      // Force Index: 13-week EMA of (weekly price change x weekly volume)
+      const force = new Array(N).fill(null);
+      for (let i = 1; i < N; i++) {
+        const raw = (rows[i].close - rows[i - 1].close) * rows[i].vol;
+        force[i] = i === 1 ? raw : raw * K + force[i - 1] * (1 - K);
+      }
+      const above = i => force[i] > 0;
+
+      // Every cross of the zero line once the average has settled
+      const all = [], ups = [], dns = [];
+      for (let i = WARM; i < N; i++) {
+        all.push(i);
+        if (above(i) && !above(i - 1)) ups.push(i);
+        if (!above(i) && above(i - 1)) dns.push(i);
+      }
+
+      // ---- what the S&P 500 did next (from the close of the event week) ----
+      const H = [[4, '1 month'], [13, '3 months'], [26, '6 months'], [52, '12 months']];
+      const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+      const fwd = (i, h) => (i + h < N ? rows[i + h].close / rows[i].close - 1 : null);
+      const summarize = (idxs, h) => {
+        const a = idxs.map(i => fwd(i, h)).filter(v => v != null);
+        return a.length ? { avg: mean(a) * 100, up: a.filter(v => v > 0).length / a.length * 100, n: a.length } : null;
+      };
+      const uStat = {}, dStat = {}, bStat = {};
+      for (const [h] of H) { uStat[h] = summarize(ups, h); dStat[h] = summarize(dns, h); bStat[h] = summarize(all, h); }
+
+      // ---- own the index only while above zero (decided at each week's close) vs holding throughout ----
+      let eqR = 1, eqH = 1, pkR = 1, pkH = 1, ddR = 0, ddH = 0, steps = 0;
+      for (let i = WARM; i + 1 < N; i++) {
+        const r = rows[i + 1].close / rows[i].close - 1;
+        if (above(i)) eqR *= 1 + r;
+        eqH *= 1 + r; steps++;
+        pkR = Math.max(pkR, eqR); pkH = Math.max(pkH, eqH);
+        ddR = Math.min(ddR, eqR / pkR - 1); ddH = Math.min(ddH, eqH / pkH - 1);
+      }
+      const yrs = steps / WEEKS_PER_YEAR;
+      const ruleCagr = (Math.pow(eqR, 1 / yrs) - 1) * 100, holdCagr = (Math.pow(eqH, 1 / yrs) - 1) * 100;
+
+      // ---- since 2010: a year after weeks above zero vs weeks below zero ----
+      const recent = all.filter(i => rows[i].date >= '2010-01-01');
+      const ab10 = summarize(recent.filter(above), 52), be10 = summarize(recent.filter(i => !above(i)), 52);
+
+      // ---- formatting ----
+      // One decimal, signed; a value that rounds to zero prints as "0.0%", never "-0.0%".
+      const fmtPct = (v, d) => { const s = v.toFixed(d == null ? 1 : d); return (parseFloat(s) === 0 ? '0.0' : (v > 0 ? '+' : '') + s) + '%'; };
+      const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDate = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + parseInt(d.slice(8, 10), 10) + ', ' + d.slice(0, 4);
+      const fmtNum = v => Math.round(v).toLocaleString('en-US');
+      // Force values are shares x index points: only the sign and relative size matter, so show them in B / T.
+      const bigUnit = a => (a >= 1e12 ? parseFloat((a / 1e12).toFixed(a >= 1e13 ? 0 : 1)) + 'T' : a >= 1e9 ? Math.round(a / 1e9) + 'B' : Math.round(a / 1e6) + 'M');
+      const fmtBig = v => (v > 0 ? '+' : v < 0 ? '-' : '') + bigUnit(Math.abs(v));
+      const short = s => (s ? `${fmtPct(s.avg)} · ${Math.round(s.up)}%` : '—');
+
+      const last = N - 1;
+      const stats = {
+        startYear: rows[WARM].date.slice(0, 4),
+        perYear: ((ups.length + dns.length) / (all.length / WEEKS_PER_YEAR)).toFixed(1),
+        nCross: (ups.length + dns.length).toLocaleString('en-US'),
+        timeAbove: Math.round(all.filter(above).length / all.length * 100) + '%',
+        u12: short(uStat[52]), d12: short(dStat[52]), b12: short(bStat[52]),
+        u12avg: uStat[52] ? fmtPct(uStat[52].avg) : '—', b12avg: bStat[52] ? fmtPct(bStat[52].avg) : '—',
+        ruleVsHold: `${ruleCagr.toFixed(1)}% vs ${holdCagr.toFixed(1)}%`,
+        ruleCagr: ruleCagr.toFixed(1) + '%', holdCagr: holdCagr.toFixed(1) + '%',
+        ruleDD: Math.round(ddR * 100) + '%', holdDD: Math.round(ddH * 100) + '%',
+        above2010: ab10 ? fmtPct(ab10.avg) : '—', below2010: be10 ? fmtPct(be10.avg) : '—',
+        start: fmtDate(rows[0].date), end: fmtDate(rows[last].date),
+      };
+      card.querySelectorAll('[data-fx-stat]').forEach(el => { const v = stats[el.dataset.fxStat]; if (v != null) el.textContent = v; });
+      // The "below zero has been the better time to buy" paragraph only stays if the numbers still say so.
+      const belowPara = $('fxBelowPara');
+      if (belowPara && !(ab10 && be10 && be10.avg > ab10.avg)) belowPara.hidden = true;
+
+      const tb = $('fxTableBody');
+      const cell = s => (s ? `<td class="${s.avg >= 0 ? 'pos' : 'neg'}">${fmtPct(s.avg)}</td><td>${Math.round(s.up)}%</td>` : '<td>—</td><td>—</td>');
+      if (tb) tb.innerHTML = H.map(([h, lab]) => `<tr><td>${lab}</td>${cell(uStat[h])}${cell(dStat[h])}${cell(bStat[h])}</tr>`).join('');
+
+      // ---- today's state ----
+      const nowAbove = above(last);
+      let runStart = last; while (runStart - 1 >= 1 && above(runStart - 1) === nowAbove) runStart--;
+      const runWeeks = last - runStart + 1;
+      const moveSince = (rows[last].close / rows[runStart].close - 1) * 100;
+      const wk = `${runWeeks} week${runWeeks === 1 ? '' : 's'}`;
+      const moveWords = `The S&P 500 is ${moveSince >= 0 ? 'up' : 'down'} ${Math.abs(moveSince).toFixed(1)}% over that stretch.`;
+      if (nowAbove) {
+        pill.textContent = `BUYERS IN CONTROL · ${wk.toUpperCase()}`; pill.className = 'iq-action-pill iq-action-hold';
+        sub.textContent = `The Force Index has been above zero for ${runWeeks === 1 ? 'one week' : runWeeks + ' straight weeks'}, since ${fmtDate(rows[runStart].date)}. ${moveWords} This describes the market's tone. It is not a buy signal.`;
+      } else {
+        pill.textContent = `SELLERS IN CONTROL · ${wk.toUpperCase()}`; pill.className = 'iq-action-pill iq-action-soft-red';
+        sub.textContent = `The Force Index has been below zero for ${runWeeks === 1 ? 'one week' : runWeeks + ' straight weeks'}, since ${fmtDate(rows[runStart].date)}. ${moveWords} This describes the market's tone. It is not a sell signal: past stretches below zero were followed by gains more often than losses.`;
+      }
+      asof.textContent = `As of the week ended ${rows[last].date} · S&P 500 ${rows[last].close.toLocaleString('en-US', { maximumFractionDigits: 2 })} · updates after Friday's close`;
+
+      $('fxNow').textContent = fmtBig(force[last]);
+      $('fxNowState').textContent = nowAbove ? 'above zero' : 'below zero';
+      $('fxNowState').className = 'iq-gate-state ' + (nowAbove ? 'iq-gate-on' : 'iq-gate-off');
+      $('fxNowGate').classList.toggle('iq-gate-firing', nowAbove);
+      $('fxSinceLabel').textContent = nowAbove ? 'Above zero since' : 'Below zero since';
+      $('fxSince').textContent = fmtDate(rows[runStart].date);
+      $('fxSinceState').textContent = wk;
+      $('fxMove').textContent = fmtPct(moveSince);
+      $('fxMoveState').textContent = `${fmtNum(rows[runStart].close)} to ${fmtNum(rows[last].close)}`;
+
+      // ---- chart: S&P 500 weekly close (top) and the Force Index (bottom) ----
+      const svg = $('fxChartSvg');
+      function renderChart(years) {
+        if (!svg) return;
+        const first = Math.max(1, N - Math.round(years * WEEKS_PER_YEAR));
+        const n = N - first; if (n < 2) return;
+        const W = 1200, PAD_L = 58, PAD_R = 62, PAD_T = 18, GAP = 22, TOP_H = 270, BOT_H = 210;
+        const plotW = W - PAD_L - PAD_R, topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP, botY1 = botY0 + BOT_H;
+        const xFor = i => PAD_L + plotW * (i - first) / (n - 1);
+        const pv = rows.slice(first).map(r => r.close), fv = force.slice(first);
+        let pLo = Math.min(...pv), pHi = Math.max(...pv); const pPad = (pHi - pLo) * 0.06; pLo -= pPad; pHi += pPad;
+        const yP = x => topY1 - (x - pLo) / (pHi - pLo) * TOP_H;
+        let fLo = Math.min(0, ...fv), fHi = Math.max(0, ...fv); const fPad = (fHi - fLo) * 0.08; fLo -= fPad; fHi += fPad;
+        const yF = x => botY1 - (x - fLo) / (fHi - fLo) * BOT_H;
+        const parts = [];
+        const niceStep = range => { const raw = range / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))); return [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => range / s <= 5.5) || mag * 10; };
+        // faint red bands on the price panel: every stretch below zero
+        const half = plotW / (n - 1) / 2;
+        for (let i = first; i < N; ) {
+          if (above(i)) { i++; continue; }
+          let j = i; while (j + 1 < N && !above(j + 1)) j++;
+          const x0 = Math.max(PAD_L, xFor(i) - half), x1 = Math.min(PAD_L + plotW, xFor(j) + half);
+          parts.push(`<rect class="fx-neg-band" x="${x0.toFixed(1)}" y="${topY0}" width="${Math.max(1.5, x1 - x0).toFixed(1)}" height="${TOP_H}"/>`);
+          i = j + 1;
+        }
+        // price grid + labels
+        { const step = niceStep(pHi - pLo);
+          for (let t = Math.ceil(pLo / step) * step; t <= pHi; t += step) {
+            const y = yP(t).toFixed(1);
+            parts.push(`<line class="chart-grid" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${fmtNum(t)}</text>`);
+          } }
+        // Force grid + labels (the zero line is drawn on its own, brighter)
+        { const step = niceStep(fHi - fLo);
+          for (let t = Math.ceil(fLo / step) * step; t <= fHi; t += step) {
+            if (Math.abs(t) < step / 1000) continue;
+            const y = yF(t).toFixed(1);
+            parts.push(`<line class="chart-grid" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${fmtBig(t)}</text>`);
+          } }
+        // Force area: one shape, painted green where it is above the zero line and red where it is below
+        const y0 = yF(0);
+        const line = fv.map((x, k) => `${k ? 'L' : 'M'}${xFor(first + k).toFixed(1)},${yF(x).toFixed(1)}`).join(' ');
+        const area = `${line} L${xFor(N - 1).toFixed(1)},${y0.toFixed(1)} L${xFor(first).toFixed(1)},${y0.toFixed(1)} Z`;
+        parts.push(`<defs><clipPath id="fxClipPos"><rect x="${PAD_L}" y="${botY0}" width="${plotW}" height="${(y0 - botY0).toFixed(1)}"/></clipPath>` +
+                   `<clipPath id="fxClipNeg"><rect x="${PAD_L}" y="${y0.toFixed(1)}" width="${plotW}" height="${(botY1 - y0).toFixed(1)}"/></clipPath></defs>`);
+        parts.push(`<path class="fx-area-pos" clip-path="url(#fxClipPos)" d="${area}"/><path class="fx-area-neg" clip-path="url(#fxClipNeg)" d="${area}"/>`);
+        parts.push(`<path class="fx-line" d="${line}"/>`);
+        parts.push(`<line class="fx-zero" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(y0 + 3).toFixed(1)}" text-anchor="end">0</text>`);
+        // price line + end labels
+        parts.push(`<path class="fx-line-price" d="${pv.map((x, k) => `${k ? 'L' : 'M'}${xFor(first + k).toFixed(1)},${yP(x).toFixed(1)}`).join(' ')}"/>`);
+        parts.push(`<text class="iq-eq-label" style="fill:#e8ecf4" x="${PAD_L + plotW + 4}" y="${(yP(pv[n - 1]) + 3).toFixed(1)}">${fmtNum(pv[n - 1])}</text>`);
+        parts.push(`<text class="iq-eq-label" style="fill:${fv[n - 1] > 0 ? '#22d39a' : '#ff5374'}" x="${PAD_L + plotW + 4}" y="${(yF(fv[n - 1]) + 3).toFixed(1)}">${fmtBig(fv[n - 1])}</text>`);
+        // x axis
+        const spanDays = (Date.parse(rows[N - 1].date) - Date.parse(rows[first].date)) / 86400000;
+        const lab = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + (spanDays > 1100 ? d.slice(0, 4) : d.slice(2, 4));
+        for (let k = 0; k <= 7; k++) {
+          const i = first + Math.round(k / 7 * (n - 1));
+          parts.push(`<text class="chart-axis-label" x="${xFor(i).toFixed(1)}" y="${botY1 + 14}" text-anchor="${k === 0 ? 'start' : k === 7 ? 'end' : 'middle'}">${lab(rows[i].date)}</text>`);
+        }
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${topY0 + 13}">S&amp;P 500 · weekly close</text>`);
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${botY0 + 13}">Force Index (13-week) · weekly change × volume</text>`);
+        svg.innerHTML = parts.join('');
+      }
+      renderChart(5);
+      card.querySelectorAll('.iq-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const y = parseInt(btn.dataset.fxYears, 10); renderChart(Number.isFinite(y) && y > 0 ? y : 5);
         });
       });
     })();
