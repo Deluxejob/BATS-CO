@@ -149,9 +149,13 @@ done
 fetch_yahoo_daily "USO" "$DATA_DIR/uso.csv" "1144540800"  # 2006-04-09 (inception 2006-04-10)
 
 # ICE BofA MOVE index (Treasury-market volatility, the bond market's VIX)
-# for the Bond Fear Spike card on market-signals.html. Published once a
+# for the Bond Fear Spike card on signals.html. Published once a
 # day after the bond close; Yahoo's daily history starts 2002-11-12.
 fetch_yahoo_daily "^MOVE" "$DATA_DIR/move.csv" "1037059200"  # 2002-11-12
+
+# NYSE Composite — the price line on the Zweig Breadth Thrust card
+# (signals.html). 2015 onward is plenty; the breadth counts start in 2016.
+fetch_yahoo_daily "^NYA" "$DATA_DIR/nya.csv" "1420070400"  # 2015-01-01
 
 # --- Market Ratios page — every symbol used by a card on market-ratios.html ---
 mkdir -p "$DATA_DIR/ratios"

@@ -503,6 +503,21 @@
        currently active. Star + subtle amber border. */
     .iq-range-btn.fr-lookback-default          { border-color: rgba(255, 182, 88, 0.35); }
     .iq-range-btn.fr-lookback-default.active   { border-color: rgba(255, 182, 88, 0.75); background: rgba(255, 182, 88, 0.10); color: #ffb658; }
+
+    /* Zweig Breadth Thrust card: price line on top, the 10-day breadth
+       average below with its 0.40 / 0.615 levels, thrust and near-miss marks. */
+    .zbt-line-price  { fill: none; stroke: #e8ecf4; stroke-width: 1.3; opacity: 0.92; }
+    .zbt-line-ema    { fill: none; stroke: #64d3ff; stroke-width: 1.4; }
+    .zbt-level       { stroke: rgba(232, 236, 244, 0.55); stroke-width: 1; stroke-dasharray: 4 4; }
+    .zbt-level-mid   { stroke: rgba(139, 149, 168, 0.35); stroke-width: 1; stroke-dasharray: 2 4; }
+    .zbt-thrust      { stroke: #22d39a; stroke-width: 1.6; opacity: 0.9; }
+    .zbt-miss-tick   { stroke: rgba(255, 182, 88, 0.8); stroke-width: 1; }
+    .zbt-label       { fill: #ffb658; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+    .zbt-label-thrust{ fill: #22d39a; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+    .zbt-armed-band  { fill: rgba(34, 211, 238, 0.12); }
+    .iq-chart-caption .iq-sw-thrust { background: transparent; border-left: 2px solid #22d39a; border-right: 0; margin-right: 0.35rem; width: 0.35em; }
+    .iq-chart-caption .iq-sw-armed  { background: rgba(34, 211, 238, 0.22); border: 1px solid rgba(34, 211, 238, 0.55); }
+    .iq-action-armed { color: #22d3ee; background: rgba(34, 211, 238, 0.10); border-color: rgba(34, 211, 238, 0.45); }
   </style>
 </head>
 <body>
@@ -809,6 +824,131 @@
             in). The 60d+ window is still where the
             edge shows up.
           </p>
+        </div>
+
+        <!-- SIGNAL: Zweig Breadth Thrust (10-day EMA of advancers / (advancers + decliners)) -->
+        <div class="sig-card" id="sig-zweig-thrust">
+          <div class="sig-head">
+            <h2 class="sig-title">Zweig Breadth Thrust</h2>
+            <span class="sig-tag" data-zbt-stat="universeTag">Advancers vs decliners &middot; 10-day average &middot; daily check</span>
+          </div>
+          <p class="sig-desc">
+            Each day, divide the number of stocks that rose by the number that rose or fell. Smooth that
+            with a 10-day average and you have Martin Zweig's breadth ratio. When it sinks <strong>below 0.40</strong>
+            the market is washed out: on a typical day in the stretch, well under half of stocks were rising.
+            A <strong>Zweig Breadth Thrust</strong> is the rare snap-back, where the average climbs from below 0.40 to
+            <strong>above 0.615 within 10 trading days</strong>. Buyers flooding back that fast has historically marked
+            the start of durable advances. Since 2016 this version has dipped below 0.40
+            <strong data-zbt-stat="dips">&mdash;</strong> times and completed <strong data-zbt-stat="thrusts">&mdash;</strong> thrusts.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="zbtPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="zbtSub">Fetching advance/decline counts&hellip;</div>
+            <div class="iq-action-asof" id="zbtAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="zbtNowGate">
+              <div class="iq-gate-label">10-day breadth average</div>
+              <div class="iq-gate-value" id="zbtNow">&mdash;</div>
+              <div class="iq-gate-cond" id="zbtNowCond">below 0.40 = washed out</div>
+              <div class="iq-gate-state iq-gate-off" id="zbtNowState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="zbtDipGate">
+              <div class="iq-gate-label">Last dip below 0.40</div>
+              <div class="iq-gate-value" id="zbtDip">&mdash;</div>
+              <div class="iq-gate-cond">starts the 10-day clock</div>
+              <div class="iq-gate-state iq-gate-off" id="zbtDipState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="zbtDeadGate">
+              <div class="iq-gate-label">Thrust deadline</div>
+              <div class="iq-gate-value" id="zbtDead">&mdash;</div>
+              <div class="iq-gate-cond">needs above 0.615 by then</div>
+              <div class="iq-gate-state iq-gate-off" id="zbtDeadState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Thrusts since 2016</div><div class="val" data-zbt-stat="thrusts">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Dips below 0.40</div><div class="val" data-zbt-stat="dips">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">6 mo after a thrust</div><div class="val pos" data-zbt-stat="t6">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">6 mo after a dip</div><div class="val pos" data-zbt-stat="d6">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Any 6 months</div><div class="val" data-zbt-stat="b6">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Last thrust</div><div class="val" data-zbt-stat="lastThrust">&mdash;</div></div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="S&amp;P 500 returns after a breadth thrust, after a dip below 0.40, and on any day">
+              <thead><tr><th>Holding period</th><th>After a thrust</th><th>Higher</th><th>After a dip below 0.40</th><th>Higher</th><th>Any day</th><th>Higher</th></tr></thead>
+              <tbody id="zbtTableBody"><tr><td colspan="7">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-zbt-years="1" role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-zbt-years="2" role="tab">2Y</button>
+              <button type="button" class="iq-range-btn active" data-zbt-years="4" role="tab">4Y</button>
+              <button type="button" class="iq-range-btn" data-zbt-years="0" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="zbtChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="NYSE Composite on top and the 10-day average of the breadth ratio below, with the 0.40 and 0.615 levels and past thrusts marked"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: the NYSE Composite, a broad index of the stock market.
+            <em>Bottom panel</em>: the 10-day average of the breadth ratio. The dashed lines are the two levels that
+            matter, 0.40 and 0.615. A <span class="iq-sw iq-sw-thrust"></span><strong>green vertical</strong> marks a
+            completed thrust: the average went from under 0.40 to over 0.615 in 10 trading days or fewer.
+            Amber notes such as "took 14 days" are near-misses, where it got there too slowly to count.
+            A <span class="iq-sw iq-sw-armed"></span><strong>shaded band</strong> at the right edge means the clock is
+            running now.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>A dip below 0.40 is the common part; the thrust is the rare part.</strong> The average has
+              dropped under 0.40 <strong data-zbt-stat="dips">&mdash;</strong> times since 2016 and only
+              <strong data-zbt-stat="thrusts">&mdash;</strong> of those turned into a thrust. A dip alone says the
+              market is washed out, which has been a decent place to buy on its own:
+              <span data-zbt-stat="d6">&mdash;</span> over the next six months against
+              <span data-zbt-stat="b6">&mdash;</span> for any six months.
+            </p>
+            <p>
+              <strong>Whose stocks are counted matters.</strong> Zweig set his thresholds on every stock listed on the
+              New York Stock Exchange, about 2,800 issues. No free feed publishes those daily counts, so this card
+              counts <span data-zbt-stat="universe">&mdash;</span> instead. The readings track the NYSE version
+              closely, but this group swings a little harder, so it crosses the thresholds more often.
+              <span data-zbt-stat="fidelity">&mdash;</span>
+            </p>
+            <p>
+              <strong>It is a slow signal once it fires.</strong> A thrust says the selling is exhausted and broad
+              buying has taken over. The payoff has shown up over months, not days, and the table above is the honest
+              record of what followed. Keep in mind that <span data-zbt-stat="thrusts">&mdash;</span> thrusts is a
+              small sample, all from a decade when stocks mostly rose.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Counts from <span data-zbt-stat="start">&mdash;</span> to <span data-zbt-stat="end">&mdash;</span>, built
+            nightly from each member's daily close; today's members are applied to the whole history. Breadth ratio =
+            advancers &divide; (advancers + decliners), smoothed with a 10-day exponential average (an 18% trend).
+            Dip = the first day the average closes below 0.40 after being above it. Thrust = above 0.615 within 10
+            trading days of the last close below 0.40. Returns are S&amp;P 500 price changes measured from the close
+            after the event. Results ignore costs, taxes and dividends. Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/signals.html#sig-zweig-thrust"
+               data-share-title="Zweig Breadth Thrust — BATS.CO"
+               data-share-text="The 10-day average of advancers vs decliners, with the 0.40 washout line and the 0.615 thrust line. Live reading, the countdown when a thrust is possible, and what stocks did after every past one."
+               style="margin-top: 0.9rem;"></div>
         </div>
 
       </div>
@@ -1485,6 +1625,249 @@
         pill.textContent = 'Not armed';
         pill.className = 'sig-pill neutral';
       }
+    })();
+
+    // ==========================================================
+    //  Zweig Breadth Thrust
+    //
+    //  Breadth ratio = advancers / (advancers + decliners), smoothed
+    //  with a 10-day EMA (k = 2/11, the "18% trend"). A thrust is the
+    //  EMA going from below 0.40 to above 0.615 within 10 trading days
+    //  of its last close below 0.40. Counts come from the nightly
+    //  advance/decline file (scripts/update-ad-line.py); the price line
+    //  is the NYSE Composite (data/nya.csv). Forward returns use the
+    //  S&P 500 close carried in the counts file, from the close AFTER
+    //  the event.
+    // ==========================================================
+    (async function initZweigThrust() {
+      const card = document.getElementById('sig-zweig-thrust');
+      const pill = document.getElementById('zbtPill');
+      if (!card || !pill) return;
+      const sub  = document.getElementById('zbtSub');
+      const asof = document.getElementById('zbtAsof');
+      const $ = id => document.getElementById(id);
+
+      // Whose stocks are counted. One place to change if the universe does.
+      const SRC = {
+        file: 'data/ad_line_sp1500.csv',
+        tag: 'S&P 1500 members',
+        universe: 'the roughly 1,500 large, mid-size and small companies in the S&P 1500',
+        fidelity: 'Over 2016 to early 2020, the last stretch where real NYSE counts are on file, the two readings moved together (0.92 correlation). The NYSE version completed 1 thrust in that stretch, in January 2019; this one caught it and added 2 more. Since then it has also fired on the three widely reported NYSE thrusts: March 2023, November 2023 and April 2025.',
+      };
+      const LO = 0.40, HI = 0.615, WIN = 10, K = 2 / 11, QUIET = 20, MISS_MAX = 30;
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+      async function loadTable(path) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const lines = (await r.text()).trim().split(/\r?\n/);
+        const hdr = lines[0].split(',');
+        return lines.slice(1).map(ln => { const p = ln.split(','); const o = {}; hdr.forEach((h, i) => { o[h] = p[i]; }); return o; });
+      }
+
+      let adRaw, nyaRaw;
+      try { [adRaw, nyaRaw] = await Promise.all([loadTable(SRC.file), loadTable('data/nya.csv')]); }
+      catch (e) { fail('Could not fetch the advance/decline counts. Try again in a moment.'); return; }
+      const rows = adRaw.map(o => ({ date: o.Date, adv: +o.Adv, dec: +o.Dec, px: +o.Index }))
+                        .filter(r => r.date && r.adv + r.dec > 0 && Number.isFinite(r.px));
+      if (rows.length < 300) { fail('Not enough history to run the signal yet.'); return; }
+      const N = rows.length;
+
+      // Breadth ratio and its 10-day EMA
+      const ema = new Array(N);
+      for (let i = 0; i < N; i++) {
+        const ratio = rows[i].adv / (rows[i].adv + rows[i].dec);
+        ema[i] = i === 0 ? ratio : ratio * K + ema[i - 1] * (1 - K);
+      }
+
+      // Every stretch below 0.40, and how long it took to get above 0.615
+      // counted from the LAST close below 0.40 (Zweig's 10-day window).
+      const episodes = [];
+      for (let i = 0; i < N; ) {
+        if (ema[i] < LO) {
+          let j = i; while (j + 1 < N && ema[j + 1] < LO) j++;
+          let k = j + 1, took = null;
+          while (k < N && ema[k] >= LO) { if (ema[k] > HI) { took = k - j; break; } k++; }
+          let low = ema[i]; for (let t = i; t <= j; t++) low = Math.min(low, ema[t]);
+          episodes.push({ start: i, lastBelow: j, low, took, hit: took != null ? k : null });
+          i = (took != null ? k : j) + 1;
+        } else i++;
+      }
+      const thrusts = episodes.filter(e => e.took != null && e.took <= WIN);
+      const misses  = episodes.filter(e => e.took != null && e.took > WIN && e.took <= MISS_MAX);
+      // "Dips" for the stats: the first close below 0.40 after at least
+      // QUIET days without one, so a messy week counts once.
+      const dips = []; { let lastBelowIdx = -1e9;
+        for (let i = 0; i < N; i++) if (ema[i] < LO) { if (i - lastBelowIdx > QUIET) dips.push(i); lastBelowIdx = i; } }
+
+      // ---- forward returns (S&P 500, from the close after the event) ----
+      const H = [[21, '1 month'], [63, '3 months'], [126, '6 months'], [252, '12 months']];
+      const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+      const fwdSet = (idxs, h) => idxs.map(i => (i + 1 + h < N ? rows[i + 1 + h].px / rows[i + 1].px - 1 : null)).filter(v => v != null);
+      const summarize = a => a.length ? { avg: mean(a) * 100, up: a.filter(v => v > 0).length / a.length * 100, n: a.length } : null;
+      const tStat = {}, dStat = {}, bStat = {};
+      for (const [h] of H) {
+        tStat[h] = summarize(fwdSet(thrusts.map(e => e.hit), h));
+        dStat[h] = summarize(fwdSet(dips, h));
+        const all = []; for (let i = 0; i + h < N; i++) all.push(rows[i + h].px / rows[i].px - 1);
+        bStat[h] = summarize(all);
+      }
+      // One decimal, signed; a value that rounds to zero prints as "0.0%", never "-0.0%".
+      const fmtPct = (v, d) => { const s = v.toFixed(d == null ? 1 : d); return (parseFloat(s) === 0 ? '0.0' : (v > 0 ? '+' : '') + s) + '%'; };
+      const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDate = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + parseInt(d.slice(8, 10), 10) + ', ' + d.slice(0, 4);
+      const short = s => s ? `${fmtPct(s.avg)} · ${Math.round(s.up)}%` : '—';
+      const stats = {
+        thrusts: String(thrusts.length), dips: String(dips.length),
+        t6: short(tStat[126]), d6: short(dStat[126]), b6: short(bStat[126]),
+        lastThrust: thrusts.length ? fmtDate(rows[thrusts[thrusts.length - 1].hit].date) : 'none yet',
+        universe: SRC.universe, fidelity: SRC.fidelity,
+        universeTag: `${SRC.tag} · advancers vs decliners · 10-day average · daily check`,
+        start: fmtDate(rows[0].date), end: fmtDate(rows[N - 1].date),
+      };
+      card.querySelectorAll('[data-zbt-stat]').forEach(el => { const v = stats[el.dataset.zbtStat]; if (v != null) el.textContent = v; });
+      const tb = $('zbtTableBody');
+      const cell = (s, bold) => s ? `<td class="${bold ? 'mv-edge ' : ''}${s.avg >= 0 ? 'pos' : 'neg'}">${fmtPct(s.avg)}</td><td>${Math.round(s.up)}%</td>` : '<td>—</td><td>—</td>';
+      if (tb) tb.innerHTML = H.map(([h, lab]) => `<tr><td>${lab}</td>${cell(tStat[h], true)}${cell(dStat[h], false)}<td>${fmtPct(bStat[h].avg)}</td><td>${Math.round(bStat[h].up)}%</td></tr>`).join('');
+
+      // ---- today's state ----
+      const last = N - 1;
+      let lastBelow = -1; for (let i = last; i >= 0; i--) if (ema[i] < LO) { lastBelow = i; break; }
+      const sinceBelow = lastBelow >= 0 ? last - lastBelow : Infinity;
+      let reachedSince = false; for (let i = Math.max(0, lastBelow + 1); i <= last; i++) if (ema[i] > HI) { reachedSince = true; break; }
+      const lastThrust = thrusts.length ? thrusts[thrusts.length - 1] : null;
+      // Trading-day deadline: real dates where we have them, weekdays beyond.
+      function deadlineDate(fromIdx, days) {
+        if (fromIdx + days <= last) return rows[fromIdx + days].date;
+        const d = new Date(rows[last].date + 'T00:00:00Z'); let left = fromIdx + days - last;
+        while (left > 0) { d.setUTCDate(d.getUTCDate() + 1); const wd = d.getUTCDay(); if (wd !== 0 && wd !== 6) left--; }
+        return d.toISOString().slice(0, 10);
+      }
+      const v = ema[last];
+      let action, cls, subText, armed = false;
+      if (lastThrust && last - lastThrust.hit <= 21) {
+        action = 'THRUST FIRED'; cls = 'iq-action-buy';
+        subText = `The average went from below 0.40 to ${ema[lastThrust.hit].toFixed(3)} in ${lastThrust.took} trading days, completing a thrust on ${fmtDate(rows[lastThrust.hit].date)}. After past thrusts the S&P 500 was higher six months later ${tStat[126] ? Math.round(tStat[126].up) + '% of the time' : 'most of the time'}.`;
+      } else if (v < LO) {
+        action = 'WASHED OUT'; cls = 'iq-action-armed'; armed = true;
+        subText = `The average is ${v.toFixed(3)}, below 0.40. The 10-day clock starts from its last close under that line; a thrust then needs a close above 0.615.`;
+      } else if (sinceBelow <= WIN && !reachedSince) {
+        const left = WIN - sinceBelow; armed = true;
+        action = left === 0 ? 'ARMED · LAST DAY' : `ARMED · ${left} DAY${left === 1 ? '' : 'S'} LEFT`; cls = 'iq-action-armed';
+        subText = `The average closed below 0.40 on ${fmtDate(rows[lastBelow].date)} and is ${v.toFixed(3)} now. A thrust needs it above 0.615 by ${fmtDate(deadlineDate(lastBelow, WIN))}. Even without a thrust, the dip itself has been a decent oversold reading.`;
+      } else {
+        action = 'NO SETUP'; cls = 'iq-action-stayout';
+        subText = `The average is ${v.toFixed(3)}. A setup begins with a close below 0.40${lastBelow >= 0 ? '; the last one was ' + fmtDate(rows[lastBelow].date) : ''}.`;
+      }
+      pill.textContent = action; pill.className = 'iq-action-pill ' + cls;
+      sub.textContent = subText;
+      asof.textContent = `As of ${rows[last].date} · ${rows[last].adv} up, ${rows[last].dec} down today`;
+
+      $('zbtNow').textContent = v.toFixed(3);
+      $('zbtNowState').textContent = v < LO ? 'washed out' : v > HI ? 'above 0.615' : 'between the lines';
+      $('zbtNowState').className = 'iq-gate-state ' + (v < LO || v > HI ? 'iq-gate-on' : 'iq-gate-off');
+      $('zbtNowGate').classList.toggle('iq-gate-firing', v < LO || v > HI);
+      if (lastBelow >= 0) {
+        const ep = episodes.filter(e => e.lastBelow === lastBelow)[0];
+        $('zbtDip').textContent = fmtDate(rows[lastBelow].date);
+        $('zbtDipState').textContent = `low ${(ep ? ep.low : ema[lastBelow]).toFixed(3)} · ${sinceBelow} day${sinceBelow === 1 ? '' : 's'} ago`;
+        $('zbtDipState').className = 'iq-gate-state ' + (armed ? 'iq-gate-on' : 'iq-gate-off');
+        $('zbtDipGate').classList.toggle('iq-gate-firing', armed);
+        const dl = deadlineDate(lastBelow, WIN);
+        $('zbtDead').textContent = fmtDate(dl);
+        const left = WIN - sinceBelow;
+        $('zbtDeadState').textContent = reachedSince ? 'reached 0.615' : left >= 0 ? `${left} trading day${left === 1 ? '' : 's'} left` : 'window closed';
+        $('zbtDeadState').className = 'iq-gate-state ' + (armed && left >= 0 ? 'iq-gate-on' : 'iq-gate-off');
+        $('zbtDeadGate').classList.toggle('iq-gate-firing', armed && left >= 0);
+      }
+
+      // ---- chart: NYSE Composite (top) and the 10-day breadth average (bottom) ----
+      const nyaBy = new Map(nyaRaw.map(o => [o.Date, +o.Close]));
+      const nya = new Array(N); { let lastV = null; for (let i = 0; i < N; i++) { const x = nyaBy.get(rows[i].date); if (Number.isFinite(x)) lastV = x; nya[i] = lastV; } }
+      const svg = $('zbtChartSvg');
+      function renderChart(years) {
+        if (!svg) return;
+        const s0 = years > 0 ? Math.max(0, N - years * 252) : 0;
+        let first = s0; while (first < N && nya[first] == null) first++;
+        const n = N - first; if (n < 2) return;
+        const W = 1200, PAD_L = 58, PAD_R = 62, PAD_T = 18, GAP = 22, TOP_H = 250, BOT_H = 230;
+        const plotW = W - PAD_L - PAD_R, topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP, botY1 = botY0 + BOT_H;
+        const xFor = i => PAD_L + plotW * (i - first) / (n - 1);
+        const pv = nya.slice(first), ev = ema.slice(first);
+        let pLo = Math.min(...pv), pHi = Math.max(...pv); const pPad = (pHi - pLo) * 0.06; pLo -= pPad; pHi += pPad;
+        const yP = x => topY1 - (x - pLo) / (pHi - pLo) * TOP_H;
+        const eLo = Math.min(0.2, Math.min(...ev) - 0.02), eHi = Math.max(0.72, Math.max(...ev) + 0.02);
+        const yE = x => botY1 - (x - eLo) / (eHi - eLo) * BOT_H;
+        const parts = [];
+        // armed window shading (bottom panel, right edge)
+        if (armed && lastBelow >= first) {
+          const x0 = xFor(lastBelow);
+          parts.push(`<rect class="zbt-armed-band" x="${x0.toFixed(1)}" y="${botY0}" width="${Math.max(3, PAD_L + plotW - x0).toFixed(1)}" height="${BOT_H}"/>`);
+        }
+        // price grid + labels
+        { const range = pHi - pLo, raw = range / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => range / s <= 5.5) || mag * 10;
+          for (let t = Math.ceil(pLo / step) * step; t <= pHi; t += step) {
+            const y = yP(t).toFixed(1);
+            parts.push(`<line class="chart-grid" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${Math.round(t).toLocaleString('en-US')}</text>`);
+          } }
+        // breadth levels
+        for (const [lvl, c] of [[0.3, 'zbt-level-mid'], [LO, 'zbt-level'], [0.5, 'zbt-level-mid'], [HI, 'zbt-level'], [0.7, 'zbt-level-mid']]) {
+          if (lvl < eLo || lvl > eHi) continue;
+          const y = yE(lvl).toFixed(1);
+          parts.push(`<line class="${c}" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${lvl === HI ? '0.615' : lvl.toFixed(2)}</text>`);
+        }
+        // lines
+        const path = (vals, yf) => vals.map((x, k) => `${k ? 'L' : 'M'}${xFor(first + k).toFixed(1)},${yf(x).toFixed(1)}`).join(' ');
+        parts.push(`<path class="zbt-line-price" d="${path(pv, yP)}"/>`);
+        parts.push(`<path class="zbt-line-ema" d="${path(ev, yE)}"/>`);
+        // completed thrusts: green vertical through both panels, labelled in
+        // the gap between the panels (skipped when two sit too close to read)
+        let lastThrustX = -1e9;
+        for (const t of thrusts) {
+          if (t.hit < first) continue;
+          const x = xFor(t.hit);
+          parts.push(`<line class="zbt-thrust" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${topY0}" y2="${botY1}"/>`);
+          if (x - lastThrustX > 74) {
+            const anchor = x < PAD_L + 40 ? 'start' : x > PAD_L + plotW - 40 ? 'end' : 'middle';
+            parts.push(`<text class="zbt-label-thrust" x="${x.toFixed(1)}" y="${botY0 - 7}" text-anchor="${anchor}">thrust · ${t.took}d</text>`);
+            lastThrustX = x;
+          }
+        }
+        // near-misses: got above 0.615, but too slowly
+        let lastLabelX = -1e9;
+        for (const m of misses) {
+          if (m.hit < first) continue;
+          const x = xFor(m.hit);
+          parts.push(`<line class="zbt-miss-tick" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${(yE(ema[m.hit]) - 3).toFixed(1)}" y2="${(yE(ema[m.hit]) - 14).toFixed(1)}"/>`);
+          if (x - lastLabelX > 62) { parts.push(`<text class="zbt-label" x="${x.toFixed(1)}" y="${(yE(ema[m.hit]) - 17).toFixed(1)}" text-anchor="middle">took ${m.took} days</text>`); lastLabelX = x; }
+        }
+        // end labels
+        parts.push(`<text class="iq-eq-label" style="fill:#e8ecf4" x="${PAD_L + plotW + 4}" y="${(yP(pv[n - 1]) + 3).toFixed(1)}">${Math.round(pv[n - 1]).toLocaleString('en-US')}</text>`);
+        parts.push(`<text class="iq-eq-label" style="fill:#64d3ff" x="${PAD_L + plotW + 4}" y="${(yE(ev[n - 1]) + 3).toFixed(1)}">${ev[n - 1].toFixed(3)}</text>`);
+        // x axis
+        const spanDays = (Date.parse(rows[N - 1].date) - Date.parse(rows[first].date)) / 86400000;
+        const lab = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + (spanDays > 1100 ? d.slice(0, 4) : d.slice(2, 4));
+        for (let k = 0; k <= 7; k++) {
+          const i = first + Math.round(k / 7 * (n - 1));
+          parts.push(`<text class="chart-axis-label" x="${xFor(i).toFixed(1)}" y="${botY1 + 14}" text-anchor="${k === 0 ? 'start' : k === 7 ? 'end' : 'middle'}">${lab(rows[i].date)}</text>`);
+        }
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${topY0 + 13}">NYSE Composite</text>`);
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${botY1 - 8}">10-day average of advancers ÷ (advancers + decliners) · ${SRC.tag}</text>`);
+        svg.innerHTML = parts.join('');
+      }
+      renderChart(4);
+      card.querySelectorAll('.iq-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const y = parseInt(btn.dataset.zbtYears, 10); renderChart(Number.isFinite(y) ? y : 0);
+        });
+      });
     })();
   </script>
 </body>

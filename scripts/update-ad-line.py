@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Advance/decline lines for the S&P 500, Nasdaq-100 and Dow 30.
+Advance/decline counts for the S&P 500, Nasdaq-100, Dow 30 and S&P 1500.
 
-For each index: fetch today's member list, pull ~10 years of daily closes
+For each group: fetch today's member list, pull ~10 years of daily closes
 for every member from Yahoo, count how many rose vs fell each day, and
-write data/ad_line_<index>.csv with one row per trading day:
+write data/ad_line_<group>.csv with one row per trading day:
 
     Date,Adv,Dec,Unch,Net,ADLine,Coverage,Index
 
@@ -13,15 +13,25 @@ write data/ad_line_<index>.csv with one row per trading day:
   ADLine        running total of Net (starts at 0 on the first row)
   Coverage      members with prices on both days (newer listings drop out
                 of the early history on their own)
-  Index         the index's own close that day, for the chart overlay
+  Index         an index close that day, for chart overlays and returns
 
-Member lists come from three free sources, each cached in
-data/constituents.json so one bad fetch never empties an index:
-  S&P 500     Wikipedia's constituents table
-  Nasdaq-100  Nasdaq's own index-membership API
-  Dow 30      the DIA fund's daily holdings spreadsheet (openpyxl)
+Outputs and who reads them:
+  ad_line_spx.csv / ad_line_ndx.csv / ad_line_dow.csv
+      the advance/decline page (indicators/advance-decline.html)
+  ad_line_sp1500.csv   (S&P 500 + MidCap 400 + SmallCap 600 members)
+      the Zweig Breadth Thrust card on signals.html. No free feed publishes
+      daily NYSE-wide counts after Feb 2020; of the groups we can count
+      ourselves, the S&P 1500 tracks the real NYSE breadth ratio best
+      (0.92 correlation over the 2016-2020 overlap, and it reproduces the
+      Jan 2019, Mar 2023, Nov 2023 and Apr 2025 thrusts).
+
+Member lists come from free sources, each cached in data/constituents.json
+so one bad fetch never empties a group:
+  S&P 500 / 400 / 600   Wikipedia's constituents tables
+  Nasdaq-100            Nasdaq's own index-membership API
+  Dow 30                the DIA fund's daily holdings spreadsheet (openpyxl)
 Today's members are applied to the whole history (survivorship caveat
-noted on the page), which is why the series starts in 2016 rather than
+noted on the pages), which is why the series start in 2016 rather than
 reaching back decades.
 
 Fail-safe, like the other updaters: a CSV is rewritten only when at least
@@ -41,25 +51,37 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(REPO_ROOT, "data")
 CACHE_PATH = os.path.join(DATA_DIR, "constituents.json")
 
-INDEXES = {
-    "spx": {"label": "S&P 500",    "index_sym": "^GSPC", "expected": 500, "out": "ad_line_spx.csv"},
-    "ndx": {"label": "Nasdaq-100", "index_sym": "^NDX",  "expected": 100, "out": "ad_line_ndx.csv"},
-    "dow": {"label": "Dow 30",     "index_sym": "^DJI",  "expected": 30,  "out": "ad_line_dow.csv"},
+# Member lists we fetch (key -> label, expected size).
+LISTS = {
+    "spx": {"label": "S&P 500",       "expected": 500},
+    "ndx": {"label": "Nasdaq-100",    "expected": 100},
+    "dow": {"label": "Dow 30",        "expected": 30},
+    "mid": {"label": "S&P MidCap 400",   "expected": 400},
+    "sml": {"label": "S&P SmallCap 600", "expected": 600},
+}
+# Output files (key -> which lists are counted together, index for the overlay).
+OUTPUTS = {
+    "spx":    {"label": "S&P 500",    "lists": ["spx"],               "index_sym": "^GSPC", "out": "ad_line_spx.csv"},
+    "ndx":    {"label": "Nasdaq-100", "lists": ["ndx"],               "index_sym": "^NDX",  "out": "ad_line_ndx.csv"},
+    "dow":    {"label": "Dow 30",     "lists": ["dow"],               "index_sym": "^DJI",  "out": "ad_line_dow.csv"},
+    "sp1500": {"label": "S&P 1500",   "lists": ["spx", "mid", "sml"], "index_sym": "^GSPC", "out": "ad_line_sp1500.csv"},
 }
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+WIKI_UA = "BATS.CO research (deluxejob@yahoo.com)"
 YAHOO_HEADERS = {"User-Agent": UA, "Accept": "application/json", "Referer": "https://finance.yahoo.com/"}
 START = int(datetime(2015, 10, 1, tzinfo=timezone.utc).timestamp())   # ~3 months of runway before 2016
 FIRST_ROW = "2016-01-01"
 MIN_FETCH_SHARE = 0.85
-THROTTLE_S = 0.12
+WORKERS = 8          # parallel Yahoo requests; ~1,500 symbols in about 3-4 minutes
 
 
 def warn(msg: str) -> None:
@@ -78,9 +100,9 @@ def yahoo_symbol(sym: str) -> str:
     return sym.strip().upper().replace(".", "-")
 
 
-def members_spx() -> list[str]:
-    page = http_get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
-                    {"User-Agent": "BATS.CO research (deluxejob@yahoo.com)"}).decode("utf-8", "replace")
+def wiki_constituents(url: str) -> list[str]:
+    """Tickers from the first column of a Wikipedia table with id="constituents"."""
+    page = http_get(url, {"User-Agent": WIKI_UA}).decode("utf-8", "replace")
     m = re.search(r'<table[^>]*id="constituents"[^>]*>(.*?)</table>', page, re.S)
     if not m:
         raise RuntimeError("constituents table not found")
@@ -93,6 +115,18 @@ def members_spx() -> list[str]:
         if re.fullmatch(r"[A-Z][A-Z0-9.\-]{0,6}", txt):
             out.append(yahoo_symbol(txt))
     return out
+
+
+def members_spx() -> list[str]:
+    return wiki_constituents("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
+
+
+def members_mid() -> list[str]:
+    return wiki_constituents("https://en.wikipedia.org/wiki/List_of_S%26P_400_companies")
+
+
+def members_sml() -> list[str]:
+    return wiki_constituents("https://en.wikipedia.org/wiki/List_of_S%26P_600_companies")
 
 
 def members_ndx() -> list[str]:
@@ -123,7 +157,7 @@ def members_dow() -> list[str]:
     return out
 
 
-FETCHERS = {"spx": members_spx, "ndx": members_ndx, "dow": members_dow}
+FETCHERS = {"spx": members_spx, "ndx": members_ndx, "dow": members_dow, "mid": members_mid, "sml": members_sml}
 
 
 def load_cache() -> dict:
@@ -135,7 +169,7 @@ def load_cache() -> dict:
 
 
 def get_members(key: str, cache: dict) -> list[str]:
-    cfg = INDEXES[key]
+    cfg = LISTS[key]
     cached = (cache.get(key) or {}).get("symbols") or []
     try:
         fresh = FETCHERS[key]()
@@ -185,15 +219,19 @@ def fetch_daily(symbol: str):
     return out or None
 
 
-def fetch_all(symbols: list[str], cache: dict) -> dict:
-    for i, s in enumerate(symbols):
-        if s in cache:
-            continue
-        cache[s] = fetch_daily(s)
-        time.sleep(THROTTLE_S)
-        if (i + 1) % 100 == 0:
-            print(f"  fetched {i + 1}/{len(symbols)}")
-    return cache
+def fetch_all(symbols: list[str]) -> dict:
+    """Fetch every symbol with a small thread pool; a failed symbol maps to None."""
+    def safe(sym):
+        try:
+            return fetch_daily(sym)
+        except Exception as e:  # noqa: BLE001 — one bad symbol must not stop the run
+            warn(f"{sym}: {e}")
+            return None
+    t0 = time.time()
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        results = list(ex.map(safe, symbols))
+    print(f"  fetched {sum(1 for r in results if r)}/{len(symbols)} symbols in {time.time() - t0:.0f}s")
+    return dict(zip(symbols, results))
 
 
 # ---------------------------------------------------------------- A/D math
@@ -243,27 +281,26 @@ def existing_len(path: str) -> int:
 def main() -> int:
     os.makedirs(DATA_DIR, exist_ok=True)
     cache = load_cache()
-    members = {k: get_members(k, cache) for k in INDEXES}
-    for k, syms in members.items():
-        print(f"{INDEXES[k]['label']}: {len(syms)} members")
+    lists = {k: get_members(k, cache) for k in LISTS}
+    for k, syms in lists.items():
+        print(f"{LISTS[k]['label']}: {len(syms)} members")
     try:
         with open(CACHE_PATH, "w", encoding="utf-8", newline="\n") as f:
             json.dump(cache, f, indent=1, sort_keys=True)
     except OSError as e:
         warn(f"could not write {CACHE_PATH}: {e}")
 
-    wanted = sorted(set(s for syms in members.values() for s in syms) | {c["index_sym"] for c in INDEXES.values()})
+    wanted = sorted(set(s for syms in lists.values() for s in syms) | {c["index_sym"] for c in OUTPUTS.values()})
     print(f"Fetching {len(wanted)} symbols from Yahoo…")
-    prices: dict = {}
-    fetch_all(wanted, prices)
+    prices = fetch_all(wanted)
 
-    for key, cfg in INDEXES.items():
-        syms = members[key]
+    for key, cfg in OUTPUTS.items():
+        syms = sorted(set(s for lk in cfg["lists"] for s in lists[lk]))
         got = [prices[s] for s in syms if prices.get(s)]
         idx = prices.get(cfg["index_sym"])
         out_path = os.path.join(DATA_DIR, cfg["out"])
-        if not syms or not idx:
-            warn(f"{cfg['label']}: no member list or no index prices; leaving {cfg['out']} unchanged")
+        if not syms or not idx or any(not lists[lk] for lk in cfg["lists"]):
+            warn(f"{cfg['label']}: missing a member list or index prices; leaving {cfg['out']} unchanged")
             continue
         share = len(got) / len(syms)
         if share < MIN_FETCH_SHARE:
