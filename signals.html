@@ -4,23 +4,506 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Signals — BATS.CO</title>
-  <meta name="description" content="Market signals tracked by BATS.CO." />
+  <meta name="description" content="Standalone market signals we watch: bond-market fear spikes and two breadth washout setups, each with a live reading and what stocks did afterward." />
   <link rel="canonical" href="https://bats.co/signals.html">
   <meta property="og:site_name" content="BATS.CO">
   <meta property="og:title" content="Signals — BATS.CO">
-  <meta property="og:description" content="Market signals tracked by BATS.CO.">
+  <meta property="og:description" content="Standalone market signals we watch: bond-market fear spikes and two breadth washout setups, each with a live reading and what stocks did afterward.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://bats.co/signals.html">
   <meta property="og:image" content="https://bats.co/og-card.png?v=2">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Signals — BATS.CO">
-  <meta name="twitter:description" content="Market signals tracked by BATS.CO.">
+  <meta name="twitter:description" content="Standalone market signals we watch: bond-market fear spikes and two breadth washout setups, each with a live reading and what stocks did afterward.">
   <meta name="twitter:image" content="https://bats.co/og-card.png?v=2">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Teko:wght@600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Page-local styles — every signal is a compact card in a stacked
+       grid. The goal is that adding a new signal is just "drop another
+       .sig-card in the DOM", not a re-layout. Cards default to full
+       width; scale down to 1-col on any viewport. */
+    .signals-intro {
+      max-width: 900px;
+      margin: 1.5rem auto 2rem;
+      color: var(--text-dim);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .signals-intro strong { color: var(--text); }
+    .sig-grid {
+      display: grid;
+      /* minmax(0, 1fr), not 1fr: a plain 1fr column never shrinks below its
+         widest child, so one wide row stretched every card past a phone screen. */
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .sig-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem 1.1rem;
+    }
+    .sig-head {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.6rem 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+    .sig-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+      letter-spacing: -0.005em;
+    }
+    .sig-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .sig-pill.armed { color: #22d3ee; background: rgba(34, 211, 238, 0.10); border-color: rgba(34, 211, 238, 0.35); }
+    .sig-pill.neutral { color: var(--text-dim); background: rgba(139, 149, 168, 0.10); border-color: rgba(139, 149, 168, 0.30); }
+    .sig-pill.firing { color: #ffb658; background: rgba(255, 182, 88, 0.12); border-color: rgba(255, 182, 88, 0.45); }
+    .sig-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .sig-desc {
+      margin: 0 0 0.75rem;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .sig-chart-wrap {
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      padding: 0.5rem;
+    }
+    .sig-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .sig-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+    }
+    .sig-stat {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      padding: 0.45rem 0.6rem;
+      text-align: center;
+    }
+    .sig-stat .lbl {
+      color: var(--text-faint);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.6rem;
+      margin-bottom: 0.15rem;
+    }
+    .sig-stat .val { color: var(--text); font-weight: 700; }
+    .sig-stat .val.pos { color: var(--pos, #22d39a); }
+    .sig-stat .val.neg { color: var(--neg, #ff5374); }
+    .sig-loading { padding: 3rem 1rem; text-align: center; color: var(--text-dim); font-style: italic; }
+    .sig-note {
+      margin-top: 0.6rem;
+      font-size: 0.72rem;
+      color: var(--text-faint);
+      font-style: italic;
+      line-height: 1.45;
+    }
+    /* SVG chart internals */
+    .chart-bg { fill: transparent; }
+    .chart-grid { stroke: rgba(139, 149, 168, 0.14); stroke-width: 1; }
+    .chart-axis-label {
+      fill: var(--text-dim);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 10px;
+    }
+    .chart-panel-label {
+      fill: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .chart-ratio-line { fill: none; stroke: #ffb658; stroke-width: 1.5; }
+    .chart-spx-line   { fill: none; stroke: #64d3ff; stroke-width: 1.5; }
+    .chart-ref-line   { stroke: rgba(200, 51, 83, 0.5); stroke-width: 1; stroke-dasharray: 3 3; }
+    .chart-ref-label  { fill: rgba(200, 51, 83, 0.8); font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+    .chart-fire-line  { stroke: rgba(34, 211, 238, 0.5); stroke-width: 1; }
+
+    /* Two-Gate Long/Cash QQQ — big action pill (BUY/HOLD/SELL/STAY OUT)
+       is the whole point of this card, so it dominates. Everything
+       else (gates, backtest stats) supports the pill's verdict. */
+    .iq-action-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0.4rem 0 1.1rem;
+      padding: 1.3rem 1rem 1.2rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-soft);
+    }
+    .iq-action-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.95rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      padding: 0.75rem 1.6rem;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      text-align: center;
+    }
+    .iq-action-buy     { color: #22d39a; background: rgba(34, 211, 154, 0.14); border-color: rgba(34, 211, 154, 0.55); box-shadow: 0 0 44px rgba(34, 211, 154, 0.25); }
+    .iq-action-hold    { color: #7fe5c2; background: rgba(127, 229, 194, 0.09); border-color: rgba(127, 229, 194, 0.35); }
+    .iq-action-sell    { color: #ff5374; background: rgba(255, 83, 116, 0.14); border-color: rgba(255, 83, 116, 0.55); box-shadow: 0 0 44px rgba(255, 83, 116, 0.25); }
+    .iq-action-stayout { color: var(--text-faint); background: rgba(139, 149, 168, 0.08); border-color: rgba(139, 149, 168, 0.30); }
+    .iq-action-sub {
+      color: var(--text-dim);
+      font-size: 0.86rem;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 520px;
+    }
+    .iq-action-asof {
+      color: var(--text-faint);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 0.15rem;
+    }
+    .iq-gates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-bottom: 0.75rem;
+    }
+    @media (max-width: 600px) { .iq-gates { grid-template-columns: 1fr; } }
+    /* Two-of-Three USO card: three gates side by side, a vote-count line
+       under them, and the vote strip / EMA line in its chart. */
+    .u3-gates { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 760px) { .u3-gates { grid-template-columns: 1fr; } }
+    .u3-votes {
+      margin: -0.25rem 0 0.9rem; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+      color: var(--text-dim); letter-spacing: 0.04em;
+    }
+    .u3-votes strong { color: var(--text); }
+    .u3-votes.on strong { color: #22d39a; }
+    .u3-line-ema   { fill: none; stroke: #ffb658; stroke-width: 1.1; stroke-dasharray: 4 3; }
+    .u3-vote-on    { fill: rgba(34, 211, 154, 0.55); }
+    .u3-vote-off   { fill: rgba(139, 149, 168, 0.10); }
+    .u3-vote-label { fill: #8b95a8; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+    /* Bond Fear Spike (MOVE) card: performance lines, the falling ceiling,
+       spike markers, the ratio panel and the horizon table. */
+    .mv-line-spy    { fill: none; stroke: #64d3ff; stroke-width: 1.5; }
+    .mv-line-move   { fill: none; stroke: #e8ecf4; stroke-width: 1.2; opacity: 0.9; }
+    .mv-ceiling     { fill: none; stroke: #ffb658; stroke-width: 2; stroke-dasharray: 7 4; }
+    .mv-spike-mark  { stroke: #e879f9; stroke-width: 1.6; opacity: 0.85; }
+    .mv-spike-dot   { fill: none; stroke: #e879f9; stroke-width: 1.6; }
+    .mv-ratio-area  { fill: rgba(232, 236, 244, 0.10); }
+    .mv-ratio-line  { fill: none; stroke: #e8ecf4; stroke-width: 1.1; }
+    .mv-thresh      { stroke: rgba(255, 83, 116, 0.8); stroke-width: 1; stroke-dasharray: 4 3; }
+    .mv-thresh-soft { stroke: rgba(139, 149, 168, 0.4); stroke-width: 1; stroke-dasharray: 2 3; }
+    .mv-window      { fill: rgba(34, 211, 154, 0.16); }
+    .iq-chart-caption .iq-sw-magenta { background: transparent; border-left: 2px solid #e879f9; border-right: 0; margin-right: 0.35rem; width: 0.35em; }
+    .iq-chart-caption .iq-sw-amber   { background: transparent; border-top: 2px dashed #ffb658; height: 0; width: 1.1em; vertical-align: 3px; }
+    .iq-chart-caption .iq-sw-greenband { background: rgba(34, 211, 154, 0.22); border: 1px solid rgba(34, 211, 154, 0.55); }
+    .mv-table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+    .mv-table th, .mv-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border-soft); text-align: right; white-space: nowrap; }
+    .mv-table th { color: var(--text-faint); font-weight: 600; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .mv-table th:first-child, .mv-table td:first-child { text-align: left; color: var(--text-dim); }
+    .mv-table td { color: var(--text); }
+    .mv-table td.pos { color: #22d39a; }
+    .mv-table td.neg { color: #ff5374; }
+    .mv-table td.mv-edge { font-weight: 700; }
+    /* contain: inline-size stops the no-wrap table from widening the card
+       (and, through the shared grid column, every other card) on phones;
+       the table scrolls inside the wrapper instead. */
+    .mv-table-wrap { overflow-x: auto; contain: inline-size; min-width: 0; }
+    @media (max-width: 600px) { .mv-table { font-size: 0.62rem; } .mv-table th, .mv-table td { padding: 0.3rem 0.3rem; } }
+    .iq-gate {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.3rem 1rem;
+      align-items: baseline;
+    }
+    .iq-gate.iq-gate-firing { border-color: rgba(34, 211, 154, 0.45); background: rgba(34, 211, 154, 0.05); }
+    .iq-gate-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+    .iq-gate-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: right;
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .iq-gate-cond {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .iq-gate-state {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: right;
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .iq-gate-on  { color: #22d39a; }
+    .iq-gate-off { color: var(--text-faint); }
+
+    /* Tighter grid for the 9 stat cards on the Two-Gate panel so the
+       row wraps cleanly on medium/wide viewports. */
+    .iq-stats { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)) !important; gap: 0.5rem !important; }
+    .iq-stats .sig-stat { padding: 0.4rem 0.45rem; }
+    .iq-stats .lbl { font-size: 0.55rem; }
+    .iq-stats .val { font-size: 0.86rem; }
+
+    /* Two-Gate history chart: yellow bands mark cash periods,
+       thin dashed verticals mark BUY / SELL transitions. */
+    .iq-cash-band       { fill: rgba(255, 214, 102, 0.14); }
+    .iq-line-qqq        { fill: none; stroke: #64d3ff; stroke-width: 1.4; }
+    .iq-line-nfci       { fill: none; stroke: #ffb658; stroke-width: 1.2; }
+    .iq-line-sma        { fill: none; stroke: #7fe5c2; stroke-width: 1.2; stroke-dasharray: 4 3; }
+    .iq-zero-line       { stroke: rgba(139, 149, 168, 0.35); stroke-width: 1; stroke-dasharray: 2 3; }
+    .iq-mark-buy        { stroke: rgba(34, 211, 154, 0.75); stroke-width: 1.3; }
+    .iq-mark-sell       { stroke: rgba(255, 83, 116, 0.75); stroke-width: 1.3; }
+    .iq-legend-swatch-cash { fill: rgba(255, 214, 102, 0.30); stroke: rgba(255, 214, 102, 0.65); stroke-width: 0.5; }
+    .iq-legend-line-nfci{ stroke: #ffb658; stroke-width: 1.4; }
+    .iq-legend-line-sma { stroke: #7fe5c2; stroke-width: 1.4; stroke-dasharray: 3 2; }
+    .iq-line-eq-rule    { fill: none; stroke: #22d39a; stroke-width: 1.7; }
+    .iq-line-eq-bh      { fill: none; stroke: #64d3ff; stroke-width: 1.3; stroke-dasharray: 5 3; opacity: 0.85; }
+    .iq-ref-1000        { stroke: rgba(139, 149, 168, 0.45); stroke-width: 1; stroke-dasharray: 2 3; }
+    .iq-eq-label        { fill: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+    .iq-chart-caption {
+      margin: 0.5rem 0 0;
+      padding: 0.55rem 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      font-size: 0.76rem;
+      line-height: 1.55;
+      color: var(--text-dim);
+    }
+    .iq-chart-caption strong { color: var(--text); }
+    .iq-chart-caption .iq-sw {
+      display: inline-block;
+      width: 0.85em;
+      height: 0.85em;
+      vertical-align: -2px;
+      border-radius: 2px;
+      margin-right: 0.15rem;
+    }
+    .iq-chart-caption .iq-sw-yellow { background: rgba(255, 214, 102, 0.35); border: 1px solid rgba(255, 214, 102, 0.75); }
+    .iq-chart-caption .iq-sw-red    { background: transparent; border-left: 2px solid rgba(255, 83, 116, 0.85); border-right: 0; margin-right: 0.35rem; width: 0.35em; }
+    .iq-chart-caption .iq-sw-green  { background: transparent; border-left: 2px solid rgba(34, 211, 154, 0.85); border-right: 0; margin-right: 0.35rem; width: 0.35em; }
+
+    /* Callout: "What to expect if you follow this signal". The rule
+       generates a lot of ugly-looking individual trades. Anyone who
+       plans to actually follow it needs to have that framed up front,
+       or they will bail during the first whipsaw and miss the edge. */
+    .iq-callout {
+      margin: 0.85rem 0 0;
+      padding: 0.9rem 1rem;
+      background: rgba(34, 211, 238, 0.045);
+      border: 1px solid rgba(34, 211, 238, 0.30);
+      border-left: 3px solid rgba(34, 211, 238, 0.65);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: var(--text-dim);
+    }
+    .iq-callout h4 {
+      color: #22d3ee;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      margin: 0 0 0.55rem;
+    }
+    .iq-callout p { margin: 0 0 0.55rem; }
+    .iq-callout p:last-child { margin-bottom: 0; }
+    .iq-callout strong { color: var(--text); }
+    .iq-callout ul { margin: 0.15rem 0 0.55rem 1.15rem; padding: 0; }
+    .iq-callout li { margin-bottom: 0.2rem; }
+    /* Amber variant for operational / do-this-at-a-specific-time content,
+       so it's visually distinct from the cyan behavioral callout above. */
+    .iq-callout-timing {
+      background: rgba(255, 182, 88, 0.05);
+      border-color: rgba(255, 182, 88, 0.32);
+      border-left-color: rgba(255, 182, 88, 0.75);
+    }
+    .iq-callout-timing h4 { color: #ffb658; }
+
+    /* Time-range toggle above the chart. Buttons behave like a segmented
+       control — clicking one re-renders the SVG over a shorter window.
+       The row also carries "crash preset" buttons on the left that jump
+       straight to famous bear markets, since that's where the rule's
+       edge is most visible. */
+    .iq-range-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0.4rem 0 0.15rem;
+    }
+    .iq-range-group {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .iq-range-group-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      align-self: center;
+      margin-right: 0.35rem;
+    }
+    .iq-range-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      padding: 0.25rem 0.55rem;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .iq-range-btn:hover { color: var(--text); border-color: rgba(139, 149, 168, 0.55); }
+    .iq-range-btn.active {
+      color: #22d3ee;
+      border-color: rgba(34, 211, 238, 0.55);
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    /* Factor ETF Rotation card. Reuses .iq-* patterns for pill, gates,
+       callouts, and chart. Adds only what's genuinely new: a compact
+       "live rankings" table and a pill layout that shows a ticker
+       prominently instead of a HOLD / BUY word. */
+    .fr-action-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      padding: 0.75rem 1.4rem;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      text-align: center;
+      line-height: 1.15;
+    }
+    .fr-action-pill .fr-verb {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      opacity: 0.7;
+      margin-bottom: 0.15rem;
+    }
+    .fr-action-pill .fr-ticker { font-size: 2.05rem; letter-spacing: 0.14em; }
+    .fr-action-pill.fr-hold    { color: #7fe5c2; background: rgba(127, 229, 194, 0.09); border-color: rgba(127, 229, 194, 0.35); }
+    .fr-action-pill.fr-rotate  { color: #22d39a; background: rgba(34, 211, 154, 0.14); border-color: rgba(34, 211, 154, 0.55); box-shadow: 0 0 44px rgba(34, 211, 154, 0.25); }
+
+    /* Rankings table. Rank 1 gets highlighted; rows for 2+ are subtle. */
+    .fr-rankings {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+      margin: 0.9rem 0 0.75rem;
+    }
+    .fr-rank-row {
+      display: grid;
+      grid-template-columns: 1.6rem 3.6rem 1fr 5.5rem 6.5rem;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.4rem 0.65rem;
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+    }
+    .fr-rank-row.fr-rank-top {
+      background: rgba(34, 211, 154, 0.05);
+      border-color: rgba(34, 211, 154, 0.35);
+    }
+    .fr-rank-num  { color: var(--text-faint); text-align: right; }
+    .fr-rank-tkr  { color: var(--text); font-weight: 700; letter-spacing: 0.05em; }
+    .fr-rank-tkr a { color: inherit; text-decoration: none; }
+    .fr-rank-tkr a:hover { color: #22d3ee; text-decoration: underline; text-underline-offset: 2px; }
+    .fr-rank-name { color: var(--text-dim); font-size: 0.72rem; }
+    .fr-rank-ret  { text-align: right; font-weight: 700; }
+    .fr-rank-ret.pos { color: var(--pos, #22d39a); }
+    .fr-rank-ret.neg { color: var(--neg, #ff5374); }
+    .fr-rank-badge {
+      font-size: 0.6rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+    /* Phones: the fixed desktop columns add up to more than the screen, so
+       tighten them and let long fund names end in "…" instead of widening the row. */
+    @media (max-width: 600px) {
+      .fr-rank-row  { grid-template-columns: 1.2rem 3rem minmax(0, 1fr) auto auto; gap: 0.45rem; padding: 0.4rem 0.5rem; font-size: 0.74rem; }
+      .fr-rank-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .fr-rank-badge { padding: 0.1rem 0.35rem; font-size: 0.55rem; }
+    }
+    .fr-badge-pick   { color: #22d39a; background: rgba(34, 211, 154, 0.10); border-color: rgba(34, 211, 154, 0.40); }
+    .fr-badge-empty  { visibility: hidden; }
+    /* Marker on the strategy-default lookback so it reads as "this is the
+       one the strategy actually uses" even when a comparison lookback is
+       currently active. Star + subtle amber border. */
+    .iq-range-btn.fr-lookback-default          { border-color: rgba(255, 182, 88, 0.35); }
+    .iq-range-btn.fr-lookback-default.active   { border-color: rgba(255, 182, 88, 0.75); background: rgba(255, 182, 88, 0.10); color: #ffb658; }
+  </style>
 </head>
 <body>
 
@@ -71,8 +554,264 @@
   <main>
     <section>
       <h1 style="margin: 1.5rem 0 0.25rem;">Signals</h1>
-      <!-- Intentionally blank for now: signal cards will be moved here
-           from the Strategies page (market-signals.html). -->
+      <p class="signals-intro">
+        <strong>Standalone setups we watch</strong> — each card is a
+        specific market condition that has historically preceded
+        above-baseline forward returns. These sit outside the main BATS
+        composite; the BATS gauge is a broad, slow-moving mood ring,
+        while these are single-purpose event triggers. New signals
+        will drop in over time.
+      </p>
+
+      <div class="sig-grid">
+
+        <!-- SIGNAL: Bond Fear Spike (MOVE index) — Treasury-volatility spikes vs stock-market lows -->
+        <div class="sig-card" id="sig-move-spike">
+          <div class="sig-head">
+            <h2 class="sig-title">Bond Fear Spike (MOVE Index)</h2>
+            <span class="sig-tag">Treasury volatility &middot; spike vs 50-day average &middot; short-term bounce, daily check</span>
+          </div>
+          <p class="sig-desc">
+            The <strong>MOVE index</strong> is the bond market's version of the VIX: it measures how big a swing traders
+            expect in Treasury yields over the next month. When bond fear spikes, stocks are usually already falling
+            &mdash; and the top of the spike has tended to land within days of the stock market's low. A
+            <strong>spike</strong> here means MOVE closes at least <strong>25% above its own 50-day average</strong>.
+            Since 2003 that has happened <strong data-mv-stat="spikes">&mdash;</strong> times. Measured from the day
+            each spike <strong>peaked</strong> &mdash; where the chart below draws its markers &mdash; SPY was higher a
+            month later <strong data-mv-stat="pkM1Up">&mdash;</strong> of the time, averaging
+            <strong data-mv-stat="pkM1Avg">&mdash;</strong> against <strong data-mv-stat="b1Avg">&mdash;</strong> for a
+            random month. The catch: you only know the peak a few days late. Buying the day after the rule
+            <em>fires</em>, which you can actually do, still beat a random month: <strong data-mv-stat="m1Avg">&mdash;</strong>
+            and higher <strong data-mv-stat="m1Up">&mdash;</strong> of the time. Either way the edge is short-lived: by
+            twelve months a spike looks like any other day.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="mvActionPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="mvActionSub">Fetching MOVE and SPY&hellip;</div>
+            <div class="iq-action-asof" id="mvActionAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="mvLevelGate">
+              <div class="iq-gate-label">MOVE index</div>
+              <div class="iq-gate-value" id="mvLevel">&mdash;</div>
+              <div class="iq-gate-cond" id="mvLevelCond">latest close</div>
+              <div class="iq-gate-state iq-gate-off" id="mvLevelState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="mvRatioGate">
+              <div class="iq-gate-label">MOVE vs 50-day average</div>
+              <div class="iq-gate-value" id="mvRatio">&mdash;</div>
+              <div class="iq-gate-cond">&ge; +25% &rarr; spike &middot; re-arms under +10%</div>
+              <div class="iq-gate-state iq-gate-off" id="mvRatioState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="mvCeilGate">
+              <div class="iq-gate-label">Falling ceiling</div>
+              <div class="iq-gate-value" id="mvCeil">&mdash;</div>
+              <div class="iq-gate-cond">line through the 2023 and 2025 spike highs, today</div>
+              <div class="iq-gate-state iq-gate-off" id="mvCeilState">&mdash;</div>
+            </div>
+          </div>
+          <div class="u3-votes" id="mvSpikeLine">&mdash;</div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Spikes since 2003</div><div class="val" data-mv-stat="spikes">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 week after the peak</div><div class="val pos" data-mv-stat="pkW1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 month after the peak</div><div class="val pos" data-mv-stat="pkM1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Higher a month after</div><div class="val pos" data-mv-stat="pkM1Up">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Any month (baseline)</div><div class="val" data-mv-stat="b1Avg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 month after it fires</div><div class="val pos" data-mv-stat="m1AvgUp">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Avg further drop</div><div class="val neg" data-mv-stat="pkDropAvg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst further drop</div><div class="val neg" data-mv-stat="pkDropWorst">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Last spike</div><div class="val" data-mv-stat="lastSpike">&mdash;</div></div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="SPY returns after a MOVE spike, measured from the peak and from the day the rule fires, versus any day">
+              <thead><tr><th>Holding period</th><th>From the peak</th><th>Higher</th><th>After it fires</th><th>Higher</th><th>Any day</th><th>Higher</th></tr></thead>
+              <tbody id="mvTableBody"><tr><td colspan="7">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Episodes">
+              <span class="iq-range-group-label">Episodes</span>
+              <button type="button" class="iq-range-btn active" data-mv-from="2022-10-03" data-mv-to="9999-12-31" role="tab" title="Since the October 2022 low: the window the falling-ceiling pattern was spotted in">2022 &rarr;</button>
+              <button type="button" class="iq-range-btn" data-mv-from="2007-06-01" data-mv-to="2009-12-31" role="tab" title="Financial crisis: the one spike that kept going">2008</button>
+              <button type="button" class="iq-range-btn" data-mv-from="2020-01-01" data-mv-to="2020-12-31" role="tab" title="COVID: the spike fired early and stocks fell another 31%">COVID</button>
+              <button type="button" class="iq-range-btn" data-mv-from="2021-11-01" data-mv-to="2023-06-30" role="tab" title="Fed-hike bear: repeated spikes into a falling market">2022 bear</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-mv-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="3"  role="tab">3Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn" data-mv-years="0"  role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="mvChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="SPY and the MOVE index as percent change from the start of the window, with the falling ceiling through the spike highs, spike markers, and MOVE relative to its 50-day average"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: SPY (blue) and the MOVE index (white) as percent change from the start of the window,
+            the same way the pattern is usually drawn. The <span class="iq-sw iq-sw-amber"></span><strong>amber dashed
+            line</strong> is the falling ceiling through the March 2023 and April 2025 spike highs, extended forward.
+            Each <span class="iq-sw iq-sw-magenta"></span><strong>magenta vertical</strong> marks where a spike topped
+            out (circled), drawn from the MOVE peak up to the SPY line &mdash; the stock market's low has usually come
+            within days of that peak. The rule fires earlier, on the way up.
+            <em>Bottom panel</em>: how far MOVE sits above or below its 50-day average. The dashed red line is the +25%
+            spike threshold and each <span class="iq-sw iq-sw-greenband"></span><strong>green band</strong> starts on
+            the day the rule fired and covers the month after it &mdash; the window the stats above measure.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>The peak is only known afterwards.</strong> The chart marks each spike where MOVE topped out, and
+              the stock market's low has usually been within days of that point. But MOVE has to stop rising before you
+              can call it a peak. The rule fires on the way up, a median <strong data-mv-stat="fireToPeak">&mdash;</strong>
+              trading days before the top, and buying the day after it fires captured most of the move
+              (<span data-mv-stat="m1Avg">&mdash;</span> a month later vs <span data-mv-stat="pkM1Avg">&mdash;</span> from
+              the exact peak). Waiting for MOVE to turn down first did not help: by the time a 5&ndash;10% drop from the
+              spike high confirmed a peak, the first bounce had usually already happened.
+            </p>
+            <p>
+              <strong>It is a bounce signal, not a bottom call.</strong> Even from the peak, the lowest close of the next
+              three months came a median <strong data-mv-stat="pkDaysToLow">&mdash;</strong> trading days later, with SPY
+              dropping another <strong data-mv-stat="pkDropAvg">&mdash;</strong> on average on the way. Twice it kept
+              falling much further &mdash; <span data-mv-stat="pkWorstTwo">&mdash;</span> &mdash; because those spikes came
+              early in a longer decline, not at the end of a scare.
+            </p>
+            <p>
+              <strong>The edge fades with time.</strong> One-week and one-month returns after a spike beat a random week or
+              month by a wide margin. Three months out the gap has narrowed (<span data-mv-stat="pkM3Avg">&mdash;</span> vs
+              <span data-mv-stat="b3Avg">&mdash;</span>), six months out it is smaller still
+              (<span data-mv-stat="pkM6Avg">&mdash;</span> vs <span data-mv-stat="b6Avg">&mdash;</span>), and at twelve
+              months a spike looks like any other day (<span data-mv-stat="pkM12Avg">&mdash;</span> vs
+              <span data-mv-stat="b12Avg">&mdash;</span>). Treat it as a reason to buy a dip, not to change a long-term plan.
+            </p>
+            <p>
+              <strong>The falling ceiling is a pattern, not a rule.</strong> Every spike since March 2023 has topped out
+              lower than the one before, along a straight line through the 2023 and 2025 highs; the March 2026 spike
+              stopped right at it. If a future spike closes clearly above that line, the calming trend is broken and the
+              2022 playbook &mdash; repeated spikes into a falling market &mdash; becomes the better guide.
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When the signal fires &mdash; and how to actually trade it</h4>
+            <p>
+              <strong>MOVE is published once a day, after the bond market closes</strong> (around 4:30 PM ET). Yahoo posts
+              the reading in the evening, so this card picks it up in the nightly refresh (~7:30 PM ET), plus a quick live
+              check when the page loads. Because the number lands after the stock market has closed, the tradable
+              version of the backtest buys SPY at the <em>next</em> day's close &mdash; you cannot act on a spike the day
+              it prints, and you cannot know it has peaked until it turns down.
+            </p>
+            <ul>
+              <li><em>Evening</em>: if the pill says SPIKE ACTIVE and the trigger date is today, plan a SPY buy for
+                tomorrow's close.</li>
+              <li><em>Sizing</em>: the historical edge is a few percent over a month. Size the trade so another
+                <span data-mv-stat="dropAvg">&mdash;</span> (the average further drop after a firing) or a crisis-sized
+                <span data-mv-stat="dropWorst">&mdash;</span> is survivable.</li>
+              <li><em>Exit</em>: the stats stop at one month and there is no exit rule in the data, so pick your holding
+                period before you buy.</li>
+            </ul>
+          </div>
+
+          <p class="sig-note">
+            Study <span data-mv-stat="start">&mdash;</span> &ndash; <span data-mv-stat="end">&mdash;</span>
+            (<span data-mv-stat="years">&mdash;</span> yrs) on daily closes of the ICE BofA MOVE index and SPY, price only.
+            Spike = MOVE close at least 25% above its 50-day simple average, one event per spike (it re-arms once MOVE
+            falls back under +10%). "From the peak" returns start at SPY's close on the day MOVE topped out within that
+            spike, which is only identifiable in hindsight; "after it fires" returns start at the close after the trigger
+            day and are the tradable version. The same pattern holds at 20%, 30% and 35% thresholds; 25% is shown because
+            it is a round number, not because it tested best. The ceiling
+            line is drawn through the highest closes of the 2023 and 2025 spikes in this data and is a chart observation,
+            not part of the rule. Results ignore trading costs, taxes and dividends. Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/signals.html#sig-move-spike"
+               data-share-title="Bond Fear Spike (MOVE Index) — BATS.CO"
+               data-share-text="When the MOVE index (bond-market fear) spikes 25% above its 50-day average, SPY has usually bounced over the following month. Live daily reading, the falling-ceiling chart and the since-2003 hit rates on the page."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
+        <!-- SIGNAL: 50MA / 200MA Breadth Ratio -->
+        <div class="sig-card" id="sig-breadth-ratio">
+          <div class="sig-head">
+            <h2 class="sig-title">Breadth Ratio (50MA / 200MA)</h2>
+            <span class="sig-pill" id="sigBr-pill">Loading…</span>
+            <span class="sig-tag">S&amp;P 500 · daily</span>
+          </div>
+          <p class="sig-desc">
+            % of large-caps above their 50-day MA divided by % above their 200-day.
+            A deep dip (≤0.35) that turns up marks a short-term breadth washout followed by
+            an early bounce — historically a good spot to buy. Vertical bars mark past fires.
+          </p>
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 460" class="sig-chart" id="sigBrSvg" preserveAspectRatio="xMidYMid meet" aria-label="Breadth ratio and SPX chart with signal markers"></svg>
+          </div>
+          <div class="sig-stats" id="sigBrStats">
+            <div class="sig-stat"><div class="lbl">Current ratio</div><div class="val" id="sigBrNow">—</div></div>
+            <div class="sig-stat"><div class="lbl">20-day low</div><div class="val" id="sigBrLow">—</div></div>
+            <div class="sig-stat"><div class="lbl">Fires / year</div><div class="val">~2.9</div></div>
+            <div class="sig-stat"><div class="lbl">60d fwd avg</div><div class="val pos">+2.9%</div></div>
+            <div class="sig-stat"><div class="lbl">250d fwd avg</div><div class="val pos">+13.2%</div></div>
+            <div class="sig-stat"><div class="lbl">250d hit rate</div><div class="val pos">86%</div></div>
+          </div>
+          <p class="sig-note">
+            Backtest 2005–2026 on ~100 S&amp;P constituents. Fires when 20-day min of the ratio
+            hit ≤0.35 and today's ratio ticks up. Baseline 250d return: +10.2% / 80% hit.
+          </p>
+        </div>
+
+        <!-- SIGNAL: Breadth Washout (companion to the Ratio card above) -->
+        <div class="sig-card" id="sig-breadth-washout">
+          <div class="sig-head">
+            <h2 class="sig-title">Breadth Washout (pct50 &le; 15%)</h2>
+            <span class="sig-pill" id="sigBw-pill">Loading&hellip;</span>
+            <span class="sig-tag">S&amp;P 500 &middot; daily</span>
+          </div>
+          <p class="sig-desc">
+            When the share of large-caps trading above their 50-day MA collapses to
+            &le;15% and then ticks back up, that's a washout bottom being formed.
+            Catches the shock-crash setups the Breadth Ratio misses (Apr 2025 Liberation
+            Day, Mar 2020 COVID, Dec 2018 Powell) plus a wider set of shallower dip-buys.
+            Threshold widened from 10 to 15 to catch nearly 2&times; the entries with
+            better short-term timing &mdash; fires slightly earlier so the market has
+            usually bottomed by the time you'd act, instead of overshooting down for a
+            week.
+          </p>
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 460" class="sig-chart" id="sigBwSvg" preserveAspectRatio="xMidYMid meet" aria-label="Breadth washout and SPX chart with signal markers"></svg>
+          </div>
+          <div class="sig-stats" id="sigBwStats">
+            <div class="sig-stat"><div class="lbl">Current pct50</div><div class="val" id="sigBwNow">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">20-day low</div><div class="val" id="sigBwLow">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Fires / year</div><div class="val">~2.3</div></div>
+            <div class="sig-stat"><div class="lbl">20d fwd avg</div><div class="val pos">+1.7%</div></div>
+            <div class="sig-stat"><div class="lbl">60d fwd avg</div><div class="val pos">+2.8%</div></div>
+            <div class="sig-stat"><div class="lbl">250d fwd avg</div><div class="val pos">+14.2%</div></div>
+            <div class="sig-stat"><div class="lbl">250d hit rate</div><div class="val pos">86%</div></div>
+          </div>
+          <p class="sig-note">
+            Backtest 2005&ndash;2026 on ~100 S&amp;P constituents. Fires when the 20-day
+            minimum of pct50 hit &le;15 and today's pct50 ticks up. Baseline 250d return:
+            +10.2% / 81% hit. Threshold widened from the earlier &le;10 setting after
+            testing showed 15 catches nearly 2&times; the entries (49 vs 29 over the
+            same window) with better short-term timing &mdash; the 5-day post-fire
+            return went from &minus;0.6% (catching a knife) to &#43;0.2% (bottom mostly
+            in). The 60d+ window is still where the
+            edge shows up.
+          </p>
+        </div>
+
+      </div>
     </section>
   </main>
 
@@ -80,8 +819,673 @@
     <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
   </footer>
   <script src="ticker-search.js" defer></script>
+  <script src="share-strip.js" defer></script>
   <script>
     document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+    // ==========================================================
+    //  Bond Fear Spike (MOVE index)
+    //
+    //  A "spike" is a MOVE close at least 25% above its own 50-day
+    //  average (one event per spike; it re-arms once MOVE cools back
+    //  under +10%). Event study: SPY bought at the close AFTER the
+    //  trigger (MOVE prints after the bell), forward 1w/1m/3m/6m/12m
+    //  returns vs any day. Chart: SPY vs MOVE % change, the falling
+    //  ceiling through the 2023 and 2025 spike highs, spike markers,
+    //  and MOVE relative to its 50-day average.
+    // ==========================================================
+    (async function initMoveSpike() {
+      const card = document.getElementById('sig-move-spike');
+      const pill = document.getElementById('mvActionPill');
+      if (!card || !pill) return;
+      const sub  = document.getElementById('mvActionSub');
+      const asof = document.getElementById('mvActionAsof');
+      const spikeLine = document.getElementById('mvSpikeLine');
+      const $ = id => document.getElementById(id);
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+      async function loadCsv(path, valueCol) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+          const p = ln.split(',');
+          const v = parseFloat(p[valueCol]);
+          if (p[0] && Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        out.sort((a, b) => a.date < b.date ? -1 : 1);
+        return out;
+      }
+
+      let move, spy;
+      try { [move, spy] = await Promise.all([loadCsv('data/move.csv', 1), loadCsv('data/spy.csv', 1)]); }
+      catch (e) { fail('Could not fetch MOVE or SPY data. Try again in a moment.'); return; }
+      if (move.length < 300 || spy.length < 300) { fail('Not enough history to run the study yet.'); return; }
+
+      // Best-effort: pick up today's MOVE print if the nightly file is a day
+      // behind. MOVE is published once a day after the bond close, so one
+      // check on page load is enough (no polling).
+      try {
+        const todayIso = new Date().toISOString().slice(0, 10);
+        if (move[move.length - 1].date < todayIso) {
+          const r = await fetch('/api/quote?syms=%5EMOVE', { cache: 'no-store' });
+          if (r.ok) {
+            const j = await r.json();
+            const q = j && j.quotes && j.quotes['^MOVE'];
+            if (q && Number.isFinite(q.price) && q.price > 0 && Number.isFinite(q.regularMarketTime)) {
+              const qDay = new Date(q.regularMarketTime * 1000).toISOString().slice(0, 10);
+              if (qDay > move[move.length - 1].date) move.push({ date: qDay, v: q.price, live: true });
+            }
+          }
+        }
+      } catch (e) { /* nightly file only */ }
+
+      // ---- MOVE-side math on its own calendar ----
+      const M = move.length, mv = move.map(r => r.v);
+      const sma50 = new Array(M).fill(null);
+      { let s = 0; for (let i = 0; i < M; i++) { s += mv[i]; if (i >= 50) s -= mv[i - 50]; if (i >= 49) sma50[i] = s / 50; } }
+      const ratio = mv.map((v, i) => sma50[i] == null ? null : v / sma50[i] - 1);
+      const TRIG = 0.25, RESET = 0.10, WINDOW = 21;
+      const S = spy.length, px = spy.map(r => r.v);
+      const trigIdx = [];
+      { let armed = true;
+        for (let i = 0; i < M; i++) {
+          const r = ratio[i]; if (r == null) continue;
+          if (armed && r >= TRIG) { if (move[i].date >= spy[0].date) trigIdx.push(i); armed = false; }
+          else if (!armed && r < RESET) armed = true;
+        } }
+      const peakOf = i => { let j = i; while (j + 1 < M && ratio[j + 1] != null && ratio[j + 1] >= RESET) j++; let p = i; for (let k = i; k <= j; k++) if (mv[k] > mv[p]) p = k; return p; };
+      const peakIdx = trigIdx.map(peakOf);
+
+      // Falling ceiling: a straight line through the 2023 and 2025 spike highs, extended forward.
+      const maxIn = (a, b) => { let p = -1; for (let i = 0; i < M; i++) if (move[i].date >= a && move[i].date <= b && (p < 0 || mv[i] > mv[p])) p = i; return p; };
+      const dayNum = iso => Date.parse(iso + 'T00:00:00Z') / 86400000;
+      const a1 = maxIn('2023-03-01', '2023-04-30'), a2 = maxIn('2025-03-15', '2025-05-15');
+      let ceilAt = null;
+      if (a1 >= 0 && a2 > a1) {
+        const slope = (mv[a2] - mv[a1]) / (dayNum(move[a2].date) - dayNum(move[a1].date));
+        ceilAt = iso => mv[a1] + slope * (dayNum(iso) - dayNum(move[a1].date));
+      }
+
+      // ---- Event study on SPY: buy at the close AFTER the trigger ----
+      const spyAtOrAfter = d => { let lo = 0, hi = S; while (lo < hi) { const m = (lo + hi) >> 1; if (spy[m].date < d) lo = m + 1; else hi = m; } return lo; };
+      const H = [[5, '1 week'], [21, '1 month'], [63, '3 months'], [126, '6 months'], [252, '12 months']];
+      // Two measurements per spike: "fires" = SPY bought at the close after
+      // the trigger prints (tradable); "peak" = SPY at its close on the day
+      // MOVE topped out within the spike (the chart's marker, hindsight only).
+      const measure = (e) => {
+        const out = { entry: null, fwd: {}, drop: null, daysToLow: null };
+        if (e == null || e >= S) return out;
+        out.entry = e;
+        for (const [h] of H) out.fwd[h] = e + h < S ? px[e + h] / px[e] - 1 : null;
+        if (e + 1 < S) { const seg = px.slice(e, e + 64); let lo = 0; for (let t = 1; t < seg.length; t++) if (seg[t] < seg[lo]) lo = t; out.drop = seg[lo] / seg[0] - 1; out.daysToLow = lo; }
+        return out;
+      };
+      const events = trigIdx.map((i, n) => {
+        const k = spyAtOrAfter(move[i].date), pk = spyAtOrAfter(move[peakIdx[n]].date);
+        const fires = measure(k + 1), peak = measure(pk < S ? pk : null);
+        return { trigDate: move[i].date, trigLevel: mv[i], trigRatio: ratio[i], peakDate: move[peakIdx[n]].date, peak: mv[peakIdx[n]],
+                 fireToPeak: peakIdx[n] - i, entry: fires.entry, fwd: fires.fwd, drop: fires.drop, daysToLow: fires.daysToLow, pk: peak };
+      });
+      const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+      const median = a => { const b = a.slice().sort((x, y) => x - y); const m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+      const upPct = a => a.filter(x => x > 0).length / a.length * 100;
+      const after = {}, afterPk = {}, base = {};
+      for (const [h] of H) {
+        const rs = events.map(ev => ev.fwd[h]).filter(x => x != null);
+        after[h] = rs.length ? { avg: mean(rs) * 100, up: upPct(rs), n: rs.length } : null;
+        const ps = events.map(ev => ev.pk.fwd[h]).filter(x => x != null);
+        afterPk[h] = ps.length ? { avg: mean(ps) * 100, up: upPct(ps), n: ps.length } : null;
+        const bs = []; for (let i = 0; i + h < S; i++) bs.push(px[i + h] / px[i] - 1);
+        base[h] = { avg: mean(bs) * 100, up: upPct(bs) };
+      }
+      const fmtPct = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '%';
+      const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthYear = iso => MONTHS[parseInt(iso.slice(5, 7), 10) - 1] + ' ' + iso.slice(0, 4);
+      const dropStats = (list, key) => {
+        const withDrop = list.filter(ev => (key ? ev[key] : ev).drop != null);
+        const drops = withDrop.map(ev => (key ? ev[key] : ev).drop), d2l = withDrop.map(ev => (key ? ev[key] : ev).daysToLow);
+        const worst = withDrop.slice().sort((a, b) => (key ? a[key] : a).drop - (key ? b[key] : b).drop).slice(0, 2);
+        return {
+          daysToLow: d2l.length ? String(Math.round(median(d2l))) : '—',
+          avg: drops.length ? (mean(drops) * 100).toFixed(1) + '%' : '—',
+          worst: drops.length ? (Math.min(...drops) * 100).toFixed(1) + '%' : '—',
+          worstTwo: worst.length === 2 ? `${monthYear(worst[0].trigDate)} (${((key ? worst[0][key] : worst[0]).drop * 100).toFixed(0)}%) and ${monthYear(worst[1].trigDate)} (${((key ? worst[1][key] : worst[1]).drop * 100).toFixed(0)}%)` : '—',
+        };
+      };
+      const dF = dropStats(events, null), dP = dropStats(events, 'pk');
+      const A = (tbl, h) => tbl[h] ? fmtPct(tbl[h].avg) : '—';
+      const U = (tbl, h) => tbl[h] ? Math.round(tbl[h].up) + '%' : '—';
+      const stats = {
+        spikes: String(trigIdx.length),
+        w1Avg: A(after, 5), w1Up: U(after, 5), m1Avg: A(after, 21), m1Up: U(after, 21),
+        m1AvgUp: after[21] ? `${fmtPct(after[21].avg)} · ${Math.round(after[21].up)}%` : '—',
+        m3Avg: A(after, 63), m6Avg: A(after, 126), m12Avg: A(after, 252),
+        pkW1Avg: A(afterPk, 5), pkW1Up: U(afterPk, 5), pkM1Avg: A(afterPk, 21), pkM1Up: U(afterPk, 21),
+        pkM3Avg: A(afterPk, 63), pkM6Avg: A(afterPk, 126), pkM12Avg: A(afterPk, 252),
+        b1Avg: fmtPct(base[21].avg), b1Up: Math.round(base[21].up) + '%',
+        b3Avg: fmtPct(base[63].avg), b6Avg: fmtPct(base[126].avg), b12Avg: fmtPct(base[252].avg),
+        daysToLow: dF.daysToLow, dropAvg: dF.avg, dropWorst: dF.worst, worstTwo: dF.worstTwo,
+        pkDaysToLow: dP.daysToLow, pkDropAvg: dP.avg, pkDropWorst: dP.worst, pkWorstTwo: dP.worstTwo,
+        fireToPeak: String(Math.round(median(events.map(ev => ev.fireToPeak)))),
+        lastSpike: trigIdx.length ? move[trigIdx[trigIdx.length - 1]].date : '—',
+        start: spy[0].date.slice(0, 7), end: spy[S - 1].date.slice(0, 7), years: ((S - 1) / 252).toFixed(1),
+      };
+      card.querySelectorAll('[data-mv-stat]').forEach(el => { const v = stats[el.dataset.mvStat]; if (v != null) el.textContent = v; });
+      const tb = $('mvTableBody');
+      const cell = (v, bold) => `<td class="${bold ? 'mv-edge ' : ''}${v >= 0 ? 'pos' : 'neg'}">${fmtPct(v)}</td>`;
+      if (tb) tb.innerHTML = H.map(([h, lab]) => {
+        const p = afterPk[h], a = after[h], b = base[h]; if (!p || !a) return '';
+        return `<tr><td>${lab}</td>${cell(p.avg, true)}<td>${Math.round(p.up)}%</td>${cell(a.avg, false)}<td>${Math.round(a.up)}%</td><td>${fmtPct(b.avg)}</td><td>${Math.round(b.up)}%</td></tr>`;
+      }).join('');
+
+      // ---- Pill, gates, last-spike line ----
+      const last = M - 1, lastTrig = trigIdx.length ? trigIdx[trigIdx.length - 1] : -1;
+      const sinceTrig = lastTrig >= 0 ? last - lastTrig : Infinity;
+      const r = ratio[last];
+      const pctS = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+      let action, cls, subText;
+      if (sinceTrig <= WINDOW && r != null) {
+        action = 'SPIKE ACTIVE'; cls = 'iq-action-buy';
+        subText = sinceTrig === 0
+          ? `MOVE closed ${pctS(r)} above its 50-day average today — a new spike. The backtest buys SPY at tomorrow's close. After the ${trigIdx.length - 1} earlier spikes, SPY was higher a month later ${stats.m1Up} of the time, but the low usually came about ${stats.daysToLow} trading days after entry.`
+          : `MOVE spiked on ${move[lastTrig].date} and sits ${pctS(r)} above its 50-day average (day ${sinceTrig} of the one-month window the stats cover). After past spikes SPY was higher a month later ${stats.m1Up} of the time, with the low arriving a median ${stats.daysToLow} trading days in — expect more wobble first.`;
+      } else if (r != null && r >= 0.15) {
+        action = 'WATCH'; cls = 'iq-action-hold';
+        subText = `MOVE is ${pctS(r)} above its 50-day average — building toward a spike. A close at or above +25% triggers.`;
+      } else {
+        action = 'NO SPIKE'; cls = 'iq-action-stayout';
+        subText = `MOVE is ${r == null ? 'still warming up' : pctS(r) + ' vs its 50-day average'}. A spike needs a close at least 25% above it.`;
+      }
+      const daysSince = iso => Math.floor((Date.now() - new Date(iso + 'T00:00:00Z').getTime()) / 86400000);
+      let asofTxt = `As of ${move[last].date}${move[last].live ? " · today's print (provisional)" : ''} · SPY thru ${spy[S - 1].date}`;
+      if (daysSince(move[last].date) > 4) asofTxt += ' · MOVE stale';
+      pill.textContent = action; pill.className = 'iq-action-pill ' + cls;
+      sub.textContent = subText; asof.textContent = asofTxt;
+
+      // Gate 1: level, change on the day, highest close since when
+      const chg1 = last > 0 ? mv[last] / mv[last - 1] - 1 : 0;
+      let since = last - 1; while (since >= 0 && mv[since] < mv[last]) since--;
+      const bigLevel = since < 0 || last - since > 60;
+      $('mvLevel').textContent = mv[last].toFixed(2);
+      $('mvLevelCond').textContent = since < 0 ? 'highest close on record' : 'highest close since ' + move[since].date;
+      $('mvLevelState').textContent = `${pctS(chg1)} today`;
+      $('mvLevelState').className = 'iq-gate-state ' + (bigLevel ? 'iq-gate-on' : 'iq-gate-off');
+      $('mvLevelGate').classList.toggle('iq-gate-firing', bigLevel);
+      // Gate 2: ratio to the 50-day average
+      const spiking = r != null && r >= TRIG, cooling = !spiking && r != null && r >= RESET && sinceTrig <= 60;
+      $('mvRatio').textContent = r == null ? '—' : pctS(r);
+      $('mvRatioState').textContent = spiking ? 'SPIKE (≥ +25%)' : cooling ? 'cooling · re-arms under +10%' : 'no spike';
+      $('mvRatioState').className = 'iq-gate-state ' + (spiking ? 'iq-gate-on' : 'iq-gate-off');
+      $('mvRatioGate').classList.toggle('iq-gate-firing', spiking);
+      // Gate 3: distance to the falling ceiling
+      if (ceilAt) {
+        const line = ceilAt(move[last].date), diff = mv[last] / line - 1;
+        let txt, on = false, broken = false;
+        if (diff > 0.02) { txt = `ABOVE by ${(diff * 100).toFixed(0)}% · pattern broken`; broken = true; }
+        else if (diff >= -0.06) { txt = 'AT the line'; on = true; }
+        else txt = `${(-diff * 100).toFixed(0)}% below the line`;
+        $('mvCeil').textContent = line.toFixed(1);
+        $('mvCeilState').textContent = txt;
+        $('mvCeilState').className = 'iq-gate-state ' + (on ? 'iq-gate-on' : 'iq-gate-off');
+        $('mvCeilState').style.color = broken ? '#ff5374' : '';
+        $('mvCeilGate').classList.toggle('iq-gate-firing', on);
+      }
+      if (lastTrig >= 0 && spikeLine) {
+        const ev = events[events.length - 1];
+        const f3 = ev.fwd[63] != null ? ` · SPY ${fmtPct(ev.fwd[63] * 100)} three months later` : '';
+        spikeLine.innerHTML = `Last spike: triggered <strong>${ev.trigDate}</strong> at ${ev.trigLevel.toFixed(1)} · peak so far <strong>${ev.peak.toFixed(1)}</strong> on ${ev.peakDate}${f3}`;
+        spikeLine.className = 'u3-votes' + (sinceTrig <= WINDOW ? ' on' : '');
+      }
+
+      // ---- Chart on SPY's calendar (MOVE forward-filled) ----
+      const mvOnSpy = new Array(S).fill(null), ratioOnSpy = new Array(S).fill(null);
+      { let j = 0, lastV = null, lastR = null;
+        for (let i = 0; i < S; i++) { while (j < M && move[j].date <= spy[i].date) { lastV = mv[j]; lastR = ratio[j]; j++; } mvOnSpy[i] = lastV; ratioOnSpy[i] = lastR; } }
+      const trigOnSpy = new Map(); trigIdx.forEach((i, n) => trigOnSpy.set(spyAtOrAfter(move[i].date), spyAtOrAfter(move[peakIdx[n]].date)));
+      let first = 0; while (first < S && (mvOnSpy[first] == null || ratioOnSpy[first] == null)) first++;
+      const viewFull = [];
+      for (let i = first; i < S; i++) viewFull.push({ date: spy[i].date, px: px[i], mv: mvOnSpy[i], r: ratioOnSpy[i], trig: trigOnSpy.has(i), peakAbs: trigOnSpy.get(i) });
+
+      const chartSvg = $('mvChartSvg');
+      function renderChart(spec) {
+        if (!chartSvg) return;
+        let startIdx = 0, endIdx = viewFull.length;
+        if (typeof spec === 'number') startIdx = spec > 0 ? Math.max(0, viewFull.length - spec * 252) : 0;
+        else if (spec && spec.from && spec.to) { const s = viewFull.findIndex(v => v.date >= spec.from), e = viewFull.findIndex(v => v.date > spec.to); startIdx = s >= 0 ? s : 0; endIdx = e >= 0 ? e : viewFull.length; }
+        const view = viewFull.slice(startIdx, endIdx);
+        if (view.length < 2) return;
+
+        const W = 1200, PAD_L = 62, PAD_R = 78, PAD_T = 20, GAP = 24, TOP_H = 330, BOT_H = 130;
+        const plotW = W - PAD_L - PAD_R, topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP, botY1 = botY0 + BOT_H;
+        const n = view.length, xFor = i => PAD_L + plotW * i / Math.max(1, n - 1);
+        const spy0 = view[0].px, mv0 = view[0].mv;
+        const ps = view.map(v => v.px / spy0 - 1), pm = view.map(v => v.mv / mv0 - 1);
+        const ceil = [];
+        if (ceilAt) { const startD = move[a1].date; for (let i = 0; i < n; i++) ceil.push(view[i].date >= startD ? ceilAt(view[i].date) / mv0 - 1 : null); }
+        const ceilVals = ceil.filter(x => x != null);
+        let lo = Math.min(0, ...ps, ...pm), hi = Math.max(0, ...ps, ...pm);
+        if (ceilVals.length) { lo = Math.min(lo, ...ceilVals); hi = Math.max(hi, ...ceilVals); }
+        const pad = (hi - lo) * 0.06 || 0.1; lo -= pad; hi += pad;
+        const yTop = v => topY1 - (v - lo) / (hi - lo) * TOP_H;
+        const rv = view.map(v => v.r);
+        let rlo = Math.min(-0.3, ...rv), rhi = Math.max(0.45, ...rv);
+        const rpad = (rhi - rlo) * 0.06; rlo -= rpad; rhi += rpad;
+        const yBot = v => botY1 - (v - rlo) / (rhi - rlo) * BOT_H;
+        const parts = [];
+
+        // top gridlines
+        const spanPct = (hi - lo) * 100, steps = [5, 10, 20, 25, 50, 100, 200, 250, 500];
+        const step = steps.find(s => spanPct / s <= 8) || 1000;
+        for (let t = Math.ceil(lo * 100 / step) * step; t <= hi * 100; t += step) {
+          const y = yTop(t / 100).toFixed(1);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="${t === 0 ? 'iq-zero-line' : 'chart-grid'}" /><text x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end" class="chart-axis-label">${t > 0 ? '+' : ''}${t}%</text>`);
+        }
+        // bottom: month-after bands, area, line, thresholds
+        const trigs = []; view.forEach((v, i) => { if (v.trig) trigs.push(i); });
+        for (const i of trigs) { const x0 = xFor(i), x1 = xFor(Math.min(n - 1, i + WINDOW)); parts.push(`<rect x="${x0.toFixed(1)}" y="${botY0}" width="${Math.max(x1 - x0, 1).toFixed(1)}" height="${BOT_H}" class="mv-window" />`); }
+        { const y0 = yBot(0).toFixed(1); let d = `M ${xFor(0).toFixed(1)} ${y0} `;
+          for (let i = 0; i < n; i++) d += `L ${xFor(i).toFixed(1)} ${yBot(rv[i]).toFixed(1)} `;
+          d += `L ${xFor(n - 1).toFixed(1)} ${y0} Z`;
+          parts.push(`<path d="${d}" class="mv-ratio-area" />`);
+          parts.push(`<path d="${rv.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yBot(v).toFixed(1)}`).join(' ')}" class="mv-ratio-line" />`); }
+        for (const [lvl, c, label] of [[0, 'iq-zero-line', '0'], [RESET, 'mv-thresh-soft', '+10% re-arm'], [TRIG, 'mv-thresh', '+25% spike']]) {
+          const y = yBot(lvl).toFixed(1);
+          parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="${c}" /><text x="${PAD_L + plotW + 4}" y="${(+y + 3).toFixed(1)}" class="chart-axis-label">${label}</text>`);
+        }
+        // top: ceiling, SPY, MOVE, spike markers
+        if (ceilVals.length) { let d = '', open = false; for (let i = 0; i < n; i++) { const c = ceil[i]; if (c == null) { open = false; continue; } d += `${open ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(c).toFixed(1)} `; open = true; } parts.push(`<path d="${d.trim()}" class="mv-ceiling" />`); }
+        parts.push(`<path d="${ps.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(v).toFixed(1)}`).join(' ')}" class="mv-line-spy" />`);
+        parts.push(`<path d="${pm.map((v, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yTop(v).toFixed(1)}`).join(' ')}" class="mv-line-move" />`);
+        // Vertical at the spike's PEAK (where the stock low has tended to
+        // be), from the MOVE peak up to the SPY line, circle on the peak.
+        // The firing day comes earlier; the green band below marks it.
+        const drawDots = trigs.length <= 14;
+        for (const i of trigs) {
+          let pk = view[i].peakAbs != null ? view[i].peakAbs - first - startIdx : i;
+          if (pk < 0 || pk >= n) pk = i;
+          const x = xFor(pk).toFixed(1), y1 = yTop(pm[pk]), y2 = yTop(ps[pk]);
+          parts.push(`<line x1="${x}" y1="${Math.min(y1, y2).toFixed(1)}" x2="${x}" y2="${Math.max(y1, y2).toFixed(1)}" class="mv-spike-mark" />`);
+          if (drawDots) parts.push(`<circle cx="${x}" cy="${yTop(pm[pk]).toFixed(1)}" r="7" class="mv-spike-dot" />`);
+        }
+        // end labels (nudged apart if they collide)
+        let ySpy = yTop(ps[n - 1]), yMv = yTop(pm[n - 1]);
+        if (Math.abs(ySpy - yMv) < 12) { if (ySpy < yMv) { ySpy -= 6; yMv += 6; } else { ySpy += 6; yMv -= 6; } }
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${(ySpy + 3).toFixed(1)}" class="iq-eq-label" style="fill:#64d3ff">${fmtPct(ps[n - 1] * 100, 0)}</text>`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${(yMv + 3).toFixed(1)}" class="iq-eq-label" style="fill:#e8ecf4">${fmtPct(pm[n - 1] * 100, 0)}</text>`);
+        // x axis: month labels for short windows, years for long ones
+        const spanYears = (dayNum(view[n - 1].date) - dayNum(view[0].date)) / 365.25;
+        const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const xl = d => spanYears <= 6 ? `${MON[parseInt(d.slice(5, 7), 10) - 1]} ${d.slice(2, 4)}` : d.slice(0, 4);
+        for (let k = 0; k <= 7; k++) { const i = Math.round(k / 7 * (n - 1)); parts.push(`<text x="${xFor(i).toFixed(1)}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${xl(view[i].date)}</text>`); }
+        parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">SPY vs MOVE · % change from window start</text>`);
+        parts.push(`<text x="${PAD_L + 6}" y="${botY0 + 14}" class="chart-panel-label">MOVE vs its 50-day average</text>`);
+        parts.push(`<g transform="translate(${PAD_L + plotW - 470}, ${topY0 + 6})"><line x1="0" y1="5" x2="18" y2="5" class="mv-line-spy" /><text x="22" y="9" class="chart-axis-label">SPY</text><line x1="58" y1="5" x2="76" y2="5" class="mv-line-move" /><text x="80" y="9" class="chart-axis-label">MOVE</text><line x1="130" y1="5" x2="148" y2="5" class="mv-ceiling" /><text x="152" y="9" class="chart-axis-label">falling ceiling</text><line x1="262" y1="0" x2="262" y2="10" class="mv-spike-mark" /><text x="268" y="9" class="chart-axis-label">spike peak</text><rect x="372" y="0" width="14" height="10" class="mv-window" /><text x="390" y="9" class="chart-axis-label">month after</text></g>`);
+        chartSvg.innerHTML = parts.join('');
+      }
+      renderChart({ from: '2022-10-03', to: '9999-12-31' });
+      card.querySelectorAll('.iq-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.mvFrom && btn.dataset.mvTo) renderChart({ from: btn.dataset.mvFrom, to: btn.dataset.mvTo });
+          else { const y = parseInt(btn.dataset.mvYears, 10); renderChart(Number.isFinite(y) ? y : 0); }
+        });
+      });
+    })();
+
+    // ==========================================================
+    //  Breadth Ratio signal — data load + SVG render
+    // ==========================================================
+    (async function initBreadthRatio() {
+      const svg = document.getElementById('sigBrSvg');
+      if (!svg) return;
+
+      // Fetch the three inputs in parallel. All three ship with the
+      // daily-update workflow; on a cold cache the client sees them
+      // straight from the raw GitHub URL via the site's Vercel cache.
+      async function loadCsv(path, closeCol = 1) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        const lines = txt.trim().split(/\r?\n/).slice(1);
+        for (const ln of lines) {
+          const p = ln.split(',');
+          if (!p[0]) continue;
+          const v = parseFloat(p[closeCol]);
+          if (Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        return out;
+      }
+
+      let pct50, pct200, spx;
+      try {
+        [pct50, pct200, spx] = await Promise.all([
+          loadCsv('data/pct_above_50ma.csv'),
+          loadCsv('data/pct_above_200ma.csv'),
+          loadCsv('data/spx.csv'),
+        ]);
+      } catch (e) {
+        svg.innerHTML = '<text x="600" y="230" text-anchor="middle" class="chart-axis-label">Failed to load data</text>';
+        return;
+      }
+
+      // Align on dates that have BOTH breadth reads AND an SPX close.
+      const m50  = new Map(pct50.map(r => [r.date, r.v]));
+      const m200 = new Map(pct200.map(r => [r.date, r.v]));
+      const spxByDate = new Map(spx.map(r => [r.date, r.v]));
+      const aligned = [];
+      for (const d of [...m50.keys()].sort()) {
+        if (!m200.has(d) || !spxByDate.has(d)) continue;
+        const p200 = m200.get(d);
+        if (p200 <= 0) continue;
+        aligned.push({ date: d, ratio: m50.get(d) / p200, spx: spxByDate.get(d) });
+      }
+      if (aligned.length < 260) {
+        svg.innerHTML = '<text x="600" y="230" text-anchor="middle" class="chart-axis-label">Not enough data</text>';
+        return;
+      }
+
+      // Show the trailing ~5 years, matching the source chart's window.
+      const view = aligned.slice(-Math.min(aligned.length, 1260));
+
+      // Fire events using the deep-dip variant that showed real edge in
+      // the backtest (Signal D): 20-day min of ratio was ≤0.35 AND today
+      // ticks up AND no fire in the last 20 days.
+      //
+      // Each fire also stashes `lowIdx` = the index within the trigger
+      // window where the ratio actually bottomed. The chart draws its
+      // vertical line at lowIdx (not the up-tick fire day) so the line
+      // visually sits AT the dip — reads as "here's the bottom this
+      // signal caught" instead of "here's the day the signal named."
+      const LOOKBACK = 20, MIN_GAP = 20, THRESHOLD = 0.35;
+      const fires = [];
+      let lastFireIdx = -MIN_GAP - 1;
+      for (let i = LOOKBACK; i < view.length; i++) {
+        let recentLow = Infinity, lowIdx = i;
+        for (let k = 1; k <= LOOKBACK; k++) {
+          const idx = i - k;
+          if (view[idx].ratio < recentLow) { recentLow = view[idx].ratio; lowIdx = idx; }
+        }
+        if (recentLow <= THRESHOLD
+            && view[i].ratio > view[i - 1].ratio
+            && (i - lastFireIdx) >= MIN_GAP) {
+          fires.push({ fireIdx: i, lowIdx });
+          lastFireIdx = i;
+        }
+      }
+
+      // ---- SVG rendering ----
+      const W = 1200, H = 460;
+      const PAD_L = 44, PAD_R = 52, PAD_T = 20;
+      const PANEL_GAP = 30;
+      const TOP_H = 200;
+      const BOT_H = 160;
+
+      const plotW = W - PAD_L - PAD_R;
+      const topY0 = PAD_T;
+      const topY1 = PAD_T + TOP_H;
+      const botY0 = topY1 + PANEL_GAP;
+      const botY1 = botY0 + BOT_H;
+
+      // Ratio axis: clamp to a sensible band for readability; the ratio
+      // occasionally spikes way past 2.0 which flattens the whole chart.
+      const rMax = Math.min(2.4, Math.max(1.6, Math.max(...view.map(v => v.ratio)) * 1.05));
+      const rMin = 0;
+      const spxMax = Math.max(...view.map(v => v.spx)) * 1.02;
+      const spxMin = Math.min(...view.map(v => v.spx)) * 0.98;
+
+      const xForIdx = i => PAD_L + (i / (view.length - 1)) * plotW;
+      const yForRatio = v => topY1 - ((v - rMin) / (rMax - rMin)) * TOP_H;
+      const yForSpx   = v => botY1 - ((v - spxMin) / (spxMax - spxMin)) * BOT_H;
+
+      const parts = [];
+
+      // Panel backgrounds + top/bottom bounding boxes
+      parts.push(`<rect x="${PAD_L}" y="${topY0}" width="${plotW}" height="${TOP_H}" class="chart-bg" stroke="var(--border-soft)" stroke-width="1"/>`);
+      parts.push(`<rect x="${PAD_L}" y="${botY0}" width="${plotW}" height="${BOT_H}" class="chart-bg" stroke="var(--border-soft)" stroke-width="1"/>`);
+
+      // Horizontal gridlines + reference lines on the ratio panel.
+      // Draw 0.5 and 0.35 as dashed red — the two thresholds we care about.
+      for (const t of [0.5, 1.0, 1.5, 2.0]) {
+        if (t > rMax) continue;
+        const y = yForRatio(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+        parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${t.toFixed(1)}</text>`);
+      }
+      for (const t of [0.35, 0.5]) {
+        const y = yForRatio(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-ref-line" />`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${y + 3}" class="chart-ref-label">${t.toFixed(2)}</text>`);
+      }
+
+      // Vertical FIRE bars extend from top of ratio panel through the SPX
+      // panel — anchored at the dip's LOW day so the line visually sits
+      // on the bottom of the ratio's dip. A reader can then eyeball
+      // where SPX was at that same moment.
+      for (const f of fires) {
+        const x = xForIdx(f.lowIdx);
+        parts.push(`<line x1="${x}" y1="${topY0}" x2="${x}" y2="${botY1}" class="chart-fire-line" />`);
+      }
+
+      // Ratio polyline
+      const ratioPath = view.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForRatio(Math.min(v.ratio, rMax)).toFixed(1)}`).join(' ');
+      parts.push(`<path d="${ratioPath}" class="chart-ratio-line" />`);
+
+      // SPX panel gridlines
+      const spxTicks = 4;
+      for (let k = 0; k <= spxTicks; k++) {
+        const t = spxMin + (spxMax - spxMin) * (k / spxTicks);
+        const y = yForSpx(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+        parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${Math.round(t).toLocaleString()}</text>`);
+      }
+      const spxPath = view.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForSpx(v.spx).toFixed(1)}`).join(' ');
+      parts.push(`<path d="${spxPath}" class="chart-spx-line" />`);
+
+      // X-axis date labels — 6 ticks evenly spread
+      const xTicks = 6;
+      for (let k = 0; k <= xTicks; k++) {
+        const idx = Math.round((k / xTicks) * (view.length - 1));
+        const x = xForIdx(idx);
+        const label = view[idx].date.slice(0, 7);      // YYYY-MM
+        parts.push(`<text x="${x}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${label}</text>`);
+      }
+
+      // Panel labels
+      parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">50MA / 200MA</text>`);
+      parts.push(`<text x="${PAD_L + 6}" y="${botY0 + 14}" class="chart-panel-label">S&amp;P 500</text>`);
+
+      svg.innerHTML = parts.join('');
+
+      // Fill the stat cards + status pill.
+      const now = view[view.length - 1];
+      let lowIn20 = Infinity;
+      for (let k = 1; k <= 20 && k < view.length; k++) lowIn20 = Math.min(lowIn20, view[view.length - k].ratio);
+      document.getElementById('sigBrNow').textContent = now.ratio.toFixed(2);
+      document.getElementById('sigBrLow').textContent = lowIn20.toFixed(2);
+      const pill = document.getElementById('sigBr-pill');
+      const armed = lowIn20 <= THRESHOLD;
+      const fireToday = fires.length && fires[fires.length - 1].fireIdx === view.length - 1;
+      if (fireToday) {
+        pill.textContent = 'Firing today';
+        pill.className = 'sig-pill firing';
+      } else if (armed) {
+        pill.textContent = 'Armed';
+        pill.className = 'sig-pill armed';
+      } else {
+        pill.textContent = 'Not armed';
+        pill.className = 'sig-pill neutral';
+      }
+    })();
+
+    // ==========================================================
+    //  Breadth Washout signal — pct50 collapses to <=15% and ticks up.
+    //  Companion to the Ratio signal above; catches the shock-crash
+    //  bottoms the ratio misses (2018-12, 2020-03, 2025-04).
+    // ==========================================================
+    (async function initBreadthWashout() {
+      const svg = document.getElementById('sigBwSvg');
+      if (!svg) return;
+
+      async function loadCsv(path, col = 1) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+          const p = ln.split(',');
+          if (!p[0]) continue;
+          const v = parseFloat(p[col]);
+          if (Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        return out;
+      }
+
+      let pct50, spx;
+      try {
+        [pct50, spx] = await Promise.all([
+          loadCsv('data/pct_above_50ma.csv'),
+          loadCsv('data/spx.csv'),
+        ]);
+      } catch (e) {
+        svg.innerHTML = '<text x="600" y="230" text-anchor="middle" class="chart-axis-label">Failed to load data</text>';
+        return;
+      }
+
+      const spxByDate = new Map(spx.map(r => [r.date, r.v]));
+      const aligned = [];
+      for (const r of pct50) {
+        if (spxByDate.has(r.date)) {
+          aligned.push({ date: r.date, pct: r.v, spx: spxByDate.get(r.date) });
+        }
+      }
+      if (aligned.length < 260) {
+        svg.innerHTML = '<text x="600" y="230" text-anchor="middle" class="chart-axis-label">Not enough data</text>';
+        return;
+      }
+
+      // Trailing ~5-year window, same as the ratio card for continuity.
+      const view = aligned.slice(-Math.min(aligned.length, 1260));
+
+      // Signal B from the backtest: 20-day min of pct50 hit <=10 AND today
+      // ticks up AND no fire in the last 20 days. Line is drawn at the
+      // low-day, not the up-tick fire day (same lesson as the ratio card).
+      const LOOKBACK = 20, MIN_GAP = 20, THRESHOLD = 15;
+      const fires = [];
+      let lastFireIdx = -MIN_GAP - 1;
+      for (let i = LOOKBACK; i < view.length; i++) {
+        let recentLow = Infinity, lowIdx = i;
+        for (let k = 1; k <= LOOKBACK; k++) {
+          const idx = i - k;
+          if (view[idx].pct < recentLow) { recentLow = view[idx].pct; lowIdx = idx; }
+        }
+        if (recentLow <= THRESHOLD
+            && view[i].pct > view[i - 1].pct
+            && (i - lastFireIdx) >= MIN_GAP) {
+          fires.push({ fireIdx: i, lowIdx });
+          lastFireIdx = i;
+        }
+      }
+
+      // ---- SVG rendering ----
+      const W = 1200, H = 460;
+      const PAD_L = 44, PAD_R = 52, PAD_T = 20;
+      const PANEL_GAP = 30;
+      const TOP_H = 200;
+      const BOT_H = 160;
+      const plotW = W - PAD_L - PAD_R;
+      const topY0 = PAD_T;
+      const topY1 = PAD_T + TOP_H;
+      const botY0 = topY1 + PANEL_GAP;
+      const botY1 = botY0 + BOT_H;
+
+      const pMax = 100;
+      const pMin = 0;
+      const spxMax = Math.max(...view.map(v => v.spx)) * 1.02;
+      const spxMin = Math.min(...view.map(v => v.spx)) * 0.98;
+
+      const xForIdx = i => PAD_L + (i / (view.length - 1)) * plotW;
+      const yForPct = v => topY1 - ((v - pMin) / (pMax - pMin)) * TOP_H;
+      const yForSpx = v => botY1 - ((v - spxMin) / (spxMax - spxMin)) * BOT_H;
+
+      const parts = [];
+      parts.push(`<rect x="${PAD_L}" y="${topY0}" width="${plotW}" height="${TOP_H}" class="chart-bg" stroke="var(--border-soft)" stroke-width="1"/>`);
+      parts.push(`<rect x="${PAD_L}" y="${botY0}" width="${plotW}" height="${BOT_H}" class="chart-bg" stroke="var(--border-soft)" stroke-width="1"/>`);
+
+      // Gridlines every 25% on the pct panel + threshold ref lines at 10 and 5.
+      for (const t of [0, 25, 50, 75, 100]) {
+        const y = yForPct(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+        parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${t}</text>`);
+      }
+      for (const t of [10]) {
+        const y = yForPct(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-ref-line" />`);
+        parts.push(`<text x="${PAD_L + plotW + 4}" y="${y + 3}" class="chart-ref-label">${t}</text>`);
+      }
+
+      // Fire bars anchored at the low-day.
+      for (const f of fires) {
+        const x = xForIdx(f.lowIdx);
+        parts.push(`<line x1="${x}" y1="${topY0}" x2="${x}" y2="${botY1}" class="chart-fire-line" />`);
+      }
+
+      // pct50 polyline.
+      const pctPath = view.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForPct(v.pct).toFixed(1)}`).join(' ');
+      parts.push(`<path d="${pctPath}" class="chart-ratio-line" />`);
+
+      // SPX gridlines + polyline.
+      const spxTicks = 4;
+      for (let k = 0; k <= spxTicks; k++) {
+        const t = spxMin + (spxMax - spxMin) * (k / spxTicks);
+        const y = yForSpx(t);
+        parts.push(`<line x1="${PAD_L}" y1="${y}" x2="${PAD_L + plotW}" y2="${y}" class="chart-grid" />`);
+        parts.push(`<text x="${PAD_L - 6}" y="${y + 3}" text-anchor="end" class="chart-axis-label">${Math.round(t).toLocaleString()}</text>`);
+      }
+      const spxPath = view.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xForIdx(i).toFixed(1)} ${yForSpx(v.spx).toFixed(1)}`).join(' ');
+      parts.push(`<path d="${spxPath}" class="chart-spx-line" />`);
+
+      // X-axis date ticks.
+      const xTicks = 6;
+      for (let k = 0; k <= xTicks; k++) {
+        const idx = Math.round((k / xTicks) * (view.length - 1));
+        const x = xForIdx(idx);
+        parts.push(`<text x="${x}" y="${botY1 + 14}" text-anchor="middle" class="chart-axis-label">${view[idx].date.slice(0, 7)}</text>`);
+      }
+
+      // Panel labels.
+      parts.push(`<text x="${PAD_L + 6}" y="${topY0 + 14}" class="chart-panel-label">% ABOVE 50MA</text>`);
+      parts.push(`<text x="${PAD_L + 6}" y="${botY0 + 14}" class="chart-panel-label">S&amp;P 500</text>`);
+
+      svg.innerHTML = parts.join('');
+
+      // Stats + status pill.
+      const now = view[view.length - 1];
+      let lowIn20 = Infinity;
+      for (let k = 1; k <= 20 && k < view.length; k++) lowIn20 = Math.min(lowIn20, view[view.length - k].pct);
+      document.getElementById('sigBwNow').textContent = now.pct.toFixed(1) + '%';
+      document.getElementById('sigBwLow').textContent = lowIn20.toFixed(1) + '%';
+      const pill = document.getElementById('sigBw-pill');
+      const armed = lowIn20 <= THRESHOLD;
+      const fireToday = fires.length && fires[fires.length - 1].fireIdx === view.length - 1;
+      if (fireToday) {
+        pill.textContent = 'Firing today';
+        pill.className = 'sig-pill firing';
+      } else if (armed) {
+        pill.textContent = 'Armed';
+        pill.className = 'sig-pill armed';
+      } else {
+        pill.textContent = 'Not armed';
+        pill.className = 'sig-pill neutral';
+      }
+    })();
   </script>
 </body>
 </html>
