@@ -32,6 +32,7 @@ import json
 import math
 import os
 import sys
+import time
 from datetime import date, datetime
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -320,6 +321,22 @@ def make_macd_cross(min_run: int, weekly: bool = False, require_trend: bool = Fa
     return rule
 
 
+def make_avoid_hot(high: float, back: float, feed_ix: str):
+    """The sell-side test: stay invested by default, step aside when the
+    gauge runs hot (>= high), and buy back once it has cooled (<= back)."""
+    state = {"invested": True}
+
+    def rule(s: Series, i: int) -> bool:
+        feed = s.fng[i] if feed_ix == "fng" else s.bats[i]
+        if state["invested"] and feed >= high:
+            state["invested"] = False
+        elif not state["invested"] and feed <= back:
+            state["invested"] = True
+        return state["invested"]
+
+    return rule
+
+
 def bull_market_only(s: Series, i: int) -> bool:
     """Simple regime filter: invested when SPX > 200-day MA, else out."""
     ma = s.ma200[i]
@@ -387,6 +404,12 @@ def run_strategy(name: str, description: str, rule, s: Series) -> dict:
     total_return = equity[-1] - 1.0
     years = (s.dates[-1] - s.dates[0]).days / 365.25
     cagr = (equity[-1] ** (1.0 / years)) - 1.0 if years > 0 else 0.0
+    # The same growth, but counted only over the time the rule was actually
+    # in stocks. This is the fair way to compare two rules that spend very
+    # different amounts of time in cash. Needs at least half a year invested
+    # to mean anything.
+    invested_years = years * pct_in_market
+    invested_cagr = (equity[-1] ** (1.0 / invested_years)) - 1.0 if invested_years >= 0.5 and equity[-1] > 0 else None
 
     # Max drawdown on the equity curve
     peak = equity[0]
@@ -419,6 +442,7 @@ def run_strategy(name: str, description: str, rule, s: Series) -> dict:
         "description": description,
         "totalReturn": round(total_return, 4),
         "cagr": round(cagr, 5),
+        "investedCagr": round(invested_cagr, 5) if invested_cagr is not None else None,
         "maxDrawdown": round(max_dd, 4),
         "sharpe": round(sharpe, 3),
         "pctInMarket": round(pct_in_market, 4),
@@ -454,12 +478,14 @@ def forward_returns_by_bucket(s: Series, feed_key: str) -> list[dict]:
     by BUCKETS in app.js and the on-page bucket table on backtest.js.
     """
     if feed_key == "fng":
+        # CNN's own zone names and cutoffs, so "Extreme Fear" means the same
+        # thing here as in the buy-zone tests above (25 or lower).
         buckets = [
-            ("Extreme Fear (0-20)",   0,   20),
-            ("Fear (20-40)",          20,  40),
-            ("Neutral (40-60)",       40,  60),
-            ("Greed (60-80)",         60,  80),
-            ("Extreme Greed (80+)",   80, 101),
+            ("Extreme Fear (under 25)", 0,   25),
+            ("Fear (25-45)",            25,  45),
+            ("Neutral (45-55)",         45,  55),
+            ("Greed (55-75)",           55,  75),
+            ("Extreme Greed (75+)",     75, 101),
         ]
     else:  # bats — real 8-bucket taxonomy from app.js BUCKETS
         buckets = [
@@ -518,109 +544,243 @@ def forward_returns_by_bucket(s: Series, feed_key: str) -> list[dict]:
     return out
 
 
-def combined_low_forward_returns(s: Series) -> dict:
-    """Extra table: what happens after days where BOTH signals were low
-    (CNN <= 25 AND BATS <= 30)? Compared to CNN-only-low and BATS-only-low."""
-    horizons = [("1w", 5), ("1m", 21), ("3m", 63), ("6m", 126), ("12m", 252)]
+HORIZONS = [("1w", 5), ("1m", 21), ("3m", 63), ("6m", 126), ("12m", 252)]
+
+
+def fwd_stats(s: Series, idxs: list[int]) -> dict:
+    """Average S&P 500 change after the given days, and how often it was up.
+
+    Also reports how many separate "spells" those days fall into (runs of
+    days less than 20 trading days apart), because 100 oversold days in a
+    row are really one event, not 100.
+    """
     n = len(s.dates)
-    def _agg(idxs: list[int]) -> dict:
-        row = {"days": len(idxs)}
-        for hlabel, hn in horizons:
-            fwd = []
-            for i in idxs:
-                j = i + hn
-                if j >= n:
-                    continue
-                fwd.append((s.spx[j] / s.spx[i]) - 1.0)
-            if fwd:
-                row[hlabel] = round(sum(fwd) / len(fwd), 4)
-                row[hlabel + "_hit"] = round(sum(1 for r in fwd if r > 0) / len(fwd), 3)
-            else:
-                row[hlabel] = None
-                row[hlabel + "_hit"] = None
-        return row
-    idx_both = [i for i in range(n) if s.fng[i] <= 25 and s.bats[i] <= 30]
-    idx_cnn  = [i for i in range(n) if s.fng[i] <= 25 and s.bats[i] > 30]
-    idx_bats = [i for i in range(n) if s.bats[i] <= 30 and s.fng[i] > 25]
+    spells, last = 0, -10 ** 9
+    for i in idxs:
+        if i - last > 20:
+            spells += 1
+        last = i
+    row = {"days": len(idxs), "share": round(len(idxs) / n, 4) if n else 0.0, "spells": spells}
+    for hlabel, hn in HORIZONS:
+        fwd = [(s.spx[i + hn] / s.spx[i]) - 1.0 for i in idxs if i + hn < n]
+        if fwd:
+            row[hlabel] = round(sum(fwd) / len(fwd), 4)
+            row[hlabel + "_hit"] = round(sum(1 for r in fwd if r > 0) / len(fwd), 3)
+        else:
+            row[hlabel] = None
+            row[hlabel + "_hit"] = None
+    return row
+
+
+def _percentile(xs: list[float], p: float) -> float:
+    q = sorted(xs)
+    return q[int(p * (len(q) - 1))]
+
+
+def combined_low_forward_returns(s: Series, low_fng: float, low_bats: float) -> dict:
+    """Extra table: what happens after days where BOTH gauges were in their
+    buy zone? Compared to CNN-only-low and BATS-only-low."""
+    n = len(s.dates)
+    idx_both = [i for i in range(n) if s.fng[i] < low_fng and s.bats[i] < low_bats]
+    idx_cnn  = [i for i in range(n) if s.fng[i] < low_fng and s.bats[i] >= low_bats]
+    idx_bats = [i for i in range(n) if s.bats[i] < low_bats and s.fng[i] >= low_fng]
     return {
-        "both_low":      _agg(idx_both),
-        "cnn_low_only":  _agg(idx_cnn),
-        "bats_low_only": _agg(idx_bats),
+        "both_low":      fwd_stats(s, idx_both),
+        "cnn_low_only":  fwd_stats(s, idx_cnn),
+        "bats_low_only": fwd_stats(s, idx_bats),
     }
+
+
+# ---------- BATS vs CNN, on equal terms ----------
+# Each gauge's own published zones. These are the natural way to compare
+# them: "when CNN says Extreme Fear" against "when BATS says Oversold".
+# A buy zone means a reading UNDER the number (CNN under 25, BATS under 32),
+# exactly as each gauge labels its own days; exits and hot zones mean the
+# reading has REACHED the number.
+EPS = 1e-9          # "under 25" is written as "<= 25 - EPS" for the rule helpers
+ZONES = {
+    "cnn":  {"name": "CNN Fear & Greed", "buy": 25, "buyLabel": "Extreme Fear",
+             "exit": 55, "exitLabel": "Greed", "hot": 75, "hotLabel": "Extreme Greed"},
+    "bats": {"name": "BATS", "buy": 32, "buyLabel": "Oversold",
+             "exit": 57, "exitLabel": "Slightly Bullish", "hot": 72, "hotLabel": "Extended"},
+}
+
+
+def head_to_head_forward(s: Series) -> dict:
+    """The same question asked of both gauges: what did the S&P 500 do after
+    a low (or high) reading?
+
+    Two kinds of row:
+      * "zone"  each gauge's own buy zone / hot zone. CNN's fires about
+        three times as often as BATS's, so this alone is not a fair fight.
+      * "pNN"   equal pickiness: the lowest (or highest) N% of each gauge's
+        readings over the test window, so both fire equally often. The
+        cutoffs come from the whole window, so they are a fairness device
+        for comparing the gauges, not a rule anyone could have traded.
+    """
+    n = len(s.dates)
+
+    def low_row(key, label, c_cut, b_cut):
+        return {"key": key, "label": label,
+                "cnn":  {"cut": round(c_cut, 1), **fwd_stats(s, [i for i in range(n) if s.fng[i] <= c_cut])},
+                "bats": {"cut": round(b_cut, 1), **fwd_stats(s, [i for i in range(n) if s.bats[i] <= b_cut])}}
+
+    def high_row(key, label, c_cut, b_cut):
+        return {"key": key, "label": label,
+                "cnn":  {"cut": round(c_cut, 1), **fwd_stats(s, [i for i in range(n) if s.fng[i] >= c_cut])},
+                "bats": {"cut": round(b_cut, 1), **fwd_stats(s, [i for i in range(n) if s.bats[i] >= b_cut])}}
+
+    low = [{"key": "zone", "label": "Each gauge's own buy zone",
+            "cnn":  {"cut": ZONES["cnn"]["buy"],  **fwd_stats(s, [i for i in range(n) if s.fng[i]  < ZONES["cnn"]["buy"]])},
+            "bats": {"cut": ZONES["bats"]["buy"], **fwd_stats(s, [i for i in range(n) if s.bats[i] < ZONES["bats"]["buy"]])}}]
+    for p, label in ((0.05, "Lowest 5% of readings"), (0.10, "Lowest 10% of readings"), (0.20, "Lowest 20% of readings")):
+        low.append(low_row(f"p{int(p * 100)}", label, _percentile(s.fng, p), _percentile(s.bats, p)))
+    high = [high_row("zone", "Each gauge's own hot zone", ZONES["cnn"]["hot"], ZONES["bats"]["hot"])]
+    for p, label in ((0.10, "Highest 10% of readings"), (0.05, "Highest 5% of readings")):
+        high.append(high_row(f"p{int(p * 100)}", label, _percentile(s.fng, 1 - p), _percentile(s.bats, 1 - p)))
+    return {"low": low, "high": high, "anyDay": fwd_stats(s, list(range(n)))}
 
 
 # ---------- Main ----------
 
 def main() -> int:
     s = build_series()
+    zc, zb = ZONES["cnn"], ZONES["bats"]
+    c_buy, b_buy = zc["buy"] - EPS, zb["buy"] - EPS     # "under 25" / "under 32"
 
+    # Equal-pickiness cutoffs: the lowest 10% of each gauge's readings over
+    # the window, and each gauge's middle reading as the exit. Used only to
+    # compare the two gauges fairly (see head_to_head_forward).
+    c10, c50 = _percentile(s.fng, 0.10), _percentile(s.fng, 0.50)
+    b10, b50 = _percentile(s.bats, 0.10), _percentile(s.bats, 0.50)
+
+    # A rule that is NOT here on purpose: "BATS low AND S&P above its
+    # 200-day average". It can never fire. BATS already measures the trend,
+    # so it does not fall into its buy zone while the index is above that
+    # average. The page reports the lowest BATS reading seen in an uptrend
+    # (batsLowestInUptrend below) instead of a row of zeros.
+    #
+    # (name, short label for the page, description, rule)
     strategies = [
-        ("Buy_and_Hold",
-         "Baseline. Always invested in S&P 500. Sets the bar every other strategy has to clear.",
+        ("Buy_and_Hold", "Buy and hold",
+         "Baseline. Always invested in the S&P 500. Sets the bar every other rule has to clear.",
          always_invested),
-        ("Trend_Only",
-         "Regime filter: invested when SPX is above its 200-day moving average, out otherwise. No sentiment input.",
+        ("Trend_Only", "Trend only (200-day average)",
+         "Invested when the S&P 500 is above its 200-day average, out otherwise. Uses neither gauge.",
          bull_market_only),
-        ("CNN_ExtremeFear_25_55",
-         "Buy when CNN <= 25, sell when CNN >= 55. Pure fear-buying with a neutral exit.",
-         make_hysteresis(25, 55, "fng")),
-        ("CNN_ExtremeFear_20_50",
-         "Tighter fear entry: buy when CNN <= 20, sell when CNN >= 50.",
+
+        # --- the three matched pairs shown side by side on the page ---
+        # Pair 1 is "buy the fear, sell the greed": each gauge's lowest zone
+        # in, each gauge's highest zone out. Same idea on both gauges.
+        ("CNN_Fear_to_Greed", "CNN: buy Extreme Fear, sell Extreme Greed",
+         f"Buy when CNN is under {zc['buy']} (Extreme Fear), hold until it reaches {zc['hot']} (Extreme Greed).",
+         make_hysteresis(c_buy, zc["hot"], "fng")),
+        ("BATS_Oversold_to_Extended", "BATS: buy Oversold, sell Extended",
+         f"Buy when BATS is under {zb['buy']} (Oversold), hold until it reaches {zb['hot']} (Extended).",
+         make_hysteresis(b_buy, zb["hot"], "bats")),
+        ("CNN_Lowest10pct", "CNN: buy its lowest 10% of readings",
+         f"Equal pickiness: buy when CNN is {c10:.1f} or lower (its lowest 10% of readings), sell at its middle reading ({c50:.1f}).",
+         make_hysteresis(c10, c50, "fng")),
+        ("BATS_Lowest10pct", "BATS: buy its lowest 10% of readings",
+         f"Equal pickiness: buy when BATS is {b10:.1f} or lower (its lowest 10% of readings), sell at its middle reading ({b50:.1f}).",
+         make_hysteresis(b10, b50, "bats")),
+        ("CNN_Avoid_ExtremeGreed", "CNN: step aside at Extreme Greed",
+         f"Stay invested, sell when CNN reaches {zc['hot']} (Extreme Greed), buy back when it cools to {zc['exit']}.",
+         make_avoid_hot(zc["hot"], zc["exit"], "fng")),
+        ("BATS_Avoid_Extended", "BATS: step aside at Extended",
+         f"Stay invested, sell when BATS reaches {zb['hot']} (Extended), buy back when it cools to {zb['exit']}.",
+         make_avoid_hot(zb["hot"], zb["exit"], "bats")),
+
+        # --- other variants we ran ---
+        ("CNN_ExtremeFear_25_55", "CNN: buy Extreme Fear, sell at Greed",
+         f"Earlier exit: buy when CNN is under {zc['buy']}, sell as soon as it reaches {zc['exit']} (Greed).",
+         make_hysteresis(c_buy, zc["exit"], "fng")),
+        ("BATS_Oversold_32_57", "BATS: buy Oversold, sell at Slightly Bullish",
+         f"Earlier exit: buy when BATS is under {zb['buy']}, sell as soon as it reaches {zb['exit']} (Slightly Bullish).",
+         make_hysteresis(b_buy, zb["exit"], "bats")),
+        ("BATS_Oversold_32_65", "BATS: buy Oversold, sell at Bullish",
+         f"Middle exit: buy when BATS is under {zb['buy']}, sell when it reaches 65 (Bullish).",
+         make_hysteresis(b_buy, 65, "bats")),
+        ("CNN_ExtremeFear_20_50", "CNN: buy at 20, sell at 50",
+         "Tighter fear entry: buy when CNN is 20 or lower, sell when it reaches 50.",
          make_hysteresis(20, 50, "fng")),
-        ("CNN_Fear_plus_Trend",
-         "Buy when CNN <= 25 AND SPX > 200MA (trend filter). Exit on CNN >= 55 OR trend break.",
-         make_hysteresis_with_trend(25, 55, "fng", require_above_ma=True)),
-        ("BATS_Low_25_55",
-         "Buy when BATS <= 25, sell when BATS >= 55. Pure BATS-buying.",
+        ("CNN_Fear_plus_Trend", "CNN Extreme Fear, uptrends only",
+         f"Buy when CNN is under {zc['buy']} AND the S&P 500 is above its 200-day average. Sell at {zc['exit']} or when the trend breaks.",
+         make_hysteresis_with_trend(c_buy, zc["exit"], "fng", require_above_ma=True)),
+        ("BATS_Low_25_55", "BATS: buy at 25, sell at 55",
+         "Stricter BATS entry: buy when BATS is 25 or lower, sell when it reaches 55.",
          make_hysteresis(25, 55, "bats")),
-        ("BATS_Low_30_60",
-         "Looser BATS entry: buy when BATS <= 30, sell when BATS >= 60.",
+        ("BATS_Low_30_60", "BATS: buy at 30, sell at 60",
+         "Buy when BATS is 30 or lower, sell when it reaches 60.",
          make_hysteresis(30, 60, "bats")),
-        ("BATS_Low_plus_Trend",
-         "Buy when BATS <= 30 AND SPX > 200MA. Exit on BATS >= 60 OR trend break.",
-         make_hysteresis_with_trend(30, 60, "bats", require_above_ma=True)),
-        ("CNN_AND_BATS_Both_Low",
-         "Strict combined: buy only when CNN <= 25 AND BATS <= 30. Exit when either rises above its threshold (55 / 60).",
-         make_combined_and(25, 30, 55, 60)),
-        ("CNN_OR_BATS_Either_Low",
-         "Loose combined: buy when CNN <= 25 OR BATS <= 30. Exit only when BOTH have risen above thresholds.",
-         make_combined_or(25, 30, 55, 60)),
-        ("MACD_Cross_10bar",
+        ("CNN_AND_BATS_Both_Low", "Both gauges in their buy zone",
+         f"Buy only when CNN is under {zc['buy']} AND BATS is under {zb['buy']}. Sell when either reaches its exit ({zc['exit']} / {zb['exit']}).",
+         make_combined_and(c_buy, b_buy, zc["exit"], zb["exit"])),
+        ("CNN_OR_BATS_Either_Low", "Either gauge in its buy zone",
+         f"Buy when CNN is under {zc['buy']} OR BATS is under {zb['buy']}. Sell only when both have reached their exits.",
+         make_combined_or(c_buy, b_buy, zc["exit"], zb["exit"])),
+
+        # --- MACD crossovers from the Divergences page ---
+        ("MACD_Cross_10bar", "MACD cross, 10-bar minimum",
          "The Divergences-page rule on daily bars: buy when the MACD line crosses above its signal after >= 10 closed bars below; sell on the mirror cross after >= 10 bars above. Earlier crosses ignored.",
          make_macd_cross(10)),
-        ("MACD_Cross_NoFilter",
+        ("MACD_Cross_NoFilter", "MACD cross, every cross",
          "Same crossover with no 10-bar minimum: every MACD/signal cross trades. Shows what the filter is worth.",
          make_macd_cross(0)),
-        ("MACD_Cross_10bar_plus_Trend",
+        ("MACD_Cross_10bar_plus_Trend", "MACD cross, uptrends only",
          "MACD 10-bar crossover, but buys only when SPX > 200-day MA and also exits on a trend break.",
          make_macd_cross(10, require_trend=True)),
-        ("MACD_Weekly_Cross_10bar",
+        ("MACD_Weekly_Cross_10bar", "MACD cross, weekly bars",
          "The same 10-bar crossover on weekly bars: decided at each Friday close, held through the following week.",
          make_macd_cross(10, weekly=True)),
     ]
 
     results = []
-    for name, desc, rule in strategies:
+    for name, label, desc, rule in strategies:
         r = run_strategy(name, desc, rule, s)
+        r["label"] = label
         results.append(r)
         print(f"  {name:32s} CAGR={r['cagr']*100:6.2f}%  MaxDD={r['maxDrawdown']*100:7.2f}%  "
               f"Sharpe={r['sharpe']:.2f}  InMkt={r['pctInMarket']*100:5.1f}%  Entries={r['entries']}")
 
+    head = head_to_head_forward(s)
+    head["pairs"] = [
+        {"key": "zone",
+         "title": "Buy the fear, sell the greed",
+         "blurb": "Each gauge's lowest zone in, each gauge's highest zone out. The same idea on both.",
+         "cnn": "CNN_Fear_to_Greed", "bats": "BATS_Oversold_to_Extended"},
+        {"key": "p10",
+         "title": "Equal pickiness",
+         "blurb": "Both gauges fire equally often: buy at the lowest 10% of each one's readings, sell at its middle reading.",
+         "cnn": "CNN_Lowest10pct", "bats": "BATS_Lowest10pct"},
+        {"key": "hot",
+         "title": "Stay invested, step aside when it runs hot",
+         "blurb": "The sell-side test: hold stocks, sell when the gauge hits its hot zone, buy back when it cools.",
+         "cnn": "CNN_Avoid_ExtremeGreed", "bats": "BATS_Avoid_Extended"},
+    ]
+
+    n = len(s.dates)
+    uptrend_bats = [s.bats[i] for i in range(n) if s.ma200[i] is not None and s.spx[i] > s.ma200[i]]
+
     payload = {
-        "generatedAt": int(datetime.utcnow().timestamp()),
+        "generatedAt": int(time.time()),
         "windowStart": s.dates[0].isoformat(),
         "windowEnd":   s.dates[-1].isoformat(),
         "tradingDays": len(s.dates),
         "assumptions": [
-            "Invested days earn full SPX daily return; flat days earn 0% (no cash yield credit).",
-            "Trades execute at the close of the signal day; the invested return begins the next trading day.",
-            "No transaction costs, taxes, or slippage. Whipsaw count surfaces flip frequency.",
-            "SPX daily closes are index level (Yahoo ^GSPC), so no reinvested dividends.",
+            "Every test uses the same trading days and S&P 500 closing prices. Dividends are not counted.",
+            "A rule that is out of the market earns nothing while it waits. No interest on cash.",
+            "Trades happen at the close on the day the signal appears; the gain or loss starts the next day.",
+            "No trading costs or taxes. Rules that trade often look better here than they would in real life.",
+            "BATS was designed and tuned by us on this same history, so it has a home-field advantage. CNN's index was not tuned by us.",
         ],
+        "zones": ZONES,
         "strategies": results,
+        "headToHead": head,
+        "batsLowestInUptrend": round(min(uptrend_bats), 1) if uptrend_bats else None,
         "forwardReturnsCNN":     forward_returns_by_bucket(s, "fng"),
         "forwardReturnsBATS":    forward_returns_by_bucket(s, "bats"),
-        "combinedLowForward":    combined_low_forward_returns(s),
+        "combinedLowForward":    combined_low_forward_returns(s, zc["buy"], zb["buy"]),
     }
 
     with open(OUT_PATH, "w") as f:
@@ -630,4 +790,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # This runs mid-pipeline in the nightly data job. A crash here must not
+    # stop that job from committing the night's other data, so on any error
+    # we warn, leave the existing signal_backtest.json in place, and exit 0.
+    try:
+        sys.exit(main())
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning::backtest-signals.py failed ({e}); keeping the existing signal_backtest.json")
+        sys.exit(0)

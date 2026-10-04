@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Signal Testing — BATS.CO</title>
-  <meta name="description" content="Head-to-head backtest of CNN Fear &amp; Greed vs BATS over 15 years of S&amp;P 500 daily data. Which sentiment signals actually beat buy-and-hold?" />
+  <meta name="description" content="CNN Fear &amp; Greed and BATS put through the same tests on 15 years of S&amp;P 500 history, side by side. Which gauge is worth acting on, and does either beat buy-and-hold?" />
   <link rel="canonical" href="https://bats.co/signal-testing.html">
   <meta property="og:site_name" content="BATS.CO">
   <meta property="og:title" content="Signal Testing — BATS.CO">
@@ -14,7 +14,7 @@
   <meta property="og:image" content="https://bats.co/og-card.png?v=2">
   <meta property="og:image:alt" content="BATS.CO market-sentiment gauge — Is now a good time to buy stocks?">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="">
+  <meta name="twitter:title" content="Signal Testing — BATS.CO">
   <meta name="twitter:description" content="Head-to-head backtest of CNN Fear &amp; Greed vs BATS over 15 years. Which sentiment signals actually beat buy-and-hold?">
   <meta name="twitter:image" content="https://bats.co/og-card.png?v=2">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -53,16 +53,19 @@
       min-width: 780px;
     }
     .st-table th, .st-table td {
-      padding: 0.55rem 0.7rem;
+      padding: 0.55rem 0.55rem;
       text-align: right;
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
     .st-table th:first-child, .st-table td:first-child {
       text-align: left;
-      max-width: 260px;
+      min-width: 220px;
+      max-width: 300px;
       white-space: normal;
     }
+    /* long column titles wrap onto two lines so all eight columns fit */
+    .st-table th { white-space: normal; line-height: 1.3; vertical-align: bottom; }
     .st-table th {
       background: var(--bg-card);
       color: var(--text-dim);
@@ -159,7 +162,7 @@
       background: rgba(255,255,255,0.015);
     }
     .st-fwd tr.baseline-row .cell-ret { color: var(--text-dim); font-style: italic; }
-    .st-fwd-note {
+    main.explainer p.st-fwd-note {
       color: var(--text-dim);
       font-size: 0.75rem;
       margin: 0.4rem 0 0.5rem;
@@ -182,13 +185,13 @@
       text-transform: uppercase;
       font-family: 'JetBrains Mono', monospace;
     }
-    .st-takeaway p { margin: 0.5rem 0; line-height: 1.55; color: var(--fg); }
+    main.explainer .st-takeaway p { margin: 0.5rem 0; line-height: 1.55; color: var(--fg); font-size: 0.95rem; }
     .st-takeaway strong { color: var(--amber); }
 
     /* ---------- Combined-low card ---------- */
     .st-combo-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 1rem;
       margin: 1rem 0;
     }
@@ -198,7 +201,7 @@
       border-radius: 8px;
       padding: 1rem;
     }
-    .st-combo-card.hero { border-color: var(--amber); border-width: 2px; }
+    .st-combo-card.hero { border-color: var(--amber); border-width: 2px; text-align: left; }   /* a site-wide .hero rule centres text */
     .st-combo-card h4 {
       margin: 0 0 0.25rem;
       font-size: 0.75rem;
@@ -208,7 +211,7 @@
       font-family: 'JetBrains Mono', monospace;
     }
     .st-combo-card.hero h4 { color: var(--amber); }
-    .st-combo-days {
+    main.explainer p.st-combo-days {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.72rem;
       color: var(--text-dim);
@@ -227,15 +230,205 @@
     .st-combo-row .lbl { color: var(--text-dim); }
     .st-combo-row .val.pos { color: var(--green, #22d39a); font-weight: 700; }
     .st-combo-row .val.neg { color: var(--red,   #ff5374); font-weight: 700; }
-    .st-combo-row .hit { color: var(--text-dim); font-size: 0.72rem; margin-left: 0.4rem; }
+    .st-combo-row .hit { color: var(--text-dim); font-size: 0.7rem; margin-left: 0.4rem; font-weight: 400; white-space: nowrap; }
+    .st-combo-row .val { white-space: nowrap; }
 
-    .st-meta {
+    main.explainer p.st-meta {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.72rem;
       color: var(--text-dim);
       text-align: center;
       margin-top: 1.5rem;
     }
+
+    /* =====================================================================
+       Head-to-head layout (BATS vs CNN on equal terms)
+       One colour per contestant, used everywhere on the page:
+         CNN Fear & Greed = cyan, BATS = green, buy and hold = amber.
+       ===================================================================== */
+    .g-cnn  { color: #6ee7ff; }
+    .g-bats { color: #22d39a; }
+    .g-hold { color: #ffb658; }
+
+    .st-explain {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--cyan, #6ee7ff);
+      border-radius: 6px;
+      padding: 0.8rem 1.1rem;
+      margin: 0.8rem 0 1.2rem;
+      color: var(--text-dim);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .st-explain strong { color: var(--fg); }
+    main.explainer .st-explain p { margin: 0.35rem 0; color: var(--text-dim); font-size: 0.92rem; line-height: 1.55; }
+
+    /* ---------- Scoreboard ---------- */
+    .st-score { width: 100%; border-collapse: collapse; min-width: 760px; }
+    .st-score th, .st-score td {
+      padding: 0.75rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .st-score th {
+      background: var(--bg-card);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .st-score .q { color: var(--fg); font-weight: 600; max-width: 310px; line-height: 1.4; }
+    .st-score .q small { display: block; color: var(--text-dim); font-weight: 400; font-size: 0.78rem; margin-top: 0.25rem; }
+    .st-big { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.1rem; color: var(--fg); white-space: nowrap; }
+    .st-sub { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-top: 0.2rem; line-height: 1.45; }
+    td.is-best-cnn  .st-big { color: #6ee7ff; }
+    td.is-best-bats .st-big { color: #22d39a; }
+    td.is-best-hold .st-big { color: #ffb658; }
+    .st-win {
+      display: inline-block;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .st-win.cnn  { color: #6ee7ff; background: rgba(110, 231, 255, 0.10); border-color: rgba(110, 231, 255, 0.4); }
+    .st-win.bats { color: #22d39a; background: rgba(34, 211, 154, 0.12); border-color: rgba(34, 211, 154, 0.45); }
+    .st-win.hold { color: #ffb658; background: rgba(255, 182, 88, 0.10); border-color: rgba(255, 182, 88, 0.45); }
+    .st-win.tie  { color: var(--text-dim); background: rgba(139, 149, 168, 0.08); border-color: rgba(139, 149, 168, 0.3); }
+
+    /* ---------- Tabs (time horizon, rule picker) ---------- */
+    .st-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.7rem 0 0.8rem; }
+    .st-tabs-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-right: 0.3rem; }
+    .st-tab {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 0.42rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+    .st-tab:hover { color: var(--fg); }
+    .st-tab.active { color: var(--fg); border-color: var(--cyan, #6ee7ff); background: rgba(110, 231, 255, 0.08); }
+
+    /* ---------- Side-by-side "what happened next" table with bars ---------- */
+    .st-h2h { width: 100%; border-collapse: collapse; min-width: 720px; }
+    .st-h2h th, .st-h2h td { padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    .st-h2h th {
+      background: var(--bg-card);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .st-h2h .lbl { color: var(--fg); font-weight: 600; max-width: 220px; line-height: 1.4; }
+    .st-h2h .lbl small { display: block; color: var(--text-dim); font-weight: 400; font-size: 0.76rem; margin-top: 0.2rem; }
+    .st-h2h td.barcell { width: 32%; min-width: 210px; }
+    .st-bar-track { position: relative; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.06); margin: 0.4rem 0 0.1rem; }
+    .st-bar { height: 100%; border-radius: 4px; min-width: 2px; }
+    .st-bar.cnn  { background: #6ee7ff; }
+    .st-bar.bats { background: #22d39a; }
+    .st-bar.any  { background: #8b95a8; }
+    .st-bar.neg  { background: #ff5374; }
+    /* amber tick = what any ordinary day did, so each bar can be read against it */
+    .st-bar-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #ffb658; border-radius: 1px; }
+    .st-edge { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+    .st-h2h tr.anyrow td { background: rgba(255, 182, 88, 0.05); }
+    main.explainer p.st-key { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); margin: 0.2rem 0 0.9rem; line-height: 1.5; }
+    .st-key i { display: inline-block; width: 2px; height: 0.9em; background: #ffb658; vertical-align: -1px; margin: 0 0.35rem 0 0; }
+
+    /* ---------- One rule, both gauges ---------- */
+    .st-pair-head { margin: 0.2rem 0 0.6rem; color: var(--text-dim); font-size: 0.92rem; line-height: 1.5; }
+    .st-pair-head strong { color: var(--fg); }
+    .st-pair-rules { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+    .st-pair-rules li { margin: 0.15rem 0; }
+    .st-pair { width: 100%; border-collapse: collapse; min-width: 560px; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; }
+    .st-pair th, .st-pair td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .st-pair th:first-child, .st-pair td:first-child { text-align: left; color: var(--text-dim); font-family: 'Inter', sans-serif; white-space: normal; }
+    .st-pair th { background: var(--bg-card); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .st-pair td { color: var(--fg); }
+    .st-pair td.dim { color: var(--text-dim); }
+    .st-pair td.best-cnn  { color: #6ee7ff; font-weight: 700; }
+    .st-pair td.best-bats { color: #22d39a; font-weight: 700; }
+    .st-pair tr.lead td { font-size: 1rem; font-weight: 700; }
+    .st-pair-chart { width: 100%; height: 320px; display: block; }
+    .st-pair-chart .grid-line { stroke: var(--border); stroke-width: 1; opacity: 0.4; stroke-dasharray: 2 3; }
+    .st-pair-chart .axis-label { fill: var(--text-dim); font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+    .st-pair-chart .end-label { font-size: 11px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    /* ---------- Fold-away detail blocks ---------- */
+    .st-details { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); margin: 1rem 0; }
+    .st-details > summary {
+      cursor: pointer;
+      padding: 0.8rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--fg);
+    }
+    .st-details > summary:hover { color: var(--cyan, #6ee7ff); }
+    .st-details > .st-details-body { padding: 0 1rem 1rem; }
+    .st-details h3 { margin: 1rem 0 0.3rem; font-size: 1rem; }
+    main.explainer .st-details p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; margin: 0.3rem 0 0.6rem; }
+
+    /* ---------- Phones: comparison tables become stacked cards ----------
+       Each row turns into a card and each cell shows its column name above
+       the value, so nothing has to be scrolled sideways. */
+    @media (max-width: 700px) {
+      .st-score, .st-h2h { min-width: 0; }
+      .st-score thead, .st-h2h thead { display: none; }
+      .st-score tbody, .st-h2h tbody { display: block; }
+      .st-score tr, .st-h2h tr {
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-card);
+        margin: 0 0 0.8rem;
+        padding: 0.35rem 0;
+      }
+      .st-score td, .st-h2h td, .st-h2h td.barcell {
+        display: block;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        border-bottom: none;
+        padding: 0.45rem 0.85rem;
+      }
+      .st-score td:empty, .st-h2h td:empty { display: none; }
+      .st-score td[data-label]::before, .st-h2h td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.64rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin-bottom: 0.2rem;
+      }
+      td.lab-cnn[data-label]::before  { color: #6ee7ff; }
+      td.lab-bats[data-label]::before { color: #22d39a; }
+      td.lab-hold[data-label]::before { color: #ffb658; }
+      .st-pair { min-width: 0; font-size: 0.76rem; }
+      .st-pair th, .st-pair td { padding: 0.45rem 0.35rem; }
+      .st-pair tr.lead td { font-size: 0.86rem; }
+      .st-pair th { font-size: 0.6rem; letter-spacing: 0.02em; white-space: normal; }
+    }
+
+    .st-learned ol { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    .st-learned li { margin: 0.55rem 0; line-height: 1.55; color: var(--fg); }
+    .st-learned li strong { color: var(--amber); }
   </style>
 </head>
 <body>
@@ -294,60 +487,160 @@
       <p class="eyebrow">SIGNAL TESTING</p>
       <h1>Does buying fear actually work?</h1>
       <p class="lede">
-        We tested fourteen different market-timing strategies against 15+ years of daily
-        S&amp;P 500 data using CNN&rsquo;s Fear &amp; Greed Index, our own BATS
-        score, and the MACD crossover signals from the Divergences page. Some of the intuitive rules people quote (&ldquo;buy when everyone is
-        fearful&rdquo;) don&rsquo;t actually beat plain buy-and-hold on their own.
-        A few combinations do. Nothing here is cherry-picked &mdash; every strategy
-        we ran is in the table below, including the losers.
+        Two gauges claim to spot the moments when fear is a buying opportunity:
+        CNN&rsquo;s Fear &amp; Greed Index and our own BATS score. We ran the
+        <strong>same tests on both</strong>, over the same
+        <span data-st="years">15+</span> years of S&amp;P 500 history, and put the results side by side.
+        Every rule we ran is on this page, including the ones that lost.
       </p>
     </section>
 
-    <section>
+    <!-- ============ 1. The short answer ============ -->
+    <section id="answer">
       <div class="section-head">
-        <h2>How to read this page</h2>
-        <p>The Strategy Comparison table shows what each rule would have done over the full test window. Below it, the equity curves let you see when each strategy diverged from buy-and-hold. Then we drill into forward returns after every reading of each index &mdash; that&rsquo;s the honest test of whether extreme sentiment predicts anything.</p>
+        <h2>The short answer</h2>
+        <p>Five questions, each answered for both gauges. The last column says who did better. The rest of the page shows the working behind each row.</p>
       </div>
-      <div class="st-assume">
-        <h3>Ground rules</h3>
-        <ul id="stAssumeList"></ul>
+      <div class="st-table-wrap">
+        <table class="st-score" id="stScore" aria-label="BATS and CNN Fear and Greed compared on five questions">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th class="g-cnn">CNN Fear &amp; Greed</th>
+              <th class="g-bats">BATS</th>
+              <th class="g-hold">Yardstick</th>
+              <th>Better</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="5" style="color:var(--text-dim);text-align:center;padding:1.5rem">Loading backtest&hellip;</td></tr></tbody>
+        </table>
+      </div>
+      <div class="st-takeaway" id="stPlain"></div>
+    </section>
+
+    <!-- ============ 2. Test 1: what happened next ============ -->
+    <section id="test1">
+      <div class="section-head">
+        <h2>Test 1 &mdash; What happened after a low reading</h2>
+        <p>
+          The simplest test, with no selling and no rules. Take every day a gauge was low and look at where
+          the S&amp;P 500 stood later. If a gauge is any good, stocks should have done better than usual after its low readings.
+        </p>
+      </div>
+      <div class="st-explain" id="stFairNote"></div>
+      <div class="st-tabs" id="stHorizonTabs" role="tablist" aria-label="How long after the reading">
+        <span class="st-tabs-label">S&amp;P 500 change after</span>
+        <button type="button" class="st-tab" data-h="1m" role="tab">1 month</button>
+        <button type="button" class="st-tab" data-h="3m" role="tab">3 months</button>
+        <button type="button" class="st-tab" data-h="6m" role="tab">6 months</button>
+        <button type="button" class="st-tab active" data-h="12m" role="tab">12 months</button>
+      </div>
+      <div class="st-table-wrap">
+        <table class="st-h2h" id="stLowTable" aria-label="S&amp;P 500 change after low readings of each gauge">
+          <thead><tr><th>Which readings</th><th class="g-cnn">CNN Fear &amp; Greed</th><th class="g-bats">BATS</th><th>Gap</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="st-key"><i></i>The amber tick on each bar is what the S&amp;P 500 did after any ordinary day. A bar that reaches past the tick beat an ordinary day.</p>
+
+      <h3 style="margin:1.6rem 0 0.3rem">And after a high reading? Did stocks do worse?</h3>
+      <p style="color:var(--text-dim);margin:0 0 0.4rem">
+        This is the reverse question. If a high reading were a reason to sell, stocks should have done
+        <strong>worse than usual</strong> afterwards. So compare each number with the ordinary day in the bottom row.
+        A number <strong>below</strong> it means the warning came true. A number at or above it means there was no warning at all.
+      </p>
+      <div class="st-table-wrap">
+        <table class="st-h2h" id="stHighTable" aria-label="S&amp;P 500 change after high readings of each gauge, compared with an ordinary day">
+          <thead><tr><th>Which readings</th><th class="g-cnn">CNN Fear &amp; Greed</th><th class="g-bats">BATS</th><th>Did it warn?</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="st-takeaway" id="stHighVerdict"></div>
+
+      <details class="st-details">
+        <summary>Show every zone of each gauge</summary>
+        <div class="st-details-body">
+          <h3>CNN Fear &amp; Greed, zone by zone</h3>
+          <p>For every day CNN was in the zone, the average S&amp;P 500 change afterwards. The small percentage is how often the S&amp;P 500 was higher.</p>
+          <div class="st-fwd-wrap">
+            <table class="st-fwd" id="stCnnFwd">
+              <thead><tr><th>Zone</th><th>Days</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>12M</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <h3>BATS, zone by zone</h3>
+          <p>The same test with the eight zones from the main BATS gauge. The two lowest zones are rare, so treat their numbers with care.</p>
+          <div class="st-fwd-wrap">
+            <table class="st-fwd" id="stBatsFwd">
+              <thead><tr><th>Zone</th><th>Days</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>12M</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="st-fwd-note">Day counts are lower than on the home page because this test only covers the years where CNN data exists. BATS&rsquo;s own history starts earlier.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ 3. Test 2: trading rules, side by side ============ -->
+    <section id="test2">
+      <div class="section-head">
+        <h2>Test 2 &mdash; Trading rules, side by side</h2>
+        <p>
+          Now turn each gauge into a rule that buys and sells, and compare it with simply holding.
+          Each rule below is run twice, once on each gauge, so the two columns are always the same idea.
+        </p>
+      </div>
+      <div class="st-explain">
+        <p><strong>How a rule can win its trades and still earn less.</strong> A rule only earns while it is invested, and these rules sit in cash most of the time. So read the rows in two groups.</p>
+        <p><strong>&ldquo;Trades won&rdquo; and &ldquo;average gain per trade&rdquo;</strong> tell you how good the signal was. <strong>&ldquo;$1 grew to&rdquo;</strong> tells you how the whole plan did, waiting time included. A gauge can win the first group and lose the second.</p>
+        <p><strong>&ldquo;Gain per year while invested&rdquo;</strong> joins the two. It asks how fast the money grew during the time it was actually in stocks, which is the fair way to compare a rule that is invested half the time with one that is invested a fifth of the time.</p>
+      </div>
+      <div class="st-tabs" id="stPairTabs" role="tablist" aria-label="Which rule"><span class="st-tabs-label">Rule</span></div>
+      <div class="st-pair-head" id="stPairHead"></div>
+      <div class="st-table-wrap">
+        <table class="st-pair" id="stPairTable" aria-label="The selected rule run on each gauge, next to buy and hold">
+          <thead><tr><th></th><th class="g-cnn">CNN Fear &amp; Greed</th><th class="g-bats">BATS</th><th class="g-hold">Buy and hold</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="st-takeaway" id="stPairVerdict"></div>
+      <div class="st-equity-wrap">
+        <svg id="stPairChart" class="st-pair-chart" viewBox="0 0 1000 320" preserveAspectRatio="none" aria-label="Growth of one dollar: the rule on each gauge against buy and hold"></svg>
+        <p class="st-key" style="margin:0.5rem 0 0">Growth of $1 since <span data-st="start">2011</span>. Flat stretches are time spent in cash.</p>
       </div>
     </section>
 
-    <section>
+    <!-- ============ 4. When both agree ============ -->
+    <section id="both">
       <div class="section-head">
-        <h2>Strategy comparison</h2>
-        <p>Every strategy runs on the same trading days from January 2011 to today. <strong>Buy &amp; Hold is the benchmark</strong> &mdash; anything below it on CAGR is a loser on total return, though some make the trade-off worthwhile by cutting drawdown or time in market. The green &ldquo;BEATS BASELINE&rdquo; badge marks strategies whose CAGR came in above buy-and-hold.</p>
+        <h2>Does it help when both gauges agree?</h2>
+        <p>
+          Days are split three ways: both gauges in their buy zone at once, only CNN, and only BATS.
+          The numbers are the S&amp;P 500&rsquo;s average change afterwards, with how often it was higher.
+        </p>
+      </div>
+      <div class="st-combo-grid" id="stComboGrid"></div>
+      <div class="st-takeaway" id="stComboVerdict"></div>
+    </section>
+
+    <!-- ============ 5. Other rules ============ -->
+    <section id="other">
+      <div class="section-head">
+        <h2>Other rules we tested</h2>
+        <p>Variations on the same ideas, plus a plain trend rule that uses neither gauge. Buy and hold is the first row for comparison.</p>
       </div>
       <div class="st-table-wrap">
-        <table class="st-table" id="stTable">
+        <table class="st-table" id="stOtherTable">
           <thead>
-            <tr>
-              <th>Strategy</th>
-              <th>CAGR</th>
-              <th>Total return</th>
-              <th>Max drawdown</th>
-              <th>Sharpe</th>
-              <th>Days in market</th>
-              <th>Entries</th>
-            </tr>
+            <tr><th>Rule</th><th>$1 grew to</th><th>Per year</th><th>Time invested</th><th>Trades</th><th>Won</th><th>Avg gain per trade</th><th>Worst drop</th></tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
+      <div class="st-explain" id="stDeadNote"></div>
     </section>
 
-    <section>
-      <div class="section-head">
-        <h2>Equity curves</h2>
-        <p>Starting with $1 on day one, what would each strategy have grown to? Click a legend swatch to hide or show that curve.</p>
-      </div>
-      <div class="st-equity-wrap">
-        <svg id="stEquityChart" class="st-equity-chart" viewBox="0 0 1000 380" preserveAspectRatio="none"></svg>
-        <div class="st-legend" id="stEquityLegend"></div>
-      </div>
-    </section>
-
+    <!-- ============ 6. MACD ============ -->
     <section id="macd">
       <div class="section-head">
         <h2>MACD crossover signals</h2>
@@ -395,71 +688,42 @@
       </div>
     </section>
 
-    <section>
-      <div class="section-head">
-        <h2>The money finding &mdash; combined extremes</h2>
-        <p>
-          Individual strategies mostly fail to beat buy-and-hold. But look what happens
-          when we don&rsquo;t <em>time</em> the market and instead just ask &ldquo;what
-          did SPX do in the days AFTER a signal fired?&rdquo; When
-          <strong>both</strong> indicators bottomed out at the same time
-          (CNN Extreme Fear&nbsp;&le;&nbsp;25 AND BATS in the Oversold zone&nbsp;&le;&nbsp;30),
-          the market&rsquo;s forward returns were far above average. Not every dip is
-          a buying opportunity &mdash; but when the crowd&rsquo;s emotion (CNN) and the
-          market&rsquo;s condition (BATS) both flash the extreme at once, history says
-          it usually is.
-        </p>
-      </div>
-      <div class="st-combo-grid" id="stComboGrid"></div>
+    <!-- ============ 7. Everything in one place ============ -->
+    <section id="all">
+      <details class="st-details">
+        <summary>Show every rule in one table, with all the growth curves</summary>
+        <div class="st-details-body">
+          <p>Every rule on this page, on the same trading days. Nothing is left out.</p>
+          <div class="st-table-wrap">
+            <table class="st-table" id="stTable">
+              <thead>
+                <tr><th>Rule</th><th>$1 grew to</th><th>Per year</th><th>Time invested</th><th>Trades</th><th>Won</th><th>Avg gain per trade</th><th>Worst drop</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p>Growth of $1 for every rule. Click a name to hide or show its line.</p>
+          <div class="st-equity-wrap">
+            <svg id="stEquityChart" class="st-equity-chart" viewBox="0 0 1000 380" preserveAspectRatio="none"></svg>
+            <div class="st-legend" id="stEquityLegend"></div>
+          </div>
+        </div>
+      </details>
     </section>
 
+    <!-- ============ 8. What we learned ============ -->
     <section>
-      <div class="section-head">
-        <h2>Forward returns by CNN F&amp;G bucket</h2>
-        <p>For every day CNN was in the given bucket, what did SPX do 1 week / 1 month / 3 months / 6 months later on average? The small percentage after each return is the hit rate &mdash; how often that horizon was positive.</p>
-      </div>
-      <div class="st-fwd-wrap">
-        <table class="st-fwd" id="stCnnFwd">
-          <thead>
-            <tr>
-              <th>Bucket</th>
-              <th>Days</th>
-              <th>1W</th><th>1M</th><th>3M</th><th>6M</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section>
-      <div class="section-head">
-        <h2>Forward returns by BATS bucket</h2>
-        <p>Same test, using BATS scores &mdash; but with our own 8-bucket taxonomy from the main gauge (Extremely Oversold through Extended), not CNN&rsquo;s 5-bucket shape. BATS uses market-condition language rather than sentiment language: it measures whether the trend is healthy or breaking down, not what the crowd is feeling. The tail buckets (Extremely Oversold and Very Oversold) are rare, so the small sample sizes deserve caution &mdash; but the forward returns are strikingly consistent.</p>
-      </div>
-      <div class="st-fwd-wrap">
-        <table class="st-fwd" id="stBatsFwd">
-          <thead>
-            <tr>
-              <th>Bucket</th>
-              <th>Days</th>
-              <th>1W</th><th>1M</th><th>3M</th><th>6M</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <p class="st-fwd-note">Note: bucket day counts are lower than on the home page&rsquo;s backtest table because this test is limited to the 2011&ndash;today window where CNN Fear &amp; Greed data exists. BATS&rsquo;s own history goes back to 2007, so the home-page counts are larger.</p>
-    </section>
-
-    <section>
-      <div class="st-takeaway">
+      <div class="st-takeaway st-learned">
         <h3>What we actually learned</h3>
-        <p><strong>1. Buy-and-hold is very hard to beat.</strong> None of the pure &ldquo;buy fear&rdquo; strategies matched the S&amp;P 500&rsquo;s total return, because sitting on cash while the market grinds higher costs a lot.</p>
-        <p><strong>2. A simple trend filter is the best risk-adjusted strategy.</strong> Just being invested when SPX is above its 200-day moving average produced most of the return with a much smaller drawdown &mdash; and it doesn&rsquo;t need any sentiment input at all.</p>
-        <p><strong>3. Extreme readings DO predict better forward returns.</strong> The bucket tables show clearly that days of CNN Extreme Fear or BATS in the Oversold zone (Extremely / Very / Oversold) were followed by above-average returns on every horizon. That&rsquo;s a real signal.</p>
-        <p><strong>4. The best use of both indicators isn&rsquo;t timing &mdash; it&rsquo;s conviction.</strong> When CNN read Extreme Fear AND BATS sat in the Oversold zone at the same time (~116 days out of 3,899), the 12-month forward return averaged nearly 28% with a 97% hit rate. That&rsquo;s not a signal to sit on cash waiting for it; it&rsquo;s a signal to add more when it happens.</p>
-        <p><strong>5. The upside extreme is harder to fade.</strong> CNN Extreme Greed and the BATS Bullish end of the scale still had positive forward returns most of the time &mdash; markets can stay hot for a long time. Selling on either alone was a losing move over this period.</p>
+        <ol id="stLearned"></ol>
+      </div>
+    </section>
+
+    <!-- ============ 9. Ground rules ============ -->
+    <section>
+      <div class="st-assume">
+        <h3>Ground rules</h3>
+        <ul id="stAssumeList"></ul>
       </div>
     </section>
 
@@ -481,10 +745,21 @@
     const fmtNum  = (v, d=2) => (v == null || !Number.isFinite(v)) ? '—' : v.toFixed(d);
     const fmtInt  = (v)      => (v == null || !Number.isFinite(v)) ? '—' : Math.round(v).toLocaleString();
     const clsSign = (v) => v == null ? 'dim' : v > 0 ? 'pos' : v < 0 ? 'neg' : 'dim';
+    const money   = (v) => (v == null || !Number.isFinite(v)) ? '—' : '$' + v.toFixed(2);
+    const share   = (v) => (v == null || !Number.isFinite(v)) ? '—' : Math.round(v * 100) + '%';
+    const esc     = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const $id     = (id) => document.getElementById(id);
 
-    // Distinct color palette for equity curves — amber first (baseline),
-    // then a diverging set so each line stays readable when many overlap.
+    // One colour per contestant, the same everywhere on the page.
+    const G = {
+      cnn:  { name: 'CNN Fear & Greed', short: 'CNN',        color: '#6ee7ff' },
+      bats: { name: 'BATS',             short: 'BATS',       color: '#22d39a' },
+      hold: { name: 'Buy and hold',     short: 'Buy & hold', color: '#ffb658' },
+    };
+    // Palette for the all-rules chart — amber first (buy and hold), then a
+    // spread so each line stays readable when many overlap.
     const COLORS = ['#ffb658', '#6ee7ff', '#22d39a', '#c78bff', '#ff9f66', '#4bd1ff', '#ffd166', '#ff5374', '#8ce88c', '#a97fff'];
+    const HLABEL = { '1m': '1 month', '3m': '3 months', '6m': '6 months', '12m': '12 months' };
 
     (async function loadSignalBacktest() {
       let d;
@@ -492,84 +767,428 @@
         const r = await fetch('data/signal_backtest.json?nc=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         d = await r.json();
+        if (!d.headToHead || !d.zones) throw new Error('backtest file is from an older version');
       } catch (e) {
-        document.getElementById('stTable').querySelector('tbody').innerHTML =
-          '<tr><td colspan="7" style="color:var(--text-dim);text-align:center;padding:1.5rem">Failed to load backtest data: ' + (e.message || e) + '</td></tr>';
+        $id('stScore').querySelector('tbody').innerHTML =
+          '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;padding:1.5rem">Failed to load backtest data: ' + esc(e.message || e) + '</td></tr>';
         return;
       }
+      const by = Object.fromEntries(d.strategies.map(s => [s.name, s]));
+      const years = (Date.parse(d.windowEnd) - Date.parse(d.windowStart)) / (365.25 * 86400000);
+      document.querySelectorAll('[data-st="years"]').forEach(el => { el.textContent = Math.floor(years) + '+'; });
+      document.querySelectorAll('[data-st="start"]').forEach(el => { el.textContent = d.windowStart.slice(0, 4); });
 
-      // ---- Assumptions ----
-      const ul = document.getElementById('stAssumeList');
-      ul.innerHTML = (d.assumptions || []).map(a => '<li>' + a + '</li>').join('');
-
-      // ---- Strategy table ----
-      const baseline = d.strategies.find(s => s.name === 'Buy_and_Hold');
-      const baseCagr = baseline ? baseline.cagr : 0;
-      const tbody = document.getElementById('stTable').querySelector('tbody');
-      const rowsHtml = d.strategies.map((s) => {
-        const isBase = s.name === 'Buy_and_Hold';
-        const beats = !isBase && s.cagr > baseCagr;
-        let badge = '';
-        if (isBase) badge = '<span class="st-badge def">BASELINE</span>';
-        else if (beats) badge = '<span class="st-badge beat">BEATS BASELINE</span>';
-        else if (s.name === 'Trend_Only') badge = '<span class="st-badge def">DEFENSIVE</span>';
-        return '<tr class="' + (isBase ? 'st-row-baseline' : '') + '">' +
-          '<td><span class="st-strat-name">' + prettyName(s.name) + '</span>' + badge +
-            '<span class="st-strat-desc">' + s.description + '</span></td>' +
-          '<td class="st-val ' + clsSign(s.cagr) + '">' + fmtPct(s.cagr) + '</td>' +
-          '<td class="st-val ' + clsSign(s.totalReturn) + '">' + fmtPct(s.totalReturn, 1) + '</td>' +
-          '<td class="st-val neg">' + fmtPct(s.maxDrawdown, 1) + '</td>' +
-          '<td class="st-val ' + (s.sharpe > 0.5 ? 'pos' : 'dim') + '">' + fmtNum(s.sharpe) + '</td>' +
-          '<td class="st-val dim">' + fmtPct(s.pctInMarket, 0) + '</td>' +
-          '<td class="st-val dim">' + fmtInt(s.entries) + '</td>' +
-        '</tr>';
-      }).join('');
-      tbody.innerHTML = rowsHtml;
-
-      // ---- Equity curve chart ----
-      drawEquityChart(d.strategies);
+      renderScore(d, by);
+      renderForward(d);
+      renderPairs(d, by);
+      renderCombo(d);
+      renderOthers(d, by);
       renderMacd(d);
-
-      // ---- Combined-low money finding ----
-      const combo = d.combinedLowForward;
-      const comboCards = [
-        {label: 'Both extreme (CNN Extreme Fear ≤ 25 AND BATS Oversold zone ≤ 30)', data: combo.both_low,     hero: true},
-        {label: 'CNN Extreme Fear only (CNN ≤ 25, BATS > 30)',                       data: combo.cnn_low_only, hero: false},
-        {label: 'BATS Oversold zone only (BATS ≤ 30, CNN > 25)',                     data: combo.bats_low_only, hero: false},
-      ];
-      const comboGrid = document.getElementById('stComboGrid');
-      comboGrid.innerHTML = comboCards.map(c => {
-        const rows = ['1w', '1m', '3m', '6m', '12m'].map(h => {
-          const v = c.data[h], hit = c.data[h + '_hit'];
-          return '<div class="st-combo-row">' +
-            '<span class="lbl">' + h.toUpperCase() + ' forward SPX</span>' +
-            '<span class="val ' + clsSign(v) + '">' + fmtPct(v) +
-              '<span class="hit">' + (hit != null ? Math.round(hit * 100) + '% hit' : '') + '</span>' +
-            '</span></div>';
-        }).join('');
-        return '<div class="st-combo-card ' + (c.hero ? 'hero' : '') + '">' +
-          '<h4>' + c.label + '</h4>' +
-          '<p class="st-combo-days">' + c.data.days + ' matching days over the test window</p>' +
-          rows + '</div>';
-      }).join('');
-
-      // ---- Forward returns tables ----
+      renderAllRules(d);
+      drawEquityChart(d.strategies);
       renderFwdTable('stCnnFwd', d.forwardReturnsCNN);
       renderFwdTable('stBatsFwd', d.forwardReturnsBATS);
+      renderLearned(d, by);
+      $id('stAssumeList').innerHTML = (d.assumptions || []).map(a => '<li>' + esc(a) + '</li>').join('');
 
-      // ---- Meta line ----
       const dt = new Date((d.generatedAt || 0) * 1000);
-      document.getElementById('stMeta').textContent =
+      $id('stMeta').textContent =
         'Test window ' + d.windowStart + ' → ' + d.windowEnd +
         ' · ' + d.tradingDays.toLocaleString() + ' trading days' +
         ' · Backtest regenerated ' + dt.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
     })();
 
-    function prettyName(k) {
-      return k.replace(/_/g, ' ').replace(/\bplus\b/gi, '+').replace(/\band\b/gi, 'AND').replace(/\bor\b/gi, 'OR');
+    function ruleLabel(s) { return s.label || s.name.replace(/_/g, ' '); }
+    // Who did better? `tol` is how close counts as a tie.
+    function winner(cnn, bats, tol) {
+      if (cnn == null || bats == null) return 'tie';
+      if (Math.abs(cnn - bats) <= tol) return 'tie';
+      return bats > cnn ? 'bats' : 'cnn';
+    }
+    const winChip = (w) => '<span class="st-win ' + w + '">' + (w === 'tie' ? 'About even' : G[w].short) + '</span>';
+
+    // ================= 1. The short answer =================
+    function renderScore(d, by) {
+      const h = d.headToHead, any = h.anyDay, hold = by.Buy_and_Hold;
+      const zone = h.low.find(r => r.key === 'zone'), p10 = h.low.find(r => r.key === 'p10');
+      const pz = h.pairs.find(p => p.key === 'zone'), ph = h.pairs.find(p => p.key === 'hot');
+      const zc = by[pz.cnn], zb = by[pz.bats], hc = by[ph.cnn], hb = by[ph.bats];
+
+      const big = (txt, subtxt) => '<span class="st-big">' + txt + '</span>' + (subtxt ? '<span class="st-sub">' + subtxt + '</span>' : '');
+      const ret = (r) => big(fmtPct(r['12m'], 1), 'higher ' + share(r['12m_hit']) + ' of the time');
+      const trade = (s) => big(fmtPct(s.avgTrade, 1), s.trades + ' trades, ' + share(s.winRate) + ' won');
+      // For growth rows, buy and hold can be the winner.
+      const growthWin = (a, b) => (hold.equityFinal > Math.max(a.equityFinal, b.equityFinal) ? 'hold' : winner(a.equityFinal, b.equityFinal, 0.03 * Math.max(a.equityFinal, b.equityFinal)));
+
+      const rows = [
+        { q: 'One year after a buy-zone reading, how much was the S&P 500 up?',
+          note: 'CNN under ' + d.zones.cnn.buy + ' (Extreme Fear). BATS under ' + d.zones.bats.buy + ' (Oversold).',
+          cnn: ret(zone.cnn), bats: ret(zone.bats), ref: big(fmtPct(any['12m'], 1), 'after any day'), win: winner(zone.cnn['12m'], zone.bats['12m'], 0.005) },
+        { q: 'The same question when both gauges are equally picky',
+          note: 'The lowest 10% of each gauge’s readings, so both fire equally often.',
+          cnn: ret(p10.cnn), bats: ret(p10.bats), ref: big(fmtPct(any['12m'], 1), 'after any day'), win: winner(p10.cnn['12m'], p10.bats['12m'], 0.005) },
+        { q: 'Trading the buy zone: how much did the average trade make?',
+          note: 'Buy in the buy zone, sell when the gauge runs hot.',
+          cnn: trade(zc), bats: trade(zb), ref: big('—', 'buy and hold never trades'), win: winner(zc.avgTrade, zb.avgTrade, 0.002) },
+        { q: 'Trading the buy zone: what did $1 grow to?',
+          note: 'Waiting time in cash included.',
+          cnn: big(money(zc.equityFinal), 'invested ' + share(zc.pctInMarket) + ' of the time'), bats: big(money(zb.equityFinal), 'invested ' + share(zb.pctInMarket) + ' of the time'),
+          ref: big(money(hold.equityFinal), 'just holding'), win: growthWin(zc, zb) },
+        { q: 'Holding, but stepping aside when the gauge ran hot: what did $1 grow to?',
+          note: 'Sell at ' + d.zones.cnn.hotLabel + ' (CNN) or ' + d.zones.bats.hotLabel + ' (BATS), buy back when it cools.',
+          cnn: big(money(hc.equityFinal), 'invested ' + share(hc.pctInMarket) + ' of the time'), bats: big(money(hb.equityFinal), 'invested ' + share(hb.pctInMarket) + ' of the time'),
+          ref: big(money(hold.equityFinal), 'just holding'), win: growthWin(hc, hb) },
+      ];
+      $id('stScore').querySelector('tbody').innerHTML = rows.map(r =>
+        '<tr>' +
+          '<td class="q">' + esc(r.q) + '<small>' + esc(r.note) + '</small></td>' +
+          '<td data-label="CNN Fear &amp; Greed" class="lab-cnn ' + (r.win === 'cnn' ? 'is-best-cnn' : '') + '">' + r.cnn + '</td>' +
+          '<td data-label="BATS" class="lab-bats ' + (r.win === 'bats' ? 'is-best-bats' : '') + '">' + r.bats + '</td>' +
+          '<td data-label="Yardstick" class="lab-hold ' + (r.win === 'hold' ? 'is-best-hold' : '') + '">' + r.ref + '</td>' +
+          '<td data-label="Better">' + winChip(r.win) + '</td>' +
+        '</tr>').join('');
+
+      // Plain-words summary, written from the numbers so it stays true as data updates.
+      const a = any['12m'], c = zone.cnn['12m'], b = zone.bats['12m'];
+      const vsAny = (v) => Math.abs(v - a) < 0.01 ? 'about the same as any ordinary day' : v > a ? 'better than an ordinary day' : 'worse than an ordinary day';
+      const bestTraded = Math.max(zc.equityFinal, zb.equityFinal);
+      $id('stPlain').innerHTML =
+        '<h3>In plain words</h3>' +
+        '<p>After <span class="g-bats"><strong>BATS</strong></span> dropped into its buy zone, the S&P 500 gained <strong>' + fmtPct(b, 1) + '</strong> over the next year on average. That is ' + vsAny(b) + ' (' + fmtPct(a, 1) + ').</p>' +
+        '<p>After <span class="g-cnn"><strong>CNN</strong></span> showed Extreme Fear, it gained <strong>' + fmtPct(c, 1) + '</strong>. That is ' + vsAny(c) + '.</p>' +
+        '<p>Neither gauge beat simply holding when it was traded in and out. The buy-zone rule turned $1 into ' + money(bestTraded) + ' at best, against <strong>' + money(by.Buy_and_Hold.equityFinal) + '</strong> for just holding. ' +
+        'These gauges are more useful for deciding <strong>when to add</strong> than for deciding when to get out.</p>' +
+        '<p style="color:var(--text-dim);font-size:0.88rem">One caution: we built BATS and tuned it on this same history, so it has a home-field advantage. CNN’s index was not tuned by us.</p>';
     }
 
-    // ---- MACD crossover section ----
+    // ================= 2. Test 1: what happened next =================
+    function renderForward(d) {
+      const h = d.headToHead;
+      const z = h.low.find(r => r.key === 'zone');
+      $id('stFairNote').innerHTML =
+        '<p><strong>Why there are several rows.</strong> CNN shows Extreme Fear on about ' + share(z.cnn.share) + ' of days. BATS shows Oversold on about ' + share(z.bats.share) + '. ' +
+        'A pickier gauge will usually look better, so the first row alone is not a fair fight. The rows under it compare the two at <strong>equal pickiness</strong>: the lowest 5%, 10% and 20% of each gauge’s own readings.</p>';
+
+      // Bars share one scale across both tables and all four horizons would be
+      // too flat, so the scale is set per horizon.
+      function draw(hz) {
+        const vals = [h.anyDay[hz]];
+        h.low.concat(h.high).forEach(r => { vals.push(r.cnn[hz], r.bats[hz]); });
+        const maxV = Math.max(0.0001, ...vals.filter(v => v != null));
+        const markPct = Math.max(0, Math.min(100, (h.anyDay[hz] / maxV) * 100));
+        const cell = (g, r, cutText) => {
+          const v = r[hz], hit = r[hz + '_hit'];
+          const w = v == null ? 0 : Math.max(0, Math.min(100, (Math.abs(v) / maxV) * 100));
+          return '<td class="barcell lab-' + g + '" data-label="' + esc(G[g].name) + '">' +
+            '<span class="st-big" style="color:' + G[g].color + '">' + fmtPct(v, 1) + '</span>' +
+            '<div class="st-bar-track"><div class="st-bar ' + (v < 0 ? 'neg' : g) + '" style="width:' + w.toFixed(1) + '%"></div><div class="st-bar-mark" style="left:' + markPct.toFixed(1) + '%"></div></div>' +
+            '<span class="st-sub">higher ' + share(hit) + ' of the time</span>' +
+            '<span class="st-sub">' + cutText + ' · ' + r.days.toLocaleString() + ' days in ' + r.spells + ' spells</span>' +
+          '</td>';
+        };
+        const gap = (r) => {
+          const c = r.cnn[hz], b = r.bats[hz];
+          if (c == null || b == null) return '<td>—</td>';
+          const diff = (b - c) * 100;                     // BATS minus CNN, in percentage points
+          const w = Math.abs(diff) < 0.5 ? 'tie' : (diff > 0 ? 'bats' : 'cnn');
+          return '<td data-label="Gap"><span class="st-edge" style="color:' + (w === 'tie' ? 'var(--text-dim)' : G[w].color) + '">' + Math.abs(diff).toFixed(1) + ' pts</span>' +
+            '<span class="st-sub">' + (w === 'tie' ? 'about even' : 'in favour of ' + G[w].short) + '</span></td>';
+        };
+        const anyRow = '<tr class="anyrow"><td class="lbl">Any ordinary day<small>The yardstick for every row above.</small></td>' +
+          '<td class="barcell lab-hold" data-label="S&amp;P 500" colspan="2"><span class="st-big g-hold">' + fmtPct(h.anyDay[hz], 1) + '</span>' +
+          '<div class="st-bar-track"><div class="st-bar any" style="width:' + markPct.toFixed(1) + '%"></div></div>' +
+          '<span class="st-sub">higher ' + share(h.anyDay[hz + '_hit']) + ' of the time · all ' + h.anyDay.days.toLocaleString() + ' days</span></td><td></td></tr>';
+
+        $id('stLowTable').querySelector('tbody').innerHTML = h.low.map(r => {
+          const zoneRow = r.key === 'zone';
+          const note = zoneRow ? d.zones.cnn.buyLabel + ' for CNN, ' + d.zones.bats.buyLabel + ' for BATS. Not equally picky.' : 'Equal pickiness: both gauges fire equally often.';
+          return '<tr><td class="lbl">' + esc(r.label) + '<small>' + esc(note) + '</small></td>' +
+            cell('cnn', r.cnn, (zoneRow ? 'under ' : '') + r.cnn.cut + (zoneRow ? '' : ' or lower')) +
+            cell('bats', r.bats, (zoneRow ? 'under ' : '') + r.bats.cut + (zoneRow ? '' : ' or lower')) +
+            gap(r) + '</tr>';
+        }).join('') + anyRow;
+
+        // High readings ask the reverse question: did stocks do WORSE than an
+        // ordinary day afterwards? So each cell is judged against the ordinary
+        // day, and a lower number is the one that "warned".
+        const anyV = h.anyDay[hz];
+        const vsAny = (v) => (v - anyV) * 100;                    // percentage points above (+) or below (-) an ordinary day
+        const tol = Math.max(0.5, Math.abs(anyV) * 10);            // "about the same" = within a tenth of the ordinary gain (at least half a point)
+        const warned = (v) => v != null && vsAny(v) < -tol;
+        const warnCell = (g, r, cutText) => {
+          const v = r[hz], hit = r[hz + '_hit'], diff = vsAny(v);
+          const w = v == null ? 0 : Math.max(0, Math.min(100, (Math.abs(v) / maxV) * 100));
+          const words = Math.abs(diff) < tol ? 'about the same as an ordinary day'
+            : Math.abs(diff).toFixed(1) + ' pts ' + (diff < 0 ? 'less' : 'more') + ' than an ordinary day';
+          return '<td class="barcell lab-' + g + '" data-label="' + esc(G[g].name) + '">' +
+            '<span class="st-big" style="color:' + G[g].color + '">' + fmtPct(v, 1) + '</span>' +
+            '<div class="st-bar-track"><div class="st-bar ' + (v < 0 ? 'neg' : g) + '" style="width:' + w.toFixed(1) + '%"></div><div class="st-bar-mark" style="left:' + markPct.toFixed(1) + '%"></div></div>' +
+            '<span class="st-sub" style="color:var(--fg)">' + words + '</span>' +
+            '<span class="st-sub">higher ' + share(hit) + ' of the time</span>' +
+            '<span class="st-sub">' + cutText + ' · ' + r.days.toLocaleString() + ' days in ' + r.spells + ' spells</span>' +
+            '<div style="margin-top:0.45rem">' + (warned(v) ? '<span class="st-win hold">Stocks did worse than usual</span>' : '<span class="st-win tie">No warning</span>') + '</div>' +
+          '</td>';
+        };
+        const warnVerdict = (r) => {
+          const c = r.cnn[hz], b = r.bats[hz], cw = warned(c), bw = warned(b);
+          let title, who = null, note;
+          if (cw && bw) { who = b < c ? 'bats' : 'cnn'; title = 'Both warned, ' + G[who].short + ' more'; }
+          else if (bw) { who = 'bats'; title = 'Only BATS warned'; }
+          else if (cw) { who = 'cnn'; title = 'Only CNN warned'; }
+          else title = 'Neither warned';
+          if (who) { const hit = r[who][hz + '_hit']; note = hit >= 0.5 ? 'but stocks still rose ' + share(hit) + ' of the time' : 'and stocks fell more often than they rose'; }
+          else note = 'stocks did as well as usual, or better';
+          return '<td data-label="Did it warn?"><span class="st-edge" style="color:' + (who ? G[who].color : 'var(--text-dim)') + ';white-space:normal">' + title + '</span>' +
+            '<span class="st-sub">' + note + '</span></td>';
+        };
+        $id('stHighTable').querySelector('tbody').innerHTML = h.high.map(r => {
+          const zoneRow = r.key === 'zone';
+          const note = zoneRow ? d.zones.cnn.hotLabel + ' for CNN, ' + d.zones.bats.hotLabel + ' for BATS. Not equally picky.' : 'Equal pickiness: both gauges fire equally often.';
+          return '<tr><td class="lbl">' + esc(r.label) + '<small>' + esc(note) + '</small></td>' +
+            warnCell('cnn', r.cnn, r.cnn.cut + ' or higher') +
+            warnCell('bats', r.bats, r.bats.cut + ' or higher') +
+            warnVerdict(r) + '</tr>';
+        }).join('') + anyRow;
+
+        // The same thing in sentences, using each gauge's own hot zone.
+        const hz0 = h.high.find(r => r.key === 'zone');
+        const sentence = (g, zoneName) => {
+          const r = hz0[g], v = r[hz], diff = vsAny(v);
+          const lead = 'After <span class="g-' + g + '"><strong>' + G[g].short + '</strong></span> showed ' + zoneName + ', the S&P 500 ' + (v >= 0 ? 'gained ' : 'lost ') + '<strong>' + (Math.abs(v) * 100).toFixed(1) + '%</strong> over the next ' + HLABEL[hz] + '. ';
+          if (diff < -tol) return lead + 'That is less than after an ordinary day (' + fmtPct(anyV, 1) + '), so the warning came true. ' +
+            (v > 0 ? 'But it was still a gain, and stocks were higher ' + share(r[hz + '_hit']) + ' of the time.' : 'Stocks were higher only ' + share(r[hz + '_hit']) + ' of the time.');
+          if (diff > tol) return lead + 'That is <strong>more</strong> than after an ordinary day (' + fmtPct(anyV, 1) + '). No warning there: stocks did better than usual.';
+          return lead + 'That is about the same as after an ordinary day (' + fmtPct(anyV, 1) + '). No warning there.';
+        };
+        const bad = ['cnn', 'bats'].filter(g => hz0[g][hz] < 0 || hz0[g][hz + '_hit'] < 0.55);
+        const anyBad = bad.length > 0;
+        $id('stHighVerdict').innerHTML =
+          '<h3>How to read this table</h3>' +
+          '<p>' + sentence('cnn', d.zones.cnn.hotLabel) + '</p>' +
+          '<p>' + sentence('bats', d.zones.bats.hotLabel) + '</p>' +
+          '<p>' + (anyBad ? 'So over ' + HLABEL[hz] + ', a hot reading on ' + bad.map(g => G[g].short).join(' and ') + ' was a real short-term caution: stocks were about as likely to fall as to rise. Look at the longer tabs to see it fade.' : '<strong>Either way, stocks usually kept rising. A high reading has not been a reason to sell.</strong>') + '</p>';
+      }
+
+      const tabs = $id('stHorizonTabs').querySelectorAll('.st-tab');
+      tabs.forEach(t => t.addEventListener('click', () => {
+        tabs.forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        draw(t.dataset.h);
+      }));
+      draw('12m');
+    }
+
+    // ================= 3. Test 2: one rule, both gauges =================
+    function renderPairs(d, by) {
+      const pairs = d.headToHead.pairs, hold = by.Buy_and_Hold;
+      const tabsEl = $id('stPairTabs');
+      tabsEl.insertAdjacentHTML('beforeend', pairs.map((p, i) =>
+        '<button type="button" class="st-tab' + (i === 0 ? ' active' : '') + '" data-pair="' + p.key + '" role="tab">' + esc(p.title) + '</button>').join(''));
+
+      function show(key) {
+        const p = pairs.find(x => x.key === key), c = by[p.cnn], b = by[p.bats];
+        $id('stPairHead').innerHTML =
+          '<strong>' + esc(p.title) + '.</strong> ' + esc(p.blurb) +
+          '<ul class="st-pair-rules"><li><span class="g-cnn"><strong>CNN:</strong></span> ' + esc(c.description) + '</li>' +
+          '<li><span class="g-bats"><strong>BATS:</strong></span> ' + esc(b.description) + '</li></ul>';
+
+        // dir: +1 = bigger is better, -1 = smaller is better, 0 = just information
+        const metrics = [
+          // tol: how close two results must be to count as "about even" (no winner highlighted)
+          { label: '$1 grew to',                get: s => s.equityFinal,  fmt: money,                  dir: 1, lead: true, tol: (x, y) => 0.03 * Math.max(x, y) },
+          { label: 'Gain per year',             get: s => s.cagr,         fmt: v => fmtPct(v, 1),      dir: 1, tol: () => 0.003 },
+          { label: 'Time invested',             get: s => s.pctInMarket,  fmt: share,                  dir: 0 },
+          { label: 'Gain per year while invested', get: s => s.investedCagr, fmt: v => fmtPct(v, 1),   dir: 1, tol: () => 0.003 },
+          { label: 'Trades',                    get: s => s.trades,       fmt: fmtInt,                 dir: 0, noHold: true },
+          { label: 'Trades won',                get: s => s.winRate,      fmt: share,                  dir: 1, noHold: true, tol: () => 0.02 },
+          { label: 'Average gain per trade',    get: s => s.avgTrade,     fmt: v => fmtPct(v, 1),      dir: 1, noHold: true, tol: () => 0.002 },
+          { label: 'Average trading days per trade', get: s => s.avgHoldDays, fmt: v => v == null ? '—' : String(Math.round(v)), dir: 0, noHold: true },
+          { label: 'Worst drop along the way',  get: s => s.maxDrawdown,  fmt: v => fmtPct(v, 1),      dir: 1, tol: () => 0.005 },   // -20% is "bigger" than -30%
+        ];
+        $id('stPairTable').querySelector('tbody').innerHTML = metrics.map(m => {
+          const cv = m.get(c), bv = m.get(b);
+          let best = '';
+          if (m.dir !== 0 && cv != null && bv != null && Math.abs(cv - bv) > (m.tol ? m.tol(cv, bv) : 1e-9)) best = (bv - cv) * m.dir > 0 ? 'bats' : 'cnn';
+          return '<tr' + (m.lead ? ' class="lead"' : '') + '><td>' + m.label + '</td>' +
+            '<td class="' + (best === 'cnn' ? 'best-cnn' : '') + '">' + m.fmt(cv) + '</td>' +
+            '<td class="' + (best === 'bats' ? 'best-bats' : '') + '">' + m.fmt(bv) + '</td>' +
+            '<td class="dim">' + (m.noHold ? '—' : m.fmt(m.get(hold))) + '</td></tr>';
+        }).join('');
+
+        // Verdict, written from the numbers.
+        let text;
+        const growW = winner(c.equityFinal, b.equityFinal, 0.03 * Math.max(c.equityFinal, b.equityFinal));
+        if (key === 'hot') {
+          const better = growW === 'tie' ? null : by[p[growW]];
+          const beatHold = Math.max(c.equityFinal, b.equityFinal) > hold.equityFinal;
+          text = '<p><strong>Verdict.</strong> ' + (beatHold ? 'Stepping aside came out slightly ahead with one gauge' : 'Stepping aside cost money with both gauges') + ': $1 grew to ' +
+            '<span class="g-cnn">' + money(c.equityFinal) + '</span> with CNN and <span class="g-bats">' + money(b.equityFinal) + '</span> with BATS, against <span class="g-hold">' + money(hold.equityFinal) + '</span> just held. ' +
+            (better ? G[growW].short + ' did less damage because it stepped aside less often (out of the market ' + share(1 - better.pctInMarket) + ' of the time). ' : '') +
+            (Math.min(c.maxDrawdown, b.maxDrawdown) <= hold.maxDrawdown + 0.005 ? 'Neither rule avoided the worst drop of the period (' + fmtPct(hold.maxDrawdown, 1) + '), so there was no safety in exchange for the lost gains.' : '') + '</p>' +
+            '<p>High readings were not a sell signal on either gauge.</p>';
+        } else {
+          const tradeW = winner(c.avgTrade, b.avgTrade, 0.002);
+          const tw = tradeW === 'tie' ? null : tradeW, tl = tw === 'bats' ? 'cnn' : 'bats';
+          const s = { cnn: c, bats: b };
+          text = '<p><strong>Verdict.</strong> ' +
+            (tw ? '<strong>Per trade, ' + G[tw].short + ' was better.</strong> It won ' + share(s[tw].winRate) + ' of ' + s[tw].trades + ' trades for an average ' + fmtPct(s[tw].avgTrade, 1) +
+                  ', against ' + share(s[tl].winRate) + ' of ' + s[tl].trades + ' for ' + fmtPct(s[tl].avgTrade, 1) + ' with ' + G[tl].short + '. '
+                : '<strong>Per trade, the two were about even</strong> (' + fmtPct(c.avgTrade, 1) + ' for CNN, ' + fmtPct(b.avgTrade, 1) + ' for BATS). ');
+          if (growW === 'tie') {
+            // same growth: the one that spent less time in the market got there with less risk
+            const lessIn = Math.abs(c.pctInMarket - b.pctInMarket) < 0.03 ? null : (b.pctInMarket < c.pctInMarket ? 'bats' : 'cnn');
+            text += '<strong>On total growth they finished about even</strong> (' + money(c.equityFinal) + ' for CNN, ' + money(b.equityFinal) + ' for BATS)' +
+              (lessIn ? ', and ' + G[lessIn].short + ' got there while invested ' + share(s[lessIn].pctInMarket) + ' of the time against ' + share(s[lessIn === 'bats' ? 'cnn' : 'bats'].pctInMarket) + '. ' : '. ');
+          } else {
+            const gl = growW === 'bats' ? 'cnn' : 'bats';
+            text += '<strong>On total growth, ' + G[growW].short + ' finished ahead</strong> (' + money(s[growW].equityFinal) + ' against ' + money(s[gl].equityFinal) + ')' +
+              (tw && growW !== tw ? ', but only because it was invested ' + share(s[growW].pctInMarket) + ' of the time against ' + share(s[gl].pctInMarket) + '. More time in a rising market, not better signals. ' : '. ');
+          }
+          if (c.investedCagr != null && b.investedCagr != null) {
+            const iw = winner(c.investedCagr, b.investedCagr, 0.003);
+            text += iw === 'tie' ? 'While actually invested, the two grew at about the same pace (' + fmtPct(c.investedCagr, 1) + ' a year). '
+              : 'While actually invested, ' + G[iw].short + '’s money grew faster: ' + fmtPct(s[iw].investedCagr, 1) + ' a year against ' + fmtPct(s[iw === 'bats' ? 'cnn' : 'bats'].investedCagr, 1) + '. ';
+          }
+          const few = ['cnn', 'bats'].filter(g => s[g].trades < 10);
+          if (few.length) text += few.map(g => G[g].short).join(' and ') + '’s record here rests on only ' + few.map(g => s[g].trades).join(' and ') + ' trades, so treat it with care. ';
+          text += '</p><p>Both finished behind buy and hold (<span class="g-hold">' + money(hold.equityFinal) + '</span>), because cash earns nothing while the rule waits for its next signal.</p>';
+        }
+        $id('stPairVerdict').innerHTML = text;
+        drawPairChart(hold, c, b);
+      }
+
+      tabsEl.querySelectorAll('.st-tab').forEach(t => t.addEventListener('click', () => {
+        tabsEl.querySelectorAll('.st-tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        show(t.dataset.pair);
+      }));
+      show(pairs[0].key);
+    }
+
+    // Three lines only: buy and hold, the rule on CNN, the rule on BATS.
+    function drawPairChart(hold, c, b) {
+      const svg = $id('stPairChart');
+      const W = 1000, H = 320, PAD_L = 46, PAD_R = 96, PAD_T = 12, PAD_B = 26;
+      const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+      const lines = [{ s: hold, g: 'hold' }, { s: c, g: 'cnn' }, { s: b, g: 'bats' }];
+      const t0 = Date.parse(hold.equityCurve[0].d), t1 = Date.parse(hold.equityCurve[hold.equityCurve.length - 1].d);
+      const all = lines.flatMap(l => l.s.equityCurve.map(p => p.e)).filter(v => v > 0);
+      const yLo = Math.max(0.5, Math.floor(Math.min(...all) * 10) / 10), yHi = Math.ceil(Math.max(...all));
+      const xFor = t => PAD_L + ((t - t0) / (t1 - t0)) * plotW;
+      const yFor = v => PAD_T + (1 - (Math.log(Math.max(v, yLo)) - Math.log(yLo)) / (Math.log(yHi) - Math.log(yLo))) * plotH;
+      let out = '';
+      for (const v of [1, 2, 3, 5, 8, 10, 15].filter(v => v >= yLo && v <= yHi)) {
+        const y = yFor(v);
+        out += '<line class="grid-line" x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + y + '" y2="' + y + '"/>' +
+               '<text class="axis-label" x="' + (PAD_L - 6) + '" y="' + (y + 3) + '" text-anchor="end">$' + v + '</text>';
+      }
+      for (let yr = new Date(t0).getUTCFullYear(); yr <= new Date(t1).getUTCFullYear(); yr += 2) {
+        const ts = Date.UTC(yr, 0, 1); if (ts < t0 || ts > t1) continue;
+        out += '<text class="axis-label" x="' + xFor(ts) + '" y="' + (H - 8) + '" text-anchor="middle">' + yr + '</text>';
+      }
+      // end labels, nudged apart so they never sit on top of each other
+      const ends = lines.map(l => ({ g: l.g, v: l.s.equityFinal, y: yFor(l.s.equityFinal) })).sort((p, q) => p.y - q.y);
+      for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+      for (const l of lines) {
+        const path = l.s.equityCurve.map((p, i) => (i ? 'L' : 'M') + xFor(Date.parse(p.d)).toFixed(1) + ' ' + yFor(p.e).toFixed(1)).join(' ');
+        out += '<path d="' + path + '" fill="none" stroke="' + G[l.g].color + '" stroke-width="' + (l.g === 'hold' ? 2.2 : 1.8) + '" stroke-linejoin="round" opacity="0.95"/>';
+      }
+      for (const e of ends) out += '<text class="end-label" x="' + (W - PAD_R + 5) + '" y="' + (e.y + 4).toFixed(1) + '" fill="' + G[e.g].color + '">' + (e.g === 'hold' ? 'Hold' : G[e.g].short) + ' ' + money(e.v) + '</text>';
+      svg.innerHTML = out;
+    }
+
+    // ================= 4. When both agree =================
+    function renderCombo(d) {
+      const combo = d.combinedLowForward, zc = d.zones.cnn, zb = d.zones.bats, any = d.headToHead.anyDay;
+      const cards = [
+        { label: 'Both in their buy zone (CNN under ' + zc.buy + ' and BATS under ' + zb.buy + ')', data: combo.both_low, hero: true },
+        { label: 'Only CNN (CNN under ' + zc.buy + ', BATS not oversold)', data: combo.cnn_low_only, hero: false },
+        { label: 'Only BATS (BATS under ' + zb.buy + ', CNN not in Extreme Fear)', data: combo.bats_low_only, hero: false },
+      ];
+      $id('stComboGrid').innerHTML = cards.map(c => {
+        const rows = ['1m', '3m', '6m', '12m'].map(hz => {
+          const v = c.data[hz], hit = c.data[hz + '_hit'];
+          return '<div class="st-combo-row"><span class="lbl">' + HLABEL[hz] + '</span>' +
+            '<span class="val ' + clsSign(v) + '">' + fmtPct(v, 1) + '<span class="hit">' + (hit != null ? 'higher ' + share(hit) : '') + '</span></span></div>';
+        }).join('');
+        return '<div class="st-combo-card ' + (c.hero ? 'hero' : '') + '"><h4>' + esc(c.label) + '</h4>' +
+          '<p class="st-combo-days">' + c.data.days + ' days in ' + c.data.spells + ' spells · S&amp;P 500 change after:</p>' + rows + '</div>';
+      }).join('');
+
+      const both = combo.both_low['12m'], onlyC = combo.cnn_low_only['12m'], onlyB = combo.bats_low_only['12m'], a = any['12m'];
+      const agreeHelps = both - onlyB > 0.02;
+      $id('stComboVerdict').innerHTML =
+        '<p><strong>Verdict.</strong> ' +
+        (agreeHelps ? 'Agreement helped: a year after both gauges were low together the S&P 500 was up ' + fmtPct(both, 1) + ', against ' + fmtPct(onlyB, 1) + ' when only BATS was low. '
+                    : 'Agreement added little. A year after both were low together the S&P 500 was up ' + fmtPct(both, 1) + '. When only BATS was low it was up ' + fmtPct(onlyB, 1) + ', about the same. ') +
+        'When only CNN was low it was up ' + fmtPct(onlyC, 1) + ', ' + (onlyC < a - 0.01 ? 'which is <strong>less</strong> than after an ordinary day (' + fmtPct(a, 1) + ').' : 'against ' + fmtPct(a, 1) + ' after an ordinary day.') + '</p>' +
+        '<p>' + (agreeHelps ? 'CNN’s fear reading adds something on top of BATS, but most of the signal comes from BATS.' : 'In other words, the days that mattered were the ones BATS flagged. CNN’s fear reading did not add to them.') +
+        ' The “only BATS” group is small, so treat it as a hint and not a law.</p>';
+    }
+
+    // ================= 5. Other rules =================
+    function ruleRow(s, opts) {
+      opts = opts || {};
+      const noTrades = !s.trades;
+      return '<tr class="' + (s.name === 'Buy_and_Hold' ? 'st-row-baseline' : '') + '">' +
+        '<td><span class="st-strat-name">' + esc(ruleLabel(s)) + '</span>' + (opts.badge || '') +
+          '<span class="st-strat-desc">' + esc(s.description) + '</span></td>' +
+        '<td class="st-val">' + money(s.equityFinal) + '</td>' +
+        '<td class="st-val ' + clsSign(s.cagr) + '">' + fmtPct(s.cagr, 1) + '</td>' +
+        '<td class="st-val dim">' + share(s.pctInMarket) + '</td>' +
+        '<td class="st-val dim">' + (s.name === 'Buy_and_Hold' ? '—' : fmtInt(s.trades)) + '</td>' +
+        '<td class="st-val dim">' + (s.name === 'Buy_and_Hold' || noTrades ? '—' : share(s.winRate)) + '</td>' +
+        '<td class="st-val ' + (s.name === 'Buy_and_Hold' || noTrades ? 'dim' : clsSign(s.avgTrade)) + '">' + (s.name === 'Buy_and_Hold' || noTrades ? '—' : fmtPct(s.avgTrade, 1)) + '</td>' +
+        '<td class="st-val neg">' + fmtPct(s.maxDrawdown, 1) + '</td>' +
+      '</tr>';
+    }
+    function renderOthers(d, by) {
+      const names = ['Buy_and_Hold', 'Trend_Only', 'CNN_ExtremeFear_25_55', 'BATS_Oversold_32_57', 'BATS_Oversold_32_65', 'CNN_Fear_plus_Trend', 'CNN_AND_BATS_Both_Low', 'CNN_OR_BATS_Either_Low', 'CNN_ExtremeFear_20_50', 'BATS_Low_25_55', 'BATS_Low_30_60'];
+      $id('stOtherTable').querySelector('tbody').innerHTML = names.map(n => by[n]).filter(Boolean).map(s => ruleRow(s)).join('');
+      $id('stDeadNote').innerHTML =
+        '<p><strong>One rule we could not run.</strong> The twin of “CNN Extreme Fear, uptrends only” would be “BATS Oversold, uptrends only”. It never trades. ' +
+        'In this whole period BATS did not once fall under ' + d.zones.bats.buy + ' while the S&P 500 was above its 200-day average' +
+        (d.batsLowestInUptrend != null ? '; its lowest reading in an uptrend was ' + d.batsLowestInUptrend : '') + '. ' +
+        'BATS already has the trend built into it, so “oversold” and “in an uptrend” cannot both be true. An earlier version of this page showed that rule as a row of zeros.</p>';
+    }
+    function renderAllRules(d) {
+      const hold = d.strategies.find(s => s.name === 'Buy_and_Hold');
+      $id('stTable').querySelector('tbody').innerHTML = d.strategies.map(s => {
+        let badge = '';
+        if (s.name === 'Buy_and_Hold') badge = '<span class="st-badge def">YARDSTICK</span>';
+        else if (hold && s.equityFinal > hold.equityFinal) badge = '<span class="st-badge beat">BEAT BUY AND HOLD</span>';
+        return ruleRow(s, { badge });
+      }).join('');
+    }
+
+    // ================= 8. What we learned =================
+    function renderLearned(d, by) {
+      const h = d.headToHead, any = h.anyDay, hold = by.Buy_and_Hold, trend = by.Trend_Only;
+      const zone = h.low.find(r => r.key === 'zone'), p10 = h.low.find(r => r.key === 'p10'), hot = h.high.find(r => r.key === 'zone');
+      const combo = d.combinedLowForward;
+      const traded = d.strategies.filter(s => s.name !== 'Buy_and_Hold').slice().sort((x, y) => y.equityFinal - x.equityFinal);
+      const top = traded[0];
+      const items = [];
+      items.push('<strong>Buy and hold is very hard to beat.</strong> $1 simply held grew to ' + money(hold.equityFinal) + '. ' +
+        (top.equityFinal > hold.equityFinal
+          ? 'Only “' + esc(ruleLabel(top)) + '” finished ahead, at ' + money(top.equityFinal) + '.'
+          : 'The best of the ' + traded.length + ' trading rules, “' + esc(ruleLabel(top)) + '”, reached ' + money(top.equityFinal) + '.') +
+        ' Sitting in cash while the market climbs costs more than the rules save.');
+      items.push('<strong>Low readings are worth acting on, and BATS’s more than CNN’s.</strong> A year after a BATS Oversold reading the S&P 500 was up ' + fmtPct(zone.bats['12m'], 1) +
+        ' on average (higher ' + share(zone.bats['12m_hit']) + ' of the time). After CNN’s Extreme Fear it was up ' + fmtPct(zone.cnn['12m'], 1) + ' (' + share(zone.cnn['12m_hit']) + '). An ordinary day: ' + fmtPct(any['12m'], 1) + ' (' + share(any['12m_hit']) + ').');
+      items.push('<strong>That is not only because BATS is pickier.</strong> Comparing the lowest 10% of each gauge’s readings, so both fire equally often, the S&P 500 was up ' +
+        fmtPct(p10.bats['12m'], 1) + ' a year after BATS’s and ' + fmtPct(p10.cnn['12m'], 1) + ' after CNN’s.');
+      items.push('<strong>Agreement between the two adds little.</strong> Days when both were low: ' + fmtPct(combo.both_low['12m'], 1) + ' a year later. Days when only BATS was low: ' +
+        fmtPct(combo.bats_low_only['12m'], 1) + '. Days when only CNN was low: ' + fmtPct(combo.cnn_low_only['12m'], 1) + '.');
+      items.push('<strong>High readings are not sell signals.</strong> A year after CNN’s Extreme Greed the S&P 500 was still up ' + fmtPct(hot.cnn['12m'], 1) + ', and after BATS Extended ' + fmtPct(hot.bats['12m'], 1) +
+        '. Stepping aside at those readings left $1 at ' + money(by.CNN_Avoid_ExtremeGreed.equityFinal) + ' (CNN) and ' + money(by.BATS_Avoid_Extended.equityFinal) + ' (BATS), against ' + money(hold.equityFinal) + ' held.');
+      if (trend) items.push('<strong>A plain trend rule buys safety, at a price.</strong> Owning stocks only above the 200-day average cut the worst drop from ' + fmtPct(hold.maxDrawdown, 1) + ' to ' + fmtPct(trend.maxDrawdown, 1) +
+        ', but the yearly gain fell from ' + fmtPct(hold.cagr, 1) + ' to ' + fmtPct(trend.cagr, 1) + '.');
+      items.push('<strong>So use the gauges to add, not to trade.</strong> A deep low reading has been a good moment to put more money to work. Nothing on this page is a good reason to sell and wait.');
+      $id('stLearned').innerHTML = items.map(t => '<li>' + t + '</li>').join('');
+    }
+
+    // ================= MACD crossover section (unchanged logic) =================
     function renderMacd(d) {
       const base  = d.strategies.find(s => s.name === 'Buy_and_Hold');
       const trend = d.strategies.find(s => s.name === 'Trend_Only');
@@ -578,7 +1197,7 @@
         ['MACD_Cross_NoFilter',         'Daily, every cross'],
         ['MACD_Cross_10bar_plus_Trend', 'Daily, 10-bar + SPX above 200-day MA'],
         ['MACD_Weekly_Cross_10bar',     'Weekly, 10-bar minimum'],
-      ].map(([name, label]) => Object.assign({ label }, d.strategies.find(s => s.name === name))).filter(v => v.name);
+      ].map(([name, label]) => Object.assign({}, d.strategies.find(s => s.name === name), { label })).filter(v => v.name);
       if (!variants.length || !base) return;
 
       const tbody = document.getElementById('stMacdTable').querySelector('tbody');
@@ -639,9 +1258,9 @@
       tbody.innerHTML = rows.map(r => {
         const cell = (v, hit) => v == null
           ? '<td class="cell-days">—</td>'
-          : '<td class="cell-ret ' + clsSign(v) + '">' + fmtPct(v) +
+          : '<td class="cell-ret ' + clsSign(v) + '">' + fmtPct(v, 1) +
             (hit != null ? '<span class="cell-hit">' + Math.round(hit * 100) + '%</span>' : '') + '</td>';
-        const label = r.isBaseline ? '<em>' + r.bucket + '</em>' : r.bucket;
+        const label = r.isBaseline ? '<em>Any ordinary day</em>' : esc(r.bucket);
         return '<tr' + (r.isBaseline ? ' class="baseline-row"' : '') + '>' +
           '<td>' + label + '</td>' +
           '<td class="cell-days">' + r.days.toLocaleString() + '</td>' +
@@ -649,10 +1268,12 @@
           cell(r['1m'], r['1m_hit']) +
           cell(r['3m'], r['3m_hit']) +
           cell(r['6m'], r['6m_hit']) +
+          cell(r['12m'], r['12m_hit']) +
         '</tr>';
       }).join('');
     }
 
+    // All-rules chart (inside the fold-away block).
     function drawEquityChart(strategies) {
       const svg = document.getElementById('stEquityChart');
       const legend = document.getElementById('stEquityLegend');
@@ -721,7 +1342,7 @@
         const color = COLORS[idx % COLORS.length];
         return '<span class="st-legend-item" data-strat="' + s.name + '">' +
           '<span class="st-legend-swatch" style="background:' + color + '"></span>' +
-          prettyName(s.name) + ' ($' + s.equityFinal + ')' +
+          esc(ruleLabel(s)) + ' (' + money(s.equityFinal) + ')' +
           '</span>';
       }).join('');
       legend.querySelectorAll('.st-legend-item').forEach(item => {
