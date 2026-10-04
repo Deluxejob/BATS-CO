@@ -531,6 +531,22 @@
     .iq-chart-caption .iq-sw-fxpos  { background: rgba(34, 211, 154, 0.42); border: 1px solid rgba(34, 211, 154, 0.7); }
     .iq-chart-caption .iq-sw-fxneg  { background: rgba(255, 83, 116, 0.45); border: 1px solid rgba(255, 83, 116, 0.7); }
     .iq-chart-caption .iq-sw-fxband { background: rgba(255, 83, 116, 0.12); border: 1px solid rgba(255, 83, 116, 0.35); }
+    /* McClellan Summation Index card: S&P 500 on top, the index below with
+       its 21-day average, the deeply-oversold zone shaded, and a dashed
+       vertical at the low of every past deep-oversold stretch. */
+    .msi-line-price { fill: none; stroke: #e8ecf4; stroke-width: 1.3; opacity: 0.92; }
+    .msi-line       { fill: none; stroke: #64d3ff; stroke-width: 1.5; }
+    .msi-ema        { fill: none; stroke: rgba(255, 182, 88, 0.85); stroke-width: 1; }
+    .msi-zone       { fill: rgba(34, 211, 238, 0.11); }
+    .msi-zone-edge  { stroke: rgba(34, 211, 238, 0.65); stroke-width: 1; }
+    .msi-level      { stroke: rgba(34, 211, 238, 0.45); stroke-width: 1; stroke-dasharray: 4 4; }
+    .msi-zero       { stroke: rgba(232, 236, 244, 0.45); stroke-width: 1; }
+    .msi-low        { stroke: rgba(100, 211, 255, 0.6); stroke-width: 1; stroke-dasharray: 3 3; }
+    .msi-low-label  { fill: #64d3ff; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+    .iq-chart-caption .iq-sw-msizone { background: rgba(34, 211, 238, 0.18); border: 1px solid rgba(34, 211, 238, 0.6); }
+    .iq-chart-caption .iq-sw-msilow  { background: transparent; border-left: 2px dashed rgba(100, 211, 255, 0.8); border-right: 0; margin-right: 0.35rem; width: 0.35em; }
+    .iq-chart-caption .iq-sw-msiema  { background: transparent; border-top: 2px solid rgba(255, 182, 88, 0.85); height: 0; width: 1.1em; vertical-align: 3px; }
+
     /* A descriptive "sellers in control" pill: red, but without the glow of a sell call. */
     .iq-action-soft-red { color: #ff8fa3; background: rgba(255, 83, 116, 0.08); border-color: rgba(255, 83, 116, 0.35); }
   </style>
@@ -963,6 +979,147 @@
                data-share-url="https://bats.co/signals.html#sig-zweig-thrust"
                data-share-title="Zweig Breadth Thrust — BATS.CO"
                data-share-text="The 10-day average of advancers vs decliners, with the 0.40 washout line and the 0.615 thrust line. Live reading, the countdown when a thrust is possible, and what stocks did after every past one."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
+        <!-- SIGNAL: McClellan Summation Index (ratio-adjusted), counted on the S&P 1500 members -->
+        <div class="sig-card" id="sig-summation-index">
+          <div class="sig-head">
+            <h2 class="sig-title">McClellan Summation Index</h2>
+            <span class="sig-tag">S&amp;P 1500 members &middot; running total of daily breadth &middot; daily check</span>
+          </div>
+          <p class="sig-desc">
+            Every day, take the share of stocks that rose minus the share that fell. The McClellan Oscillator is a
+            smoothed version of that daily score, and the <strong>Summation Index</strong> is its running total. It
+            climbs while most stocks are rising and sinks while most are falling, even when a few giant companies
+            hold the S&amp;P 500 itself up. A reading <strong>below <span data-msi-stat="deepT">&minus;600</span></strong>
+            means broad selling has gone on for weeks: the market is deeply oversold. Since
+            <span data-msi-stat="startYear">2016</span> that has happened
+            <strong data-msi-stat="deepN">&mdash;</strong> times, and those stretches line up with the major lows on
+            the chart below.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="msiPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="msiSub">Fetching advance/decline counts&hellip;</div>
+            <div class="iq-action-asof" id="msiAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="msiNowGate">
+              <div class="iq-gate-label">Summation Index</div>
+              <div class="iq-gate-value" id="msiNow">&mdash;</div>
+              <div class="iq-gate-cond">below <span data-msi-stat="deepT">&minus;600</span> = deeply oversold</div>
+              <div class="iq-gate-state iq-gate-off" id="msiNowState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="msiDirGate">
+              <div class="iq-gate-label">Latest daily change</div>
+              <div class="iq-gate-value" id="msiDir">&mdash;</div>
+              <div class="iq-gate-cond">above zero = the index is rising</div>
+              <div class="iq-gate-state iq-gate-off" id="msiDirState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="msiLowGate">
+              <div class="iq-gate-label" id="msiLowLabel">This drop's low</div>
+              <div class="iq-gate-value" id="msiLow">&mdash;</div>
+              <div class="iq-gate-cond" id="msiLowCond">&mdash;</div>
+              <div class="iq-gate-state iq-gate-off" id="msiLowState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Deep oversold stretches</div><div class="val" data-msi-stat="deepN">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Days spent below <span data-msi-stat="deepT">&minus;600</span></div><div class="val" data-msi-stat="deepShare">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 yr after below <span data-msi-stat="deepT">&minus;600</span></div><div class="val pos" data-msi-stat="deep12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 yr after below <span data-msi-stat="osT">&minus;400</span></div><div class="val pos" data-msi-stat="os12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">1 yr after any day</div><div class="val" data-msi-stat="any12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Further S&amp;P drop first</div><div class="val" data-msi-stat="deepFurther">&mdash;</div></div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="S&amp;P 500 returns after the Summation Index first closes below each oversold level, and on any day">
+              <thead><tr><th>Holding period</th><th>After first close below <span data-msi-stat="osT">&minus;400</span></th><th>Higher</th><th>After first close below <span data-msi-stat="deepT">&minus;600</span></th><th>Higher</th><th>Any day</th><th>Higher</th></tr></thead>
+              <tbody id="msiTableBody"><tr><td colspan="7">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-msi-years="2" role="tab">2Y</button>
+              <button type="button" class="iq-range-btn" data-msi-years="5" role="tab">5Y</button>
+              <button type="button" class="iq-range-btn active" data-msi-years="0" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="msiChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="S&amp;P 500 on top and the McClellan Summation Index below, with the deeply oversold zone shaded and past lows marked"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: the S&amp;P 500.
+            <em>Bottom panel</em>: the Summation Index, with its <span class="iq-sw iq-sw-msiema"></span>21-day average.
+            The <span class="iq-sw iq-sw-msizone"></span><strong>shaded zone</strong> is deeply oversold, below
+            <span data-msi-stat="deepT">&minus;600</span>; the dashed line above it is the milder
+            <span data-msi-stat="osT">&minus;400</span> level. Each
+            <span class="iq-sw iq-sw-msilow"></span><strong>dashed vertical</strong> marks the lowest point of a past
+            trip into the zone, so you can look straight up and see where the S&amp;P 500 was that day.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>In the last ten years, deep readings marked the lows.</strong> Since
+              <span data-msi-stat="startYear">2016</span> the index has closed below
+              <span data-msi-stat="deepT">&minus;600</span> in <span data-msi-stat="deepN">&mdash;</span> separate
+              stretches. One year after the first such close, the S&amp;P 500 had gained
+              <span data-msi-stat="deep12avg">&mdash;</span> on average and was higher
+              <span data-msi-stat="deep12up">&mdash;</span> of the time, against
+              <span data-msi-stat="any12">&mdash;</span> for any day. The milder
+              <span data-msi-stat="osT">&minus;400</span> level was less reliable: it also fired in February and May
+              2022, months before that year's low.
+            </p>
+            <p>
+              <strong>The first reading is early, not the low.</strong> After the first close below
+              <span data-msi-stat="deepT">&minus;600</span>, the S&amp;P 500 fell another
+              <span data-msi-stat="deepFurtherAvg">&mdash;</span> on average before it turned, and
+              <span data-msi-stat="deepFurtherWorst">&mdash;</span> in the worst case. The index can keep sinking for
+              days or weeks after it enters the zone.
+            </p>
+            <p>
+              <strong>The longer record is less kind.</strong> We ran the same test on real New York Stock Exchange
+              counts from 1965 to early 2020. A first close below &minus;700 was followed a year later by an average
+              gain of 8.0%, against 8.2% for any day, and stocks were higher 66% of the time against 74%. In bear
+              markets the oversold reading came long before the bottom: after the November 2007 reading the S&amp;P 500
+              was 40% lower a year later, and 1973 and 2000 were similar. Oversold has been a good place to buy in a
+              bull market and a trap in a bear market.
+            </p>
+            <p>
+              <strong>Whose stocks are counted matters.</strong> The well-known version of this index counts every
+              issue on the New York Stock Exchange. No free feed publishes those counts with history, so this card
+              counts the roughly 1,500 companies in the S&amp;P 1500. The two move together (0.89 correlation over
+              2016 to early 2020), but ours usually reads about 140 points higher. On October 2, 2026 the NYSE version
+              read &minus;767 while ours read about &minus;680, so <span data-msi-stat="deepT">&minus;600</span> here is
+              roughly &minus;700 to &minus;750 there.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Counts from <span data-msi-stat="start">&mdash;</span> to <span data-msi-stat="end">&mdash;</span>, built
+            nightly from each S&amp;P 1500 member's daily close; today's members are applied to the whole history.
+            Daily score = (advancers &minus; decliners) &divide; (advancers + decliners) &times; 1,000, the
+            "ratio-adjusted" form. Oscillator = its 19-day minus its 39-day exponential average. Summation Index =
+            the running total of the oscillator. The first 200 days are left out while the averages settle. A
+            stretch = consecutive closes below the level, with gaps of up to 20 trading days counted as one stretch.
+            Returns are S&amp;P 500 price changes measured from the close after the first close below the level.
+            "Further drop" is the lowest S&amp;P 500 close in the following six months. Results ignore costs, taxes
+            and dividends. Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/signals.html#sig-summation-index"
+               data-share-title="McClellan Summation Index — BATS.CO"
+               data-share-text="The running total of daily market breadth, with the deeply oversold zone and every past trip into it marked against the S&P 500. Live reading and what stocks did afterwards."
                style="margin-top: 0.9rem;"></div>
         </div>
 
@@ -2012,6 +2169,246 @@
           card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           const y = parseInt(btn.dataset.zbtYears, 10); renderChart(Number.isFinite(y) ? y : 0);
+        });
+      });
+    })();
+
+    // ==========================================================
+    //  McClellan Summation Index (ratio-adjusted)
+    //  Daily score = (adv - dec) / (adv + dec) x 1000. The oscillator is
+    //  its 19-day EMA minus its 39-day EMA; the Summation Index is the
+    //  running total of the oscillator, which works out to
+    //  19 x EMA39 - 9 x EMA19 (so it needs no starting value).
+    //  Counted on the S&P 1500 members (data/ad_line_sp1500.csv), the
+    //  same stand-in for NYSE-wide counts the Zweig card uses. Checked
+    //  against real NYSE counts: the same maths gives the published
+    //  NYSE figure to within a point.
+    // ==========================================================
+    (async function initSummationIndex() {
+      const card = document.getElementById('sig-summation-index');
+      const pill = document.getElementById('msiPill');
+      if (!card || !pill) return;
+      const $ = id => document.getElementById(id);
+      const sub = $('msiSub'), asof = $('msiAsof');
+      // Levels for THIS version of the index (it reads about 140 points
+      // higher than the NYSE-wide one). The card's text reads them from here.
+      const OS = -400, DEEP = -600;
+      const WARM = 200;      // days skipped while the two averages settle
+      const MERGE = 20;      // dips less than 20 trading days apart count as one stretch
+      const FLAT = 5;        // a daily change smaller than this is "leveling off"
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+      let raw;
+      try {
+        const r = await fetch('data/ad_line_sp1500.csv', { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch');
+        const lines = (await r.text()).trim().split(/\r?\n/);
+        const hdr = lines[0].split(',');
+        const col = n => hdr.indexOf(n);
+        raw = lines.slice(1).map(ln => { const p = ln.split(','); return { date: p[col('Date')], adv: +p[col('Adv')], dec: +p[col('Dec')], px: +p[col('Index')] }; })
+                   .filter(r => r.date && r.adv + r.dec > 0 && Number.isFinite(r.px) && r.px > 0);
+      } catch (e) { fail('Could not fetch the advance/decline counts. Try again in a moment.'); return; }
+      if (raw.length < WARM + 300) { fail('Not enough history to run the index yet.'); return; }
+
+      // The two averages, the oscillator and the Summation Index
+      let e19 = null, e39 = null;
+      const all = raw.map(r => {
+        const x = (r.adv - r.dec) / (r.adv + r.dec) * 1000;
+        e19 = e19 == null ? x : e19 + 0.10 * (x - e19);
+        e39 = e39 == null ? x : e39 + 0.05 * (x - e39);
+        return { date: r.date, px: r.px, osc: e19 - e39, si: 19 * e39 - 9 * e19 };
+      });
+      const rows = all.slice(WARM), N = rows.length, last = N - 1;
+      const si = rows.map(r => r.si), osc = rows.map(r => r.osc), px = rows.map(r => r.px);
+      const ema21 = new Array(N); for (let i = 0; i < N; i++) ema21[i] = i === 0 ? si[0] : ema21[i - 1] + (2 / 22) * (si[i] - ema21[i - 1]);
+
+      // Stretches below a level (close dips are merged into one stretch)
+      function stretches(T) {
+        const out = [];
+        for (let i = 0; i < N; ) {
+          if (si[i] < T) {
+            let j = i, lastB = i;
+            while (j + 1 < N && (si[j + 1] < T || j + 1 - lastB <= MERGE)) { j++; if (si[j] < T) lastB = j; }
+            let low = i; for (let k = i; k <= lastB; k++) if (si[k] < si[low]) low = k;
+            out.push({ start: i, end: lastB, low });
+            i = lastB + 1;
+          } else i++;
+        }
+        return out;
+      }
+      const osEps = stretches(OS), deepEps = stretches(DEEP);
+
+      // ---- what the S&P 500 did next (from the close after the event) ----
+      const H = [[21, '1 month'], [63, '3 months'], [126, '6 months'], [252, '12 months']];
+      const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+      const fwd = (i, h) => (i + 1 + h < N ? px[i + 1 + h] / px[i + 1] - 1 : null);
+      const summarize = (idxs, h) => {
+        const a = idxs.map(i => fwd(i, h)).filter(v => v != null);
+        return a.length ? { avg: mean(a) * 100, up: a.filter(v => v > 0).length / a.length * 100, n: a.length } : null;
+      };
+      const everyDay = Array.from({ length: N }, (_, i) => i);
+      const osStat = {}, deepStat = {}, anyStat = {};
+      for (const [h] of H) { osStat[h] = summarize(osEps.map(e => e.start), h); deepStat[h] = summarize(deepEps.map(e => e.start), h); anyStat[h] = summarize(everyDay, h); }
+      // How much further the S&P 500 fell in the six months after the first close below the deep level
+      const further = deepEps.map(e => { const seg = px.slice(e.start + 1, e.start + 127); return seg.length > 5 ? (Math.min(...seg) / px[e.start + 1] - 1) * 100 : null; }).filter(v => v != null);
+
+      // ---- formatting ----
+      const fmtPct = (v, d) => { const s = v.toFixed(d == null ? 1 : d); return (parseFloat(s) === 0 ? '0.0' : (v > 0 ? '+' : '') + s) + '%'; };
+      const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDate = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + parseInt(d.slice(8, 10), 10) + ', ' + d.slice(0, 4);
+      const fmtMonth = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + d.slice(0, 4);
+      const fmtIdx = v => Math.round(v).toLocaleString('en-US').replace('-', '−');
+      const short = s => (s ? `${fmtPct(s.avg)} · ${Math.round(s.up)}%` : '—');
+
+      const v = si[last], o = osc[last];
+      const lowerShare = si.filter(x => x < v).length / N * 100;
+      const stats = {
+        deepT: fmtIdx(DEEP), osT: fmtIdx(OS),
+        startYear: rows[0].date.slice(0, 4),
+        deepN: String(deepEps.length),
+        deepShare: (si.filter(x => x < DEEP).length / N * 100).toFixed(1) + '%',
+        deep12: short(deepStat[252]), os12: short(osStat[252]), any12: short(anyStat[252]),
+        deep12avg: deepStat[252] ? fmtPct(deepStat[252].avg) : '—',
+        deep12up: deepStat[252] ? Math.round(deepStat[252].up) + '%' : '—',
+        deepFurther: further.length ? fmtPct(mean(further)) + ' avg' : '—',
+        deepFurtherAvg: further.length ? Math.abs(mean(further)).toFixed(1) + '%' : '—',
+        deepFurtherWorst: further.length ? Math.abs(Math.min(...further)).toFixed(1) + '%' : '—',
+        start: fmtDate(rows[0].date), end: fmtDate(rows[last].date),
+      };
+      card.querySelectorAll('[data-msi-stat]').forEach(el => { const s = stats[el.dataset.msiStat]; if (s != null) el.textContent = s; });
+      const tb = $('msiTableBody');
+      const cell = (s, bold) => (s ? `<td class="${bold ? 'mv-edge ' : ''}${s.avg >= 0 ? 'pos' : 'neg'}">${fmtPct(s.avg)}</td><td>${Math.round(s.up)}%</td>` : '<td>—</td><td>—</td>');
+      if (tb) tb.innerHTML = H.map(([h, lab]) => `<tr><td>${lab}</td>${cell(osStat[h], false)}${cell(deepStat[h], true)}${cell(anyStat[h], false)}</tr>`).join('');
+
+      // ---- today's state ----
+      const zone = v < DEEP ? 'deep' : v < OS ? 'os' : 'none';
+      const dir = o <= -FLAT ? 'falling' : o >= FLAT ? 'rising' : 'flat';
+      // how many days in a row the index has moved the same way (ignoring a "flat" latest day)
+      const runFrom = dir === 'flat' ? last - 1 : last;
+      let run = 0; if (runFrom >= 0) { const sgn = osc[runFrom] > 0; for (let i = runFrom; i >= 0 && (osc[i] > 0) === sgn; i--) run++; }
+      const runDown = runFrom >= 0 && !(osc[runFrom] > 0);
+      const dayWord = n => `${n} day${n === 1 ? '' : 's'}`;
+      const dirWords = { falling: 'STILL FALLING', flat: 'LEVELING OFF', rising: 'TURNING UP' };
+      const dirSentence = dir === 'falling' ? `It is still falling, down ${dayWord(run)} in a row.`
+        : dir === 'rising' ? `It has risen ${dayWord(run)} in a row.`
+        : `It ${runDown ? 'fell' : 'rose'} ${dayWord(run)} in a row and was nearly flat on the latest day.`;
+      // The current trip below the oversold level, if we are in one
+      const cur = osEps.length && osEps[osEps.length - 1].end >= last - MERGE && v < OS ? osEps[osEps.length - 1] : null;
+      let lowestSince = null;
+      if (cur) { for (let i = cur.start - 1; i >= 0; i--) if (si[i] < si[cur.low]) { lowestSince = i; break; } }
+      const sinceWords = cur ? (lowestSince != null ? `its lowest since ${fmtMonth(rows[lowestSince].date)}` : `its lowest since this record began in ${stats.startYear}`) : '';
+      if (zone === 'deep') {
+        pill.textContent = `DEEPLY OVERSOLD · ${dirWords[dir]}`; pill.className = 'iq-action-pill iq-action-armed';
+        sub.textContent = `The index is ${fmtIdx(v)}, lower than on all but ${lowerShare.toFixed(1)}% of days since ${stats.startYear} and ${sinceWords}. ${dirSentence} Readings this low marked the major lows of the past decade, but the first one tends to be early.`;
+      } else if (zone === 'os') {
+        pill.textContent = `OVERSOLD · ${dirWords[dir]}`; pill.className = 'iq-action-pill iq-action-armed';
+        sub.textContent = `The index is ${fmtIdx(v)}, below the ${fmtIdx(OS)} oversold level but above the ${fmtIdx(DEEP)} deep zone. ${dirSentence}`;
+      } else {
+        pill.textContent = 'NO EXTREME'; pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = `The index is ${fmtIdx(v)}. Oversold begins below ${fmtIdx(OS)} and deeply oversold below ${fmtIdx(DEEP)}. ${dirSentence}`;
+      }
+      asof.textContent = `As of ${rows[last].date} · S&P 500 ${px[last].toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+
+      $('msiNow').textContent = fmtIdx(v);
+      $('msiNowState').textContent = zone === 'deep' ? 'deeply oversold' : zone === 'os' ? 'oversold' : 'not oversold';
+      $('msiNowState').className = 'iq-gate-state ' + (zone !== 'none' ? 'iq-gate-on' : 'iq-gate-off');
+      $('msiNowGate').classList.toggle('iq-gate-firing', zone !== 'none');
+      $('msiDir').textContent = (o > 0 ? '+' : o < 0 ? '−' : '') + Math.abs(o).toFixed(1);
+      $('msiDirState').textContent = dir === 'falling' ? `falling · ${dayWord(run)}` : dir === 'rising' ? `rising · ${dayWord(run)}` : 'leveling off';
+      $('msiDirState').className = 'iq-gate-state ' + (dir === 'rising' ? 'iq-gate-on' : 'iq-gate-off');
+      if (cur) {
+        $('msiLowLabel').textContent = "This drop's low";
+        $('msiLow').textContent = fmtIdx(si[cur.low]);
+        $('msiLowCond').textContent = lowestSince != null ? `lowest since ${fmtMonth(rows[lowestSince].date)}` : 'lowest on this record';
+        $('msiLowState').textContent = `lower on ${lowerShare.toFixed(1)}% of days`;
+        $('msiLowState').className = 'iq-gate-state iq-gate-on';
+        $('msiLowGate').classList.toggle('iq-gate-firing', zone === 'deep');
+      } else if (deepEps.length) {
+        const e = deepEps[deepEps.length - 1];
+        $('msiLowLabel').textContent = 'Last deep reading';
+        $('msiLow').textContent = fmtMonth(rows[e.low].date);
+        $('msiLowCond').textContent = `low of ${fmtIdx(si[e.low])}`;
+        $('msiLowState').textContent = `${(last - e.low).toLocaleString('en-US')} trading days ago`;
+      }
+
+      // ---- chart: S&P 500 (top) and the Summation Index (bottom) ----
+      const svg = $('msiChartSvg');
+      function renderChart(years) {
+        if (!svg) return;
+        const first = years > 0 ? Math.max(0, N - years * 252) : 0;
+        const n = N - first; if (n < 2) return;
+        const W = 1200, PAD_L = 58, PAD_R = 62, PAD_T = 18, GAP = 22, TOP_H = 230, BOT_H = 250;
+        const plotW = W - PAD_L - PAD_R, topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP, botY1 = botY0 + BOT_H;
+        const xFor = i => PAD_L + plotW * (i - first) / (n - 1);
+        const pv = px.slice(first), sv = si.slice(first), ev = ema21.slice(first);
+        let pLo = Math.min(...pv), pHi = Math.max(...pv); const pPad = (pHi - pLo) * 0.06; pLo -= pPad; pHi += pPad;
+        const yP = x => topY1 - (x - pLo) / (pHi - pLo) * TOP_H;
+        // extra room below for the labels under each low, and above so the panel title clears the line
+        const sLo = Math.min(DEEP - 150, Math.min(...sv) - 130), sHi = Math.max(600, Math.max(...sv) + 280);
+        const yS = x => botY1 - (x - sLo) / (sHi - sLo) * BOT_H;
+        const parts = [];
+        const niceStep = range => { const r = range / 4, mag = Math.pow(10, Math.floor(Math.log10(r))); return [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => range / s <= 5.5) || mag * 10; };
+        // deeply-oversold zone
+        parts.push(`<rect class="msi-zone" x="${PAD_L}" y="${yS(DEEP).toFixed(1)}" width="${plotW}" height="${(botY1 - yS(DEEP)).toFixed(1)}"/>`);
+        // price grid + labels
+        { const step = niceStep(pHi - pLo);
+          for (let t = Math.ceil(pLo / step) * step; t <= pHi; t += step) {
+            const y = yP(t).toFixed(1);
+            parts.push(`<line class="chart-grid" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${Math.round(t).toLocaleString('en-US')}</text>`);
+          } }
+        // index grid: every 500 points, with the zero line a little brighter
+        for (let t = Math.ceil(sLo / 500) * 500; t <= sHi; t += 500) {
+          const y = yS(t).toFixed(1);
+          parts.push(`<line class="${t === 0 ? 'msi-zero' : 'chart-grid'}" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${fmtIdx(t)}</text>`);
+        }
+        // the two levels
+        parts.push(`<line class="msi-zone-edge" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${yS(DEEP).toFixed(1)}" y2="${yS(DEEP).toFixed(1)}"/><text class="msi-low-label" x="${PAD_L + plotW + 4}" y="${(yS(DEEP) + 3).toFixed(1)}">${fmtIdx(DEEP)}</text>`);
+        parts.push(`<line class="msi-level" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${yS(OS).toFixed(1)}" y2="${yS(OS).toFixed(1)}"/>`);
+        // past trips into the deep zone: a dashed vertical at each low, through both panels
+        const shown = deepEps.filter(e => e.low >= first && e.end < last - 1);     // on the chart and finished
+        for (const e of shown) {
+          const x = xFor(e.low).toFixed(1);
+          parts.push(`<line class="msi-low" x1="${x}" x2="${x}" y1="${topY0}" y2="${botY1}"/>`);
+        }
+        // label the lows, deepest first, skipping any that would sit on top of one already labelled
+        const labelled = [];
+        for (const e of shown.slice().sort((a, b) => si[a.low] - si[b.low])) {
+          const x = xFor(e.low);
+          if (labelled.some(lx => Math.abs(lx - x) < 56)) continue;
+          labelled.push(x);
+          const anchor = x < PAD_L + 30 ? 'start' : x > PAD_L + plotW - 30 ? 'end' : 'middle';
+          parts.push(`<text class="msi-low-label" x="${x.toFixed(1)}" y="${Math.min(botY1 - 4, yS(si[e.low]) + 14).toFixed(1)}" text-anchor="${anchor}">${fmtIdx(si[e.low])}</text>`);
+        }
+        // lines
+        const path = (vals, yf) => vals.map((x, k) => `${k ? 'L' : 'M'}${xFor(first + k).toFixed(1)},${yf(x).toFixed(1)}`).join(' ');
+        parts.push(`<path class="msi-line-price" d="${path(pv, yP)}"/>`);
+        parts.push(`<path class="msi-ema" d="${path(ev, yS)}"/>`);
+        parts.push(`<path class="msi-line" d="${path(sv, yS)}"/>`);
+        // end labels
+        parts.push(`<text class="iq-eq-label" style="fill:#e8ecf4" x="${PAD_L + plotW + 4}" y="${(yP(pv[n - 1]) + 3).toFixed(1)}">${Math.round(pv[n - 1]).toLocaleString('en-US')}</text>`);
+        const endY = yS(sv[n - 1]) + 3 + (Math.abs(yS(sv[n - 1]) - yS(DEEP)) < 11 ? (sv[n - 1] < DEEP ? 11 : -11) : 0);   // keep clear of the level label
+        parts.push(`<text class="iq-eq-label" style="fill:#e8ecf4" x="${PAD_L + plotW + 4}" y="${endY.toFixed(1)}">${fmtIdx(sv[n - 1])}</text>`);
+        // x axis
+        const spanDays = (Date.parse(rows[N - 1].date) - Date.parse(rows[first].date)) / 86400000;
+        const lab = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + (spanDays > 1100 ? d.slice(0, 4) : d.slice(2, 4));
+        for (let k = 0; k <= 7; k++) {
+          const i = first + Math.round(k / 7 * (n - 1));
+          parts.push(`<text class="chart-axis-label" x="${xFor(i).toFixed(1)}" y="${botY1 + 14}" text-anchor="${k === 0 ? 'start' : k === 7 ? 'end' : 'middle'}">${lab(rows[i].date)}</text>`);
+        }
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${topY0 + 13}">S&amp;P 500</text>`);
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${botY0 + 13}">McClellan Summation Index · S&amp;P 1500 members</text>`);
+        svg.innerHTML = parts.join('');
+      }
+      renderChart(0);
+      card.querySelectorAll('.iq-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const y = parseInt(btn.dataset.msiYears, 10); renderChart(Number.isFinite(y) ? y : 0);
         });
       });
     })();
