@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signals — BATS.CO</title>
+  <meta name="description" content="Market signals tracked by BATS.CO." />
+  <link rel="canonical" href="https://bats.co/signals.html">
+  <meta property="og:site_name" content="BATS.CO">
+  <meta property="og:title" content="Signals — BATS.CO">
+  <meta property="og:description" content="Market signals tracked by BATS.CO.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bats.co/signals.html">
+  <meta property="og:image" content="https://bats.co/og-card.png?v=2">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Signals — BATS.CO">
+  <meta name="twitter:description" content="Market signals tracked by BATS.CO.">
+  <meta name="twitter:image" content="https://bats.co/og-card.png?v=2">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Teko:wght@600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <a href="index.html" class="brand-link" aria-label="BATS.CO home">
+        <img src="/stock-market-sentiment-bull-logo.png" alt="BATS bull logo" class="brand-logo" />
+        <div class="brand-text">
+          <h1>Benchmark Asset and Trend Scenarios</h1>
+        </div>
+      </a>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html">Score</a>
+      <a href="quotes.html">Dashboard</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="markets.html">Markets</a>
+      <a href="sector-rotation.html">Sector Rotation</a>
+      <a href="concentration.html">Concentration</a>
+      <a href="market-ratios.html">Market Ratios</a>
+      <a href="risk-watch.html">Risk Watch</a>
+      <a href="valuations.html">Valuations</a>
+      <a href="market-signals.html">Strategies</a>
+      <a href="signals.html">Signals</a>
+      <div class="nav-more">
+        <button type="button" class="nav-more-btn" aria-haspopup="true" aria-expanded="false">More<span class="caret" aria-hidden="true">&#9662;</span></button>
+        <div class="nav-more-menu">
+          <a href="divergences.html">Divergences</a>
+          <a href="consumer.html">Consumer</a>
+          <a href="pelosi.html">Pelosi Trades</a>
+          <a href="pe.html">Private Equity</a>
+          <a href="signal-testing.html">Signal Testing</a>
+        </div>
+      </div>
+    </nav>
+    <script src="nav-more.js" defer></script>
+    <script>
+      (function () {
+        document.querySelectorAll('.site-nav a').forEach(a => {
+          if ((a.getAttribute('href') || '').split('/').pop() === 'signals.html') {
+            a.classList.add('active');
+          }
+        });
+      })();
+    </script>
+  </header>
+
+  <main>
+    <section>
+      <h1 style="margin: 1.5rem 0 0.25rem;">Signals</h1>
+      <!-- Intentionally blank for now: signal cards will be moved here
+           from the Strategies page (market-signals.html). -->
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>BATS.CO &copy; <span id="footerYear"></span> &middot; For informational purposes only. Not investment advice.</p>
+  </footer>
+  <script src="ticker-search.js" defer></script>
+  <script>
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

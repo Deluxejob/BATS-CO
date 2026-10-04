@@ -144,6 +144,59 @@ h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); }
   font-weight: 700;
 }
 
+/* "More" — the last menu item, a small dropdown holding the pages that
+   don't need a top-level slot. Opens on hover with a mouse; nav-more.js
+   adds .open for taps and the keyboard, and closes it on an outside
+   click, Escape, or when focus leaves. The panel hangs from the right
+   edge of the button (it is the last item); nav-more.js flips it to the
+   left edge if that would push it off a narrow screen. */
+.site-nav .nav-more { position: relative; display: inline-flex; }
+.site-nav .nav-more-btn {
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: .35rem .15rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.site-nav .nav-more-btn .caret { font-size: .7em; margin-left: .25em; }
+.site-nav .nav-more.open .nav-more-btn { color: var(--text); border-color: var(--accent); }
+.site-nav .nav-more-btn.active { color: var(--accent); border-color: var(--accent); font-weight: 700; }
+.site-nav .nav-more-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 60;
+  min-width: 190px;
+  padding: .4rem;
+  flex-direction: column;
+  gap: .1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.site-nav .nav-more-menu.align-left { right: auto; left: 0; }
+.site-nav .nav-more.open .nav-more-menu { display: flex; }
+@media (hover: hover) {
+  .site-nav .nav-more:hover .nav-more-btn { color: var(--text); border-color: var(--accent); }
+  .site-nav .nav-more:hover .nav-more-menu { display: flex; }
+}
+.site-nav .nav-more-menu a {
+  display: block;
+  padding: .5rem .7rem;
+  border-bottom: 0;
+  border-radius: 6px;
+}
+.site-nav .nav-more-menu a:hover { background: rgba(110, 231, 255, .08); }
+.site-nav .nav-more-menu a.active { background: rgba(110, 231, 255, .10); }
+
 main {
   max-width: 1280px;
   margin: 0 auto;
@@ -1431,6 +1484,7 @@ a.ticker-chip:hover {
   .hero { padding: 1.25rem; }
   .site-nav { width: 100%; justify-content: space-between; gap: .5rem; }
   .site-nav a { font-size: .85rem; }
+  .site-nav .nav-more-btn { font-size: .85rem; }
 }
 
 /* ====== Real market moments — cards under the home-page backtest ====== */
