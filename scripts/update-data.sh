@@ -144,10 +144,6 @@ for sym in AAPL MSFT NVDA AMZN GOOGL META TSLA; do
   fetch_yahoo_daily "$sym" "$DATA_DIR/top10/$fname" "946684800"  # 2000-01-01
 done
 
-# USO — crude oil ETF for the Two-of-Three Long/Cash signal card on
-# market-signals.html (uses data/hyg.csv + data/nfci.csv alongside it).
-fetch_yahoo_daily "USO" "$DATA_DIR/uso.csv" "1144540800"  # 2006-04-09 (inception 2006-04-10)
-
 # ICE BofA MOVE index (Treasury-market volatility, the bond market's VIX)
 # for the Bond Fear Spike card on signals.html. Published once a
 # day after the bond close; Yahoo's daily history starts 2002-11-12.

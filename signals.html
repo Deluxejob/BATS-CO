@@ -206,8 +206,9 @@
       margin-bottom: 0.75rem;
     }
     @media (max-width: 600px) { .iq-gates { grid-template-columns: 1fr; } }
-    /* Two-of-Three USO card: three gates side by side, a vote-count line
-       under them, and the vote strip / EMA line in its chart. */
+    /* Three gates side by side (the cards on this page use .u3-gates). The
+       "u3" name and the vote-strip rules below come from the Two-of-Three
+       USO strategy card, which has since been removed from the site. */
     .u3-gates { grid-template-columns: repeat(3, 1fr); }
     @media (max-width: 760px) { .u3-gates { grid-template-columns: 1fr; } }
     .u3-votes {
