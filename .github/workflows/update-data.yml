@@ -48,6 +48,9 @@ jobs:
       - name: Refresh weekly S&P 500 close and volume (Weekly Force Index card — always exits 0)
         run: python scripts/update-spx-weekly.py
 
+      - name: Refresh S&P 500 forward PE from all members (Valuations page — always exits 0)
+        run: python scripts/update-forward-pe.py
+
       - name: Refresh NAAIM (weekly — tolerant of no-new-data)
         run: python scripts/update-naaim.py
 

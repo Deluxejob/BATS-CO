@@ -58,8 +58,8 @@
     .per-hero-stat.pct     .num  { color: var(--s5); }
     .per-hero-stat.max     .num  { color: var(--s0); }
     .per-hero-stat.dotcom  .num  { color: #ffb658; }
-    /* Small extra note below the "Forward PE" tile with the implied
-       one-year earnings-growth expectation. Kept subtle so it doesn't
+    /* Small extra note below a tile (what the Forward PE covers, or the
+       later spike on the two crash cards). Kept subtle so it doesn't
        fight the main number. */
     .per-hero-stat .sublabel {
       font-family: 'JetBrains Mono', monospace;
@@ -220,7 +220,7 @@
         </div>
         <div class="per-hero-stat forward">
           <span class="num" id="statForward">&ndash;</span>
-          <span class="label">Forward PE (next 12mo est.)</span>
+          <span class="label">Forward PE (next 12 months est.)</span>
           <span class="sublabel" id="statForwardSub">&nbsp;</span>
         </div>
         <div class="per-hero-stat avg">
@@ -615,56 +615,43 @@
       &nbsp;·&nbsp; today's PE is higher than <strong>${percentile.toFixed(0)}%</strong> of historical readings
     `;
 
-    // ---- Forward PE (analyst consensus for next 12 months) --------------
-    // Yahoo doesn't publish forwardPE for the S&P 500 index or its ETF
-    // proxies (SPY/VOO/IVV all return null) via free APIs. We approximate
-    // with the market-cap-weighted forward P/E of the ten largest S&P
-    // constituents — currently ~35% of the index by weight and heavily
-    // correlated with the whole thing.
-    //
-    // Weighting formula:
-    //   weighted_fwd_PE = Σ(marketCap_i) / Σ(marketCap_i / forwardPE_i)
-    //
-    // which is equivalent to (total market cap) / (total forward earnings)
-    // — the same math Yardeni/FactSet use for the true index number.
+    // ---- Forward PE (analysts' estimates for the next 12 months) --------
+    // The number comes from data/spx_forward_pe.csv, built nightly by
+    // scripts/update-forward-pe.py from EVERY S&P 500 company: total market
+    // value divided by total expected earnings over the next 12 months,
+    // using each company's own financial-year dates. (An earlier version
+    // worked it out here in the browser from only the ten largest
+    // companies, which read almost three points too high.)
     (async () => {
-      // Top-10 S&P 500 constituents by weight (as of 2026). Same list the
-      // Concentration page tracks daily.
-      const TOP10 = ['AAPL','MSFT','NVDA','AMZN','GOOGL','META','TSLA','LLY','JPM','AVGO'];
-      let quotes = {};
+      const sub = $('statForwardSub');
+      let last = null;
       try {
-        const r = await fetch('/api/quote?syms=' + encodeURIComponent(TOP10.join(',')));
+        const r = await fetch('data/spx_forward_pe.csv', { cache: 'no-store' });
         if (r.ok) {
-          const data = await r.json();
-          quotes = (data && data.quotes) || {};
+          const lines = (await r.text()).trim().split(/\r?\n/);
+          const hdr = lines[0].split(',');
+          const cells = lines[lines.length - 1].split(',');
+          if (lines.length > 1) { last = {}; hdr.forEach((h, i) => { last[h] = cells[i]; }); }
         }
       } catch (e) { /* fall through */ }
 
-      let capSum = 0, fwdEarnSum = 0, trlEarnSum = 0, sampleCount = 0;
-      for (const sym of TOP10) {
-        const q = quotes[sym];
-        if (!q || !Number.isFinite(q.marketCap) || q.marketCap <= 0) continue;
-        capSum += q.marketCap;
-        if (Number.isFinite(q.forwardPE)  && q.forwardPE  > 0.5) fwdEarnSum += q.marketCap / q.forwardPE;
-        if (Number.isFinite(q.trailingPE) && q.trailingPE > 0.5) trlEarnSum += q.marketCap / q.trailingPE;
-        sampleCount++;
-      }
-      const sub = $('statForwardSub');
-      if (sampleCount < 6 || fwdEarnSum <= 0) {
-        sub.textContent = 'Not published for the index via free data';
+      const fwdPE = last ? parseFloat(last.ForwardPE) : NaN;
+      if (!Number.isFinite(fwdPE) || fwdPE <= 0) {
+        sub.textContent = 'Not available right now';
         return;
       }
-      const fwdPE = capSum / fwdEarnSum;
       $('statForward').textContent = fwdPE.toFixed(2);
-      if (trlEarnSum > 0) {
-        const trlPE = capSum / trlEarnSum;
-        const growth = (trlPE / fwdPE - 1) * 100;
-        const sign = growth >= 0 ? '+' : '';
-        const cls  = growth >= 0 ? 'pos' : 'neg';
-        sub.innerHTML = `Top-10 weighted &middot; analysts expect <span class="${cls}">${sign}${growth.toFixed(1)}%</span> EPS growth`;
-      } else {
-        sub.textContent = 'Top-10 market-cap-weighted forward P/E';
+      const n = parseInt(last.Companies, 10);
+      const growth = parseFloat(last.GrowthNextYear) * 100;
+      let text = Number.isFinite(n) ? `All ${n} companies in the S&amp;P 500` : 'Every company in the S&amp;P 500';
+      if (Number.isFinite(growth)) {
+        const cls = growth >= 0 ? 'pos' : 'neg';
+        text += ` &middot; analysts expect <span class="${cls}">${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%</span> EPS growth next year`;
       }
+      // Say so if the nightly update has not run for a while.
+      const ageDays = (Date.now() - Date.parse(last.Date + 'T00:00:00Z')) / 86400000;
+      if (ageDays > 7) text += ` &middot; as of ${last.Date}`;
+      sub.innerHTML = text;
     })();
 
     // --- SVG chart (period-aware) ---
