@@ -104,13 +104,21 @@ def yahoo_quotes(syms):
     num = lambda q, k: q.get(k) if isinstance(q.get(k), (int, float)) else None
     out = {}
     for q in res:
+        # Keep this field list the same as compactQuote() in api/quote.js. A
+        # field missing here shows up as a blank on the local preview only
+        # (the Forward PE card on valuations.html went blank that way).
+        div = num(q, 'trailingAnnualDividendYield')
         out[q.get('symbol')] = {
             'symbol': q.get('symbol'), 'shortName': q.get('shortName') or q.get('longName'),
+            'currency': q.get('currency'),
             'price': num(q, 'regularMarketPrice'), 'prevClose': num(q, 'regularMarketPreviousClose'),
             'dayChange': num(q, 'regularMarketChange'), 'dayChangePct': num(q, 'regularMarketChangePercent'),
             'open': num(q, 'regularMarketOpen'), 'dayHigh': num(q, 'regularMarketDayHigh'), 'dayLow': num(q, 'regularMarketDayLow'),
             'regularMarketTime': num(q, 'regularMarketTime'), 'marketState': q.get('marketState'),
+            'dividendYieldPct': div * 100 if div is not None else num(q, 'dividendYield'),
             'marketCap': num(q, 'marketCap'),
+            'fiftyTwoWeekHigh': num(q, 'fiftyTwoWeekHigh'), 'fiftyTwoWeekLow': num(q, 'fiftyTwoWeekLow'),
+            'trailingPE': num(q, 'trailingPE'), 'forwardPE': num(q, 'forwardPE'),
             'preMarketPrice': num(q, 'preMarketPrice'), 'preMarketChange': num(q, 'preMarketChange'),
             'preMarketChangePercent': num(q, 'preMarketChangePercent'), 'preMarketTime': num(q, 'preMarketTime'),
             'postMarketPrice': num(q, 'postMarketPrice'), 'postMarketChange': num(q, 'postMarketChange'),

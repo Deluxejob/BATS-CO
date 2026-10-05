@@ -57,6 +57,7 @@
     .per-hero-stat.avg     .num  { color: #64d3ff; }
     .per-hero-stat.pct     .num  { color: var(--s5); }
     .per-hero-stat.max     .num  { color: var(--s0); }
+    .per-hero-stat.dotcom  .num  { color: #ffb658; }
     /* Small extra note below the "Forward PE" tile with the implied
        one-year earnings-growth expectation. Kept subtle so it doesn't
        fight the main number. */
@@ -210,7 +211,7 @@
 
     <section id="hero-stats">
       <div class="section-head">
-        <h2>Where we stand today</h2>
+        <h2>Current Stock Market Price-to-Earnings Ratio</h2>
       </div>
       <div class="per-hero-stats">
         <div class="per-hero-stat current">
@@ -232,7 +233,13 @@
         </div>
         <div class="per-hero-stat max">
           <span class="num" id="statMax">&ndash;</span>
-          <span class="label">All-time high (GFC earnings collapse)</span>
+          <span class="label" id="statMaxLabel">Pre-GFC market high (October 2007)</span>
+          <span class="sublabel" id="statMaxSub">&nbsp;</span>
+        </div>
+        <div class="per-hero-stat dotcom">
+          <span class="num" id="statDotcom">&ndash;</span>
+          <span class="label" id="statDotcomLabel">Tech bubble high (April 1999)</span>
+          <span class="sublabel" id="statDotcomSub">&nbsp;</span>
         </div>
       </div>
       <p class="backtest-meta" id="statMeta">Loading&hellip;</p>
@@ -567,7 +574,40 @@
     $('statCurrent').textContent = latest.pe.toFixed(2);
     $('statAvg').textContent     = mean.toFixed(2);
     $('statPct').textContent     = `${percentile.toFixed(0)}th`;
-    $('statMax').textContent     = max.toFixed(1);
+
+    // The two crash cards share one layout. The big number is the PE while
+    // prices were still high; the note under it is the later spike, when
+    // earnings fell faster than prices. Those spikes (46.7 and 123.7) are
+    // the same effect, so they are the two numbers to compare with each other.
+    {
+      const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthYear = (d, short) => { const m = MONTHS[parseInt(d.slice(5, 7), 10) - 1]; return (short ? m.slice(0, 3) : m) + ' ' + d.slice(0, 4); };
+      const highest = (from, to) => rows.filter(r => r.date >= from && r.date <= to).reduce((a, b) => (a && a.pe >= b.pe ? a : b), null);
+
+      // GFC card: the PE in the month the S&P 500 topped (its closing high
+      // was October 9, 2007). The all-time high PE came later, in 2009.
+      const gfcTop = rows.find(r => r.date.startsWith('2007-10'));
+      if (gfcTop) {
+        $('statMax').textContent = gfcTop.pe.toFixed(1);
+        $('statMaxLabel').textContent = `Pre-GFC market high (${monthYear(gfcTop.date)})`;
+        $('statMaxSub').textContent =
+          `Then spiked to ${max.toFixed(1)} in ${monthYear(rows[maxIdx].date, true)} as earnings collapsed, the all-time high`;
+      } else {
+        $('statMax').textContent = max.toFixed(1);
+        $('statMaxLabel').textContent = 'All-time high (GFC earnings collapse)';
+      }
+
+      // Tech bubble card: the highest PE on the way up (1998-2000).
+      const runUp = highest('1998-01', '2000-12-31'), after = highest('2001-01', '2003-12-31');
+      if (runUp) {
+        $('statDotcom').textContent = runUp.pe.toFixed(1);
+        $('statDotcomLabel').textContent = `Tech bubble high (${monthYear(runUp.date)})`;
+      }
+      if (after) {
+        $('statDotcomSub').textContent =
+          `Then spiked to ${after.pe.toFixed(1)} in ${monthYear(after.date, true)} as earnings fell`;
+      }
+    }
     $('statMeta').innerHTML = `
       <strong>Data range:</strong> ${rows[0].date} to ${latest.date}
       &nbsp;·&nbsp; <strong>${rows.length.toLocaleString()}</strong> monthly readings
