@@ -255,7 +255,8 @@ section { margin: 2.5rem 0; }
   gap: 4px;
   padding: 6px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  /* Outlined in the same amber as the quote boxes on the Dashboard. */
+  border: 1px solid #ffb658;
   border-radius: 999px;
   margin: 0 auto 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);

@@ -51,6 +51,11 @@ jobs:
       - name: Refresh S&P 500 forward PE from all members (Valuations page — always exits 0)
         run: python scripts/update-forward-pe.py
 
+      - name: Refresh bond spreads by rating tier (Junk Bond Quality Gap card — keeps every day seen, always exits 0)
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/update-credit-tiers.py
+
       - name: Refresh NAAIM (weekly — tolerant of no-new-data)
         run: python scripts/update-naaim.py
 

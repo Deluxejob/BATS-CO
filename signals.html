@@ -550,6 +550,22 @@
     .msi-rec-dot    { fill: #22d39a; stroke: #0b1220; stroke-width: 1.2; }
     .iq-chart-caption .iq-sw-msirec  { background: #22d39a; border-radius: 50%; width: 0.65em; height: 0.65em; }
 
+    /* Junk Bond Quality Gap card: S&P 500 on top, bond spreads by rating
+       tier below on a log scale so a 0.9% spread and a 12% spread can
+       share one panel and equal-sized moves look equal. */
+    .cq-line-price { fill: none; stroke: #e8ecf4; stroke-width: 1.3; opacity: 0.92; }
+    .cq-ccc { fill: none; stroke: #ff5374; stroke-width: 1.6; }
+    .cq-b   { fill: none; stroke: #ffb658; stroke-width: 1.1; opacity: 0.9; }
+    .cq-bb  { fill: none; stroke: #22d39a; stroke-width: 1.4; }
+    .cq-ig  { fill: none; stroke: #64d3ff; stroke-width: 1.4; }
+    .cq-end { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+    .iq-chart-caption .iq-sw-cqccc { background: transparent; border-top: 2px solid #ff5374; height: 0; width: 1.1em; vertical-align: 3px; }
+    .iq-chart-caption .iq-sw-cqb   { background: transparent; border-top: 2px solid #ffb658; height: 0; width: 1.1em; vertical-align: 3px; }
+    .iq-chart-caption .iq-sw-cqbb  { background: transparent; border-top: 2px solid #22d39a; height: 0; width: 1.1em; vertical-align: 3px; }
+    .iq-chart-caption .iq-sw-cqig  { background: transparent; border-top: 2px solid #64d3ff; height: 0; width: 1.1em; vertical-align: 3px; }
+    .cq-table td.cq-pct-hi { color: #ff5374; }
+    .cq-table td.cq-pct-lo { color: #22d39a; }
+
     /* A descriptive "sellers in control" pill: red, but without the glow of a sell call. */
     .iq-action-soft-red { color: #ff8fa3; background: rgba(255, 83, 116, 0.08); border-color: rgba(255, 83, 116, 0.35); }
   </style>
@@ -1139,6 +1155,129 @@
                data-share-url="https://bats.co/signals.html#sig-summation-index"
                data-share-title="McClellan Summation Index — BATS.CO"
                data-share-text="The running total of daily market breadth, with the deeply oversold zone and every past trip into it marked against the S&P 500. Live reading and what stocks did afterwards."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
+        <!-- SIGNAL: Junk Bond Quality Gap — CCC spread vs BB and investment-grade spreads -->
+        <div class="sig-card" id="sig-credit-quality-gap">
+          <div class="sig-head">
+            <h2 class="sig-title">Junk Bond Quality Gap</h2>
+            <span class="sig-tag">CCC vs BB vs investment-grade spreads &middot; ICE BofA via FRED &middot; daily check</span>
+          </div>
+          <p class="sig-desc">
+            A bond's <strong>spread</strong> is the extra yield lenders demand over Treasuries for the risk of not
+            being paid back. This card compares the spread on the shakiest companies (rated <strong>CCC</strong>)
+            with the spread on the strongest junk (<strong>BB</strong>) and on <strong>investment-grade</strong>
+            debt. When the CCC spread climbs while the other two stay calm, lenders are backing away from the
+            weakest companies first. That is weakness underneath a market that still looks fine from the top.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="cqPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="cqSub">Fetching bond spreads&hellip;</div>
+            <div class="iq-action-asof" id="cqAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="cqCccGate">
+              <div class="iq-gate-label">CCC spread (weakest junk)</div>
+              <div class="iq-gate-value" id="cqCcc">&mdash;</div>
+              <div class="iq-gate-cond" id="cqCccCond">&mdash;</div>
+              <div class="iq-gate-state iq-gate-off" id="cqCccState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="cqBbGate">
+              <div class="iq-gate-label">BB spread (strongest junk)</div>
+              <div class="iq-gate-value" id="cqBb">&mdash;</div>
+              <div class="iq-gate-cond" id="cqBbCond">&mdash;</div>
+              <div class="iq-gate-state iq-gate-off" id="cqBbState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="cqIgGate">
+              <div class="iq-gate-label">Investment-grade spread</div>
+              <div class="iq-gate-value" id="cqIg">&mdash;</div>
+              <div class="iq-gate-cond" id="cqIgCond">&mdash;</div>
+              <div class="iq-gate-state iq-gate-off" id="cqIgState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Quality gap (CCC minus BB)</div><div class="val" data-cq-stat="gap">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Gap a year ago</div><div class="val" data-cq-stat="gapYearAgo">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Gap's high on record</div><div class="val" data-cq-stat="gapHigh">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">CCC spread &divide; BB spread</div><div class="val" data-cq-stat="ratio">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">CCC change, 3 months</div><div class="val" data-cq-stat="ccc3m">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">BB change, 3 months</div><div class="val" data-cq-stat="bb3m">&mdash;</div></div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table cq-table" aria-label="Bond spreads by rating tier: now, a month ago, a year ago, the range on record and where today sits in it">
+              <thead><tr><th>Rating tier</th><th>Now</th><th>1 month ago</th><th>1 year ago</th><th>Low on record</th><th>High on record</th><th>Where now sits</th></tr></thead>
+              <tbody id="cqTableBody"><tr><td colspan="7">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-cq-days="5" role="tab">1W</button>
+              <button type="button" class="iq-range-btn" data-cq-days="21" role="tab">1M</button>
+              <button type="button" class="iq-range-btn active" data-cq-days="63" role="tab">3M</button>
+              <button type="button" class="iq-range-btn" data-cq-days="126" role="tab">6M</button>
+              <button type="button" class="iq-range-btn" data-cq-days="252" role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-cq-days="0" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="cqChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="S&amp;P 500 on top and bond spreads by rating tier below on a log scale"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: the S&amp;P 500.
+            <em>Bottom panel</em>: bond spreads by rating,
+            <span class="iq-sw iq-sw-cqccc"></span>CCC,
+            <span class="iq-sw iq-sw-cqb"></span>B,
+            <span class="iq-sw iq-sw-cqbb"></span>BB and
+            <span class="iq-sw iq-sw-cqig"></span>investment grade, in percentage points over Treasuries. The
+            scale is logarithmic, so a line climbing by the same height means the same percentage move whether it
+            starts at 1% or 10%. Weakness underneath looks like the red line pulling away from the others.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>This is a reading, not a timing signal.</strong> Only the last three years of these spreads
+              are free, and we save every day from here on, so the record grows. Three years is too short to test
+              what the stock market did after past gaps, and this card does not pretend otherwise. Nothing here says
+              when to sell.
+            </p>
+            <p id="cqEpisode"></p>
+            <p>
+              <strong>Why it is worth watching.</strong> Lenders usually see trouble before shareholders do, and the
+              weakest borrowers are cut off first. In 2007 and again in 2015 the lowest-rated credits cracked months
+              before the stock market did. We cannot show those years here because the free data does not reach back
+              that far.
+            </p>
+            <p>
+              <strong>The limit.</strong> The CCC index is small and a handful of troubled borrowers can move it. A
+              widening CCC spread is a warning worth taking seriously when BB and investment-grade spreads start to
+              follow; on its own it has sometimes been a false alarm.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Spreads are ICE BofA option-adjusted spreads published by FRED (series BAMLH0A3HYC, BAMLH0A2HYB,
+            BAMLH0A1HYBB and BAMLC0A0CM), in percentage points over Treasuries, from
+            <span data-cq-stat="start">&mdash;</span> to <span data-cq-stat="end">&mdash;</span>. FRED publishes
+            them with a one-day lag and only releases the latest three years; our nightly job keeps every day it has
+            seen, so this record lengthens over time. "Where now sits" is how far today's spread is from its lowest to
+            its highest reading on record (0% = at the low, 100% = at the high). Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/signals.html#sig-credit-quality-gap"
+               data-share-title="Junk Bond Quality Gap — BATS.CO"
+               data-share-text="The spread on the weakest-rated companies (CCC) against BB and investment-grade spreads. When the weakest crack first, that is weakness underneath the market."
                style="margin-top: 0.9rem;"></div>
         </div>
 
@@ -2484,6 +2623,201 @@
           card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           const y = parseInt(btn.dataset.msiYears, 10); renderChart(Number.isFinite(y) ? y : 0);
+        });
+      });
+    })();
+
+    // ==========================================================
+    //  Junk Bond Quality Gap
+    //  Bond spreads by rating tier (data/credit_tiers.csv, built nightly
+    //  by scripts/update-credit-tiers.py from FRED). The reading compares
+    //  where each tier's spread sits within its own record: CCC near the
+    //  top while BB and investment grade sit in the lower half is
+    //  "weakness underneath". No backtest: the free record is three
+    //  years long, and the card says so.
+    // ==========================================================
+    (async function initCreditQualityGap() {
+      const card = document.getElementById('sig-credit-quality-gap');
+      const pill = document.getElementById('cqPill');
+      if (!card || !pill) return;
+      const $ = id => document.getElementById(id);
+      const sub = $('cqSub'), asof = $('cqAsof');
+      const HI = 0.75, LO = 0.50;      // "near the top" = top quarter of its record; "calm" = lower half
+      const FAST = 0.75;               // a one-month move of this many points counts as fast
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+      async function loadCsv(path) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const lines = (await r.text()).trim().split(/\r?\n/);
+        const hdr = lines[0].split(',');
+        return lines.slice(1).map(ln => { const p = ln.split(','); const o = {}; hdr.forEach((h, i) => { o[h] = p[i]; }); return o; });
+      }
+      let raw, spxRaw;
+      try { [raw, spxRaw] = await Promise.all([loadCsv('data/credit_tiers.csv'), loadCsv('data/spx.csv')]); }
+      catch (e) { fail('Could not fetch the bond spread data. Try again in a moment.'); return; }
+      const rows = raw.map(o => ({ date: o.Date, ccc: +o.CCC, b: +o.B, bb: +o.BB, ig: +o.IG }))
+                      .filter(r => r.date && r.ccc > 0 && r.bb > 0);
+      const N = rows.length, last = N - 1;
+      if (N < 120) { fail('Not enough spread history yet.'); return; }
+      const TIERS = [['ccc', 'CCC (weakest junk)'], ['b', 'B'], ['bb', 'BB (strongest junk)'], ['ig', 'Investment grade']];
+      const series = {}; TIERS.forEach(([k]) => { series[k] = rows.map(r => (Number.isFinite(r[k]) && r[k] > 0 ? r[k] : null)); });
+      // carry the last known value over a missing day so every tier has a number on every row
+      for (const k in series) for (let i = 1; i < N; i++) if (series[k][i] == null) series[k][i] = series[k][i - 1];
+
+      // ---- where each tier sits within its own record ----
+      // Range position: how far today's spread is from its lowest to its
+      // highest reading on record (0 = at the low, 1 = at the high). Used
+      // instead of "share of days below", because a short record made up
+      // mostly of calm years would call a low spread "high".
+      const at = (arr, back) => (last - back >= 0 ? arr[last - back] : null);
+      const now = {}, p = {}, m1 = {}, m3 = {}, y1 = {}, lo = {}, hi = {};
+      for (const k in series) {
+        const s = series[k], a = s.filter(x => x != null);
+        now[k] = s[last]; m1[k] = at(s, 21); m3[k] = at(s, 63); y1[k] = at(s, 252);
+        lo[k] = Math.min(...a); hi[k] = Math.max(...a);
+        p[k] = hi[k] > lo[k] ? (now[k] - lo[k]) / (hi[k] - lo[k]) : 0.5;
+      }
+      const gapS = rows.map((r, i) => series.ccc[i] - series.bb[i]);
+      const gap = gapS[last], gapHiIdx = gapS.indexOf(Math.max(...gapS)), gapLo = Math.min(...gapS);
+      const gapPos = gapS[gapHiIdx] > gapLo ? (gap - gapLo) / (gapS[gapHiIdx] - gapLo) : 0.5;
+
+      // ---- formatting ----
+      const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDate = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + parseInt(d.slice(8, 10), 10) + ', ' + d.slice(0, 4);
+      const fmtMonth = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + d.slice(0, 4);
+      const pctTxt = v => v.toFixed(2) + '%';
+      const pts = (v, d) => (v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d == null ? 2 : d) + ' pts');
+      const where = (x, short) => {
+        if (x >= 0.95) return short ? 'at its high' : 'at the high of its range on record';
+        if (x >= HI) return short ? 'top quarter' : 'in the top quarter of its range on record';
+        if (x > LO) return short ? 'upper half' : 'in the upper half of its range on record';
+        if (x > 0.25) return short ? 'lower half' : 'in the lower half of its range on record';
+        return short ? 'near its low' : 'near the low of its range on record';
+      };
+
+      // ---- today's state ----
+      const cccHigh = p.ccc >= HI, bbCalm = p.bb <= LO, igCalm = p.ig <= LO;
+      const d1 = now.ccc - (m1.ccc == null ? now.ccc : m1.ccc);
+      const dir = d1 >= FAST ? ' · WIDENING' : d1 <= -FAST ? ' · EASING' : '';
+      let action, cls;
+      if (cccHigh && bbCalm && igCalm) { action = 'STRESS UNDERNEATH' + dir; cls = 'iq-action-soft-red'; }
+      else if (cccHigh) { action = 'BROAD STRESS' + dir; cls = 'iq-action-sell'; }
+      else if (p.ccc <= 0.25) { action = 'CALM' + dir; cls = 'iq-action-hold'; }
+      else { action = 'NO EXTREME' + dir; cls = 'iq-action-stayout'; }
+      pill.textContent = action; pill.className = 'iq-action-pill ' + cls;
+      const calmWords = (bbCalm && igCalm) ? 'both in the lower half of their ranges on record' : (!bbCalm && !igCalm) ? 'both in the upper half of their ranges, so the stress is spreading' : (bbCalm ? 'with investment grade now in the upper half of its range' : 'with BB now in the upper half of its range');
+      const bbMove = m1.bb == null ? 0 : now.bb - m1.bb;
+      const bbMoving = (bbCalm && bbMove >= 0.25) ? `, though BB has started to move (${pts(bbMove)} this month)` : '';
+      sub.textContent = `The CCC spread is ${pctTxt(now.ccc)}, ${Math.round(p.ccc * 100)}% of the way from its lowest to its highest reading on record, and ${d1 >= 0 ? 'up' : 'down'} ${Math.abs(d1).toFixed(2)} points in a month. BB sits at ${pctTxt(now.bb)} and investment grade at ${pctTxt(now.ig)}, ${calmWords}${bbMoving}. The gap between CCC and BB is ${gap.toFixed(1)} points, ${gapPos >= 0.999 ? 'the widest on record here' : Math.round(gapPos * 100) + '% of the way from its narrowest to its widest on record'}.`;
+      asof.textContent = `As of ${rows[last].date} · FRED publishes with a one-day lag · ${N.toLocaleString('en-US')} days on record`;
+
+      const gate = (key, idVal, idCond, idState, idGate, flagHigh) => {
+        $(idVal).textContent = pctTxt(now[key]);
+        const dm = m1[key] == null ? null : now[key] - m1[key];
+        $(idCond).textContent = `1 month: ${pts(dm)}`;
+        $(idState).textContent = where(p[key]);
+        const hot = p[key] >= HI;
+        $(idState).className = 'iq-gate-state ' + (hot ? 'iq-gate-on' : 'iq-gate-off');
+        $(idGate).classList.toggle('iq-gate-firing', hot);
+      };
+      gate('ccc', 'cqCcc', 'cqCccCond', 'cqCccState', 'cqCccGate');
+      gate('bb', 'cqBb', 'cqBbCond', 'cqBbState', 'cqBbGate');
+      gate('ig', 'cqIg', 'cqIgCond', 'cqIgState', 'cqIgGate');
+
+      const stats = {
+        gap: gap.toFixed(1) + ' pts',
+        gapYearAgo: (gapS[last - 252] != null ? gapS[last - 252].toFixed(1) + ' pts' : '—'),
+        gapHigh: gapS[gapHiIdx].toFixed(1) + ' pts · ' + fmtMonth(rows[gapHiIdx].date),
+        ratio: (now.ccc / now.bb).toFixed(1) + '×',
+        ccc3m: pts(m3.ccc == null ? null : now.ccc - m3.ccc), bb3m: pts(m3.bb == null ? null : now.bb - m3.bb),
+        start: fmtDate(rows[0].date), end: fmtDate(rows[last].date),
+      };
+      card.querySelectorAll('[data-cq-stat]').forEach(el => { const v = stats[el.dataset.cqStat]; if (v != null) el.textContent = v; });
+
+      const tb = $('cqTableBody');
+      if (tb) tb.innerHTML = TIERS.map(([k, label]) => {
+        const cls = p[k] >= HI ? 'cq-pct-hi' : p[k] <= 0.25 ? 'cq-pct-lo' : '';
+        return `<tr><td>${label}</td><td>${pctTxt(now[k])}</td><td>${m1[k] == null ? '—' : pctTxt(m1[k])}</td><td>${y1[k] == null ? '—' : pctTxt(y1[k])}</td><td>${pctTxt(lo[k])}</td><td>${pctTxt(hi[k])}</td><td class="${cls}">${where(p[k], true)} · ${Math.round(p[k] * 100)}% of the way up</td></tr>`;
+      }).join('');
+
+      // ---- the one comparison this short record allows: the sharpest earlier CCC jump ----
+      const spxBy = new Map(spxRaw.map(o => [o.Date, +o.Close]));
+      const spx = new Array(N); { let v = null; for (let i = 0; i < N; i++) { const x = spxBy.get(rows[i].date); if (Number.isFinite(x)) v = x; spx[i] = v; } }
+      { let best = -1, bestJump = 0;
+        for (let i = 21; i <= last - 63; i++) { const j = series.ccc[i] - series.ccc[i - 21]; if (j > bestJump) { bestJump = j; best = i; } }
+        const el = $('cqEpisode');
+        if (best > 0 && spx[best] && spx[best + 63]) {
+          const r3 = (spx[best + 63] / spx[best] - 1) * 100;
+          const bbThen = series.bb[best] - series.bb[best - 21];
+          el.innerHTML = `<strong>The one earlier episode on this record.</strong> The sharpest CCC jump before the current one came on ${fmtDate(rows[best].date)}: ${pts(bestJump, 1)} in a month, while BB moved ${pts(bbThen, 1)}. The S&P 500 was ${Math.abs(r3).toFixed(1)}% ${r3 >= 0 ? 'higher' : 'lower'} three months later. One case proves nothing, but it is the only comparison the data allows.`;
+        } else el.remove();
+      }
+
+      // ---- chart: S&P 500 (top) and the four spreads on a log scale (bottom) ----
+      const svg = $('cqChartSvg');
+      function renderChart(days) {
+        if (!svg) return;
+        // `days` is trading days: 5 = one week, 21 = one month, 0 = everything on record
+        const first = days > 0 ? Math.max(0, N - days - 1) : 0;
+        let f0 = first; while (f0 < N && spx[f0] == null) f0++;
+        const n = N - f0; if (n < 2) return;
+        const W = 1200, PAD_L = 58, PAD_R = 70, PAD_T = 18, GAP = 22, TOP_H = 200, BOT_H = 280;
+        const plotW = W - PAD_L - PAD_R, topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP, botY1 = botY0 + BOT_H;
+        const xFor = i => PAD_L + plotW * (i - f0) / (n - 1);
+        const pv = spx.slice(f0);
+        let pLo = Math.min(...pv), pHi = Math.max(...pv); const pPad = (pHi - pLo) * 0.06; pLo -= pPad; pHi += pPad;
+        const yP = x => topY1 - (x - pLo) / (pHi - pLo) * TOP_H;
+        const vals = TIERS.flatMap(([k]) => series[k].slice(f0)).filter(v => v != null && v > 0);
+        const sLo = Math.log(Math.min(...vals) / 1.25), sHi = Math.log(Math.max(...vals) * 1.3);
+        const yS = v => botY1 - (Math.log(v) - sLo) / (sHi - sLo) * BOT_H;
+        const parts = [];
+        // price grid
+        { const range = pHi - pLo, raw = range / 3, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+          const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => range / s <= 4.5) || mag * 10;
+          for (let t = Math.ceil(pLo / step) * step; t <= pHi; t += step) {
+            const y = yP(t).toFixed(1);
+            parts.push(`<line class="chart-grid" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${Math.round(t).toLocaleString('en-US')}</text>`);
+          } }
+        // spread grid on the log scale
+        for (const t of [0.25, 0.5, 1, 2, 3, 5, 10, 15, 20, 30]) {
+          if (Math.log(t) < sLo || Math.log(t) > sHi) continue;
+          const y = yS(t).toFixed(1);
+          parts.push(`<line class="chart-grid" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y}" y2="${y}"/><text class="chart-axis-label" x="${PAD_L - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end">${t}%</text>`);
+        }
+        const path = (vals, yf) => { let d = '', open = false; vals.forEach((x, k) => { if (x == null) { open = false; return; } d += `${open ? 'L' : 'M'}${xFor(f0 + k).toFixed(1)},${yf(x).toFixed(1)}`; open = true; }); return d; };
+        parts.push(`<path class="cq-line-price" d="${path(pv, yP)}"/>`);
+        const colors = { ccc: '#ff5374', b: '#ffb658', bb: '#22d39a', ig: '#64d3ff' };
+        for (const [k] of TIERS) parts.push(`<path class="cq-${k}" d="${path(series[k].slice(f0), yS)}"/>`);
+        // end labels, nudged apart
+        const ends = TIERS.map(([k]) => ({ k, y: yS(series[k][last]), txt: k.toUpperCase() + ' ' + now[k].toFixed(2) + '%' })).sort((a, b2) => a.y - b2.y);
+        for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 12) ends[i].y = ends[i - 1].y + 12;
+        for (const e of ends) parts.push(`<text class="cq-end" fill="${colors[e.k]}" x="${PAD_L + plotW + 4}" y="${(e.y + 3).toFixed(1)}">${e.txt}</text>`);
+        parts.push(`<text class="iq-eq-label" style="fill:#e8ecf4" x="${PAD_L + plotW + 4}" y="${(yP(pv[n - 1]) + 3).toFixed(1)}">${Math.round(pv[n - 1]).toLocaleString('en-US')}</text>`);
+        // x axis
+        const spanDays = (Date.parse(rows[N - 1].date) - Date.parse(rows[f0].date)) / 86400000;
+        // short windows get day labels ("Sep 28"), long ones month and year
+        const lab = d => (spanDays <= 200 ? MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + parseInt(d.slice(8, 10), 10)
+                                           : MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + (spanDays > 400 ? d.slice(0, 4) : d.slice(2, 4)));
+        const ticks = Math.min(6, n - 1);
+        for (let k = 0; k <= ticks; k++) {
+          const i = f0 + Math.round(k / ticks * (n - 1));
+          parts.push(`<text class="chart-axis-label" x="${xFor(i).toFixed(1)}" y="${botY1 + 14}" text-anchor="${k === 0 ? 'start' : k === ticks ? 'end' : 'middle'}">${lab(rows[i].date)}</text>`);
+        }
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${topY0 + 13}">S&amp;P 500</text>`);
+        parts.push(`<text class="chart-panel-label" x="${PAD_L + 6}" y="${botY0 + 13}">Bond spreads over Treasuries, by rating · log scale</text>`);
+        svg.innerHTML = parts.join('');
+      }
+      renderChart(63);
+      card.querySelectorAll('.iq-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('.iq-range-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const d = parseInt(btn.dataset.cqDays, 10); renderChart(Number.isFinite(d) ? d : 0);
         });
       });
     })();
