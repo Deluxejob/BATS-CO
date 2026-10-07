@@ -26,7 +26,10 @@ seen stays on file, and the record grows past three years from here on.
 
 Output: data/credit_tiers.csv
 
-    Date,CCC,B,BB,HY,IG,BBB
+    Date,CCC,B,BB,HY,IG,BBB,CCCY
+
+  CCCY is the CCC effective yield (BAMLH0A3HYCEY): what those bonds pay
+  in total, i.e. the Treasury yield plus the CCC spread.
 
 Fail-safe, like the other updaters: a tier that fails to download is
 left as it was; the file is only rewritten when the CCC and BB series
@@ -44,7 +47,10 @@ import urllib.request
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT_PATH = os.path.join(REPO_ROOT, "data", "credit_tiers.csv")
 SERIES = [("CCC", "BAMLH0A3HYC"), ("B", "BAMLH0A2HYB"), ("BB", "BAMLH0A1HYBB"),
-          ("HY", "BAMLH0A0HYM2"), ("IG", "BAMLC0A0CM"), ("BBB", "BAMLC0A4CBBB")]
+          ("HY", "BAMLH0A0HYM2"), ("IG", "BAMLC0A0CM"), ("BBB", "BAMLC0A4CBBB"),
+          # CCC effective YIELD (Treasury yield + spread): the figure people
+          # quote on social media, shown under the CCC spread on the card.
+          ("CCCY", "BAMLH0A3HYCEY")]
 HEADER = ["Date"] + [name for name, _ in SERIES]
 ESSENTIAL = {"CCC", "BB"}
 

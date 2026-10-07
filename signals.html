@@ -1267,7 +1267,8 @@
 
           <p class="sig-note">
             Spreads are ICE BofA option-adjusted spreads published by FRED (series BAMLH0A3HYC, BAMLH0A2HYB,
-            BAMLH0A1HYBB and BAMLC0A0CM), in percentage points over Treasuries, from
+            BAMLH0A1HYBB and BAMLC0A0CM), in percentage points over Treasuries; the CCC yield is the matching
+            effective-yield series (BAMLH0A3HYCEY), which is the Treasury yield plus the spread. Data runs from
             <span data-cq-stat="start">&mdash;</span> to <span data-cq-stat="end">&mdash;</span>. FRED publishes
             them with a one-day lag and only releases the latest three years; our nightly job keeps every day it has
             seen, so this record lengthens over time. "Where now sits" is how far today's spread is from its lowest to
@@ -2660,7 +2661,7 @@
       let raw, spxRaw;
       try { [raw, spxRaw] = await Promise.all([loadCsv('data/credit_tiers.csv'), loadCsv('data/spx.csv')]); }
       catch (e) { fail('Could not fetch the bond spread data. Try again in a moment.'); return; }
-      const rows = raw.map(o => ({ date: o.Date, ccc: +o.CCC, b: +o.B, bb: +o.BB, ig: +o.IG }))
+      const rows = raw.map(o => ({ date: o.Date, ccc: +o.CCC, b: +o.B, bb: +o.BB, ig: +o.IG, cccy: +o.CCCY }))
                       .filter(r => r.date && r.ccc > 0 && r.bb > 0);
       const N = rows.length, last = N - 1;
       if (N < 120) { fail('Not enough spread history yet.'); return; }
@@ -2700,6 +2701,10 @@
         return short ? 'near its low' : 'near the low of its range on record';
       };
 
+      // CCC effective yield (Treasury yield + spread): the number quoted in
+      // most social-media posts, so it goes right under the CCC spread.
+      let cccYield = null;
+      for (let i = last; i >= Math.max(0, last - 5); i--) if (Number.isFinite(rows[i].cccy) && rows[i].cccy > 0) { cccYield = rows[i].cccy; break; }
       // ---- today's state ----
       const cccHigh = p.ccc >= HI, bbCalm = p.bb <= LO, igCalm = p.ig <= LO;
       const d1 = now.ccc - (m1.ccc == null ? now.ccc : m1.ccc);
@@ -2713,13 +2718,13 @@
       const calmWords = (bbCalm && igCalm) ? 'both in the lower half of their ranges on record' : (!bbCalm && !igCalm) ? 'both in the upper half of their ranges, so the stress is spreading' : (bbCalm ? 'with investment grade now in the upper half of its range' : 'with BB now in the upper half of its range');
       const bbMove = m1.bb == null ? 0 : now.bb - m1.bb;
       const bbMoving = (bbCalm && bbMove >= 0.25) ? `, though BB has started to move (${pts(bbMove)} this month)` : '';
-      sub.textContent = `The CCC spread is ${pctTxt(now.ccc)}, ${Math.round(p.ccc * 100)}% of the way from its lowest to its highest reading on record, and ${d1 >= 0 ? 'up' : 'down'} ${Math.abs(d1).toFixed(2)} points in a month. BB sits at ${pctTxt(now.bb)} and investment grade at ${pctTxt(now.ig)}, ${calmWords}${bbMoving}. The gap between CCC and BB is ${gap.toFixed(1)} points, ${gapPos >= 0.999 ? 'the widest on record here' : Math.round(gapPos * 100) + '% of the way from its narrowest to its widest on record'}.`;
+      sub.textContent = `The CCC spread is ${pctTxt(now.ccc)}${cccYield != null ? ' (a yield of ' + pctTxt(cccYield) + ' once Treasuries are added)' : ''}, ${Math.round(p.ccc * 100)}% of the way from its lowest to its highest reading on record, and ${d1 >= 0 ? 'up' : 'down'} ${Math.abs(d1).toFixed(2)} points in a month. BB sits at ${pctTxt(now.bb)} and investment grade at ${pctTxt(now.ig)}, ${calmWords}${bbMoving}. The gap between CCC and BB is ${gap.toFixed(1)} points, ${gapPos >= 0.999 ? 'the widest on record here' : Math.round(gapPos * 100) + '% of the way from its narrowest to its widest on record'}.`;
       asof.textContent = `As of ${rows[last].date} · FRED publishes with a one-day lag · ${N.toLocaleString('en-US')} days on record`;
 
       const gate = (key, idVal, idCond, idState, idGate, flagHigh) => {
         $(idVal).textContent = pctTxt(now[key]);
         const dm = m1[key] == null ? null : now[key] - m1[key];
-        $(idCond).textContent = `1 month: ${pts(dm)}`;
+        $(idCond).textContent = (key === 'ccc' && cccYield != null ? `yield ${pctTxt(cccYield)} · ` : '') + `1 month: ${pts(dm)}`;
         $(idState).textContent = where(p[key]);
         const hot = p[key] >= HI;
         $(idState).className = 'iq-gate-state ' + (hot ? 'iq-gate-on' : 'iq-gate-off');
