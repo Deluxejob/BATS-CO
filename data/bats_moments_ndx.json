@@ -1,8 +1,196 @@
 {
   "source": "Computed from data/*.csv using the same scoring functions as app.js",
-  "generatedAt": 1791543129,
+  "generatedAt": 1791551767,
   "latestSpxDate": "2026-10-08",
   "moments": [
+    {
+      "date": "2000-03-24",
+      "asOf": "2000-03-24",
+      "event": "Dot-com bubble peak",
+      "context": "S&P 500 closed at its bubble high of 1527. Nasdaq had topped two weeks earlier; the bust took 2.5 years.",
+      "spxClose": 4691.61,
+      "batsScore": 66.3,
+      "bucketLabel": "Bullish",
+      "bucketColor": "var(--s5)",
+      "action": "Hold, But Be Careful",
+      "coverage": 63,
+      "missing": [
+        "breadth",
+        "pct_above_200ma",
+        "pct_above_50ma",
+        "naaim",
+        "junk"
+      ],
+      "proxies": [
+        "vol: VIX used in place of VXN"
+      ],
+      "components": {
+        "vix": {
+          "raw": 23.31,
+          "score": 33.1,
+          "weight": 25
+        },
+        "breadth": {
+          "raw": null,
+          "score": null,
+          "weight": 10
+        },
+        "rsi": {
+          "raw": 64.19,
+          "score": 67.7,
+          "weight": 10
+        },
+        "ma200": {
+          "raw": 56.0,
+          "score": 95,
+          "weight": 10
+        },
+        "ma50": {
+          "raw": 14.91,
+          "score": 90,
+          "weight": 5
+        },
+        "pct_above_200ma": {
+          "raw": null,
+          "score": null,
+          "weight": 20
+        },
+        "pct_above_50ma": {
+          "raw": null,
+          "score": null,
+          "weight": 5
+        },
+        "naaim": {
+          "raw": null,
+          "score": null,
+          "weight": 5
+        },
+        "junk": {
+          "raw": null,
+          "score": null,
+          "weight": 10
+        },
+        "spread": {
+          "raw": -0.44,
+          "score": 29.7,
+          "weight": 5
+        },
+        "sector_osc": {
+          "raw": 6.39,
+          "score": 62.8,
+          "weight": 10
+        },
+        "roc5": {
+          "raw": 5.66,
+          "score": 97.1,
+          "weight": 10
+        },
+        "sector_regime": {
+          "raw": 11.86,
+          "score": 98,
+          "weight": 10
+        }
+      },
+      "forward": {
+        "spx_1m": -22.81,
+        "spx_3m": -21.45,
+        "spx_6m": -21.11,
+        "spx_12m": -64.26
+      }
+    },
+    {
+      "date": "2002-10-09",
+      "asOf": "2002-10-09",
+      "event": "Dot-com bust bottom",
+      "context": "SPX closed at 777, down 49% from the peak. VIX above 40 for weeks; the lowest close of the bear market.",
+      "spxClose": 807.42,
+      "batsScore": 15.8,
+      "bucketLabel": "Very Oversold",
+      "bucketColor": "var(--s0)",
+      "action": "Strong Buy",
+      "coverage": 63,
+      "missing": [
+        "breadth",
+        "pct_above_200ma",
+        "pct_above_50ma",
+        "naaim",
+        "junk"
+      ],
+      "proxies": [],
+      "components": {
+        "vix": {
+          "raw": 62.38,
+          "score": 3.3,
+          "weight": 25
+        },
+        "breadth": {
+          "raw": null,
+          "score": null,
+          "weight": 10
+        },
+        "rsi": {
+          "raw": 35.5,
+          "score": 31.9,
+          "weight": 10
+        },
+        "ma200": {
+          "raw": -33.83,
+          "score": 5,
+          "weight": 10
+        },
+        "ma50": {
+          "raw": -11.75,
+          "score": 5,
+          "weight": 5
+        },
+        "pct_above_200ma": {
+          "raw": null,
+          "score": null,
+          "weight": 20
+        },
+        "pct_above_50ma": {
+          "raw": null,
+          "score": null,
+          "weight": 5
+        },
+        "naaim": {
+          "raw": null,
+          "score": null,
+          "weight": 5
+        },
+        "junk": {
+          "raw": null,
+          "score": null,
+          "weight": 10
+        },
+        "spread": {
+          "raw": 1.89,
+          "score": 82.8,
+          "weight": 5
+        },
+        "sector_osc": {
+          "raw": -9.55,
+          "score": 30.9,
+          "weight": 10
+        },
+        "roc5": {
+          "raw": -4.96,
+          "score": 8.7,
+          "weight": 10
+        },
+        "sector_regime": {
+          "raw": -10.45,
+          "score": 5.8,
+          "weight": 10
+        }
+      },
+      "forward": {
+        "spx_1m": 27.05,
+        "spx_3m": 33.27,
+        "spx_6m": 27.96,
+        "spx_12m": 73.01
+      }
+    },
     {
       "date": "2007-10-09",
       "asOf": "2007-10-09",
@@ -13,6 +201,9 @@
       "bucketLabel": "Bullish",
       "bucketColor": "var(--s5)",
       "action": "Hold, But Be Careful",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 19.42,
@@ -97,6 +288,9 @@
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 79.16,
@@ -181,6 +375,9 @@
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 71.2,
@@ -265,6 +462,9 @@
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 48.76,
@@ -349,6 +549,9 @@
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 44.74,
@@ -433,6 +636,9 @@
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 31.87,
@@ -517,6 +723,9 @@
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 38.68,
@@ -601,6 +810,9 @@
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 26.38,
@@ -685,6 +897,9 @@
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 18.58,
@@ -769,6 +984,9 @@
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 58.36,
@@ -853,6 +1071,9 @@
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 21.17,
@@ -937,6 +1158,9 @@
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 36.66,
@@ -1021,6 +1245,9 @@
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 39.51,
@@ -1105,6 +1332,9 @@
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 29.39,
@@ -1189,6 +1419,9 @@
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 24.44,
@@ -1273,6 +1506,9 @@
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
+      "coverage": 100,
+      "missing": [],
+      "proxies": [],
       "components": {
         "vix": {
           "raw": 39.56,

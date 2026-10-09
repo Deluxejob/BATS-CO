@@ -1544,6 +1544,15 @@ a.ticker-chip:hover {
   color: var(--text-dim);
   line-height: 1.4;
 }
+.moment-partial {
+  font-size: .74rem;
+  line-height: 1.35;
+  color: var(--text-dim);
+  padding: .35rem .6rem;
+  border-left: 2px solid var(--s2);
+  background: var(--bg-elevated);
+  border-radius: 4px;
+}
 .moment-reading {
   display: flex;
   align-items: center;

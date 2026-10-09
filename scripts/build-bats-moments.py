@@ -31,7 +31,10 @@ MARKETS = {
     'sp500':  dict(vol='vix.csv', index='spx.csv', cap='spy.csv', equal='rsp.csv',
                    label='S&P 500',   out_suffix=''),
     'nasdaq': dict(vol='vxn.csv', index='ndx.csv', cap='qqq.csv', equal='qqew.csv',
-                   label='Nasdaq 100', out_suffix='_ndx'),
+                   label='Nasdaq 100', out_suffix='_ndx',
+                   # VXN only starts 2001-01-23; use the VIX as a stand-in before that
+                   # so the 2000 dot-com moments still get a volatility reading.
+                   vol_fallback='vix.csv'),
 }
 MARKET = 'sp500'
 for _arg in sys.argv[1:]:
@@ -357,7 +360,15 @@ def forward_return(dates, prices, date, days):
 
 
 # --- Curated moments ---
+# Moments before 2007-10 are scored on a reduced component set: breadth
+# (RSP/QQEW), % above 200/50-day, NAAIM and junk-bond (HYG/LQD) data do not
+# exist yet, so the blend below renormalises over whatever is available and
+# the JSON records `coverage` (% of component weight with data) and `missing`.
 MOMENTS = [
+    dict(target='2000-03-24', event='Dot-com bubble peak',
+         context='S&P 500 closed at its bubble high of 1527. Nasdaq had topped two weeks earlier; the bust took 2.5 years.'),
+    dict(target='2002-10-09', event='Dot-com bust bottom',
+         context='SPX closed at 777, down 49% from the peak. VIX above 40 for weeks; the lowest close of the bear market.'),
     dict(target='2007-10-09', event='Pre-GFC all-time high',
          context='S&P 500 hit its cyclical peak. Housing bubble already leaking.'),
     dict(target='2008-10-27', event='Post-Lehman panic — peak fear',
@@ -395,6 +406,7 @@ MOMENTS = [
 
 def main():
     vix   = load_vix(MC['vol'])
+    vol_fb = load_vix(MC['vol_fallback']) if MC.get('vol_fallback') else None
     spx   = load_close(MC['index'])
     spy   = load_close(MC['cap'])
     rsp   = load_close(MC['equal'])
@@ -423,6 +435,7 @@ def main():
     hyg_dates = sorted(hyg.keys())
     lqd_dates = sorted(lqd.keys())
     vix_dates = sorted(vix.keys())
+    vol_fb_dates = sorted(vol_fb.keys()) if vol_fb else []
     pct_above_dates = sorted(pct_above.keys())
     pct_above_50_dates = sorted(pct_above_50.keys())
     sector_regime_dates = sorted(sector_regime.keys())
@@ -446,12 +459,26 @@ def main():
         d_yields = snap_le(yields_dates, target)
         d_sector = snap_le(sector_dates, target)
 
+        proxies = []
         v_vix    = vix.get(d_vix)                if d_vix    else None
+        if v_vix is None and vol_fb:
+            # No VXN yet (pre-2001): fall back to the VIX for the volatility component.
+            d_fb = snap_le(vol_fb_dates, target)
+            if d_fb and d_fb >= target[:4] + '-01-01':
+                v_vix = vol_fb.get(d_fb)
+                if v_vix is not None:
+                    proxies.append('vol: VIX used in place of VXN')
         v_pct    = pct_above.get(d_pct)          if d_pct    else None
         v_pct50  = pct_above_50.get(d_pct50)     if d_pct50  else None
         v_secreg = sector_regime.get(d_secreg)   if d_secreg else None
         v_naaim  = naaim.get(d_naaim)            if d_naaim  else None
         v_rsi    = rsi_at(spy_dates, spy, d_spy) if d_spy else None
+        if v_rsi is None and d_spx:
+            # Before the cap-weighted ETF existed (SPY 2003 / QQQ 1999), take the
+            # RSI from the index itself. Same formula, nearly identical reading.
+            v_rsi = rsi_at(spx_dates, spx, d_spx)
+            if v_rsi is not None:
+                proxies.append('rsi: computed on the index instead of the ETF')
         v_ma     = ma200_dist(spx_dates, spx, d_spx) if d_spx else None
         # 50-day MA distance at d_spx (rolling 50-day window)
         v_ma50 = None
@@ -493,9 +520,16 @@ def main():
             'sector_regime':   dict(raw=v_secreg, score=score_sector_regime(v_secreg),           weight=WEIGHTS['sector_regime']),
         }
 
-        # Weighted blend
+        # Weighted blend. Components with no data (pre-2007 moments) are left
+        # out and the remaining weights are renormalised to 100.
         w_sum = sum(c['weight'] for c in components.values() if c['score'] is not None)
         blend = (sum(c['score'] * c['weight'] for c in components.values() if c['score'] is not None) / w_sum) if w_sum > 0 else None
+        missing = [k for k, c in components.items() if c['score'] is None]
+        w_total = sum(WEIGHTS.values())
+        coverage = round(100 * w_sum / w_total)
+        if coverage < 50:
+            warn(f"{target}: only {coverage}% of component weight available ({missing}); score too thin, skipping")
+            continue
 
         # Forward SPX returns (using SPX total-price CSV; not TR)
         fwd_1m  = forward_return(spx_dates, spx, d_spx, 21)  if d_spx else None
@@ -515,6 +549,9 @@ def main():
             'bucketLabel': bucket_for(blend)['label'] if blend is not None else None,
             'bucketColor': bucket_for(blend)['color'] if blend is not None else None,
             'action':      bucket_for(blend)['action'] if blend is not None else None,
+            'coverage':    coverage,   # % of total component weight that had data
+            'missing':     missing,
+            'proxies':     proxies,
             'components': {
                 k: dict(
                     raw=(round(v['raw'], 2)   if v['raw']   is not None else None),
