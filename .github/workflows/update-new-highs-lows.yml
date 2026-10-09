@@ -1,0 +1,64 @@
+name: Count new 52-week highs and lows
+
+# Counts how many S&P 500 and Nasdaq-100 members set a new 52-week high or
+# low each day, from the members' own Yahoo price bars, into
+# data/new_highs_lows_spx.csv and data/new_highs_lows_ndx.csv. The whole
+# history is rebuilt on every run (today's member list applied back to
+# 2016), so a missed night costs nothing. Nothing on the site reads these
+# files yet.
+#
+# Its own small job rather than a step in the big nightly data job, so a
+# slow Yahoo night here can never hold back the other data. It runs a
+# little after that job so the two don't push at the same moment; if they
+# still collide, the push replays on top of the other bot's commit.
+#
+# Manual trigger available from the Actions tab (workflow_dispatch).
+
+on:
+  schedule:
+    - cron: '55 23 * * 1-5'   # 23:55 UTC weekdays  (~7:55pm ET EDT / 6:55pm ET EST)
+    - cron: '55  3 * * 2-6'   # 03:55 UTC next day  (safety catch-up)
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/update-new-highs-lows.py'
+      - '.github/workflows/update-new-highs-lows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed for the bot to push the updated CSVs back
+
+concurrency:
+  group: update-new-highs-lows
+  cancel-in-progress: false
+
+jobs:
+  count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Count new highs and lows (every S&P 500 and Nasdaq-100 member from Yahoo)
+        # Scheduled runs tolerate a bad night; manual and on-edit runs are strict.
+        run: python scripts/update-new-highs-lows.py ${{ github.event_name != 'schedule' && '--strict' || '' }}
+
+      - name: Commit and push if the counts changed
+        run: |
+          FILES="data/new_highs_lows_spx.csv data/new_highs_lows_ndx.csv"
+          if [ -n "$(git status --porcelain $FILES)" ]; then
+            git config user.name  "BATS.CO Update Bot"
+            git config user.email "bot@bats.co"
+            git add $FILES
+            git commit -m "chore: count new 52-week highs and lows $(date -u +'%Y-%m-%d')"
+            # The nightly data bot may have pushed in the meantime; replay on top and try once more.
+            git push || { git pull --rebase origin "${GITHUB_REF_NAME}" && git push; }
+            echo "::notice::Pushed new highs/lows counts."
+          else
+            echo "::notice::Counts unchanged; nothing to commit."
+          fi
