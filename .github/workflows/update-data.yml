@@ -71,6 +71,9 @@ jobs:
       - name: Refresh Buffett Indicator (quarterly — tolerant of no-new-data)
         run: python scripts/update-buffett-indicator.py
 
+      - name: Refresh Tobin's Q ratio (quarterly — composite valuation percentile on valuations.html, always exits 0)
+        run: python scripts/update-q-ratio.py
+
       - name: Refresh Risk Watch data (credit spreads, yield curve, employment, NBER recession)
         env:
           # Authenticated FRED API — unlocks full history for most series.

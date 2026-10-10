@@ -1,0 +1,34 @@
+name: First Q ratio fetch (temporary)
+
+# One-off: FRED is not reachable from the authoring session, so this
+# produces data/q_ratio.csv on the feature branch once. Deleted after.
+
+on:
+  push:
+    branches: [claude/sp-nasdaq-new-highs-lows-y4jqwa]
+    paths:
+      - 'scripts/update-q-ratio.py'
+      - '.github/workflows/tmp-q-ratio-first-run.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/update-q-ratio.py
+      - run: |
+          if [ -n "$(git status --porcelain data/q_ratio.csv)" ]; then
+            git config user.name  "BATS.CO Update Bot"
+            git config user.email "bot@bats.co"
+            git add data/q_ratio.csv
+            git commit -m "chore: first Q ratio fetch $(date -u +'%Y-%m-%d')"
+            git push
+          else
+            echo "::error::q_ratio.csv was not written"; exit 1
+          fi
