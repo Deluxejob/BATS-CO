@@ -397,6 +397,56 @@
       </div>
     </section>
 
+    <section id="composite">
+      <div class="section-head">
+        <h2>4. Composite valuation percentile &mdash; four measures on one scale</h2>
+        <p>
+          The three measures above plus Tobin's Q ratio, each scored as a
+          percentile of its own full history: <strong>0</strong> is the cheapest
+          reading that measure has ever shown, <strong>100</strong> the richest.
+          The line is the average of those scores. It is the same construction as
+          Bloomberg's "US stock valuations have never been higher" chart, built
+          from the four of its eight inputs that have history back past 1950
+          (price-to-book, price-to-sales, EV/EBITDA and forward PE are not
+          available as long free series). Before 1945 only the PE and CAPE
+          contribute.
+        </p>
+      </div>
+      <div class="per-hero-stats">
+        <div class="per-hero-stat current">
+          <span class="num" id="compositeCurrent">&ndash;</span>
+          <span class="label" id="compositeCurrentLabel">Today's composite</span>
+        </div>
+        <div class="per-hero-stat max">
+          <span class="num" id="composite2000">&ndash;</span>
+          <span class="label" id="composite2000Label">2000 dot-com peak</span>
+        </div>
+        <div class="per-hero-stat max">
+          <span class="num" id="composite1929">&ndash;</span>
+          <span class="label" id="composite1929Label">1929 peak</span>
+        </div>
+        <div class="per-hero-stat avg">
+          <span class="num" id="compositeInputs">&ndash;</span>
+          <span class="label">Measures in today's reading</span>
+        </div>
+      </div>
+      <p class="backtest-meta" id="compositeMeta">Loading&hellip;</p>
+      <div class="per-chart-wrap">
+        <div class="chart-periods" id="compositePeriods" role="tablist" aria-label="Composite chart time period">
+          <button type="button" class="chart-period-btn" data-period="20"  role="tab">20Y</button>
+          <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
+          <button type="button" class="chart-period-btn active" data-period="all" role="tab">All</button>
+        </div>
+        <svg id="compositeChart" class="per-chart" viewBox="0 0 1200 460" preserveAspectRatio="none" aria-label="Composite valuation percentile chart"></svg>
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:var(--s5)"></span> Average percentile of the four measures</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> 50th percentile</span>
+          <span><span class="swatch" style="background:var(--s6)"></span> Today</span>
+        </div>
+        <p class="chart-cap-note" id="compositeInputsNote" style="display:block"></p>
+      </div>
+    </section>
+
     <section id="findings">
       <h2>What the data actually says</h2>
       <div class="findings-grid">
@@ -494,7 +544,7 @@
           <a href="https://www.multpl.com/shiller-pe/table/by-month" style="color:#64d3ff">multpl.com</a>.
           CAPE = current real price / 10-year average of real earnings.
         </p>
-        <p style="margin:0;">
+        <p style="margin:0 0 0.75rem;">
           <strong>Buffett Indicator series:</strong> computed from two FRED series &mdash;
           <a href="https://fred.stlouisfed.org/series/NCBEILQ027S" style="color:#64d3ff">NCBEILQ027S</a>
           (Fed Z.1 Nonfinancial Corporate Business, Corporate Equities as a Liability, in
@@ -507,6 +557,24 @@
           Indicator dashboards (longtermtrends, gurufocus post-2023) also use. Slightly
           narrower scope than the original (excludes financials), but the shape of the
           series and its interpretation are the same.
+        </p>
+        <p style="margin:0 0 0.75rem;">
+          <strong>Q ratio series:</strong> Tobin's Q for US nonfinancial corporations,
+          computed from two FRED series &mdash;
+          <a href="https://fred.stlouisfed.org/series/NCBEILQ027S" style="color:#64d3ff">NCBEILQ027S</a>
+          (corporate equities as a liability) divided by
+          <a href="https://fred.stlouisfed.org/series/TNWMVBSNNCB" style="color:#64d3ff">TNWMVBSNNCB</a>
+          (net worth at market value). Quarterly from 1945, refreshed with the
+          nightly workflow.
+        </p>
+        <p style="margin:0;">
+          <strong>Composite percentile:</strong> for each of the four measures, every
+          reading is ranked against that measure's entire history (the share of all
+          readings at or below it, 0&ndash;100). The composite for a month is the
+          plain average of the percentiles available that month; quarterly series
+          carry their latest value forward within the quarter. Ranking against the
+          full history means a new record pushes earlier percentiles down slightly,
+          so the line is redrawn from scratch on every visit rather than stored.
         </p>
       </div>
       <p class="disclaimer" style="margin-top:1.25rem">
@@ -1087,6 +1155,146 @@
     currentLabelId: 'buffettCurrentLabel',
     maxLabelId:     'buffettMaxLabel',
   });
+  // ---- Composite valuation percentile (section 4) ----
+  // Four measures, each ranked against its own full history, averaged.
+  async function renderCompositeChart() {
+    const $ = (id) => document.getElementById(id);
+    const INPUTS = [
+      { key: 'pe',      label: 'Trailing PE',       file: 'data/spx_pe.csv',            monthly: true },
+      { key: 'cape',    label: 'Shiller CAPE',      file: 'data/spx_cape.csv',          monthly: true },
+      { key: 'buffett', label: 'Market cap / GDP',  file: 'data/buffett_indicator.csv', monthly: false },
+      { key: 'q',       label: "Tobin's Q",         file: 'data/q_ratio.csv',           monthly: false },
+    ];
+    const parse = (txt) => {
+      const out = [];
+      for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+        const [date, valStr] = ln.split(',');
+        const v = parseFloat(valStr);
+        if (date && isFinite(v)) out.push({ ym: date.slice(0, 7), v });
+      }
+      return out;
+    };
+    const results = await Promise.allSettled(INPUTS.map(async (inp) => {
+      const r = await fetch(inp.file, { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return parse(await r.text());
+    }));
+    const series = [];
+    results.forEach((res, i) => {
+      if (res.status === 'fulfilled' && res.value.length > 20) {
+        const rows = res.value;
+        const sorted = rows.map(r => r.v).sort((a, b) => a - b);
+        // Percentile of v within the full history: share of readings at or below it.
+        const pct = (v) => { let lo = 0, hi = sorted.length; while (lo < hi) { const m = (lo + hi) >> 1; if (sorted[m] <= v) lo = m + 1; else hi = m; } return lo / sorted.length * 100; };
+        series.push({ ...INPUTS[i], rows, pct, byYm: new Map(rows.map(r => [r.ym, r.v])) });
+      }
+    });
+    if (series.length < 2) { $('compositeMeta').textContent = 'Composite data is not available right now.'; return; }
+
+    // Monthly grid from the earliest monthly input to the latest reading.
+    const monthly = series.filter(sr => sr.monthly);
+    const firstYm = monthly.length ? monthly.map(sr => sr.rows[0].ym).sort()[0] : series.map(sr => sr.rows[0].ym).sort()[0];
+    const lastYm  = series.map(sr => sr.rows[sr.rows.length - 1].ym).sort().slice(-1)[0];
+    const nextYm = (ym) => { let [y, m] = ym.split('-').map(Number); m += 1; if (m > 12) { m = 1; y += 1; } return `${y}-${String(m).padStart(2, '0')}`; };
+    // Quarterly series carry their latest value forward until the next one.
+    const cursor = series.map(() => 0), carried = series.map(() => null);
+    const rows = [];
+    for (let ym = firstYm; ym <= lastYm; ym = nextYm(ym)) {
+      const parts = [];
+      series.forEach((sr, i) => {
+        while (cursor[i] < sr.rows.length && sr.rows[cursor[i]].ym <= ym) { carried[i] = sr.rows[cursor[i]].v; cursor[i]++; }
+        let v = null;
+        if (sr.monthly) v = sr.byYm.has(ym) ? sr.byYm.get(ym) : null;
+        // Carry a quarterly value for up to a year: the Z.1 history is annual before 1952.
+        else if (carried[i] != null && cursor[i] > 0 && monthsBetween(sr.rows[cursor[i] - 1].ym, ym) < 12) v = carried[i];
+        if (v != null) parts.push({ key: sr.key, label: sr.label, pct: sr.pct(v), v });
+      });
+      if (!parts.length) continue;
+      const [y, m] = ym.split('-').map(Number);
+      rows.push({ ym, yf: y + (m - 1) / 12, v: parts.reduce((a, p) => a + p.pct, 0) / parts.length, parts });
+    }
+    function monthsBetween(a, b) { const [ay, am] = a.split('-').map(Number), [by, bm] = b.split('-').map(Number); return (by - ay) * 12 + (bm - am); }
+    if (rows.length < 24) { $('compositeMeta').textContent = 'Composite data is not available right now.'; return; }
+
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const fmtYm = (ym) => MON[parseInt(ym.slice(5, 7), 10) - 1] + ' ' + ym.slice(0, 4);
+    const ord = (n) => { n = Math.round(n); const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+    const peakIn = (y0, y1) => rows.filter(r => r.yf >= y0 && r.yf < y1).reduce((a, r) => (!a || r.v > a.v ? r : a), null);
+    const last = rows[rows.length - 1], p1929 = peakIn(1927, 1933), p2000 = peakIn(1997, 2002);
+    const allTimeMax = rows.reduce((a, r) => (r.v > a.v ? r : a), rows[0]);
+
+    $('compositeCurrent').textContent = ord(last.v);
+    $('compositeCurrentLabel').textContent = `Today's composite (${fmtYm(last.ym)})`;
+    if (p2000) { $('composite2000').textContent = ord(p2000.v); $('composite2000Label').textContent = `2000 dot-com peak (${fmtYm(p2000.ym)})`; }
+    if (p1929) { $('composite1929').textContent = ord(p1929.v); $('composite1929Label').textContent = `1929 peak (${fmtYm(p1929.ym)})`; }
+    $('compositeInputs').textContent = `${last.parts.length} of ${INPUTS.length}`;
+    const higherThan = Math.floor(rows.filter(r => r.v < last.v).length / rows.length * 100);
+    $('compositeMeta').innerHTML =
+      `<strong>Data range:</strong> ${fmtYm(rows[0].ym)} to ${fmtYm(last.ym)}` +
+      ` &nbsp;&middot;&nbsp; <strong>${rows.length.toLocaleString()}</strong> monthly readings` +
+      ` &nbsp;&middot;&nbsp; richest month on record: <strong>${ord(allTimeMax.v)}</strong> (${fmtYm(allTimeMax.ym)})` +
+      ` &nbsp;&middot;&nbsp; today's composite is higher than <strong>${higherThan}%</strong> of months since ${rows[0].ym.slice(0, 4)}`;
+    $('compositeInputsNote').innerHTML =
+      `<strong>Today, measure by measure:</strong> ` +
+      last.parts.map(p => `${p.label} <strong>${ord(p.pct)}</strong> percentile`).join(' &middot; ') +
+      (last.parts.length < INPUTS.length ? ` &middot; <em>${INPUTS.filter(i => !last.parts.some(p => p.key === i.key)).map(i => i.label).join(', ')} not loaded</em>` : '') +
+      `. Percentiles are of each measure's own full history, so a 95th means richer than 95% of that measure's readings ever.`;
+
+    const chart = $('compositeChart');
+    const W = 1200, H = 460, M = { top: 20, right: 60, bottom: 40, left: 55 };
+    const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
+    function render(period) {
+      let slice = period === 'all' ? rows : rows.filter(r => r.yf >= last.yf - parseFloat(period));
+      if (slice.length < 2) slice = rows.slice(-24);
+      const first = slice[0], end = slice[slice.length - 1];
+      const xFor = (yr) => M.left + ((yr - first.yf) / (end.yf - first.yf || 1)) * plotW;
+      const yFor = (v) => M.top + plotH - (v / 100) * plotH;
+      let svg = '';
+      const y50 = yFor(50);
+      svg += `<rect class="band-cheap" x="${M.left}" y="${y50}" width="${plotW}" height="${(M.top + plotH) - y50}"/>`;
+      svg += `<rect class="band-expensive" x="${M.left}" y="${M.top}" width="${plotW}" height="${y50 - M.top}"/>`;
+      for (let p = 0; p <= 100; p += 25) {
+        const y = yFor(p);
+        svg += `<line class="grid-line" x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}"/>`;
+        svg += `<text class="axis-label" x="${M.left - 8}" y="${y + 3}" text-anchor="end">${p}</text>`;
+      }
+      const span = end.yf - first.yf;
+      const tickStep = span <= 6 ? 1 : span <= 15 ? 2 : span <= 30 ? 5 : span <= 75 ? 10 : 20;
+      for (let yr = Math.ceil(first.yf / tickStep) * tickStep; yr <= end.yf; yr += tickStep) {
+        const x = xFor(yr);
+        svg += `<line class="grid-line" x1="${x}" x2="${x}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+        svg += `<text class="axis-label" x="${x}" y="${M.top + plotH + 15}" text-anchor="middle">${Math.round(yr)}</text>`;
+      }
+      svg += `<line class="axis-line" x1="${M.left}" x2="${W - M.right}" y1="${M.top + plotH}" y2="${M.top + plotH}"/>`;
+      svg += `<line class="axis-line" x1="${M.left}" x2="${M.left}" y1="${M.top}" y2="${M.top + plotH}"/>`;
+      svg += `<line class="avg-line" x1="${M.left}" x2="${W - M.right}" y1="${y50}" y2="${y50}"/>`;
+      svg += `<text class="axis-label" x="${W - M.right + 3}" y="${y50 + 4}" style="fill:#64d3ff">50th</text>`;
+      let path = '';
+      slice.forEach((r, i) => { path += (i ? 'L' : 'M') + xFor(r.yf).toFixed(1) + ',' + yFor(r.v).toFixed(1) + ' '; });
+      svg += `<path class="pe-line" d="${path}"/>`;
+      // Landmark peaks inside the window.
+      for (const [pk, name] of [[p1929, '1929'], [p2000, '2000 dot-com']]) {
+        if (!pk || pk.yf < first.yf || pk.yf > end.yf) continue;
+        const x = xFor(pk.yf), y = yFor(pk.v);
+        svg += `<circle cx="${x}" cy="${y}" r="3.5" style="fill:var(--bear)"/>`;
+        svg += `<text class="annotation" x="${x}" y="${y - 10}" text-anchor="middle" style="fill:var(--bear);font-weight:600;font-size:12px;">${name} · ${ord(pk.v)}</text>`;
+      }
+      const xCur = xFor(end.yf), yCur = yFor(end.v);
+      svg += `<circle class="current-dot" cx="${xCur}" cy="${yCur}" r="5"/>`;
+      // Today's label sits to the right of the dot, in the right margin, so it never covers the line.
+      svg += `<text class="annotation" x="${xCur + 9}" y="${yCur + 4}" text-anchor="start" style="fill:var(--s6);font-weight:600;font-size:12px;">${ord(end.v)}</text>`;
+      svg += `<text class="axis-label" x="${M.left - 40}" y="${M.top - 6}" text-anchor="start">percentile</text>`;
+      chart.innerHTML = svg;
+    }
+    const bar = $('compositePeriods');
+    bar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.chart-period-btn'); if (!btn) return;
+      bar.querySelectorAll('.chart-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+      render(btn.dataset.period);
+    });
+    render('all');
+  }
+  renderCompositeChart();
   </script>
   <script src="ticker-search.js" defer></script>
   <script src="share-strip.js" defer></script>
