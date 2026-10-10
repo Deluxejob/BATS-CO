@@ -19,7 +19,7 @@ on:
     - cron: '55 23 * * 1-5'   # 23:55 UTC weekdays  (~7:55pm ET EDT / 6:55pm ET EST)
     - cron: '55  3 * * 2-6'   # 03:55 UTC next day  (safety catch-up)
   push:
-    branches: [main, claude/sp-nasdaq-new-highs-lows-y4jqwa]   # TEMPORARY: one run on this branch, reverted after
+    branches: [main]
     paths:
       - 'scripts/update-new-highs-lows.py'
       - '.github/workflows/update-new-highs-lows.yml'
