@@ -4,8 +4,8 @@ name: Count new 52-week highs and lows
 # low each day, from the members' own Yahoo price bars, into
 # data/new_highs_lows_spx.csv and data/new_highs_lows_ndx.csv. The whole
 # history is rebuilt on every run (today's member list applied back to
-# 2016), so a missed night costs nothing. Nothing on the site reads these
-# files yet.
+# 2016), so a missed night costs nothing. The New 52-week highs & lows
+# panel on quotes.html reads these files.
 #
 # Its own small job rather than a step in the big nightly data job, so a
 # slow Yahoo night here can never hold back the other data. It runs a

@@ -884,6 +884,57 @@
       color: #0a1218;
       border-color: var(--term-amber);
     }
+
+    /* ---------- New 52-week highs & lows (compact) ---------- */
+    .nhl-label { flex-wrap: wrap; }
+    .nhl-label > span:first-child { white-space: nowrap; }
+    .nhl-panel { padding-bottom: 0.5rem; }
+    .nhl-head {
+      display: flex; align-items: center; gap: 0.5rem 0.9rem; flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+    }
+    .nhl-head .chart-periods { margin-bottom: 0; }
+    .nhl-head .chart-period-btn { padding: 0.22rem 0.55rem; font-size: 0.64rem; }
+    .nhl-reading {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em;
+      color: var(--term-text); white-space: nowrap;
+    }
+    .nhl-reading .dim { color: var(--term-dim); font-weight: 500; }
+    .nhl-reading .hi  { color: var(--term-green); }
+    .nhl-reading .lo  { color: var(--term-red); }
+    .nhl-range { margin-top: 0; margin-left: auto; }
+    .nhl-chart-wrap { position: relative; height: 196px; }
+    .nhl-chart { width: 100%; height: 100%; display: block; cursor: crosshair; }
+    .nhl-chart text { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: var(--term-dim); }
+    .nhl-chart .grid   { stroke: var(--term-border-soft); stroke-width: 1; }
+    .nhl-chart .zero   { stroke: var(--term-dim); stroke-width: 1; opacity: 0.7; }
+    .nhl-chart .idx    { fill: none; stroke: var(--term-cyan); stroke-width: 1.4; stroke-linejoin: round; }
+    .nhl-chart .idxfill{ fill: var(--term-cyan); opacity: 0.08; }
+    .nhl-chart .hi     { fill: var(--term-green); }
+    .nhl-chart .lo     { fill: var(--term-red); }
+    .nhl-chart .cross  { stroke: var(--term-text); stroke-width: 1; opacity: 0.45; }
+    .nhl-chart .dot    { fill: var(--term-cyan); stroke: var(--term-panel); stroke-width: 1.5; }
+    .nhl-tip {
+      position: absolute; top: 4px; pointer-events: none; z-index: 2;
+      background: rgba(8, 17, 26, 0.94); border: 1px solid var(--term-border);
+      border-radius: 3px; padding: 0.3rem 0.5rem; white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; line-height: 1.5;
+      color: var(--term-text);
+    }
+    .nhl-tip .dim { color: var(--term-dim); }
+    .nhl-tip .hi  { color: var(--term-green); }
+    .nhl-tip .lo  { color: var(--term-red); }
+    .nhl-empty {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: var(--term-dim); font-size: 0.8rem; pointer-events: none;
+    }
+    .nhl-empty[hidden] { display: none; }
+    .nhl-meta { margin-top: 0.4rem !important; }
+    @media (max-width: 560px) {
+      .nhl-reading { order: 3; width: 100%; }
+      .nhl-chart-wrap { height: 176px; }
+    }
     /* Sector heatmap is exactly 11 tiles. On any reasonable laptop-and-up
        screen (≥1100px), force one row of 11 columns so it never wraps to
        9+2. Below that, fall back to a packed grid that adapts. */
@@ -1391,17 +1442,33 @@
       </div>
     </section>
 
-    <!-- Market news — moved up between Market Internals and Sector Heatmap -->
+    <!-- New 52-week highs & lows — how many S&P 500 / Nasdaq-100 members
+         set a one-year high or low each day, counted nightly from every
+         member's own price bars (scripts/update-new-highs-lows.py). Kept
+         short on purpose: one compact chart, index line above, mirrored
+         highs/lows bars below. -->
     <section class="term-section">
-      <div class="term-section-label">MARKET NEWS <span class="sub">— Yahoo Finance, refreshed hourly</span></div>
-      <div class="term-panel">
-        <ul class="term-news-list" id="marketNewsList">
-          <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
-        </ul>
-        <div class="term-news-actions">
-          <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
+      <div class="term-section-label nhl-label"><span>NEW 52-WEEK HIGHS &amp; LOWS</span> <span class="sub">&mdash; index members setting a one-year high or low each day &middot; counted from every member&rsquo;s price bars &middot; updated nightly</span></div>
+      <div class="term-panel nhl-panel">
+        <div class="nhl-head">
+          <div class="chart-periods nhl-idx" id="nhlIndex" role="tablist" aria-label="Index">
+            <button type="button" class="chart-period-btn active" data-idx="spx" role="tab">S&amp;P 500</button>
+            <button type="button" class="chart-period-btn"        data-idx="ndx" role="tab">NASDAQ-100</button>
+          </div>
+          <div class="nhl-reading" id="nhlReading"></div>
+          <div class="idx-range-picker nhl-range" id="nhlRange" role="tablist" aria-label="Time range">
+            <button type="button" data-range="3m">3M</button>
+            <button type="button" data-range="6m" class="active">6M</button>
+            <button type="button" data-range="1y">1Y</button>
+            <button type="button" data-range="3y">3Y</button>
+          </div>
         </div>
-        <p class="term-news-meta" id="marketNewsMeta"></p>
+        <div class="nhl-chart-wrap" id="nhlChartWrap">
+          <svg class="nhl-chart" id="nhlChart" role="img" aria-label="New 52-week highs and lows"></svg>
+          <div class="nhl-tip" id="nhlTip" hidden></div>
+          <div class="nhl-empty" id="nhlEmpty">Loading counts&hellip;</div>
+        </div>
+        <p class="term-news-meta nhl-meta" id="nhlMeta"></p>
       </div>
     </section>
 
@@ -1757,6 +1824,20 @@
           }
           </script>
         </div>
+      </div>
+    </section>
+
+    <!-- Market news — at the foot of the page, below the Economic Calendar -->
+    <section class="term-section">
+      <div class="term-section-label">MARKET NEWS <span class="sub">— Yahoo Finance, refreshed hourly</span></div>
+      <div class="term-panel">
+        <ul class="term-news-list" id="marketNewsList">
+          <li><span style="color:var(--term-dim); font-size:0.85rem">Loading headlines&hellip;</span></li>
+        </ul>
+        <div class="term-news-actions">
+          <button type="button" id="newsMoreBtn" class="term-news-more" hidden>SHOW MORE HEADLINES &darr;</button>
+        </div>
+        <p class="term-news-meta" id="marketNewsMeta"></p>
       </div>
     </section>
 
@@ -4157,6 +4238,234 @@
       backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
       if (new URLSearchParams(window.location.search).get('tool') === 'brief') setTimeout(run, 0);
+    })();
+  </script>
+  <script>
+    // New 52-week highs & lows — reads data/new_highs_lows_{spx,ndx}.csv
+    // (one row per trading day since 2016, rebuilt nightly) and draws one
+    // compact SVG: the index close as a thin line above, new highs (up,
+    // green) and new lows (down, red) as mirrored bars below, on one
+    // linear axis so the two sides stay comparable. Hover for the day.
+    (function () {
+      const chart   = document.getElementById('nhlChart');
+      const wrap    = document.getElementById('nhlChartWrap');
+      const tip     = document.getElementById('nhlTip');
+      const empty   = document.getElementById('nhlEmpty');
+      const reading = document.getElementById('nhlReading');
+      const meta    = document.getElementById('nhlMeta');
+      const idxPick = document.getElementById('nhlIndex');
+      const rngPick = document.getElementById('nhlRange');
+      if (!chart || !wrap || !tip || !empty || !reading || !meta || !idxPick || !rngPick) return;
+
+      const INDEX = {
+        spx: { file: 'data/new_highs_lows_spx.csv', label: 'S&P 500',    members: 'S&P 500' },
+        ndx: { file: 'data/new_highs_lows_ndx.csv', label: 'Nasdaq-100', members: 'Nasdaq-100' },
+      };
+      const RANGE = { '3m': 63, '6m': 126, '1y': 252, '3y': 756 };
+      const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const NS = 'http://www.w3.org/2000/svg';
+      const state = { idx: 'spx', range: '6m', rows: null, view: null, geo: null, hover: -1 };
+      const cache = {};
+
+      function parseCsv(text) {
+        const out = [];
+        for (const line of text.trim().split('\n').slice(1)) {
+          const c = line.split(',');
+          if (c.length < 6) continue;
+          out.push({ d: c[0], hi: +c[1], lo: +c[2], cov: +c[4], px: +c[5] });
+        }
+        return out;
+      }
+
+      async function load(key) {
+        if (cache[key]) return cache[key];
+        const r = await fetch(INDEX[key].file, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        cache[key] = parseCsv(await r.text());
+        return cache[key];
+      }
+
+      const fmtDate = (d, year) => {
+        const [y, m, day] = d.split('-');
+        return MONTHS[+m - 1] + ' ' + (+day) + (year ? ', ' + y : '');
+      };
+      const fmtPx  = v => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtAxis = v => Math.round(v).toLocaleString('en-US');
+      const signed = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
+      const el = (tag, attrs, text) => {
+        const n = document.createElementNS(NS, tag);
+        for (const k in attrs) n.setAttribute(k, attrs[k]);
+        if (text != null) n.textContent = text;
+        return n;
+      };
+
+      function draw() {
+        const rows = state.rows;
+        if (!rows || !rows.length) return;
+        const view = rows.slice(-RANGE[state.range]);
+        state.view = view;
+        const W = Math.max(200, wrap.clientWidth), H = wrap.clientHeight || 196;
+        chart.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        chart.innerHTML = '';
+
+        // Layout: index line in a short band on top, bars below, month axis at the foot.
+        const padL = 4, padR = 46, axisH = 14;
+        const idxTop = 6, idxBot = 58;
+        const barTop = 66, barBot = H - axisH - 4;
+        const x0 = padL, x1 = W - padR;
+        const n = view.length;
+        const step = (x1 - x0) / n;
+        const xc = i => x0 + (i + 0.5) * step;
+        const bw = Math.max(1, Math.min(step * 0.72, 9));
+
+        // Scales.
+        let pxMin = Infinity, pxMax = -Infinity, hiMax = 0, loMax = 0;
+        for (const r of view) {
+          if (r.px < pxMin) pxMin = r.px;
+          if (r.px > pxMax) pxMax = r.px;
+          if (r.hi > hiMax) hiMax = r.hi;
+          if (r.lo > loMax) loMax = r.lo;
+        }
+        if (pxMax === pxMin) pxMax = pxMin + 1;
+        hiMax = Math.max(hiMax, 1); loMax = Math.max(loMax, 1);
+        const yPx = v => idxBot - (v - pxMin) / (pxMax - pxMin) * (idxBot - idxTop);
+        const span = hiMax + loMax;
+        const yBar = v => barTop + (hiMax - v) / span * (barBot - barTop);   // v>0 highs, v<0 lows
+        const y0 = yBar(0);
+
+        // Month gridlines + labels (year on January, and on the first tick).
+        let lastMonth = view[0].d.slice(0, 7), firstTick = true;
+        let lastLabelEnd = -Infinity;   // right edge of the last month label, in px
+        for (let i = 1; i < n; i++) {
+          const ym = view[i].d.slice(0, 7);
+          if (ym === lastMonth) continue;
+          lastMonth = ym;
+          const x = x0 + i * step;
+          chart.appendChild(el('line', { class: 'grid', x1: x, x2: x, y1: idxTop, y2: barBot }));
+          const m = +ym.slice(5, 7);
+          const label = (m === 1 || firstTick) ? MONTHS[m - 1] + ' \u2019' + ym.slice(2, 4) : MONTHS[m - 1];
+          if (x + 3 >= lastLabelEnd + 10) {
+            chart.appendChild(el('text', { x: x + 3, y: H - 3 }, label));
+            lastLabelEnd = x + 3 + label.length * 6.2; firstTick = false;
+          }
+        }
+
+        // Index line with a faint fill underneath.
+        let path = '', area = '';
+        view.forEach((r, i) => {
+          const x = xc(i).toFixed(1), y = yPx(r.px).toFixed(1);
+          path += (i ? 'L' : 'M') + x + ' ' + y;
+        });
+        area = path + `L${xc(n - 1).toFixed(1)} ${idxBot}L${xc(0).toFixed(1)} ${idxBot}Z`;
+        chart.appendChild(el('path', { class: 'idxfill', d: area }));
+        chart.appendChild(el('path', { class: 'idx', d: path }));
+        chart.appendChild(el('text', { x: x1 + 4, y: idxTop + 8 }, fmtAxis(pxMax)));
+        chart.appendChild(el('text', { x: x1 + 4, y: idxBot }, fmtAxis(pxMin)));
+        chart.appendChild(el('text', { x: x0 + 2, y: idxTop + 8, style: 'fill:var(--term-cyan)' }, INDEX[state.idx].label));
+
+        // Bars.
+        const gHi = el('g', { class: 'hi' }), gLo = el('g', { class: 'lo' });
+        view.forEach((r, i) => {
+          const x = (xc(i) - bw / 2).toFixed(1);
+          if (r.hi > 0) gHi.appendChild(el('rect', { x, y: yBar(r.hi).toFixed(1), width: bw.toFixed(1), height: (y0 - yBar(r.hi)).toFixed(1) }));
+          if (r.lo > 0) gLo.appendChild(el('rect', { x, y: y0.toFixed(1), width: bw.toFixed(1), height: (yBar(-r.lo) - y0).toFixed(1) }));
+        });
+        chart.appendChild(gHi); chart.appendChild(gLo);
+        chart.appendChild(el('line', { class: 'zero', x1: x0, x2: x1, y1: y0, y2: y0 }));
+        chart.appendChild(el('text', { x: x1 + 4, y: barTop + 8, style: 'fill:var(--term-green)' }, '+' + hiMax));
+        chart.appendChild(el('text', { x: x1 + 4, y: y0 + 3.5 }, '0'));
+        chart.appendChild(el('text', { x: x1 + 4, y: barBot, style: 'fill:var(--term-red)' }, '−' + loMax));
+
+        // Hover layer (filled in on pointermove).
+        const hover = el('g', { class: 'hover', style: 'display:none' });
+        hover.appendChild(el('line', { class: 'cross', y1: idxTop, y2: barBot }));
+        hover.appendChild(el('circle', { class: 'dot', r: 3 }));
+        chart.appendChild(hover);
+        state.geo = { x0, x1, step, yPx, hover, W };
+        setHover(-1);
+      }
+
+      function setHover(i) {
+        const g = state.geo, view = state.view;
+        if (!g || !view) return;
+        state.hover = i;
+        if (i < 0 || i >= view.length) {
+          g.hover.style.display = 'none'; tip.hidden = true; return;
+        }
+        const r = view[i], x = g.x0 + (i + 0.5) * g.step;
+        g.hover.style.display = '';
+        g.hover.querySelector('line').setAttribute('x1', x);
+        g.hover.querySelector('line').setAttribute('x2', x);
+        const dot = g.hover.querySelector('circle');
+        dot.setAttribute('cx', x); dot.setAttribute('cy', g.yPx(r.px));
+        tip.innerHTML =
+          `<span class="dim">${fmtDate(r.d, true)}</span> &middot; ${INDEX[state.idx].label} ${fmtPx(r.px)}<br>` +
+          `<span class="hi">${r.hi} new high${r.hi === 1 ? '' : 's'}</span> &middot; ` +
+          `<span class="lo">${r.lo} new low${r.lo === 1 ? '' : 's'}</span> &middot; net ${signed(r.hi - r.lo)}`;
+        tip.hidden = false;
+        // Keep the tip inside the panel: flip to the left of the cursor past the midpoint.
+        const px = x / g.W * wrap.clientWidth;
+        tip.style.left = ''; tip.style.right = '';
+        if (px > wrap.clientWidth / 2) tip.style.right = (wrap.clientWidth - px + 10) + 'px';
+        else tip.style.left = (px + 10) + 'px';
+      }
+
+      function renderText() {
+        const rows = state.rows;
+        if (!rows || !rows.length) return;
+        const last = rows[rows.length - 1];
+        reading.innerHTML =
+          `<span class="dim">${fmtDate(last.d).toUpperCase()}</span> &middot; ` +
+          `<span class="hi">${last.hi} HIGHS</span> &middot; <span class="lo">${last.lo} LOWS</span> &middot; ` +
+          `NET ${signed(last.hi - last.lo)}`;
+        meta.innerHTML =
+          `${INDEX[state.idx].members} members whose intraday high (low) beat their highest high (lowest low) of the previous 252 sessions. ` +
+          `${last.cov} members counted &middot; through ${fmtDate(last.d, true)} &middot; today&rsquo;s membership applied to the whole history &middot; Yahoo daily bars.`;
+      }
+
+      async function show() {
+        try {
+          state.rows = await load(state.idx);
+          empty.hidden = true;
+          renderText();
+          draw();
+        } catch (e) {
+          empty.hidden = false;
+          empty.textContent = 'Counts unavailable right now.';
+          reading.textContent = ''; meta.textContent = '';
+          chart.innerHTML = '';
+        }
+      }
+
+      idxPick.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-idx]');
+        if (!btn || btn.dataset.idx === state.idx) return;
+        state.idx = btn.dataset.idx;
+        idxPick.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        show();
+      });
+      rngPick.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-range]');
+        if (!btn || btn.dataset.range === state.range) return;
+        state.range = btn.dataset.range;
+        rngPick.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        draw();
+      });
+      chart.addEventListener('pointermove', e => {
+        const g = state.geo; if (!g) return;
+        const rect = chart.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width * g.W;
+        const i = Math.floor((x - g.x0) / g.step);
+        if (i !== state.hover) setHover(i);
+      });
+      chart.addEventListener('pointerleave', () => setHover(-1));
+      if (window.ResizeObserver) {
+        let t = null;
+        new ResizeObserver(() => { clearTimeout(t); t = setTimeout(draw, 80); }).observe(wrap);
+      } else {
+        window.addEventListener('resize', () => draw());
+      }
+      show();
     })();
   </script>
   <script src="ticker-search.js" defer></script>

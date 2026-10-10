@@ -41,7 +41,7 @@ Fail-safe, like the other updaters: a CSV is rewritten only when at least
 existing one. Exits 0 in normal use so a bad night never fails the job;
 with --strict (manual runs) it exits 1 if any file was left unchanged.
 
-Nothing on the site reads these files yet.
+Read by the New 52-week highs & lows panel on quotes.html.
 """
 
 from __future__ import annotations
