@@ -915,6 +915,9 @@
     .nhl-chart .lo     { fill: var(--term-red); }
     .nhl-chart .cross  { stroke: var(--term-text); stroke-width: 1; opacity: 0.45; }
     .nhl-chart .dot    { fill: var(--term-cyan); stroke: var(--term-panel); stroke-width: 1.5; }
+    .nhl-chart .peak   { font-size: 9px; font-weight: 700; paint-order: stroke; stroke: var(--term-panel); stroke-width: 3px; stroke-linejoin: round; }
+    .nhl-chart .peak.hi { fill: var(--term-green); }
+    .nhl-chart .peak.lo { fill: var(--term-red); }
     .nhl-tip {
       position: absolute; top: 4px; pointer-events: none; z-index: 2;
       background: rgba(8, 17, 26, 0.94); border: 1px solid var(--term-border);
@@ -4372,6 +4375,16 @@
         });
         chart.appendChild(gHi); chart.appendChild(gLo);
         chart.appendChild(el('line', { class: 'zero', x1: x0, x2: x1, y1: y0, y2: y0 }));
+        // Peak tags: the count beside the tallest new-high bar and the deepest
+        // new-low bar in view (the most recent one when days tie).
+        let iHi = -1, iLo = -1;
+        view.forEach((r, i) => { if (r.hi > 0 && r.hi >= (iHi < 0 ? 0 : view[iHi].hi)) iHi = i; if (r.lo > 0 && r.lo >= (iLo < 0 ? 0 : view[iLo].lo)) iLo = i; });
+        const peak = (i, cls, val, y) => {
+          const right = xc(i) > (x0 + x1) / 2;     // flip to the left of the bar near the right edge
+          chart.appendChild(el('text', { class: 'peak ' + cls, x: (xc(i) + (right ? -1 : 1) * (bw / 2 + 2)).toFixed(1), y: y.toFixed(1), 'text-anchor': right ? 'end' : 'start' }, val));
+        };
+        if (iHi >= 0) peak(iHi, 'hi', view[iHi].hi, Math.max(barTop + 8, yBar(view[iHi].hi) + 7));
+        if (iLo >= 0) peak(iLo, 'lo', view[iLo].lo, Math.min(barBot - 1, yBar(-view[iLo].lo) - 1));
         chart.appendChild(el('text', { x: x1 + 4, y: barTop + 8, style: 'fill:var(--term-green)' }, '+' + hiMax));
         chart.appendChild(el('text', { x: x1 + 4, y: y0 + 3.5 }, '0'));
         chart.appendChild(el('text', { x: x1 + 4, y: barBot, style: 'fill:var(--term-red)' }, '−' + loMax));

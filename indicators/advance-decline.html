@@ -60,6 +60,7 @@
     .nhl-chart .zero { stroke: rgba(139,149,168,.6); stroke-width: 1; }
     .nhl-chart .idx-fill { fill: rgba(100,211,255,.08); }
     .nhl-chart .nhl-empty { fill: var(--text-dim); font-size: 14px; }
+    .nhl-chart .peak { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; font-weight: 700; paint-order: stroke; stroke: var(--bg-card); stroke-width: 3px; stroke-linejoin: round; }
     .ad-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; justify-content: center; margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--text-dim); }
     .ad-legend .sw { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 2px; vertical-align: -2px; margin-right: 0.3rem; }
     .ad-legend .sw.ln { height: 2px; width: 1.2em; vertical-align: 3px; }
@@ -575,6 +576,16 @@
           if (r.lo > 0) parts.push(`<rect class="bar-lo" x="${x}" y="${y0.toFixed(1)}" width="${bw.toFixed(1)}" height="${(yBar(-r.lo) - y0).toFixed(1)}">${t}</rect>`);
         }
         parts.push(`<line class="zero" x1="${PAD_L}" x2="${PAD_L + plotW}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}"/>`);
+        // Peak tags: the count beside the tallest new-high bar and the deepest
+        // new-low bar in view (the most recent one when days tie).
+        let iHi = -1, iLo = -1;
+        view.forEach((r, i) => { if (r.hi > 0 && r.hi >= (iHi < 0 ? 0 : view[iHi].hi)) iHi = i; if (r.lo > 0 && r.lo >= (iLo < 0 ? 0 : view[iLo].lo)) iLo = i; });
+        const peak = (i, color, val, y) => {
+          const right = xFor(i) > PAD_L + plotW / 2;
+          parts.push(`<text class="peak" fill="${color}" x="${(xFor(i) + (right ? -1 : 1) * (bw / 2 + 2)).toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${right ? 'end' : 'start'}">${val}</text>`);
+        };
+        if (iHi >= 0) peak(iHi, '#22d39a', view[iHi].hi, Math.max(botY0 + 9, yBar(view[iHi].hi) + 8));
+        if (iLo >= 0) peak(iLo, '#ff5374', view[iLo].lo, Math.min(botY1 - 1, yBar(-view[iLo].lo) - 1));
         parts.push(`<text class="end-label" fill="#22d39a" x="${PAD_L + plotW + 6}" y="${botY0 + 4}">+${hiMax}</text>`);
         parts.push(`<text class="axis" x="${PAD_L + plotW + 6}" y="${(y0 + 4).toFixed(1)}">0</text>`);
         parts.push(`<text class="end-label" fill="#ff5374" x="${PAD_L + plotW + 6}" y="${botY1 + 4}">\u2212${loMax}</text>`);
