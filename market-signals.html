@@ -489,6 +489,38 @@
        currently active. Star + subtle amber border. */
     .iq-range-btn.fr-lookback-default          { border-color: rgba(255, 182, 88, 0.35); }
     .iq-range-btn.fr-lookback-default.active   { border-color: rgba(255, 182, 88, 0.75); background: rgba(255, 182, 88, 0.10); color: #ffb658; }
+    /* Sector Rotation (Smoother Ride) card. Reuses the Factor card's pill
+       and ranking rows; adds only the four-ticker pill size, small section
+       titles, the sector colour swatches, the side-by-side tables and the
+       fold-away year-by-year table. */
+    .sr-pill .fr-ticker { font-size: 1.25rem; letter-spacing: 0.1em; }
+    .sr-pill.sr-cash .fr-ticker { color: var(--text-dim); }
+    .sr-section-title {
+      margin: 1rem 0 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .sr-section-title small { text-transform: none; letter-spacing: 0; color: var(--text-faint); }
+    #srRankings { margin-top: 0.45rem; }
+    .fr-rank-row.sr-rank-held { background: rgba(34, 211, 154, 0.05); border-color: rgba(34, 211, 154, 0.35); }
+    .sr-badge-next { color: #ffb658; background: rgba(255, 182, 88, 0.10); border-color: rgba(255, 182, 88, 0.45); }
+    .sr-badge-skip { color: var(--text-faint); border-color: rgba(139, 149, 168, 0.35); }
+    .sr-lane-label { fill: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+    .sr-legend { margin-top: 0.35rem; line-height: 1.9; }
+    .sr-legend .item { white-space: nowrap; margin-right: 0.6rem; }
+    .sr-sw { display: inline-block; width: 0.75em; height: 0.75em; border-radius: 2px; vertical-align: -1px; margin-right: 0.25rem; }
+    .sr-tables { display: grid; grid-template-columns: 1fr; gap: 0 1.25rem; }
+    @media (min-width: 760px) { .sr-tables { grid-template-columns: 1fr 1fr; } }
+    .sr-tables .mv-table { margin-top: 0.45rem; }
+    .sr-fold { margin-top: 0.85rem; border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.45rem 0.75rem; }
+    .sr-fold summary { cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+    .sr-fold summary:hover { color: var(--text); }
+    .sr-fold .mv-table { margin-top: 0.5rem; }
+    .mv-table td.sr-part { color: var(--text-faint); }
+    /* end Sector Rotation card */
   </style>
 </head>
 <body>
@@ -1068,6 +1100,165 @@
                style="margin-top: 0.9rem;"></div>
         </div>
 
+
+        <!-- SIGNAL: Sector Rotation, Smoother Ride (monthly, top 4 SPDR sectors by 12-month return,
+             cash when a pick is down). Every number comes from data/sector_rotation.json, which
+             scripts/backtest-sector-rotation.py rebuilds nightly; the page only draws it. -->
+        <div class="sig-card" id="sig-sector-rotation">
+          <div class="sig-head">
+            <h2 class="sig-title">Sector Rotation: Smoother Ride</h2>
+            <span class="sig-tag">Monthly &middot; 11 SPDR sector funds &middot; top 4 by 12-month return</span>
+          </div>
+          <p class="sig-desc">
+            On the <strong>first trading day of each month</strong>, rank the 11 SPDR sector funds by their
+            total return over the past 12 months and hold the <strong>top four in equal parts</strong>.
+            Any of the four that is <strong>down over 12 months</strong> is left out; if all four are down,
+            the money sits in short-term Treasuries (SHY). Since 2000 this has earned about the same as the
+            S&amp;P 500 (<strong data-sr-stat="ruleCagr">&mdash;</strong> a year vs
+            <span data-sr-stat="spyCagr">&mdash;</span>) with a much shallower worst drop
+            (<strong data-sr-stat="ruleMaxDd">&mdash;</strong> vs <span data-sr-stat="spyMaxDd">&mdash;</span>).
+            A smoother ride, not a bigger return.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="fr-action-pill fr-hold sr-pill" id="srActionPill">
+              <span class="fr-verb">LOADING&hellip;</span>
+              <span class="fr-ticker">&mdash;</span>
+            </div>
+            <div class="iq-action-sub" id="srActionSub">Loading the nightly backtest&hellip;</div>
+            <div class="iq-action-asof" id="srActionAsof"></div>
+          </div>
+
+          <div class="sr-section-title">12-month return ranking <small id="srRankAsof"></small></div>
+          <div class="fr-rankings" id="srRankings">
+            <div class="fr-rank-row" style="opacity: 0.5;">
+              <div class="fr-rank-num">&mdash;</div>
+              <div class="fr-rank-tkr">&mdash;</div>
+              <div class="fr-rank-name">the ranking loads with the backtest file</div>
+              <div class="fr-rank-ret">&mdash;</div>
+              <div class="fr-rank-badge fr-badge-empty">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Rule, per year</div><div class="val pos" data-sr-stat="ruleCagr">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">S&amp;P 500, per year</div><div class="val" data-sr-stat="spyCagr">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst drop, rule</div><div class="val" data-sr-stat="ruleMaxDd">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst drop, S&amp;P 500</div><div class="val neg" data-sr-stat="spyMaxDd">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">$1,000 became (rule)</div><div class="val pos" data-sr-stat="ruleFinal">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">$1,000 became (S&amp;P)</div><div class="val" data-sr-stat="spyFinal">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Beat S&amp;P, 3-yr windows</div><div class="val" data-sr-stat="win3y">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Trades per year</div><div class="val" data-sr-stat="tradesPerYear">&mdash;</div></div>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range" style="margin-top: 0.75rem;">
+            <div class="iq-range-group" aria-label="Famous bear markets">
+              <span class="iq-range-group-label">Crashes</span>
+              <button type="button" class="iq-range-btn" data-sr-from="2000-02-01" data-sr-to="2003-12-31" role="tab" title="Tech bust, 2000 to 2003">Tech bust</button>
+              <button type="button" class="iq-range-btn" data-sr-from="2007-07-02" data-sr-to="2010-12-31" role="tab" title="Financial crisis and recovery">2008</button>
+              <button type="button" class="iq-range-btn" data-sr-from="2020-01-02" data-sr-to="2020-12-31" role="tab" title="COVID crash and recovery">COVID</button>
+              <button type="button" class="iq-range-btn" data-sr-from="2021-11-01" data-sr-to="2023-06-30" role="tab" title="Fed-hike bear market">2022</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-sr-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-sr-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn active" data-sr-years="0" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 460" class="sig-chart" id="srChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="Sector rotation rule vs SPY, with the sectors held each month"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: $1,000 in the rule (<span class="iq-sw iq-sw-green"></span>green) vs $1,000 in SPY
+            (<span class="iq-sw iq-sw-amber" style="border-top-color: #64d3ff;"></span>dashed blue), dividends included,
+            on a log scale so the early years stay visible. The readout at the top is for the window shown.
+            <em>Bottom panel</em>: the sectors held each month, one lane per slot, best 12-month return on top.
+            Gray across all four lanes means the rule was in cash (SHY) because every top-four fund was down over 12 months.
+            <div class="sr-legend" id="srLegend"></div>
+          </div>
+
+          <div class="sr-tables">
+            <div>
+              <div class="sr-section-title">How it held up in the big drops</div>
+              <div class="mv-table-wrap"><table class="mv-table" id="srCrashTable"></table></div>
+            </div>
+            <div>
+              <div class="sr-section-title">Return per year, by era</div>
+              <div class="mv-table-wrap"><table class="mv-table" id="srPeriodTable"></table></div>
+            </div>
+          </div>
+
+          <details class="sr-fold">
+            <summary id="srYearSummary">Year by year</summary>
+            <div class="mv-table-wrap"><table class="mv-table" id="srYearTable"></table></div>
+          </details>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this rule</h4>
+            <p>
+              <strong>About the same return as the index, with smaller drops.</strong> Over
+              <span data-sr-stat="years">&mdash;</span> years the rule made <span data-sr-stat="ruleCagr">&mdash;</span>
+              a year against <span data-sr-stat="spyCagr">&mdash;</span> for SPY, and its worst peak-to-trough drop was
+              <span data-sr-stat="ruleMaxDd">&mdash;</span> against SPY's <span data-sr-stat="spyMaxDd">&mdash;</span>.
+              The point of this rule is the second number, not the first.
+            </p>
+            <p>
+              <strong>Most of its lead came from the two big crashes.</strong> <span id="srEraText">&mdash;</span>
+              In a long bull run led by one sector it tends to run a step behind the index.
+            </p>
+            <p>
+              <strong>Year to year it is close to a coin flip.</strong> It beat SPY in
+              <span data-sr-stat="yearsBeat">&mdash;</span> of <span data-sr-stat="yearsTotal">&mdash;</span> calendar years
+              and in <span data-sr-stat="win3y">&mdash;</span> of rolling 3-year windows; its worst 3-year stretch
+              against SPY was <span data-sr-stat="worstRel3y">&mdash;</span> points behind. <span id="srCashText"></span>
+            </p>
+            <p>
+              <strong>About <span data-sr-stat="tradesPerYear">&mdash;</span> trades a year.</strong> Most months one or
+              two of the four funds change. Every figure here already includes 0.10% of each dollar traded; in the
+              research run, 0.5% per trade cut the return to about 8.5% a year, so commissions and sloppy fills
+              matter more here than for the buy-and-hold side.
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When to trade and how</h4>
+            <p>
+              <strong>Once a month, on the first trading day.</strong> Using the previous day's close, rank the
+              11 funds by their 12-month total return. The ranking table above is that list, refreshed nightly.
+            </p>
+            <ul>
+              <li>Buy the <strong>top four</strong> in equal parts, 25% each.</li>
+              <li><strong>Skip any of the four that is down</strong> over 12 months and split the money over the rest.
+                If none of the four is up, buy <strong>SHY</strong> (1-3 year Treasuries) instead.</li>
+              <li>Trade at the close of that first trading day. The backtest assumes the close; the next
+                morning's open is close enough.</li>
+            </ul>
+            <p>
+              <strong>The pill shows what the rule holds now</strong>; the ranking table shows what it would pick
+              if the month ended today. The two can differ late in a month, and nothing needs doing until the
+              first trading day.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Backtest from February 2000, the first month in which the nine original SPDR sector funds (launched
+            December 1998) had 12 months of history; XLRE joins in October 2016 and XLC in June 2019, each after
+            its own first 12 months. Yahoo dividend-adjusted daily closes, so dividends count on both sides.
+            Signals use the previous close; trades fill at the rebalance day's close with 0.10% of each dollar
+            traded as cost. Rebuilt nightly. Systematic rotation shown for reference only &mdash; not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/market-signals.html#sig-sector-rotation"
+               data-share-title="Sector Rotation: Smoother Ride — BATS.CO"
+               data-share-text="A rules-only SPDR sector rotation: each month hold the top 4 sectors by 12-month return, skip any that is down, cash if none is up. Since 2000 about the same return as the S&P 500 with a much shallower worst drop. Live backtest on the page."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+        <!-- end Sector Rotation card -->
       </div>
     </section>
   </main>
@@ -2526,6 +2717,266 @@
       });
     })();
 
+
+    // ---- Sector Rotation: Smoother Ride ----
+    // Monthly top-4 SPDR sectors by 12-month return, cash when a pick is
+    // down. Everything is read from data/sector_rotation.json, rebuilt
+    // nightly by scripts/backtest-sector-rotation.py; this only draws it.
+    (async function initSectorRotation() {
+      const card = document.getElementById('sig-sector-rotation');
+      if (!card) return;
+      const $ = id => document.getElementById(id);
+      const pill = $('srActionPill'), sub = $('srActionSub'), asof = $('srActionAsof'), chartSvg = $('srChartSvg');
+
+      const COLORS = {
+        XLK: '#22d3ee', XLF: '#a78bfa', XLV: '#22d39a', XLY: '#fb7185', XLP: '#fde047', XLE: '#ffb658',
+        XLI: '#3b82f6', XLB: '#e879f9', XLU: '#a3e635', XLRE: '#f97316', XLC: '#e5e7eb'
+      };
+      const CASH_FILL = 'rgba(139, 149, 168, 0.35)';
+
+      const pct   = (x, d) => (x * 100).toFixed(d == null ? 1 : d) + '%';
+      const sgn   = (x, d) => (x >= 0 ? '+' : '') + pct(x, d);
+      const pts   = (x, d) => (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(d == null ? 1 : d) + ' pts';
+      const money = v => '$' + Math.round(v * 1000).toLocaleString('en-US');
+      const fmtDate = (iso, opts) => new Date(iso + 'T12:00:00').toLocaleDateString('en-US', opts || {month: 'short', day: 'numeric', year: 'numeric'});
+      const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+      function fail(msg) {
+        pill.querySelector('.fr-verb').textContent = 'UNAVAILABLE';
+        pill.querySelector('.fr-ticker').textContent = '—';
+        sub.textContent = msg;
+      }
+
+      let d;
+      try {
+        const r = await fetch('data/sector_rotation.json', {cache: 'no-store'});
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        d = await r.json();
+      } catch (e) { fail('The nightly backtest file could not be loaded. Try refreshing.'); return; }
+      if (!d || !d.stats || !d.equity || !d.equity.d || !d.rebalances || !d.holdings || !d.preview) { fail('The backtest file is in an unexpected format.'); return; }
+
+      const S = d.stats, NAMES = d.names || {};
+
+      // ---- numbers that appear in the text and the stat boxes ----
+      const FMT = {
+        ruleCagr: pct(S.ruleCagr), spyCagr: pct(S.spyCagr),
+        ruleMaxDd: pct(S.ruleMaxDd, 0), spyMaxDd: pct(S.spyMaxDd, 0),
+        ruleFinal: money(S.ruleFinal), spyFinal: money(S.spyFinal),
+        win3y: Math.round(S.win3y * 100) + '%', tradesPerYear: Math.round(S.tradesPerYear),
+        yearsBeat: S.yearsBeat, yearsTotal: S.yearsTotal, years: Math.round(d.window.years),
+        worstRel3y: Math.abs(S.worstRel3y * 100).toFixed(0)
+      };
+      card.querySelectorAll('[data-sr-stat]').forEach(el => { const k = el.dataset.srStat; if (k in FMT) el.textContent = FMT[k]; });
+
+      // ---- the pill: what the rule holds right now ----
+      const H = d.holdings, picks = H.picks || [], held = picks.map(p => p.sym);
+      const sinceTxt = fmtDate(H.since, {month: 'short', day: 'numeric'}).toUpperCase();
+      if (!picks.length) {
+        pill.classList.add('sr-cash');
+        pill.querySelector('.fr-verb').textContent = 'IN CASH · SINCE ' + sinceTxt;
+        pill.querySelector('.fr-ticker').textContent = 'SHY';
+      } else {
+        const skipped = (H.dropped || []).length;
+        pill.querySelector('.fr-verb').textContent =
+          'HOLDING ' + picks.length + ' SECTOR' + (picks.length > 1 ? 'S' : '') + (skipped ? ' · ' + skipped + ' SKIPPED (DOWN)' : '') + ' · SINCE ' + sinceTxt;
+        pill.querySelector('.fr-ticker').textContent = held.join(' · ');
+      }
+
+      // What it would pick if the month ended today, vs what it holds.
+      const P = d.preview, ranking = P.ranking || [];
+      const nextPicks = ranking.filter(r => r.pick).map(r => r.sym);
+      const adds = nextPicks.filter(s => !held.includes(s)), drops = held.filter(s => !nextPicks.includes(s));
+      const nextTxt = fmtDate(P.nextRebalance, {weekday: 'short', month: 'short', day: 'numeric'});
+      let change;
+      if (!adds.length && !drops.length) change = picks.length ? 'the same ' + (picks.length === 4 ? 'four' : picks.length) + ' funds' : 'cash (SHY), as now';
+      else change = (nextPicks.length ? nextPicks.join(', ') : 'cash (SHY)') + ' (out: ' + (drops.length ? drops.join(', ') : 'none') + '; in: ' + (adds.length ? adds.join(', ') : 'none') + ')';
+      const weightTxt = picks.length
+        ? 'Equal parts, ' + Math.round(100 / picks.length) + '% each. '
+        : 'Every top-four fund was down over 12 months, so the money sits in SHY. ';
+      sub.innerHTML = esc(weightTxt) + 'Next rebalance: <strong>' + esc(nextTxt) + '</strong>. If the month ended today the rule would hold <strong>' + esc(change) + '</strong>.';
+      asof.textContent = 'Backtest and ranking as of ' + fmtDate(P.asOf) + ' · refreshed nightly';
+
+      // ---- the ranking table ----
+      $('srRankAsof').textContent = '· as of ' + fmtDate(P.asOf) + ' · the rule looks at this on the first trading day';
+      $('srRankings').innerHTML = ranking.map((r, i) => {
+        const isHeld = held.includes(r.sym), isNext = !!r.pick;
+        let badge = '<div class="fr-rank-badge fr-badge-empty">&mdash;</div>';
+        if (isHeld && isNext)       badge = '<div class="fr-rank-badge fr-badge-pick">Held</div>';
+        else if (isHeld)            badge = '<div class="fr-rank-badge sr-badge-skip">Held · out next</div>';
+        else if (isNext)            badge = '<div class="fr-rank-badge sr-badge-next">In next</div>';
+        else if (i < 4 && r.ret12 <= 0) badge = '<div class="fr-rank-badge sr-badge-skip">Down · skipped</div>';
+        return '<div class="fr-rank-row' + (isHeld ? ' sr-rank-held' : '') + '">' +
+          '<div class="fr-rank-num">' + (i + 1) + '</div>' +
+          '<div class="fr-rank-tkr"><a href="ticker.html?sym=' + encodeURIComponent(r.sym) + '" title="Open ' + esc(r.sym) + ' on the ticker page">' + esc(r.sym) + '</a></div>' +
+          '<div class="fr-rank-name">' + esc(r.name || NAMES[r.sym] || '') + '</div>' +
+          '<div class="fr-rank-ret ' + (r.ret12 >= 0 ? 'pos' : 'neg') + '">' + sgn(r.ret12) + '</div>' +
+          badge + '</div>';
+      }).join('');
+
+      // ---- tables: crashes, eras, year by year ----
+      const diffCell = (x, d_) => '<td class="' + (x >= 0 ? 'pos' : 'neg') + ' mv-edge">' + pts(x, d_) + '</td>';
+      $('srCrashTable').innerHTML =
+        '<thead><tr><th>Episode</th><th>Rule</th><th>S&amp;P 500</th><th>Rule fell less by</th></tr></thead><tbody>' +
+        (d.crashes || []).map(c => '<tr><td>' + esc(c.label) + '</td><td class="neg">' + pct(c.rule, 0) + '</td><td class="neg">' + pct(c.spy, 0) + '</td>' + diffCell(c.rule - c.spy, 0) + '</tr>').join('') +
+        '</tbody>';
+      const per = d.periods || [];
+      $('srPeriodTable').innerHTML =
+        '<thead><tr><th>Era</th><th>Rule</th><th>S&amp;P 500</th><th>Difference</th></tr></thead><tbody>' +
+        per.map(p => '<tr><td>' + esc(p.label) + '</td><td class="' + (p.rule >= 0 ? 'pos' : 'neg') + '">' + pct(p.rule) + '</td><td class="' + (p.spy >= 0 ? 'pos' : 'neg') + '">' + pct(p.spy) + '</td>' + diffCell(p.rule - p.spy) + '</tr>').join('') +
+        '</tbody>';
+      const yrs = d.years || [];
+      $('srYearSummary').textContent = 'Year by year: beat the S&P in ' + S.yearsBeat + ' of ' + S.yearsTotal + ' years (tap to open)';
+      $('srYearTable').innerHTML =
+        '<thead><tr><th>Year</th><th>Rule</th><th>S&amp;P 500</th><th>Difference</th></tr></thead><tbody>' +
+        yrs.map(y => '<tr><td' + (y.partial ? ' class="sr-part" title="Part of the year"' : '') + '>' + y.year + (y.partial ? '*' : '') + '</td><td class="' + (y.rule >= 0 ? 'pos' : 'neg') + '">' + sgn(y.rule) + '</td><td class="' + (y.spy >= 0 ? 'pos' : 'neg') + '">' + sgn(y.spy) + '</td>' + diffCell(y.rule - y.spy) + '</tr>').join('') +
+        '</tbody>' + (yrs.some(y => y.partial) ? '<tfoot><tr><td colspan="4" class="sr-part" style="text-align:left">* part of the year</td></tr></tfoot>' : '');
+
+      // ---- sentences in the callout that depend on the numbers ----
+      if (per.length === 3) {
+        const spy0 = per[0].spy < 0 ? 'lost ' + pct(-per[0].spy) : 'made ' + pct(per[0].spy);
+        $('srEraText').textContent = 'Up to 2008 it made ' + pct(per[0].rule) + ' a year while SPY ' + spy0 + '; from 2009 to 2016 it made ' +
+          pct(per[1].rule) + ' vs ' + pct(per[1].spy) + ', and since 2017 ' + pct(per[2].rule) + ' vs ' + pct(per[2].spy) + '.';
+      }
+      const rb = d.rebalances, stretches = [];
+      rb.forEach((r, i) => {
+        if (r.p.length) return;
+        const last = stretches[stretches.length - 1];
+        if (last && last.endIdx === i - 1) { last.endIdx = i; last.end = r.d; } else stretches.push({start: r.d, end: r.d, endIdx: i});
+      });
+      const my = iso => fmtDate(iso, {month: 'short', year: 'numeric'});
+      const span = s => {
+        if (s.start.slice(0, 7) === s.end.slice(0, 7)) return my(s.start);
+        if (s.start.slice(0, 4) === s.end.slice(0, 4)) return fmtDate(s.start, {month: 'short'}) + ' to ' + my(s.end);
+        return my(s.start) + ' to ' + my(s.end);
+      };
+      const joinList = arr => arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' and ' + arr[arr.length - 1];
+      let cashTxt = stretches.length
+        ? 'It has gone fully to cash in ' + (stretches.length === 1 ? 'one stretch' : stretches.length + ' stretches') + ': ' +
+          joinList(stretches.map(span)) + ' (' + S.monthsAllCash + ' months in all).'
+        : 'It has never gone fully to cash.';
+      if (yrs.length) {
+        const worst = yrs.reduce((a, y) => (y.rule - y.spy) < (a.rule - a.spy) ? y : a, yrs[0]);
+        cashTxt += ' Its worst year against SPY was ' + worst.year + ' (' + pts(worst.rule - worst.spy, 0) + ')' +
+          (worst.year === '2009' ? ', when the cash rule kept it out for the first half of the rebound.' : '.');
+      }
+      $('srCashText').textContent = cashTxt;
+
+      // ---- legend ----
+      $('srLegend').innerHTML = Object.keys(COLORS).filter(s => NAMES[s]).map(s =>
+        '<span class="item"><span class="sr-sw" style="background:' + COLORS[s] + '"></span>' + s + ' ' + esc(NAMES[s]) + '</span>').join('') +
+        '<span class="item"><span class="sr-sw" style="background:' + CASH_FILL + '; border: 1px solid rgba(139,149,168,0.5)"></span>Cash (SHY)</span>';
+
+      // ---- chart: $1,000 in the rule vs SPY (log scale) over the lanes of sectors held ----
+      const ED = d.equity.d, EE = d.equity.e, EB = d.equity.b;   // daily, parallel arrays; e and b start at 1
+      const W = 1200, PAD_L = 60, PAD_R = 96, TOP = 22, EQ_H = 262;
+      const LANES = 4, LANE_H = 22, LANE_TOP = 326, LANE_BOT = LANE_TOP + LANES * LANE_H, AXIS_Y = LANE_BOT + 18;
+      const toT = iso => Date.parse(iso + 'T12:00:00Z');
+
+      function renderChart(opt) {
+        let i0 = 0, i1 = ED.length - 1;
+        if (opt.from) {
+          i0 = ED.findIndex(x => x >= opt.from); if (i0 < 0) i0 = 0;
+          const j = ED.findIndex(x => x > opt.to); if (j > 0) i1 = j - 1;
+        } else if (opt.years) {
+          const c = new Date(ED[i1] + 'T12:00:00'); c.setFullYear(c.getFullYear() - opt.years);
+          i0 = ED.findIndex(x => x >= c.toISOString().slice(0, 10)); if (i0 < 0) i0 = 0;
+        }
+        if (i1 - i0 < 2) return;
+        const seg = [], rule = [], spy = [];
+        let lo = Infinity, hi = -Infinity;
+        for (let k = i0; k <= i1; k++) {
+          const r = 1000 * EE[k] / EE[i0], s = 1000 * EB[k] / EB[i0];
+          seg.push({d: ED[k]}); rule.push(r); spy.push(s);
+          if (r < lo) lo = r; if (s < lo) lo = s; if (r > hi) hi = r; if (s > hi) hi = s;
+        }
+        const t0 = toT(seg[0].d), t1 = toT(seg[seg.length - 1].d);
+        const lmin = Math.log(lo) - 0.05, lmax = Math.log(hi) + 0.05;
+        const xFor = iso => PAD_L + (toT(iso) - t0) / (t1 - t0) * (W - PAD_L - PAD_R);
+        const yFor = v => TOP + EQ_H - (Math.log(v) - lmin) / (lmax - lmin) * EQ_H;
+        const parts = [];
+
+        // money gridlines: 1-2-5 steps, finer when the window is narrow
+        const mults = hi / lo < 3 ? [1, 1.5, 2, 3, 5, 7] : [1, 2, 5];
+        for (const base of [100, 1000, 10000, 100000]) for (const m of mults) {
+          const v = base * m;
+          if (v < lo || v > hi) continue;
+          const y = yFor(v);
+          parts.push('<line x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" class="chart-grid"/>');
+          parts.push('<text x="' + (PAD_L - 6) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" class="chart-axis-label">$' + (v >= 1000 ? (v / 1000) + 'k' : v) + '</text>');
+        }
+        // one point per ~0.4px of width is plenty; skip the rest so the path stays small
+        const path = arr => {
+          const out = []; let lastX = -1e9;
+          for (let k = 0; k < arr.length; k++) {
+            const x = xFor(seg[k].d);
+            if (k && k < arr.length - 1 && x - lastX < 0.4) continue;
+            out.push((out.length ? 'L' : 'M') + x.toFixed(1) + ' ' + yFor(arr[k]).toFixed(1)); lastX = x;
+          }
+          return out.join('');
+        };
+        parts.push('<path d="' + path(spy) + '" class="iq-line-eq-bh"/>');
+        parts.push('<path d="' + path(rule) + '" class="iq-line-eq-rule"/>');
+
+        // end labels, nudged apart if they would overlap
+        const rEnd = rule[rule.length - 1], sEnd = spy[spy.length - 1];
+        let yR = yFor(rEnd), yS = yFor(sEnd);
+        if (Math.abs(yR - yS) < 13) { const mid = (yR + yS) / 2; yR = rEnd >= sEnd ? mid - 6.5 : mid + 6.5; yS = rEnd >= sEnd ? mid + 6.5 : mid - 6.5; }
+        parts.push('<text x="' + (W - PAD_R + 6) + '" y="' + (yR + 3.5).toFixed(1) + '" class="iq-eq-label" fill="#22d39a" style="fill:#22d39a">' + money(rEnd / 1000) + '</text>');
+        parts.push('<text x="' + (W - PAD_R + 6) + '" y="' + (yS + 3.5).toFixed(1) + '" class="iq-eq-label" fill="#64d3ff" style="fill:#64d3ff">' + money(sEnd / 1000) + '</text>');
+
+        // window readout
+        const ddOf = arr => { let peak = arr[0], dd = 0; for (const v of arr) { if (v > peak) peak = v; if (v / peak - 1 < dd) dd = v / peak - 1; } return dd; };
+        parts.push('<text x="' + PAD_L + '" y="' + (TOP - 8) + '" class="chart-panel-label">$1,000 in the rule vs SPY</text>');
+        parts.push('<text x="' + (W - PAD_R) + '" y="' + (TOP - 8) + '" text-anchor="end" class="chart-axis-label">' +
+          fmtDate(seg[0].d, {month: 'short', year: 'numeric'}) + ' to ' + fmtDate(seg[seg.length - 1].d, {month: 'short', year: 'numeric'}) +
+          ' · rule ' + sgn(rEnd / 1000 - 1, 0) + ', worst drop ' + pct(ddOf(rule), 0) + ' · SPY ' + sgn(sEnd / 1000 - 1, 0) + ', worst drop ' + pct(ddOf(spy), 0) + '</text>');
+
+        // lanes: which sectors were held, by rank, from each rebalance to the next
+        parts.push('<text x="' + PAD_L + '" y="' + (LANE_TOP - 7) + '" class="chart-panel-label">Sectors held, best 12-month return on top</text>');
+        for (let j = 0; j < LANES; j++) {
+          parts.push('<text x="' + (PAD_L - 6) + '" y="' + (LANE_TOP + j * LANE_H + LANE_H / 2 + 3) + '" text-anchor="end" class="sr-lane-label">#' + (j + 1) + '</text>');
+        }
+        const xL = PAD_L, xR = W - PAD_R;
+        for (let k = 0; k < rb.length; k++) {
+          const a = Math.max(xL, xFor(rb[k].d));
+          const b = Math.min(xR, k + 1 < rb.length ? xFor(rb[k + 1].d) : xR);
+          if (b - a <= 0.2) continue;
+          const w = (b - a).toFixed(2), x = a.toFixed(2);
+          if (!rb[k].p.length) {
+            parts.push('<rect x="' + x + '" y="' + LANE_TOP + '" width="' + w + '" height="' + (LANES * LANE_H) + '" fill="' + CASH_FILL + '"/>');
+            continue;
+          }
+          rb[k].p.forEach((sym, j) => {
+            if (j >= LANES) return;
+            parts.push('<rect x="' + x + '" y="' + (LANE_TOP + j * LANE_H + 1) + '" width="' + w + '" height="' + (LANE_H - 2) + '" fill="' + (COLORS[sym] || '#888') + '" opacity="0.85"/>');
+          });
+        }
+        parts.push('<line x1="' + xL + '" x2="' + xR + '" y1="' + LANE_BOT + '" y2="' + LANE_BOT + '" class="chart-grid"/>');
+
+        // x axis
+        const nTicks = 7, spanDays = (t1 - t0) / 86400000;
+        let lastLabel = '';
+        for (let k = 0; k <= nTicks; k++) {
+          const idx = Math.round(k * (seg.length - 1) / nTicks);
+          const iso = seg[idx].d;
+          const label = spanDays < 2200 ? fmtDate(iso, {month: 'short', year: '2-digit'}) : iso.slice(0, 4);
+          if (label === lastLabel) continue;        // a year can land on two ticks in a mid-length window
+          lastLabel = label;
+          parts.push('<text x="' + xFor(iso).toFixed(1) + '" y="' + AXIS_Y + '" text-anchor="middle" class="chart-axis-label">' + label + '</text>');
+        }
+        chartSvg.innerHTML = parts.join('');
+      }
+
+      renderChart({years: 0});
+      card.querySelectorAll('[data-sr-years], [data-sr-from]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('[data-sr-years], [data-sr-from]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.srFrom && btn.dataset.srTo) renderChart({from: btn.dataset.srFrom, to: btn.dataset.srTo});
+          else { const y = parseInt(btn.dataset.srYears, 10); renderChart({years: Number.isFinite(y) ? y : 0}); }
+        });
+      });
+    })(); // end Sector Rotation: Smoother Ride
   </script>
 </body>
 </html>

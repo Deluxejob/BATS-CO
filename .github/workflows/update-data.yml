@@ -51,6 +51,9 @@ jobs:
       - name: Refresh S&P 500 forward PE from all members (Valuations page — always exits 0)
         run: python scripts/update-forward-pe.py
 
+      - name: Rebuild the Sector Rotation (Smoother Ride) backtest and holdings (Strategies page — always exits 0)
+        run: python scripts/backtest-sector-rotation.py
+
       - name: Refresh bond spreads by rating tier (Junk Bond Quality Gap card — keeps every day seen, always exits 0)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
