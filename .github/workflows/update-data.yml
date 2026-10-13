@@ -6,10 +6,22 @@ name: Update market data
 #
 # Manual trigger available from the Actions tab (workflow_dispatch).
 
+# GitHub runs scheduled workflows at low priority: slots are routinely
+# delayed by hours and sometimes skipped outright (the weekend of 10-11
+# Oct 2026 lost every evening slot). Seven slots are spread across the
+# evening and the following morning so at least one usually fires. Every
+# script no-ops when there is nothing new and the commit step only commits
+# real changes, so a run that finds nothing costs a few minutes and nothing
+# else. Minutes are off the hour and half hour, which GitHub asks for.
 on:
   schedule:
     - cron: '30 23 * * 1-5'   # 23:30 UTC weekdays  (~7:30pm ET EDT / 6:30pm ET EST)
-    - cron: '30  3 * * 2-6'   # 03:30 UTC next day  (safety catch-up)
+    - cron: '7   1 * * 2-6'   # 01:07 UTC next day
+    - cron: '47  2 * * 2-6'   # 02:47 UTC
+    - cron: '30  3 * * 2-6'   # 03:30 UTC (the original catch-up)
+    - cron: '7   6 * * 2-6'   # 06:07 UTC
+    - cron: '47  8 * * 2-6'   # 08:47 UTC
+    - cron: '7  12 * * 2-6'   # 12:07 UTC (~8am ET, before the open)
   workflow_dispatch:
 
 permissions:

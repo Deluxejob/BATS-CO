@@ -14,10 +14,16 @@ name: Count new 52-week highs and lows
 #
 # Manual trigger available from the Actions tab (workflow_dispatch).
 
+# Several slots because GitHub delays and sometimes skips scheduled runs;
+# the count is rebuilt in full each time, so an extra run only costs minutes.
 on:
   schedule:
     - cron: '55 23 * * 1-5'   # 23:55 UTC weekdays  (~7:55pm ET EDT / 6:55pm ET EST)
-    - cron: '55  3 * * 2-6'   # 03:55 UTC next day  (safety catch-up)
+    - cron: '25  1 * * 2-6'   # 01:25 UTC next day
+    - cron: '55  3 * * 2-6'   # 03:55 UTC
+    - cron: '25  6 * * 2-6'   # 06:25 UTC
+    - cron: '25  9 * * 2-6'   # 09:25 UTC
+    - cron: '25 12 * * 2-6'   # 12:25 UTC (~8:25am ET, before the open)
   push:
     branches: [main]
     paths:
