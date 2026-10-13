@@ -161,7 +161,10 @@ jobs:
             git config user.email "bot@bats.co"
             git add data/
             git commit -m "chore: refresh market data $(date -u +'%Y-%m-%d')"
-            git push
+            # Another bot (news, intraday sectors, highs/lows, breadth) may have
+            # pushed meanwhile; replay this commit on top and try once more
+            # rather than throw the whole run away.
+            git push || { git pull --rebase origin main && git push; }
             echo "::notice::Pushed refreshed market data."
           else
             echo "::notice::No data changes today; nothing to commit."
