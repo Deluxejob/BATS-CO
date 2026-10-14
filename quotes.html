@@ -510,6 +510,7 @@
       font-weight: 600;
       margin: 0 0 0.3rem;
     }
+    .brd-card .brd-label .brd-label-date { color: var(--term-dim); font-weight: 500; }
     .brd-card .brd-value {
       font-family: 'JetBrains Mono', monospace;
       font-size: 1.4rem;
@@ -1439,7 +1440,7 @@
 
     <!-- Row 2: Market internals (breadth tilt gauges) -->
     <section class="term-section">
-      <div class="term-section-label">MARKET INTERNALS <span class="sub">— sector-ETF proxy for S&amp;P 500 breadth</span></div>
+      <div class="term-section-label">MARKET INTERNALS <span class="sub">— sector-ETF proxies for S&amp;P 500 breadth &middot; highs and lows counted across every member</span></div>
       <div class="grid-4" id="internalsGauges">
         <em style="color:var(--term-dim); font-size:0.85rem">Loading breadth stats&hellip;</em>
       </div>
@@ -2967,6 +2968,44 @@
       // the modal-open handler so the popup always shows fresh data.
       let latestStats = null;
 
+      // Real new 52-week highs and lows for the fourth tile: counted nightly
+      // across every S&P 500 member (scripts/update-new-highs-lows.py writes
+      // data/new_highs_lows_spx.csv, the file the chart further down reads).
+      // The sector-ETF "within 3% of its high/low" proxy stays as the
+      // fallback if the file cannot be read.
+      const NHL_FILE = 'data/new_highs_lows_spx.csv';
+      let nhl = null;            // { rows: [{d, hi, lo, net, cov}], loadedAt }
+      async function loadNhl() {
+        if (nhl && Date.now() - nhl.loadedAt < 60 * 60 * 1000) return nhl;   // the file changes once a night
+        try {
+          const r = await fetch(NHL_FILE, { cache: 'no-store' });
+          if (!r.ok) return nhl;
+          const rows = [];
+          for (const ln of (await r.text()).trim().split(/\r?\n/).slice(1)) {
+            const c = ln.split(',');
+            if (c.length < 5) continue;
+            const hi = +c[1], lo = +c[2], cov = +c[4];
+            if (Number.isFinite(hi) && Number.isFinite(lo)) rows.push({ d: c[0], hi, lo, net: hi - lo, cov });
+          }
+          if (rows.length) nhl = { rows, loadedAt: Date.now() };
+        } catch (e) { /* keep whatever we already had */ }
+        return nhl;
+      }
+      const MONTHS3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDay = d => MONTHS3[+d.slice(5, 7) - 1] + ' ' + (+d.slice(8, 10));
+      const signedInt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
+      // Where the latest day's net (highs minus lows) sits against the past
+      // year's big days: 50 = even, 100 = as lopsided to the high side as the
+      // year's biggest days (95th percentile of |net|, never less than 10).
+      function nhlGauge(rows) {
+        const last = rows[rows.length - 1];
+        const year = rows.slice(-252).map(r => Math.abs(r.net)).sort((a, b) => a - b);
+        const p95 = year.length ? year[Math.min(year.length - 1, Math.floor(year.length * 0.95))] : 0;
+        const scale = Math.max(10, p95);
+        const pos = Math.max(2, Math.min(98, 50 + 50 * last.net / scale));
+        return { last, scale, pos };
+      }
+
       async function loadCsv(sym) {
         try {
           const r = await fetch(`data/sectors/${sym}.csv`, { cache: 'no-store' });
@@ -3060,6 +3099,7 @@
         const advPct  = (upDown.up + upDown.dn) > 0
           ? Math.round(upDown.up / (upDown.up + upDown.dn) * 100)
           : null;
+        const nhlData = await loadNhl();
 
         const cards = [
           {
@@ -3095,26 +3135,44 @@
                 tilt: tiltLabel(advPct),
                 endsL: 'ALL RED', endsR: 'ALL GREEN',
               },
-          (function () {
-            const net = highs - lows;
-            const pos = ((net + n) / (2 * n)) * 100;
-            const tilt = tiltLabel(pos, { bearAt: 45, bullAt: 55 });
-            const val = (highs === 0 && lows === 0)
-              ? '<span style="color:var(--term-dim); font-size:0.85rem">none</span>'
-              : `${highs}<span class="unit">↑</span> &nbsp; ${lows}<span class="unit">↓</span>`;
-            return {
-              metric: 'highslows',
-              label: 'New 52-wk highs vs lows',
-              value: val,
-              gaugePos: pos,
-              tilt,
-              endsL: 'LOWS', endsR: 'HIGHS',
-            };
-          })(),
+          (nhlData && nhlData.rows.length)
+            ? (function () {
+                // Real counts: every S&P 500 member, as of the last nightly run.
+                const { last, pos } = nhlGauge(nhlData.rows);
+                const val = (last.hi === 0 && last.lo === 0)
+                  ? '<span style="color:var(--term-dim); font-size:0.85rem">none</span>'
+                  : `${last.hi}<span class="unit">↑</span> &nbsp; ${last.lo}<span class="unit">↓</span>`;
+                return {
+                  metric: 'highslows',
+                  label: `New 52-wk highs vs lows <span class="brd-label-date">· ${fmtDay(last.d)}</span>`,
+                  ariaLabel: 'New 52-wk highs vs lows',
+                  value: val,
+                  gaugePos: pos,
+                  tilt: tiltLabel(pos, { bearAt: 45, bullAt: 55 }),
+                  endsL: 'LOWS', endsR: 'HIGHS',
+                };
+              })()
+            : (function () {
+                // Fallback: sector ETFs within 3% of their one-year high or low.
+                const net = highs - lows;
+                const pos = ((net + n) / (2 * n)) * 100;
+                const tilt = tiltLabel(pos, { bearAt: 45, bullAt: 55 });
+                const val = (highs === 0 && lows === 0)
+                  ? '<span style="color:var(--term-dim); font-size:0.85rem">none</span>'
+                  : `${highs}<span class="unit">↑</span> &nbsp; ${lows}<span class="unit">↓</span>`;
+                return {
+                  metric: 'highslows',
+                  label: 'Near 52-wk highs vs lows',
+                  value: val,
+                  gaugePos: pos,
+                  tilt,
+                  endsL: 'LOWS', endsR: 'HIGHS',
+                };
+              })(),
         ];
 
         mount.innerHTML = cards.map(c => `
-          <div class="brd-card" data-metric="${c.metric}" role="button" tabindex="0" aria-label="${c.label} — click to see per-sector breakdown">
+          <div class="brd-card" data-metric="${c.metric}" role="button" tabindex="0" aria-label="${c.ariaLabel || c.label} — click to see the breakdown">
             <div class="brd-label">${c.label}</div>
             <div class="brd-value">${c.value}</div>
             <div class="brd-gauge" style="--pos: ${c.gaugePos.toFixed(1)}%"></div>
@@ -3198,7 +3256,45 @@
         `).join('') + `</div>`;
       }
 
+      // Modal for the real new-highs/new-lows count. Only the counts are
+      // stored (no names), so show the day in context plus the last ten
+      // sessions and point at the chart further down for the history.
+      function openNhlModal() {
+        const rows = nhl.rows, { last, scale } = nhlGauge(rows);
+        const year = rows.slice(-252);
+        const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+        const avgHi = avg(year.map(r => r.hi)), avgLo = avg(year.map(r => r.lo));
+        const maxHi = year.reduce((a, r) => r.hi >= a.hi ? r : a, year[0]);
+        const maxLo = year.reduce((a, r) => r.lo >= a.lo ? r : a, year[0]);
+        const recent = rows.slice(-10).reverse();
+        modalTitle.textContent = 'New 52-wk highs vs lows';
+        modalSub.textContent = `S&P 500 members · ${fmtDay(last.d)}: ${last.hi} new highs, ${last.lo} new lows, net ${signedInt(last.net)} (${last.cov} members counted).`;
+        modalBody.innerHTML = `
+          <div class="internals-cols">
+            <div class="internals-col pos">
+              <div class="internals-col-header"><span class="count">${last.hi}</span>NEW 52-WK HIGHS</div>
+              <div class="internals-empty">Past year: ${avgHi.toFixed(1)} a day on average; biggest day ${maxHi.hi} on ${fmtDay(maxHi.d)}.</div>
+            </div>
+            <div class="internals-col neg">
+              <div class="internals-col-header"><span class="count">${last.lo}</span>NEW 52-WK LOWS</div>
+              <div class="internals-empty">Past year: ${avgLo.toFixed(1)} a day on average; biggest day ${maxLo.lo} on ${fmtDay(maxLo.d)}.</div>
+            </div>
+          </div>
+          <div class="internals-col-header" style="margin-top: 0.9rem;">LAST 10 SESSIONS <span style="color: var(--term-dim); font-weight: 500;">· highs, lows, net</span></div>
+          <div class="internals-list">${recent.map(r => `
+            <div class="internals-row ${r.net > 0 ? 'pos' : r.net < 0 ? 'neg' : ''}" style="grid-template-columns: 58px 1fr auto;">
+              <span class="sym">${fmtDay(r.d)}</span>
+              <span class="name">${r.hi} highs &middot; ${r.lo} lows</span>
+              <span class="metric">${signedInt(r.net)}</span>
+            </div>`).join('')}
+          </div>
+          <div class="internals-empty" style="margin-top: 0.7rem;">A member counts as a new high (low) when its intraday high (low) beats its highest high (lowest low) of the previous 252 sessions. The gauge sets the day's net against the past year's biggest days: a net of ${signedInt(Math.round(scale))} or more fills the bar. Names are not stored; the chart below has the full history.</div>
+        `;
+        modalBackdrop.classList.add('open');
+      }
+
       function openInternalsModal(metricKey) {
+        if (metricKey === 'highslows' && nhl && nhl.rows.length) { openNhlModal(); return; }
         const cfg = METRICS[metricKey];
         if (!cfg || !latestStats) return;
         const left  = latestStats.filter(cfg.leftFilter);
