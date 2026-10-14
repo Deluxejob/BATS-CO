@@ -521,6 +521,18 @@
     .sr-fold .mv-table { margin-top: 0.5rem; }
     .mv-table td.sr-part { color: var(--text-faint); }
     /* end Sector Rotation card */
+    /* All-Asset Trend Rotation card. Reuses the Sector Rotation card's
+       section titles, badges, legend, tables and fold; adds only the
+       seven-ticker pill size, the "below trend" badge and the fold for
+       the lower half of the 23-fund ranking. */
+    .aat-pill .fr-ticker { font-size: 1.05rem; letter-spacing: 0.08em; line-height: 1.6; }
+    .aat-pill.sr-cash .fr-ticker { color: var(--text-dim); }
+    .aat-badge-off { color: rgba(255, 83, 116, 0.75); border-color: rgba(255, 83, 116, 0.3); }
+    .aat-more { margin-top: 0.3rem; }
+    .aat-more summary { cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); padding: 0.25rem 0; }
+    .aat-more summary:hover { color: var(--text); }
+    .aat-more .fr-rankings { margin-top: 0.25rem; }
+    /* end All-Asset Trend card */
   </style>
 </head>
 <body>
@@ -1259,6 +1271,171 @@
                style="margin-top: 0.9rem;"></div>
         </div>
         <!-- end Sector Rotation card -->
+
+        <!-- SIGNAL: All-Asset Trend Rotation (monthly, the 7 strongest funds in uptrends across every
+             asset class, cash for empty slots). Every number comes from data/all_asset_trend.json, which
+             scripts/backtest-all-asset-trend.py rebuilds nightly; the page only draws it. -->
+        <div class="sig-card" id="sig-all-asset-trend">
+          <div class="sig-head">
+            <h2 class="sig-title">All-Asset Trend Rotation</h2>
+            <span class="sig-tag">Monthly &middot; 23 funds, every asset class &middot; top 7 in uptrends</span>
+          </div>
+          <p class="sig-desc">
+            On the <strong>first trading day of each month</strong>, score 23 funds spanning stocks, bonds,
+            commodities, a bitcoin trust and currencies by their 6-month return. A fund counts as
+            <strong>risk on</strong> only while that return is positive and its price is above its 10-month
+            average. Hold the <strong>7 strongest risk-on funds in equal parts</strong>; any slot that cannot be
+            filled sits in short-term Treasuries (SHY). Since 2008 this has made
+            <strong data-aat-stat="ruleCagr">&mdash;</strong> a year against <span data-aat-stat="spyCagr">&mdash;</span>
+            for the S&amp;P 500, with about half the worst drop (<strong data-aat-stat="ruleMaxDd">&mdash;</strong> vs
+            <span data-aat-stat="spyMaxDd">&mdash;</span>). It still has losing years. It is not a no-loss strategy.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="fr-action-pill fr-hold aat-pill" id="aatActionPill">
+              <span class="fr-verb">LOADING&hellip;</span>
+              <span class="fr-ticker">&mdash;</span>
+            </div>
+            <div class="iq-action-sub" id="aatActionSub">Loading the nightly backtest&hellip;</div>
+            <div class="iq-action-asof" id="aatActionAsof"></div>
+          </div>
+
+          <div class="sr-section-title">6-month return ranking <small id="aatRankAsof"></small></div>
+          <div class="fr-rankings" id="aatRankings">
+            <div class="fr-rank-row" style="opacity: 0.5;">
+              <div class="fr-rank-num">&mdash;</div>
+              <div class="fr-rank-tkr">&mdash;</div>
+              <div class="fr-rank-name">the ranking loads with the backtest file</div>
+              <div class="fr-rank-ret">&mdash;</div>
+              <div class="fr-rank-badge fr-badge-empty">&mdash;</div>
+            </div>
+          </div>
+          <details class="aat-more" id="aatMore">
+            <summary id="aatMoreSummary">Show the rest of the universe</summary>
+            <div class="fr-rankings" id="aatRankingsMore"></div>
+          </details>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Rule, per year</div><div class="val pos" data-aat-stat="ruleCagr">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">S&amp;P 500, per year</div><div class="val" data-aat-stat="spyCagr">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst drop, rule</div><div class="val" data-aat-stat="ruleMaxDd">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst drop, S&amp;P 500</div><div class="val neg" data-aat-stat="spyMaxDd">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">$1,000 became (rule)</div><div class="val pos" data-aat-stat="ruleFinal">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">$1,000 became (S&amp;P)</div><div class="val" data-aat-stat="spyFinal">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Losing years, rule</div><div class="val" data-aat-stat="ruleNeg">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Losing years, S&amp;P 500</div><div class="val" data-aat-stat="spyNeg">&mdash;</div></div>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range" style="margin-top: 0.75rem;">
+            <div class="iq-range-group" aria-label="Famous bear markets">
+              <span class="iq-range-group-label">Crashes</span>
+              <button type="button" class="iq-range-btn" data-aat-from="2008-01-02" data-aat-to="2010-12-31" role="tab" title="Financial crisis and recovery">2008</button>
+              <button type="button" class="iq-range-btn" data-aat-from="2020-01-02" data-aat-to="2020-12-31" role="tab" title="COVID crash and recovery">COVID</button>
+              <button type="button" class="iq-range-btn" data-aat-from="2021-11-01" data-aat-to="2023-06-30" role="tab" title="Fed-hike bear market">2022</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-aat-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-aat-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn active" data-aat-years="0" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 480" class="sig-chart" id="aatChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="All-asset trend rule vs SPY, with the funds held each month"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: $1,000 in the rule (<span class="iq-sw iq-sw-green"></span>green) vs $1,000 in SPY
+            (<span class="iq-sw iq-sw-amber" style="border-top-color: #64d3ff;"></span>dashed blue), dividends included,
+            on a log scale. The readout at the top is for the window shown.
+            <em>Bottom panel</em>: the seven slots each month, strongest fund on top, coloured by asset class.
+            Gray means that slot was in cash (SHY) because fewer than seven funds were in uptrends.
+            <div class="sr-legend" id="aatLegend"></div>
+          </div>
+
+          <div class="sr-tables">
+            <div>
+              <div class="sr-section-title">How it held up in the big drops</div>
+              <div class="mv-table-wrap"><table class="mv-table" id="aatCrashTable"></table></div>
+            </div>
+            <div>
+              <div class="sr-section-title">Return per year, by era</div>
+              <div class="mv-table-wrap"><table class="mv-table" id="aatPeriodTable"></table></div>
+            </div>
+          </div>
+
+          <details class="sr-fold">
+            <summary id="aatYearSummary">Year by year</summary>
+            <div class="mv-table-wrap"><table class="mv-table" id="aatYearTable"></table></div>
+          </details>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this rule</h4>
+            <p>
+              <strong>About the S&amp;P's return with half the drop.</strong> Over
+              <span data-aat-stat="years">&mdash;</span> years the rule made <span data-aat-stat="ruleCagr">&mdash;</span>
+              a year against <span data-aat-stat="spyCagr">&mdash;</span> for SPY, with a worst peak-to-trough drop of
+              <span data-aat-stat="ruleMaxDd">&mdash;</span> against SPY's <span data-aat-stat="spyMaxDd">&mdash;</span>.
+              <span id="aatDdText">&mdash;</span> It beat SPY in <span data-aat-stat="win3y">&mdash;</span> of rolling
+              3-year windows and in <span data-aat-stat="yearsBeat">&mdash;</span> of <span data-aat-stat="yearsTotal">&mdash;</span>
+              calendar years, so most of its lead over the index came in a few bursts.
+            </p>
+            <p>
+              <strong>It has losing years.</strong> <span id="aatNegText">&mdash;</span> Claims that a rule like this
+              never has a down year come from backtests tuned after the fact; a rule set in advance does not behave that way.
+            </p>
+            <p>
+              <strong>One fund carries a lot of it.</strong> <span id="aatBtcText">&mdash;</span>
+            </p>
+            <p>
+              <strong>About <span data-aat-stat="tradesPerYear">&mdash;</span> trades a year.</strong> Most months one to three
+              of the seven slots change. Every figure here already includes 0.10% of each dollar traded. On average the rule held
+              <span data-aat-stat="avgPositions">&mdash;</span> of its seven slots in funds and the rest in cash; it was fully
+              invested in <span data-aat-stat="monthsFullPct">&mdash;</span> of months.
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When to trade and how</h4>
+            <p>
+              <strong>Once a month, on the first trading day.</strong> Using the previous day's close, score the 23 funds by
+              6-month total return and check each against its 10-month average. The ranking table above is that list,
+              refreshed nightly.
+            </p>
+            <ul>
+              <li>Buy the <strong>7 strongest funds that are risk on</strong> (6-month return above zero and price above the
+                10-month average), one seventh each.</li>
+              <li>If fewer than seven qualify, put each empty slot in <strong>SHY</strong> (1-3 year Treasuries).</li>
+              <li>Trade at the close of that first trading day. The backtest assumes the close; the next morning's open is
+                close enough.</li>
+            </ul>
+            <p>
+              <strong>The pill shows what the rule holds now</strong>; the ranking table shows what it would pick if the month
+              ended today. The two can differ late in a month, and nothing needs doing until the first trading day.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Universe: emerging markets (EEM), Asia ex-Japan (AAXJ), Europe (VGK), Latin America (ILF), Nasdaq 100 (QQQ),
+            S&amp;P 400 (MDY), S&amp;P 500 equal weight (RSP), S&amp;P 600 (IJR), Treasuries 7-10, 10-20 and 20+ years
+            (IEF, TLH, TLT), investment-grade and high-yield corporates (LQD, HYG), international bonds (BWX, IGOV, BNDX),
+            crude oil (USO), gasoline (UGA), gold (GLD), silver (SLV), a bitcoin trust (GBTC), the Swiss franc (FXF) and the
+            US dollar (UUP). Backtest from January 2008, the first month most of these existed; later funds join once they
+            have 10 months of history (international bonds through 2013, the bitcoin trust in 2016). Yahoo dividend-adjusted
+            daily closes, so dividends count on both sides. Signals use the previous close; trades fill at the rebalance day's
+            close with 0.10% of each dollar traded as cost. Rebuilt nightly. Systematic rotation shown for reference only
+            &mdash; not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/market-signals.html#sig-all-asset-trend"
+               data-share-title="All-Asset Trend Rotation — BATS.CO"
+               data-share-text="A rules-only all-asset rotation: each month hold the 7 strongest funds in uptrends across stocks, bonds, commodities, bitcoin and currencies, cash for the rest. About the S&P 500's return since 2008 with half the worst drop, and the losing years shown honestly. Live backtest on the page."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+        <!-- end All-Asset Trend card -->
       </div>
     </section>
   </main>
@@ -2977,6 +3154,255 @@
         });
       });
     })(); // end Sector Rotation: Smoother Ride
+
+    // ---- All-Asset Trend Rotation ----
+    // Monthly: the 7 strongest funds in uptrends across every asset class,
+    // cash for empty slots. Everything is read from data/all_asset_trend.json,
+    // rebuilt nightly by scripts/backtest-all-asset-trend.py; this only draws it.
+    (async function initAllAssetTrend() {
+      const card = document.getElementById('sig-all-asset-trend');
+      if (!card) return;
+      const $ = id => document.getElementById(id);
+      const pill = $('aatActionPill'), sub = $('aatActionSub'), asof = $('aatActionAsof'), chartSvg = $('aatChartSvg');
+
+      // one colour per asset class (the lanes and the legend)
+      const CLASS_COLORS = {
+        intl: '#22d3ee', us: '#22d39a', tsy: '#a78bfa', corp: '#3b82f6', intlbond: '#e879f9',
+        cmdty: '#ffb658', btc: '#f97316', fx: '#e5e7eb'
+      };
+      const CASH_FILL = 'rgba(139, 149, 168, 0.35)';
+      const TOP_N = 7;
+
+      const pct   = (x, d) => (x * 100).toFixed(d == null ? 1 : d) + '%';
+      const sgn   = (x, d) => (x >= 0 ? '+' : '') + pct(x, d);
+      const pts   = (x, d) => (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(d == null ? 1 : d) + ' pts';
+      const money = v => '$' + Math.round(v * 1000).toLocaleString('en-US');
+      const fmtDate = (iso, opts) => new Date(iso + 'T12:00:00').toLocaleDateString('en-US', opts || {month: 'short', day: 'numeric', year: 'numeric'});
+      const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+      const joinList = arr => arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ') + ' and ' + arr[arr.length - 1];
+
+      function fail(msg) {
+        pill.querySelector('.fr-verb').textContent = 'UNAVAILABLE';
+        pill.querySelector('.fr-ticker').textContent = '—';
+        sub.textContent = msg;
+      }
+
+      let d;
+      try {
+        const r = await fetch('data/all_asset_trend.json', {cache: 'no-store'});
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        d = await r.json();
+      } catch (e) { fail('The nightly backtest file could not be loaded. Try refreshing.'); return; }
+      if (!d || !d.stats || !d.equity || !d.equity.d || !d.rebalances || !d.holdings || !d.preview) { fail('The backtest file is in an unexpected format.'); return; }
+
+      const S = d.stats, NAMES = d.names || {}, CLS = d.classOf || {}, CLASSES = d.classes || {};
+
+      // ---- numbers that appear in the text and the stat boxes ----
+      const FMT = {
+        ruleCagr: pct(S.ruleCagr), spyCagr: pct(S.spyCagr),
+        ruleMaxDd: pct(S.ruleMaxDd, 0), spyMaxDd: pct(S.spyMaxDd, 0),
+        ruleFinal: money(S.ruleFinal), spyFinal: money(S.spyFinal),
+        ruleNeg: S.ruleNegYears.length + ' of ' + S.yearsTotal, spyNeg: S.spyNegYears.length + ' of ' + S.yearsTotal,
+        win3y: Math.round(S.win3y * 100) + '%', tradesPerYear: Math.round(S.tradesPerYear),
+        yearsBeat: S.yearsBeat, yearsTotal: S.yearsTotal, years: Math.round(d.window.years),
+        avgPositions: S.avgPositions.toFixed(1), monthsFullPct: Math.round(100 * S.monthsFull / S.monthsTotal) + '%'
+      };
+      card.querySelectorAll('[data-aat-stat]').forEach(el => { const k = el.dataset.aatStat; if (k in FMT) el.textContent = FMT[k]; });
+
+      // ---- the pill: what the rule holds right now ----
+      const H = d.holdings, picks = H.picks || [], held = picks.map(p => p.sym);
+      const sinceTxt = fmtDate(H.since, {month: 'short', day: 'numeric'}).toUpperCase();
+      const emptySlots = TOP_N - picks.length;
+      if (!picks.length) {
+        pill.classList.add('sr-cash');
+        pill.querySelector('.fr-verb').textContent = 'ALL IN CASH · SINCE ' + sinceTxt;
+        pill.querySelector('.fr-ticker').textContent = 'SHY';
+      } else {
+        pill.querySelector('.fr-verb').textContent =
+          'HOLDING ' + picks.length + ' FUND' + (picks.length > 1 ? 'S' : '') + (emptySlots ? ' · ' + emptySlots + ' SLOT' + (emptySlots > 1 ? 'S' : '') + ' IN CASH' : '') + ' · SINCE ' + sinceTxt;
+        pill.querySelector('.fr-ticker').textContent = held.join(' · ') + (emptySlots ? ' · SHY' : '');
+      }
+
+      // What it would pick if the month ended today, vs what it holds.
+      const P = d.preview, ranking = P.ranking || [];
+      const nextPicks = ranking.filter(r => r.pick).map(r => r.sym);
+      const adds = nextPicks.filter(s => !held.includes(s)), drops = held.filter(s => !nextPicks.includes(s));
+      const nextTxt = fmtDate(P.nextRebalance, {weekday: 'short', month: 'short', day: 'numeric'});
+      let change;
+      if (!adds.length && !drops.length) change = picks.length ? 'the same ' + (picks.length === TOP_N ? 'seven' : picks.length) + ' funds' : 'cash (SHY), as now';
+      else change = (nextPicks.length ? nextPicks.join(', ') : 'cash (SHY)') + (nextPicks.length < TOP_N ? ' + ' + (TOP_N - nextPicks.length) + ' slot' + (TOP_N - nextPicks.length > 1 ? 's' : '') + ' in SHY' : '') +
+        ' (out: ' + (drops.length ? drops.join(', ') : 'none') + '; in: ' + (adds.length ? adds.join(', ') : 'none') + ')';
+      const weightTxt = picks.length ? 'One seventh each' + (emptySlots ? ', with ' + emptySlots + ' slot' + (emptySlots > 1 ? 's' : '') + ' in SHY' : '') + '. ' : 'No fund is risk on, so everything sits in SHY. ';
+      sub.innerHTML = esc(weightTxt) + 'Next rebalance: <strong>' + esc(nextTxt) + '</strong>. If the month ended today the rule would hold <strong>' + esc(change) + '</strong>.';
+      asof.textContent = 'Backtest and ranking as of ' + fmtDate(P.asOf) + ' · refreshed nightly';
+
+      // ---- the ranking table: top rows visible, the rest folded ----
+      $('aatRankAsof').textContent = '· as of ' + fmtDate(P.asOf) + ' · risk on = 6-month return above zero and price above the 10-month average';
+      const row = (r, i) => {
+        const isHeld = held.includes(r.sym), isNext = !!r.pick;
+        let badge = '<div class="fr-rank-badge fr-badge-empty">&mdash;</div>';
+        if (isHeld && isNext)       badge = '<div class="fr-rank-badge fr-badge-pick">Held</div>';
+        else if (isHeld)            badge = '<div class="fr-rank-badge sr-badge-skip">Held · out next</div>';
+        else if (isNext)            badge = '<div class="fr-rank-badge sr-badge-next">In next</div>';
+        else if (r.mom == null)     badge = '<div class="fr-rank-badge sr-badge-skip">Too new</div>';
+        else if (!r.on)             badge = '<div class="fr-rank-badge aat-badge-off">Below trend</div>';
+        const mom = r.mom == null ? '—' : sgn(r.mom);
+        return '<div class="fr-rank-row' + (isHeld ? ' sr-rank-held' : '') + '">' +
+          '<div class="fr-rank-num">' + (i + 1) + '</div>' +
+          '<div class="fr-rank-tkr"><a href="ticker.html?sym=' + encodeURIComponent(r.sym) + '" title="Open ' + esc(r.sym) + ' on the ticker page">' + esc(r.sym) + '</a></div>' +
+          '<div class="fr-rank-name"><span style="color:' + (CLASS_COLORS[r.cls] || '#888') + '">●</span> ' + esc(r.name || NAMES[r.sym] || '') + '</div>' +
+          '<div class="fr-rank-ret ' + (r.mom != null && r.mom >= 0 ? 'pos' : 'neg') + '">' + mom + '</div>' +
+          badge + '</div>';
+      };
+      const SHOW = 10;
+      $('aatRankings').innerHTML = ranking.slice(0, SHOW).map(row).join('');
+      const rest = ranking.slice(SHOW);
+      if (rest.length) {
+        $('aatRankingsMore').innerHTML = rest.map((r, i) => row(r, i + SHOW)).join('');
+        $('aatMoreSummary').textContent = 'Show the other ' + rest.length + ' funds (ranked ' + (SHOW + 1) + ' to ' + ranking.length + ')';
+      } else {
+        $('aatMore').style.display = 'none';
+      }
+
+      // ---- tables: crashes, eras, year by year ----
+      const diffCell = (x, d_) => '<td class="' + (x >= 0 ? 'pos' : 'neg') + ' mv-edge">' + pts(x, d_) + '</td>';
+      $('aatCrashTable').innerHTML =
+        '<thead><tr><th>Episode</th><th>Rule</th><th>S&amp;P 500</th><th>Rule fell less by</th></tr></thead><tbody>' +
+        (d.crashes || []).map(c => '<tr><td>' + esc(c.label) + '</td><td class="neg">' + pct(c.rule, 0) + '</td><td class="neg">' + pct(c.spy, 0) + '</td>' + diffCell(c.rule - c.spy, 0) + '</tr>').join('') +
+        '</tbody>';
+      const per = d.periods || [];
+      $('aatPeriodTable').innerHTML =
+        '<thead><tr><th>Era</th><th>Rule</th><th>S&amp;P 500</th><th>Difference</th></tr></thead><tbody>' +
+        per.map(p => '<tr><td>' + esc(p.label) + '</td><td class="' + (p.rule >= 0 ? 'pos' : 'neg') + '">' + pct(p.rule) + '</td><td class="' + (p.spy >= 0 ? 'pos' : 'neg') + '">' + pct(p.spy) + '</td>' + diffCell(p.rule - p.spy) + '</tr>').join('') +
+        '</tbody>';
+      const yrs = d.years || [];
+      $('aatYearSummary').textContent = 'Year by year: beat the S&P in ' + S.yearsBeat + ' of ' + S.yearsTotal + ' years, lost money in ' + S.ruleNegYears.length + ' (tap to open)';
+      $('aatYearTable').innerHTML =
+        '<thead><tr><th>Year</th><th>Rule</th><th>S&amp;P 500</th><th>Difference</th></tr></thead><tbody>' +
+        yrs.map(y => '<tr><td' + (y.partial ? ' class="sr-part" title="Part of the year"' : '') + '>' + y.year + (y.partial ? '*' : '') + '</td><td class="' + (y.rule >= 0 ? 'pos' : 'neg') + '">' + sgn(y.rule) + '</td><td class="' + (y.spy >= 0 ? 'pos' : 'neg') + '">' + sgn(y.spy) + '</td>' + diffCell(y.rule - y.spy) + '</tr>').join('') +
+        '</tbody>' + (yrs.some(y => y.partial) ? '<tfoot><tr><td colspan="4" class="sr-part" style="text-align:left">* part of the year</td></tr></tfoot>' : '');
+
+      // ---- sentences in the callout that depend on the numbers ----
+      const yearRet = Object.fromEntries(yrs.map(y => [y.year, y]));
+      const negList = S.ruleNegYears.map(y => y + ' (' + sgn(yearRet[y].rule, 1) + ')');
+      $('aatNegText').textContent = 'It lost money in ' + S.ruleNegYears.length + ' of ' + S.yearsTotal + ' calendar years: ' + joinList(negList) +
+        '. The S&P lost money in ' + S.spyNegYears.length + ' (' + joinList(S.spyNegYears) + '), but by more each time.';
+      if (S.ruleMaxDdFrom && S.ruleMaxDdTo) {
+        const months = Math.round((Date.parse(S.ruleMaxDdTo) - Date.parse(S.ruleMaxDdFrom)) / (30.44 * 86400000));
+        const my = iso => fmtDate(iso, {month: 'short', year: 'numeric'});
+        $('aatDdText').textContent = 'That worst drop ran from ' + my(S.ruleMaxDdFrom) + ' to ' + my(S.ruleMaxDdTo) + ': shallower than the index, but ' + months + ' months from peak to trough.';
+      }
+      $('aatBtcText').textContent = 'Run the same rule without the bitcoin trust and it made ' + pct(S.exBtcCagr) + ' a year with a worst drop of ' +
+        pct(S.exBtcMaxDd, 0) + ' and ' + S.exBtcNegYears.length + ' losing years. The gap is mostly one fund’s 2017 run, so treat the headline return as the best case, not the base case.';
+
+      // ---- legend ----
+      $('aatLegend').innerHTML = Object.keys(CLASS_COLORS).filter(c => CLASSES[c]).map(c =>
+        '<span class="item"><span class="sr-sw" style="background:' + CLASS_COLORS[c] + '"></span>' + esc(CLASSES[c]) + '</span>').join('') +
+        '<span class="item"><span class="sr-sw" style="background:' + CASH_FILL + '; border: 1px solid rgba(139,149,168,0.5)"></span>Cash (SHY)</span>';
+
+      // ---- chart: $1,000 in the rule vs SPY (log scale) over seven lanes of holdings ----
+      const ED = d.equity.d, EE = d.equity.e, EB = d.equity.b;
+      const rb = d.rebalances;
+      const W = 1200, PAD_L = 60, PAD_R = 96, TOP = 22, EQ_H = 246;
+      const LANES = TOP_N, LANE_H = 18, LANE_TOP = 312, LANE_BOT = LANE_TOP + LANES * LANE_H, AXIS_Y = LANE_BOT + 18;
+      const toT = iso => Date.parse(iso + 'T12:00:00Z');
+
+      function renderChart(opt) {
+        let i0 = 0, i1 = ED.length - 1;
+        if (opt.from) {
+          i0 = ED.findIndex(x => x >= opt.from); if (i0 < 0) i0 = 0;
+          const j = ED.findIndex(x => x > opt.to); if (j > 0) i1 = j - 1;
+        } else if (opt.years) {
+          const c = new Date(ED[i1] + 'T12:00:00'); c.setFullYear(c.getFullYear() - opt.years);
+          i0 = ED.findIndex(x => x >= c.toISOString().slice(0, 10)); if (i0 < 0) i0 = 0;
+        }
+        if (i1 - i0 < 2) return;
+        const seg = [], rule = [], spy = [];
+        let lo = Infinity, hi = -Infinity;
+        for (let k = i0; k <= i1; k++) {
+          const r = 1000 * EE[k] / EE[i0], s = 1000 * EB[k] / EB[i0];
+          seg.push({d: ED[k]}); rule.push(r); spy.push(s);
+          if (r < lo) lo = r; if (s < lo) lo = s; if (r > hi) hi = r; if (s > hi) hi = s;
+        }
+        const t0 = toT(seg[0].d), t1 = toT(seg[seg.length - 1].d);
+        const lmin = Math.log(lo) - 0.05, lmax = Math.log(hi) + 0.05;
+        const xFor = iso => PAD_L + (toT(iso) - t0) / (t1 - t0) * (W - PAD_L - PAD_R);
+        const yFor = v => TOP + EQ_H - (Math.log(v) - lmin) / (lmax - lmin) * EQ_H;
+        const parts = [];
+
+        const mults = hi / lo < 3 ? [1, 1.5, 2, 3, 5, 7] : [1, 2, 5];
+        for (const base of [100, 1000, 10000, 100000]) for (const m of mults) {
+          const v = base * m;
+          if (v < lo || v > hi) continue;
+          const y = yFor(v);
+          parts.push('<line x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" class="chart-grid"/>');
+          parts.push('<text x="' + (PAD_L - 6) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" class="chart-axis-label">$' + (v >= 1000 ? (v / 1000) + 'k' : v) + '</text>');
+        }
+        const path = arr => {
+          const out = []; let lastX = -1e9;
+          for (let k = 0; k < arr.length; k++) {
+            const x = xFor(seg[k].d);
+            if (k && k < arr.length - 1 && x - lastX < 0.4) continue;
+            out.push((out.length ? 'L' : 'M') + x.toFixed(1) + ' ' + yFor(arr[k]).toFixed(1)); lastX = x;
+          }
+          return out.join('');
+        };
+        parts.push('<path d="' + path(spy) + '" class="iq-line-eq-bh"/>');
+        parts.push('<path d="' + path(rule) + '" class="iq-line-eq-rule"/>');
+
+        const rEnd = rule[rule.length - 1], sEnd = spy[spy.length - 1];
+        let yR = yFor(rEnd), yS = yFor(sEnd);
+        if (Math.abs(yR - yS) < 13) { const mid = (yR + yS) / 2; yR = rEnd >= sEnd ? mid - 6.5 : mid + 6.5; yS = rEnd >= sEnd ? mid + 6.5 : mid - 6.5; }
+        parts.push('<text x="' + (W - PAD_R + 6) + '" y="' + (yR + 3.5).toFixed(1) + '" class="iq-eq-label" style="fill:#22d39a">' + money(rEnd / 1000) + '</text>');
+        parts.push('<text x="' + (W - PAD_R + 6) + '" y="' + (yS + 3.5).toFixed(1) + '" class="iq-eq-label" style="fill:#64d3ff">' + money(sEnd / 1000) + '</text>');
+
+        const ddOf = arr => { let peak = arr[0], dd = 0; for (const v of arr) { if (v > peak) peak = v; if (v / peak - 1 < dd) dd = v / peak - 1; } return dd; };
+        parts.push('<text x="' + PAD_L + '" y="' + (TOP - 8) + '" class="chart-panel-label">$1,000 in the rule vs SPY</text>');
+        parts.push('<text x="' + (W - PAD_R) + '" y="' + (TOP - 8) + '" text-anchor="end" class="chart-axis-label">' +
+          fmtDate(seg[0].d, {month: 'short', year: 'numeric'}) + ' to ' + fmtDate(seg[seg.length - 1].d, {month: 'short', year: 'numeric'}) +
+          ' · rule ' + sgn(rEnd / 1000 - 1, 0) + ', worst drop ' + pct(ddOf(rule), 0) + ' · SPY ' + sgn(sEnd / 1000 - 1, 0) + ', worst drop ' + pct(ddOf(spy), 0) + '</text>');
+
+        parts.push('<text x="' + PAD_L + '" y="' + (LANE_TOP - 7) + '" class="chart-panel-label">Funds held, strongest on top, coloured by asset class</text>');
+        for (let j = 0; j < LANES; j++) {
+          parts.push('<text x="' + (PAD_L - 6) + '" y="' + (LANE_TOP + j * LANE_H + LANE_H / 2 + 3) + '" text-anchor="end" class="sr-lane-label">#' + (j + 1) + '</text>');
+        }
+        const xL = PAD_L, xR = W - PAD_R;
+        for (let k = 0; k < rb.length; k++) {
+          const a = Math.max(xL, xFor(rb[k].d));
+          const b = Math.min(xR, k + 1 < rb.length ? xFor(rb[k + 1].d) : xR);
+          if (b - a <= 0.2) continue;
+          const w = (b - a).toFixed(2), x = a.toFixed(2);
+          for (let j = 0; j < LANES; j++) {
+            const sym = rb[k].p[j];
+            const fill = sym ? (CLASS_COLORS[CLS[sym]] || '#888') : CASH_FILL;
+            parts.push('<rect x="' + x + '" y="' + (LANE_TOP + j * LANE_H + 1) + '" width="' + w + '" height="' + (LANE_H - 2) + '" fill="' + fill + '"' + (sym ? ' opacity="0.85"' : '') + '/>');
+          }
+        }
+        parts.push('<line x1="' + xL + '" x2="' + xR + '" y1="' + LANE_BOT + '" y2="' + LANE_BOT + '" class="chart-grid"/>');
+
+        const nTicks = 7, spanDays = (t1 - t0) / 86400000;
+        let lastLabel = '';
+        for (let k = 0; k <= nTicks; k++) {
+          const idx = Math.round(k * (seg.length - 1) / nTicks);
+          const iso = seg[idx].d;
+          const label = spanDays < 2200 ? fmtDate(iso, {month: 'short', year: '2-digit'}) : iso.slice(0, 4);
+          if (label === lastLabel) continue;
+          lastLabel = label;
+          parts.push('<text x="' + xFor(iso).toFixed(1) + '" y="' + AXIS_Y + '" text-anchor="middle" class="chart-axis-label">' + label + '</text>');
+        }
+        chartSvg.innerHTML = parts.join('');
+      }
+
+      renderChart({years: 0});
+      card.querySelectorAll('[data-aat-years], [data-aat-from]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('[data-aat-years], [data-aat-from]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.aatFrom && btn.dataset.aatTo) renderChart({from: btn.dataset.aatFrom, to: btn.dataset.aatTo});
+          else { const y = parseInt(btn.dataset.aatYears, 10); renderChart({years: Number.isFinite(y) ? y : 0}); }
+        });
+      });
+    })(); // end All-Asset Trend Rotation
   </script>
 </body>
 </html>
