@@ -1,15 +1,64 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1792114621,
-  "latestPublishedAt": 1792112634,
+  "fetchedAt": 1792139171,
+  "latestPublishedAt": 1792138779,
   "items": [
     {
-      "title": "Dow Jones Futures: Techs Slide On Anthropic Valuation Report; Tesla Roadster Event Underway",
-      "link": "https://finance.yahoo.com/m/2cd5e2a7-a743-35dd-994e-11a2ba3c6d46/dow-jones-futures%3A-techs.html",
+      "title": "1 Industrials Stock with Solid Fundamentals and 2 We Find Risky",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/1-industrials-stock-solid-fundamentals-081939447.html",
+      "publisher": "StockStory",
+      "publishedAt": 1792138779,
+      "id": "ce3dd237-2694-3f5f-a006-0b915a754b2f"
+    },
+    {
+      "title": "Trump Has a New Inflation Nightmare Ahead of the Midterms. Sugar Prices Just Exploded 34% in 3 Months Before Halloween.",
+      "link": "https://finance.yahoo.com/economy/articles/trump-inflation-nightmare-ahead-midterms-080336414.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1792137816,
+      "id": "82cf471c-bc36-366d-a54c-2414e823302e"
+    },
+    {
+      "title": "Schwab's Dividend ETF Has Gained 25% This Year. Is It Still Worth Buying?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/schwabs-dividend-etf-gained-25-073302464.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1792135982,
+      "id": "26335b6e-4a52-3e0f-9bce-fff6b4cec790"
+    },
+    {
+      "title": "Stock Market: Will S&P 500 Open Up or Down Today?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-p-500-open-062414705.html",
+      "publisher": "Benzinga Prediction Markets",
+      "publishedAt": 1792131854,
+      "id": "01e71767-5eb6-3640-8ab5-aaab0f63b751"
+    },
+    {
+      "title": "Asia stocks extend rebound as chipmakers gain; Indonesia shares slump 11%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/asia-stocks-rebound-chipmakers-recover-041454547.html",
+      "publisher": "Investing.com",
+      "publishedAt": 1792124094,
+      "id": "34cfe7ec-d0df-30f3-a3a0-2d31dc6fddc3"
+    },
+    {
+      "title": "Dow Jones Futures Rise; Anthropic Valuation Report, Flying Tesla Roadster In Focus",
+      "link": "https://finance.yahoo.com/m/2cd5e2a7-a743-35dd-994e-11a2ba3c6d46/dow-jones-futures-rise%3B.html",
       "publisher": "Investor's Business Daily",
-      "publishedAt": 1792112634,
+      "publishedAt": 1792120317,
       "id": "2cd5e2a7-a743-35dd-994e-11a2ba3c6d46"
+    },
+    {
+      "title": "The S&P 500 Went More Than 50 Trading Days Without a 1% Drop. That Streak Just Ended. What's Next?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-went-more-50-020301251.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1792116181,
+      "id": "290fa1c3-b20a-302a-8275-12c7f18a976b"
+    },
+    {
+      "title": "U.S. stock futures steady as AI spending, Fed rate concerns weigh",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/nasdaq-futures-edge-lower-ai-014010149.html",
+      "publisher": "Investing.com",
+      "publishedAt": 1792114810,
+      "id": "1f739ad1-67ca-39f0-bc72-09d201d7094d"
     },
     {
       "title": "Chipmaker sell-off sends investors to other stocks and bonds for safety",
@@ -138,32 +187,11 @@
       "id": "11bdd9f7-3568-37a9-80e9-6a6b991ab731"
     },
     {
-      "title": "T. Rowe Price (TROW) Beats Stock Market Upswing: What Investors Need to Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/t-rowe-price-trow-beats-211507432.html",
-      "publisher": "Zacks",
-      "publishedAt": 1792098907,
-      "id": "238f5b57-a7b1-3971-a5d8-53f93bbd7838"
-    },
-    {
-      "title": "American Tower (AMT) Beats Stock Market Upswing: What Investors Need to Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/american-tower-amt-beats-stock-211507080.html",
-      "publisher": "Zacks",
-      "publishedAt": 1792098907,
-      "id": "932ae1d5-a7c4-3d60-ae74-8988236fb080"
-    },
-    {
       "title": "Ross Stores (ROST) Outpaces Stock Market Gains: What You Should Know",
       "link": "https://finance.yahoo.com/markets/stocks/articles/ross-stores-rost-outpaces-stock-211506925.html",
       "publisher": "Zacks",
       "publishedAt": 1792098906,
       "id": "3330ebb0-a31c-3bc4-8ab6-eac897c11e65"
-    },
-    {
-      "title": "PagSeguro Digital Ltd. (PAGS) Surpasses Market Returns: Some Facts Worth Knowing",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/pagseguro-digital-ltd-pags-surpasses-211506609.html",
-      "publisher": "Zacks",
-      "publishedAt": 1792098906,
-      "id": "475c6bbf-3857-3953-8863-91fe26a00ef9"
     },
     {
       "title": "Phillips 66 (PSX) Stock Sinks As Market Gains: What You Should Know",
@@ -276,13 +304,6 @@
       "publisher": "Motley Fool",
       "publishedAt": 1792098293,
       "id": "5a34dd42-904b-328f-b69c-5dd51b8d73df"
-    },
-    {
-      "title": "Stocks Gain as Treasury Yields Give Back Some Recent Gains",
-      "link": "https://finance.yahoo.com/m/ccebd02e-6c7b-3a36-a826-f529e46408cc/stocks-gain-as-treasury.html",
-      "publisher": "The Wall Street Journal",
-      "publishedAt": 1792098180,
-      "id": "ccebd02e-6c7b-3a36-a826-f529e46408cc"
     },
     {
       "title": "26 Million Trump Accounts and 8 Billion Dollars Later, Here Is What You Actually Get",
