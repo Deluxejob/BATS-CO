@@ -56,6 +56,12 @@ DRY = "--dry-run" in sys.argv
 TEST = "--test" in sys.argv
 
 
+try:                       # Windows consoles may not be UTF-8; never let a log line crash the run
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
+
+
 def log(msg: str) -> None:
     print(msg, flush=True)
 
