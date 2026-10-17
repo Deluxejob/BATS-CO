@@ -182,6 +182,8 @@
     .rw-chart .annotation  { fill: var(--text-dim); font-size: 10px; }
     /* NBER recession shading — subtle red rectangles behind the chart series */
     .rw-chart .recession-band { fill: #ef4444; opacity: 0.10; }
+    /* Employment: two short stacked panels with a small gap between them */
+    .rw-chart-stack + .rw-chart-stack { margin-top: 0.5rem; }
 
     .rw-legend {
       display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
@@ -524,10 +526,14 @@
           <button type="button" class="chart-period-btn" data-period="50"  role="tab">50Y</button>
           <button type="button" class="chart-period-btn" data-period="all" role="tab">All</button>
         </div>
-        <svg id="empChart" class="rw-chart" viewBox="0 0 1200 460" preserveAspectRatio="xMinYMin meet" aria-label="Initial jobless claims and unemployment rate"></svg>
+        <!-- Two short panels, one series each, so the two units never share a
+             chart: on one chart the lines crossed in some windows and the
+             crossings meant nothing. The period buttons drive both panels. -->
+        <svg id="empChartClaims" class="rw-chart rw-chart-stack" viewBox="0 0 1200 230" preserveAspectRatio="xMinYMin meet" aria-label="Initial jobless claims"></svg>
+        <svg id="empChartUnrate" class="rw-chart rw-chart-stack" viewBox="0 0 1200 230" preserveAspectRatio="xMinYMin meet" aria-label="Unemployment rate"></svg>
         <div class="rw-legend">
-          <span><span class="swatch" style="background:var(--s5)"></span> Initial jobless claims (k, left axis)</span>
-          <span><span class="swatch" style="background:#64d3ff"></span> Unemployment rate (%, right axis)</span>
+          <span><span class="swatch" style="background:var(--s5)"></span> Initial jobless claims (k, top panel)</span>
+          <span><span class="swatch" style="background:#64d3ff"></span> Unemployment rate (%, bottom panel)</span>
           <span><span class="swatch recession"></span> NBER recession</span>
         </div>
       </div>
@@ -835,7 +841,10 @@
       function render(period) {
         if (period) curPeriod = period; else period = curPeriod;
         W = Math.max(300, Math.round(svg.getBoundingClientRect().width || 1200));
-        H = W < 600 ? 300 : Math.min(460, Math.round(W * 460 / 1200));   // desktop keeps the original 1200x460 shape
+        // cfg.height / cfg.mobileHeight let the stacked Employment panels stay
+        // short; every other chart keeps the original 1200x460 shape.
+        const fullH = cfg.height || 460, phoneH = cfg.mobileHeight || 300;
+        H = W < 600 ? phoneH : Math.min(fullH, Math.round(W * fullH / 1200));
         M.left = W < 600 ? 46 : 60; M.right = W < 600 ? 40 : 55;
         plotW = W - M.left - M.right;
         plotH = H - M.top - M.bottom;
@@ -1008,7 +1017,7 @@
           for (let j = 0; j < s.slice.length; j++) {
             path += (j === 0 ? 'M' : 'L') + xForYear(s.slice[j].yf).toFixed(1) + ',' + yFn(s.slice[j].v).toFixed(1) + ' ';
           }
-          const cls = s.right ? 'rw-line-2' : (i === 0 ? 'rw-line-1' : 'rw-line-2');
+          const cls = s.cls || (s.right ? 'rw-line-2' : (i === 0 ? 'rw-line-1' : 'rw-line-2'));
           svgHtml += `<path class="${cls}" d="${path}"/>`;
         });
 
@@ -1087,20 +1096,25 @@
       showZero:  true,
     });
 
-    // ---- Employment chart (claims on left in k, unrate on right in %) ----
+    // ---- Employment: two stacked panels, one unit each, sharing the period
+    // buttons. Each keeps its own scale in every window, so nothing crosses
+    // and the 2020 spike no longer flattens the recent years of the other.
     makeChart({
-      svgId:     'empChart',
+      svgId:     'empChartClaims',
       periodsId: 'empPeriods',
-      series: [
-        { data: claims, right: false },
-        { data: unrate, right: true },
-      ],
-      leftTitle:  'Claims (k)',
-      rightTitle: 'Unrate (%)',
-      leftFmt:    (v) => (v / 1000).toFixed(0) + 'k',
-      rightFmt:   (v) => v.toFixed(1) + '%',
-      rightAxis:  true,
+      series:    [{ data: claims, right: false }],
+      leftTitle: 'Initial jobless claims (k)',
+      leftFmt:   (v) => (v / 1000).toFixed(0) + 'k',
       leftMinFloor: 0,
+      height: 230, mobileHeight: 185,
+    });
+    makeChart({
+      svgId:     'empChartUnrate',
+      periodsId: 'empPeriods',
+      series:    [{ data: unrate, right: false, cls: 'rw-line-2' }],
+      leftTitle: 'Unemployment rate (%)',
+      leftFmt:   (v) => v.toFixed(1) + '%',
+      height: 230, mobileHeight: 185,
     });
 
     // ============================================================
