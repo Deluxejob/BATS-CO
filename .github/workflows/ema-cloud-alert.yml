@@ -1,0 +1,74 @@
+name: EMA cloud alert (QQQ, 60-min)
+
+# Personal alert for the repo owner: after each completed 60-minute bar of
+# the regular session, scripts/ema-cloud-alert.py recomputes the Ripster-
+# style EMA cloud rule on QQQ and, when the state flips between LONG and
+# CASH, sends a message to the owner's phone. The phone channel comes from
+# repository secrets (NTFY_TOPIC, or the Twilio set, or the SMTP set); with
+# none of them set the job still tracks the state but sends nothing.
+#
+# Hourly bars close at :30 (10:30 ... 15:30 ET) plus the short 16:00 bar.
+# GitHub cron is UTC and ignores daylight saving, so both the summer and
+# winter hours are covered; a run with no new completed bar does nothing.
+# Cron can drift by several minutes, hence :36 and :06.
+#
+# Manual trigger (Actions tab): tick "test" to send the current state right
+# now, which is the way to check that the phone channel works.
+
+on:
+  schedule:
+    - cron: '36 14-20 * * 1-5'   # bars closing at :30, 10:30-15:30 ET summer / 9:30-14:30 ET winter
+    - cron: '36 21 * * 1-5'      # the 15:30 bar in winter
+    - cron: '6 20,21 * * 1-5'    # the 16:00 close (20:06 UTC summer, 21:06 UTC winter)
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Send the current state now (checks the phone channel)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write  # the job commits data/ema_cloud_state.json
+
+concurrency:
+  group: ema-cloud-alert
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check the cloud state and alert on a flip (always exits 0)
+        env:
+          NTFY_TOPIC:         ${{ secrets.NTFY_TOPIC }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN:  ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM:        ${{ secrets.TWILIO_FROM }}
+          ALERT_TO_PHONE:     ${{ secrets.ALERT_TO_PHONE }}
+          SMTP_HOST:          ${{ secrets.SMTP_HOST }}
+          SMTP_PORT:          ${{ secrets.SMTP_PORT }}
+          SMTP_USER:          ${{ secrets.SMTP_USER }}
+          SMTP_PASS:          ${{ secrets.SMTP_PASS }}
+          ALERT_EMAIL_TO:     ${{ secrets.ALERT_EMAIL_TO }}
+        run: python scripts/ema-cloud-alert.py ${{ inputs.test && '--test' || '' }}
+
+      - name: Commit the state file if it changed
+        run: |
+          if [ -n "$(git status --porcelain data/ema_cloud_state.json)" ]; then
+            git config user.name  "BATS.CO Update Bot"
+            git config user.email "bot@bats.co"
+            git add data/ema_cloud_state.json
+            git commit -m "chore: EMA cloud state $(date -u +'%Y-%m-%d %H:%M UTC')"
+            # Another bot may have pushed in the meantime; replay on top and try once more.
+            git push || { git pull --rebase origin main && git push; }
+          else
+            echo "::notice::State unchanged."
+          fi
