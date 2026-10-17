@@ -143,9 +143,11 @@ def fmt_when(iso: str) -> str:
 
 def build_message(sym: str, now: dict, prev: dict | None, first: bool) -> tuple[str, str]:
     """(title, body) for a flip (or the first run / --test)."""
+    # The title travels as an HTTP header for ntfy, which allows plain ASCII
+    # only; the arrow goes in the body, where any character is fine.
     arrow = "▲" if now["state"] == "LONG" else "▼"
-    title = f"{sym} 60-min cloud {arrow} {now['state']}"
-    lines = [f"${now['close']:,.2f} at {fmt_when(now['bar'])}", now["reason"].capitalize() + "."]
+    title = f"{sym} 60-min cloud: {now['state']}"
+    lines = [f"{arrow} {now['state']} at ${now['close']:,.2f}, {fmt_when(now['bar'])}", now["reason"].capitalize() + "."]
     if prev and prev.get("state") != now["state"] and prev.get("sincePrice"):
         chg = now["close"] / prev["sincePrice"] - 1
         if prev["state"] == "LONG":
@@ -161,8 +163,10 @@ def send_ntfy(title: str, body: str) -> bool:
     topic = os.environ.get("NTFY_TOPIC", "").strip()
     if not topic:
         return False
+    safe_title = title.encode("ascii", "ignore").decode()      # headers must be plain ASCII
+    tags = "arrow_up,chart_with_upwards_trend" if "LONG" in title else "arrow_down,chart_with_downwards_trend"
     req = urllib.request.Request(f"https://ntfy.sh/{urllib.parse.quote(topic)}", data=body.encode("utf-8"),
-                                 headers={"Title": title, "Priority": "high", "Tags": "chart_with_upwards_trend" if "LONG" in title else "chart_with_downwards_trend"})
+                                 headers={"Title": safe_title, "Priority": "high", "Tags": tags})
     with urllib.request.urlopen(req, timeout=30) as r:
         log(f"ntfy: HTTP {r.status}")
     return True
