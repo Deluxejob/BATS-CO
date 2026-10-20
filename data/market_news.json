@@ -1,9 +1,16 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1792460178,
-  "latestPublishedAt": 1792459279,
+  "fetchedAt": 1792461734,
+  "latestPublishedAt": 1792460820,
   "items": [
+    {
+      "title": "Goldman Sachs sends a stern warning to stock market investors",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/goldman-sachs-sends-stern-warning-014700361.html",
+      "publisher": "TheStreet",
+      "publishedAt": 1792460820,
+      "id": "e42a98f9-fc60-3f2b-b6dd-1d26f4a24619"
+    },
     {
       "title": "U.S. stock futures steady after Wall Street rebounds on tech recovery",
       "link": "https://finance.yahoo.com/markets/stocks/articles/u-stock-futures-steady-wall-012119510.html",
@@ -19,11 +26,39 @@
       "id": "34f312fd-04b0-3225-a7aa-e2212880617b"
     },
     {
+      "title": "Meet the Dividend King Stock That Yields More Than Quintuple the Nasdaq-100. Here's Why It's a Buy in October.",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/meet-dividend-king-stock-yields-235000504.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1792453800,
+      "id": "6f96e052-ec02-3b46-8ee2-a4d31f147518"
+    },
+    {
+      "title": "3M Jumps On Expanded Amazon Data Center Deal; Earnings On Tap",
+      "link": "https://finance.yahoo.com/m/9f746d33-c17c-38dd-9fb5-a7b8bead6c9c/3m-jumps-on-expanded-amazon.html",
+      "publisher": "Investor's Business Daily",
+      "publishedAt": 1792453149,
+      "id": "9f746d33-c17c-38dd-9fb5-a7b8bead6c9c"
+    },
+    {
+      "title": "Nasdaq 100 Sees Best Day In Nearly A Month As AI Rout Cools — AMZN, BE, CRWV, AAPL, PLTR In Focus",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/nasdaq-100-sees-best-day-230023865.html",
+      "publisher": "Stocktwits",
+      "publishedAt": 1792450823,
+      "id": "0b6f782c-e425-3663-a9f1-430849cc3501"
+    },
+    {
       "title": "Nasdaq Stocks Could Crash 30% If This Happens, Experts Warn",
       "link": "https://finance.yahoo.com/markets/stocks/articles/nasdaq-stocks-could-crash-30-230000889.html",
       "publisher": "BeInCrypto",
       "publishedAt": 1792450800,
       "id": "f6c5333f-8530-3463-b50e-eb74a9fa9de9"
+    },
+    {
+      "title": "Worried About the Stock Market? This High-Yielding ETF Can Provide Stability and Generate Passive Income for Decades",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/worried-stock-market-high-yielding-222002005.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1792448402,
+      "id": "4116c49c-1632-375f-afdf-23d0834ecf9d"
     },
     {
       "title": "US stocks rebound with AI earnings test ahead, euro falls on France unrest",
@@ -47,6 +82,27 @@
       "id": "de174d6d-3ede-3636-88c3-c53b96952eeb"
     },
     {
+      "title": "GPIX Out-Yielded JEPI and Returned 17.37% to Its 9.33%. JEPI Is Still 9.5 Times Bigger",
+      "link": "https://finance.yahoo.com/markets/options/articles/gpix-yielded-jepi-returned-17-220337938.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1792447417,
+      "id": "50e9be54-cb73-3f46-bc46-53433f451342"
+    },
+    {
+      "title": "What Needs To Be True To Buy Cloudflare Stock?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/needs-true-buy-cloudflare-stock-215939385.html",
+      "publisher": "Trefis",
+      "publishedAt": 1792447179,
+      "id": "7fa6466c-abd5-330e-9c89-b3cb2dc27d79"
+    },
+    {
+      "title": "Could Howmet Stock's Winning Streak Be Luck?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/could-howmet-stocks-winning-streak-214902617.html",
+      "publisher": "Trefis",
+      "publishedAt": 1792446542,
+      "id": "8b576a54-46ee-3223-b1da-72c0f313fbd1"
+    },
+    {
       "title": "Where Will VTI Be in 20 Years? Here's What History Suggests",
       "link": "https://finance.yahoo.com/markets/stocks/articles/where-vti-20-years-heres-214300311.html",
       "publisher": "Motley Fool",
@@ -54,11 +110,32 @@
       "id": "42e628d0-2271-361f-b158-727bdab40177"
     },
     {
+      "title": "Is Cavco Industries Stock Engineered To Make You Money?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/cavco-industries-stock-engineered-money-213913001.html",
+      "publisher": "Trefis",
+      "publishedAt": 1792445953,
+      "id": "48d025a4-63e9-3c44-b70c-33d4661ebbc1"
+    },
+    {
       "title": "Stock Market Today, Oct. 19: Cleveland-Cliffs Surges on Stronger Q3 Results and Raised 2027 EBITDA Outlook",
       "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-oct-19-213727360.html",
       "publisher": "Motley Fool",
       "publishedAt": 1792445847,
       "id": "f00f2d39-3f95-3574-8ec6-2371bd424e88"
+    },
+    {
+      "title": "Forget VXUS: VOO Returned 320.81% Over Ten Years Against VXUS’s 139.56%",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/forget-vxus-voo-returned-320-213347712.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1792445627,
+      "id": "9e20963b-b931-3b3a-acc1-2a090d97a048"
+    },
+    {
+      "title": "Forget Tech. Energy Will Be The Big Winner This Earnings Season.",
+      "link": "https://finance.yahoo.com/m/2bba9727-a5dc-3eb3-821b-571b920f9856/forget-tech.-energy-will-be.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1792445580,
+      "id": "2bba9727-a5dc-3eb3-821b-571b920f9856"
     },
     {
       "title": "Update: US Equity Indexes Close Mixed Amid Thin Trading Volumes as Consumer Discretionary, Technology Tops Sector Charts",
@@ -89,6 +166,13 @@
       "id": "93a9b316-48a9-39e9-b26d-00ec34701d2f"
     },
     {
+      "title": "Is This Number The Biggest Risk To Constellation Energy Stock?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/number-biggest-risk-constellation-energy-212839787.html",
+      "publisher": "Trefis",
+      "publishedAt": 1792445319,
+      "id": "b242ba9f-7e63-3dc1-b212-7898d8f81da3"
+    },
+    {
       "title": "Stock Market Today, Oct. 19: CoreWeave Rebounds on Goldman Sachs Buy Upgrade and $139 Price Target",
       "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-oct-19-212501721.html",
       "publisher": "Motley Fool",
@@ -101,6 +185,20 @@
       "publisher": "StockStory",
       "publishedAt": 1792444855,
       "id": "21f692ae-f3cd-3e59-87c6-156407a93234"
+    },
+    {
+      "title": "Cleveland-Cliffs Expects 2027 Will Be a Very Good Year With Help From Tariffs",
+      "link": "https://finance.yahoo.com/m/9ded3254-8acb-336d-a279-aa7dd53cbf7b/cleveland-cliffs-expects-2027.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1792444800,
+      "id": "9ded3254-8acb-336d-a279-aa7dd53cbf7b"
+    },
+    {
+      "title": "AngloGold Ashanti (AU) Stock Dips While Market Gains: Key Facts",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/anglogold-ashanti-au-stock-dips-211505325.html",
+      "publisher": "Zacks",
+      "publishedAt": 1792444505,
+      "id": "1ec39ea1-4e44-337e-9b15-033eb2daa99d"
     },
     {
       "title": "VirTra, Inc. (VTSI) Stock Falls Amid Market Uptick: What Investors Need to Know",
@@ -171,13 +269,6 @@
       "publisher": "Zacks",
       "publishedAt": 1792444503,
       "id": "4c474c00-2f8e-332a-8a65-ff1bde5ddfa7"
-    },
-    {
-      "title": "Rithm (RITM) Stock Sinks As Market Gains: What You Should Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/rithm-ritm-stock-sinks-market-211503003.html",
-      "publisher": "Zacks",
-      "publishedAt": 1792444503,
-      "id": "6a23f915-4860-31f5-98d3-be46c5a37483"
     }
   ]
 }
