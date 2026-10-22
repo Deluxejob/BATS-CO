@@ -173,10 +173,12 @@ fetch_yahoo_daily "IEF"  "$DATA_DIR/ratios/ief.csv"  "1027987200"  # 2002-07-30
 fetch_yahoo_daily "SPHB" "$DATA_DIR/ratios/sphb.csv" "1304553600"  # 2011-05-05
 fetch_yahoo_daily "SPLV" "$DATA_DIR/ratios/splv.csv" "1304553600"  # 2011-05-05
 fetch_yahoo_daily "MTUM" "$DATA_DIR/ratios/mtum.csv" "1366243200"  # 2013-04-18
+fetch_yahoo_daily "VLUE" "$DATA_DIR/ratios/vlue.csv" "1366070400"  # 2013-04-16 (MTUM / VLUE card)
 fetch_yahoo_daily "SPHD" "$DATA_DIR/ratios/sphd.csv" "1351209600"  # 2012-10-26
 # Commodities & inflation
 fetch_yahoo_daily "DBC"  "$DATA_DIR/ratios/dbc.csv"  "1139184000"  # 2006-02-06
 fetch_yahoo_daily "GDX"  "$DATA_DIR/ratios/gdx.csv"  "1148256000"  # 2006-05-22
+fetch_yahoo_daily "SLVP" "$DATA_DIR/ratios/slvp.csv" "1327968000"  # 2012-01-31 (GDX / SLVP card)
 fetch_yahoo_daily "TIP"  "$DATA_DIR/ratios/tip.csv"  "1070582400"  # 2003-12-05
 fetch_yahoo_daily "HG=F" "$DATA_DIR/ratios/copper.csv" "967593600" # 2000-08-30 (Copper futures)
 fetch_yahoo_daily "XME"  "$DATA_DIR/ratios/xme.csv"  "1150934400"  # 2006-06-22
