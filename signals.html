@@ -568,6 +568,13 @@
 
     /* A descriptive "sellers in control" pill: red, but without the glow of a sell call. */
     .iq-action-soft-red { color: #ff8fa3; background: rgba(255, 83, 116, 0.08); border-color: rgba(255, 83, 116, 0.35); }
+    /* Small Cap Confirmation card (moved here from the Market Ratios page):
+       the legend dots and the SPY line; everything else reuses the shared
+       pill, gates, table, range-bar and chart styles above. */
+    .sc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 0.3rem; vertical-align: middle; border: 1px solid rgba(255, 255, 255, 0.4); }
+    .sc-line-spy { fill: none; stroke: #ffb658; stroke-width: 1.6; }
+    .sc-axis { stroke: rgba(139, 149, 168, 0.35); stroke-width: 1; }
+    /* end Small Cap Confirmation card */
   </style>
 </head>
 <body>
@@ -1413,6 +1420,133 @@
                style="margin-top: 0.9rem;"></div>
         </div>
 
+
+        <!-- SIGNAL: Small Cap Confirmation (moved here from the Market Ratios page). Every SPY
+             short-term high and low is checked against the 20-day slope of the IWM/SPY ratio:
+             did small caps confirm the move or diverge from it? Computed in the page from
+             data/spy.csv and data/iwm.csv. -->
+        <div class="sig-card" id="sig-small-cap">
+          <div class="sig-head">
+            <h2 class="sig-title">Small Cap Confirmation</h2>
+            <span class="sig-tag">SPY short-term highs and lows &middot; IWM/SPY 20-day slope &middot; daily</span>
+          </div>
+          <p class="sig-desc">
+            Small caps are the market's higher-beta end. The classic reading: when they roll over first at an
+            S&amp;P 500 high, that is a <strong>bearish divergence</strong>; when they capitulate hard into an
+            S&amp;P 500 low, that is a <strong>washout</strong> worth buying. This card marks every short-term SPY
+            high and low (the highest or lowest close within 15 trading days either side), checks what the Russell
+            2000 (IWM) was doing relative to SPY over the 20 days leading into it, and shows how much of the classic
+            reading survives once a high or low is actually confirmed. Spoiler: less than the charts suggest.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="scPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="scSub">Fetching SPY and IWM closes&hellip;</div>
+            <div class="iq-action-asof" id="scAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="scGateKindBox">
+              <div class="iq-gate-label">Last short-term extreme</div>
+              <div class="iq-gate-value" id="scGateKind">&mdash;</div>
+              <div class="iq-gate-cond">highest or lowest close within &plusmn;15 trading days</div>
+              <div class="iq-gate-state iq-gate-off" id="scGateKindState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="scGateSlopeBox">
+              <div class="iq-gate-label">IWM/SPY into that extreme</div>
+              <div class="iq-gate-value" id="scGateSlope">&mdash;</div>
+              <div class="iq-gate-cond">20-day change in the ratio at that point</div>
+              <div class="iq-gate-state iq-gate-off" id="scGateSlopeState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="scGateNowBox">
+              <div class="iq-gate-label">IWM/SPY now</div>
+              <div class="iq-gate-value" id="scGateNow">&mdash;</div>
+              <div class="iq-gate-cond">20-day change in the ratio at the latest close</div>
+              <div class="iq-gate-state iq-gate-off" id="scGateNowState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="SPY's move over the 20 trading days after each kind of short-term extreme, measured from the extreme and from the day it was confirmed">
+              <thead><tr><th>Kind of extreme</th><th>Count</th><th>From the extreme, next 20 days</th><th>After it's confirmed, next 20 days</th><th>Higher after confirmation</th></tr></thead>
+              <tbody id="scTableBody"><tr><td colspan="5">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-sc-range="3m" role="tab">3M</button>
+              <button type="button" class="iq-range-btn" data-sc-range="6m" role="tab">6M</button>
+              <button type="button" class="iq-range-btn" data-sc-range="ytd" role="tab">YTD</button>
+              <button type="button" class="iq-range-btn active" data-sc-range="1y" role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-sc-range="3y" role="tab">3Y</button>
+              <button type="button" class="iq-range-btn" data-sc-range="5y" role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-sc-range="all" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 360" class="sig-chart" id="scChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="SPY daily close with each short-term high and low marked as confirmed or divergent"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong> SPY's daily close in amber. Each dot is a short-term high or low:
+            <span class="sc-dot" style="background:#22d39a"></span><strong>confirmed low</strong>, small caps capitulating (bullish);
+            <span class="sc-dot" style="background:#06b6d4"></span><strong>divergent low</strong>, small caps holding up (weaker bounce);
+            <span class="sc-dot" style="background:#f97316"></span><strong>confirmed high</strong>, small caps in agreement (mild pullbacks);
+            <span class="sc-dot" style="background:#dc2626"></span><strong>divergent high</strong>, small caps already rolling over (bearish).
+            Divergent dots are drawn larger. The shaded band at the right edge is the newest 15 trading days: a high or
+            low in there cannot be confirmed until 15 more days have passed, so the rightmost dot is often three weeks old.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>In hindsight the pattern looks strong.</strong> Since <span data-sc-stat="start">&mdash;</span>,
+              measured from the extreme itself, SPY averaged <span data-sc-stat="dh">&mdash;</span> over the 20 days
+              after a divergent high against <span data-sc-stat="ch">&mdash;</span> after a confirmed high, and
+              <span data-sc-stat="cl">&mdash;</span> after a washout low against <span data-sc-stat="dl">&mdash;</span>
+              after a divergent low. Those numbers flatter every kind: a low is by definition the lowest close for weeks
+              around it, so SPY is almost always higher 20 days later, and the reverse for highs.
+            </p>
+            <p>
+              <strong>Once a signal actually exists, the edge is small.</strong> A high or low only counts after 15
+              trading days have passed without a higher or lower close. Measured from that day, which is the first day
+              anyone could act, SPY's next 20 days averaged <span data-sc-stat="dhc">&mdash;</span> after a divergent
+              high and <span data-sc-stat="chc">&mdash;</span> after a confirmed high; <span data-sc-stat="clc">&mdash;</span>
+              after a washout low and <span data-sc-stat="dlc">&mdash;</span> after a divergent low. Any 20-day stretch
+              since <span data-sc-stat="start">&mdash;</span> averaged <span data-sc-stat="base">&mdash;</span> and was
+              positive <span data-sc-stat="basePos">&mdash;</span> of the time. The table's last two columns are the
+              fair test, and none of the four kinds is far from the yardstick.
+            </p>
+            <p>
+              <strong>It is late by design.</strong> The newest signal is always at least three weeks old, and the pill
+              describes the last confirmed extreme, not today. The "IWM/SPY now" box is the live piece: it says whether
+              small caps are leading or lagging into whatever today turns out to be.
+            </p>
+            <p>
+              <strong>What it is good for.</strong> A clean description of each turn: did the broad market agree with
+              the index, or was it a narrow move? Use it to characterise highs and lows, not to trade them.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            SPY and IWM daily closes (Yahoo Finance) from <span data-sc-stat="start">&mdash;</span> to
+            <span data-sc-stat="end">&mdash;</span>, <span data-sc-stat="n">&mdash;</span> short-term extremes in all.
+            An extreme is the highest or lowest SPY close within 15 trading days either side. The ratio slope is IWM/SPY
+            at that close against 20 trading days earlier: rising means small caps led, falling means they lagged.
+            Forward returns are SPY price changes from the extreme's close to the close 20 trading days later, before
+            dividends and costs. Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/signals.html#sig-small-cap"
+               data-share-title="Small Cap Confirmation — BATS.CO"
+               data-share-text="Every short-term S&P 500 high and low checked against what small caps were doing into it: divergence at tops and capitulation at bottoms, with what SPY did over the next 20 days after each kind."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+        <!-- end Small Cap Confirmation card -->
       </div>
     </section>
   </main>
@@ -3038,6 +3172,214 @@
         });
       });
     })();
+
+    // ---- Small Cap Confirmation ----
+    // SPY short-term highs and lows (the highest or lowest close within 15
+    // trading days either side) checked against the 20-day slope of the
+    // IWM/SPY ratio: did small caps confirm the move or diverge from it?
+    // Moved here from the Market Ratios page; computed in the page from
+    // data/spy.csv and data/iwm.csv.
+    (async function initSmallCap() {
+      const card = document.getElementById('sig-small-cap');
+      if (!card) return;
+      const $ = id => document.getElementById(id);
+      const LOOKBACK = 15, RATIO_LOOKBACK = 20, FWD = 20;
+      const RANGE_DAYS = { '3m': 66, '6m': 132, '1y': 252, '3y': 756, '5y': 1260 };
+      // Loudest colour for the strongest signal: red = divergent high, green = confirmed low.
+      const COLOR = { confirmed_high: '#f97316', divergent_high: '#dc2626', confirmed_low: '#22d39a', divergent_low: '#06b6d4' };
+      const LABEL = { confirmed_high: 'Confirmed high', divergent_high: 'Divergent high', confirmed_low: 'Confirmed low', divergent_low: 'Divergent low' };
+      const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDate = iso => { const p = iso.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0]; };
+      const fmtDay = iso => { const p = iso.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]); };
+      const pct = (x, d) => (x >= 0 ? '+' : '') + (x * 100).toFixed(d == null ? 1 : d) + '%';
+      const pill = $('scPill'), sub = $('scSub'), asof = $('scAsof');
+
+      function fail(msg) { pill.textContent = 'UNAVAILABLE'; pill.className = 'iq-action-pill iq-action-stayout'; sub.textContent = msg; }
+
+      async function loadCsv(url) {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        const out = [];
+        for (const ln of (await r.text()).trim().split(/\r?\n/).slice(1)) {
+          const c = ln.split(',');
+          const px = parseFloat(c[1]);
+          if (isFinite(px)) out.push({ d: c[0], t: Date.parse(c[0] + 'T12:00:00Z'), px });
+        }
+        return out;
+      }
+
+      let spy, iwm;
+      try {
+        [spy, iwm] = await Promise.all([loadCsv('data/spy.csv'), loadCsv('data/iwm.csv')]);
+      } catch (e) { fail('Could not load the SPY and IWM price files. Try refreshing.'); return; }
+      const iwmMap = new Map(iwm.map(r => [r.d, r.px]));
+      const rows = spy.filter(r => iwmMap.has(r.d)).map(r => ({ d: r.d, t: r.t, spy: r.px, iwm: iwmMap.get(r.d) }));
+      rows.forEach(r => { r.ratio = r.iwm / r.spy; });
+      if (rows.length < 100) { fail('Not enough overlapping SPY and IWM history.'); return; }
+
+      // ---- every short-term extreme, classified by the ratio's 20-day slope into it ----
+      const extrema = [];
+      for (let i = LOOKBACK; i < rows.length - LOOKBACK; i++) {
+        const v = rows[i].spy;
+        let isHigh = true, isLow = true;
+        for (let j = i - LOOKBACK; j <= i + LOOKBACK; j++) {
+          if (rows[j].spy > v) isHigh = false;
+          if (rows[j].spy < v) isLow = false;
+          if (!isHigh && !isLow) break;
+        }
+        if (!isHigh && !isLow) continue;
+        const prev = i - RATIO_LOOKBACK;
+        const slope = (prev >= 0 && rows[prev].ratio > 0) ? (rows[i].ratio / rows[prev].ratio - 1) : 0;
+        const cls = isHigh ? (slope >= 0 ? 'confirmed_high' : 'divergent_high') : (slope <= 0 ? 'confirmed_low' : 'divergent_low');
+        extrema.push({ d: rows[i].d, t: rows[i].t, spy: v, cls, slope, idx: i, isHigh });
+      }
+
+      // ---- what SPY did after each kind: from the extreme itself (hindsight: a low is by
+      // definition the lowest close around, so the next 20 days are almost always up) and
+      // from the day it is confirmed, 15 trading days later, which is when anyone could act ----
+      const stats = {};
+      for (const cls in LABEL) stats[cls] = { n: 0, sum: 0, nc: 0, sumc: 0, upc: 0 };
+      for (const e of extrema) {
+        const s = stats[e.cls];
+        if (e.idx + FWD < rows.length) { s.n++; s.sum += rows[e.idx + FWD].spy / e.spy - 1; }
+        if (e.idx + LOOKBACK + FWD < rows.length) {
+          const f = rows[e.idx + LOOKBACK + FWD].spy / rows[e.idx + LOOKBACK].spy - 1;
+          s.nc++; s.sumc += f; s.upc += f > 0 ? 1 : 0;
+        }
+      }
+      // the yardstick: any 20-trading-day stretch since the data starts
+      let baseN = 0, baseSum = 0, baseUp = 0;
+      for (let i = LOOKBACK; i + FWD < rows.length; i++) { const f = rows[i + FWD].spy / rows[i].spy - 1; baseN++; baseSum += f; baseUp += f > 0 ? 1 : 0; }
+      const baseAvg = baseN ? baseSum / baseN : 0, basePos = baseN ? baseUp / baseN : 0;
+      const avgOf = cls => stats[cls].n ? pct(stats[cls].sum / stats[cls].n) : '—';
+      const avgConf = cls => stats[cls].nc ? pct(stats[cls].sumc / stats[cls].nc) : '—';
+      const cell = (v, bold) => '<td class="' + (v >= 0 ? 'pos' : 'neg') + (bold ? ' mv-edge' : '') + '">' + pct(v) + '</td>';
+      $('scTableBody').innerHTML = ['divergent_high', 'confirmed_high', 'confirmed_low', 'divergent_low'].map(cls => {
+        const s = stats[cls];
+        return '<tr><td><span class="sc-dot" style="background:' + COLOR[cls] + '"></span>' + LABEL[cls] + '</td><td>' + s.n + '</td>' +
+          cell(s.n ? s.sum / s.n : 0, false) + cell(s.nc ? s.sumc / s.nc : 0, true) +
+          '<td>' + (s.nc ? Math.round(100 * s.upc / s.nc) + '%' : '—') + '</td></tr>';
+      }).join('') + '<tr><td>Any day (the yardstick)</td><td>' + baseN + '</td>' + cell(baseAvg, false) + cell(baseAvg, true) + '<td>' + Math.round(100 * basePos) + '%</td></tr>';
+      const today = rows[rows.length - 1];
+      const FILL = { dh: avgOf('divergent_high'), ch: avgOf('confirmed_high'), cl: avgOf('confirmed_low'), dl: avgOf('divergent_low'),
+                     dhc: avgConf('divergent_high'), chc: avgConf('confirmed_high'), clc: avgConf('confirmed_low'), dlc: avgConf('divergent_low'),
+                     base: pct(baseAvg), basePos: Math.round(100 * basePos) + '%',
+                     n: extrema.length, start: rows[0].d.slice(0, 4), end: fmtDate(today.d) };
+      card.querySelectorAll('[data-sc-stat]').forEach(el => { const k = el.dataset.scStat; if (k in FILL) el.textContent = FILL[k]; });
+
+      // ---- the readout: the last confirmed extreme, plus the live ratio slope ----
+      const last = extrema[extrema.length - 1];
+      if (!last) { fail('No short-term extreme found yet.'); return; }
+      // Colour is the tone of the reading (green = washout low, red = divergent high);
+      // the words describe what small caps did, since the table shows the edge is small.
+      const PILL = {
+        confirmed_low:  ['WASHOUT LOW · SMALL CAPS CAPITULATED', 'iq-action-buy'],
+        divergent_low:  ['DIVERGENT LOW · SMALL CAPS HELD UP', 'iq-action-hold'],
+        confirmed_high: ['CONFIRMED HIGH · SMALL CAPS AGREED', 'iq-action-hold'],
+        divergent_high: ['DIVERGENT HIGH · SMALL CAPS ROLLED FIRST', 'iq-action-sell'],
+      };
+      const WHY = {
+        confirmed_high: 'small caps were still leading into it, so the broad market was in agreement',
+        divergent_high: 'small caps had already been falling behind for 20 days, the classic early-warning shape',
+        confirmed_low:  'small caps had been falling faster into it, the capitulation shape',
+        divergent_low:  'small caps had been holding up into it',
+      };
+      pill.textContent = PILL[last.cls][0];
+      pill.className = 'iq-action-pill ' + PILL[last.cls][1];
+      const daysSince = rows.length - 1 - last.idx;
+      sub.innerHTML = 'The last SPY short-term ' + (last.isHigh ? 'high' : 'low') + ' was <strong>' + fmtDate(last.d) + '</strong>, ' +
+        daysSince + ' trading days ago: ' + WHY[last.cls] + '. SPY since then: <strong>' + pct(today.spy / last.spy - 1) + '</strong>.';
+      asof.textContent = 'Data through ' + fmtDate(today.d) + ' · the newest ' + LOOKBACK + ' trading days cannot be classified yet';
+
+      const setGate = (valueId, stateId, boxId, value, state, on) => {
+        $(valueId).textContent = value;
+        const st = $(stateId); st.textContent = state; st.className = 'iq-gate-state ' + (on ? 'iq-gate-on' : 'iq-gate-off');
+        $(boxId).classList.toggle('iq-gate-firing', !!on);
+      };
+      const fired = last.cls === 'divergent_high' || last.cls === 'confirmed_low';
+      setGate('scGateKind', 'scGateKindState', 'scGateKindBox', (last.isHigh ? 'High' : 'Low') + ' · ' + fmtDay(last.d),
+        last.cls.startsWith('confirmed') ? 'small caps confirmed it' : 'small caps diverged', fired);
+      setGate('scGateSlope', 'scGateSlopeState', 'scGateSlopeBox', pct(last.slope, 2),
+        last.slope >= 0 ? 'small caps were leading' : 'small caps were lagging', fired);
+      const liveSlope = rows[rows.length - 1].ratio / rows[Math.max(0, rows.length - 1 - RATIO_LOOKBACK)].ratio - 1;
+      setGate('scGateNow', 'scGateNowState', 'scGateNowBox', pct(liveSlope, 2),
+        liveSlope >= 0 ? 'small caps leading now' : 'small caps lagging now', liveSlope >= 0);
+
+      // ---- chart ----
+      function sliceForRange(range) {
+        if (range === 'all') return rows;
+        if (range === 'ytd') { const yr = today.d.slice(0, 4); return rows.filter(r => r.d >= yr + '-01-01'); }
+        return rows.slice(-(RANGE_DAYS[range] || 252));
+      }
+      const svg = $('scChartSvg');
+      function drawChart(visible) {
+        if (!svg || visible.length < 2) return;
+        const W = 1200, H = 360, M = { top: 22, right: 28, bottom: 30, left: 60 };
+        const plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
+        let yMin = Infinity, yMax = -Infinity;
+        for (const r of visible) { if (r.spy < yMin) yMin = r.spy; if (r.spy > yMax) yMax = r.spy; }
+        const pad = (yMax - yMin) * 0.06 || 1, yLo = yMin - pad, yHi = yMax + pad;
+        const first = visible[0], lastR = visible[visible.length - 1];
+        const xFor = t => M.left + ((t - first.t) / (lastR.t - first.t || 1)) * plotW;
+        const yFor = v => M.top + plotH - ((v - yLo) / (yHi - yLo)) * plotH;
+        const parts = [];
+        const range = yHi - yLo;
+        const step = range > 400 ? 100 : range > 200 ? 50 : range > 80 ? 25 : range > 30 ? 10 : 5;
+        for (let v = Math.ceil(yLo / step) * step; v <= yHi; v += step) {
+          const y = yFor(v).toFixed(1);
+          parts.push('<line class="chart-grid" x1="' + M.left + '" x2="' + (W - M.right) + '" y1="' + y + '" y2="' + y + '"/>');
+          parts.push('<text class="chart-axis-label" x="' + (M.left - 6) + '" y="' + (+y + 3).toFixed(1) + '" text-anchor="end">' + Math.round(v) + '</text>');
+        }
+        const spanYrs = (lastR.t - first.t) / (365.25 * 86400000);
+        const ticks = spanYrs > 15 ? 5 : 6;
+        for (let i = 0; i <= ticks; i++) {
+          const t = first.t + (lastR.t - first.t) * (i / ticks), x = xFor(t).toFixed(1), d = new Date(t);
+          const label = spanYrs > 3 ? String(d.getUTCFullYear()) : MON[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2);
+          parts.push('<line class="chart-grid" x1="' + x + '" x2="' + x + '" y1="' + M.top + '" y2="' + (M.top + plotH) + '"/>');
+          parts.push('<text class="chart-axis-label" x="' + x + '" y="' + (M.top + plotH + 15) + '" text-anchor="' + (i === 0 ? 'start' : i === ticks ? 'end' : 'middle') + '">' + label + '</text>');
+        }
+        parts.push('<line class="sc-axis" x1="' + M.left + '" x2="' + (W - M.right) + '" y1="' + (M.top + plotH) + '" y2="' + (M.top + plotH) + '"/>');
+        parts.push('<line class="sc-axis" x1="' + M.left + '" x2="' + M.left + '" y1="' + M.top + '" y2="' + (M.top + plotH) + '"/>');
+        // SPY line (thinned so long ranges stay light)
+        let d = '', lastX = -1e9;
+        for (let i = 0; i < visible.length; i++) {
+          const x = xFor(visible[i].t);
+          if (i && i < visible.length - 1 && x - lastX < 0.4) continue;
+          d += (d ? 'L' : 'M') + x.toFixed(1) + ' ' + yFor(visible[i].spy).toFixed(1); lastX = x;
+        }
+        parts.push('<path class="sc-line-spy" d="' + d + '"/>');
+        // the pending band: the newest 15 trading days cannot be classified yet
+        if (rows.length > LOOKBACK) {
+          const pendT = rows[rows.length - LOOKBACK].t;
+          if (pendT >= first.t && pendT <= lastR.t) {
+            const px = xFor(pendT), rx = W - M.right, bw = rx - px;
+            if (bw > 2) {
+              parts.push('<rect x="' + px.toFixed(1) + '" y="' + M.top + '" width="' + bw.toFixed(1) + '" height="' + plotH + '" fill="rgba(148, 163, 184, 0.10)"/>');
+              parts.push('<line x1="' + px.toFixed(1) + '" x2="' + px.toFixed(1) + '" y1="' + M.top + '" y2="' + (M.top + plotH) + '" stroke="rgba(148, 163, 184, 0.45)" stroke-width="1" stroke-dasharray="3 3"/>');
+              if (bw > 34) parts.push('<text x="' + ((px + rx) / 2).toFixed(1) + '" y="' + (M.top + 12) + '" text-anchor="middle" fill="#94a3b8" font-family="JetBrains Mono, ui-monospace, monospace" font-size="8.5" font-weight="700" letter-spacing="0.12em">PENDING</text>');
+              if (bw > 90) parts.push('<text x="' + ((px + rx) / 2).toFixed(1) + '" y="' + (M.top + 24) + '" text-anchor="middle" fill="#94a3b8" font-family="JetBrains Mono, ui-monospace, monospace" font-size="7.5" letter-spacing="0.08em">' + LOOKBACK + ' TRADING DAYS</text>');
+            }
+          }
+        }
+        // the dots
+        for (const e of extrema) {
+          if (e.t < first.t || e.t > lastR.t) continue;
+          const div = e.cls.startsWith('divergent');
+          parts.push('<circle cx="' + xFor(e.t).toFixed(1) + '" cy="' + yFor(e.spy).toFixed(1) + '" r="' + (div ? 5 : 4) + '" fill="' + COLOR[e.cls] + '" stroke="#fff" stroke-width="' + (div ? 2 : 1) + '"/>');
+        }
+        parts.push('<circle cx="' + xFor(lastR.t).toFixed(1) + '" cy="' + yFor(lastR.spy).toFixed(1) + '" r="3.5" fill="#ffb658" stroke="#fff" stroke-width="1"/>');
+        parts.push('<text class="chart-panel-label" x="' + (M.left + 6) + '" y="' + (M.top + 13) + '">SPY · daily close · dots = short-term highs and lows</text>');
+        svg.innerHTML = parts.join('');
+      }
+      drawChart(sliceForRange('1y'));
+      card.querySelectorAll('[data-sc-range]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('[data-sc-range]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          drawChart(sliceForRange(btn.dataset.scRange));
+        });
+      });
+    })(); // end Small Cap Confirmation
   </script>
 </body>
 </html>
