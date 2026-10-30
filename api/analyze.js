@@ -235,6 +235,7 @@ function buildDataContext(sym, ctx) {
       L.push(`  ${lastF.period}: revenue ${$$(lastF.revenue)}, net income ${$$(lastF.netIncome)}` +
         (prevF ? `; prior quarter ${prevF.period}: ${$$(prevF.revenue)} / ${$$(prevF.netIncome)}` : '') +
         (yoyF ? `; same quarter a year earlier ${yoyF.period}: ${$$(yoyF.revenue)} / ${$$(yoyF.netIncome)}` : ''));
+      L.push('  Revenue consensus: not on file. Do not say revenue beat or missed expectations unless a headline says so, and then attribute it.');
     }
     if (!lastQ && !lastF) L.push('  The quarter\'s numbers are not on file yet.');
     L.push('  (If the quarter label on file does not match this release, Yahoo has not updated yet: say the detailed numbers are not in and lean on the headlines.)');
@@ -249,15 +250,21 @@ function buildDataContext(sym, ctx) {
       if ((last.time === 'amc' && rows[i].d <= last.date) || (last.time !== 'amc' && rows[i].d < last.date)) { base = rows[i]; baseIdx = i; break; }
     }
     const chg = (now, then) => (Number.isFinite(now) && Number.isFinite(then) && then > 0) ? `${(now / then - 1) * 100 >= 0 ? '+' : ''}${((now / then - 1) * 100).toFixed(1)}%` : 'n/a';
+    // The daily history includes today's bar while the session is running,
+    // so a row dated today is a live price, not a close.
+    const todayDay = etDay(nowMs);
+    const st0 = q && q.marketState;
+    const inProgress = (d) => d === todayDay && (st0 === 'REGULAR' || st0 === 'PRE' || st0 === 'PREPRE');
     if (base) {
       L.push(`  Last close before the release: $${base.c.toFixed(2)} on ${base.d}.`);
       if (last.time === 'amc' && baseIdx > 0) {
         L.push(`  (That day's regular session, before the numbers: ${chg(base.c, rows[baseIdx - 1].c)} close to close.)`);
       }
       const after = rows[baseIdx + 1];
-      if (after) L.push(`  First full session after the release: closed $${after.c.toFixed(2)} on ${after.d} (${chg(after.c, base.c)}).`);
-      const nxt = rows[baseIdx + 2];
-      if (nxt) L.push(`  Latest close on file: $${rows[rows.length - 1].c.toFixed(2)} on ${rows[rows.length - 1].d} (${chg(rows[rows.length - 1].c, base.c)} since the release).`);
+      if (after && !inProgress(after.d)) L.push(`  First full session after the release: closed $${after.c.toFixed(2)} on ${after.d} (${chg(after.c, base.c)}).`);
+      else if (after) L.push(`  The first session after the release is today and still in progress (no close yet).`);
+      const lastRow = rows[rows.length - 1];
+      if (rows[baseIdx + 2] && !inProgress(lastRow.d)) L.push(`  Latest close on file: $${lastRow.c.toFixed(2)} on ${lastRow.d} (${chg(lastRow.c, base.c)} since the release).`);
       if (q) {
         const st = q.marketState;
         if ((st === 'PRE' || st === 'PREPRE') && Number.isFinite(q.preMarketPrice)) {
