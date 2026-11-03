@@ -2107,22 +2107,12 @@ async function loadLiveData() {
   }
   if (!current) throw new Error('Could not compute current BATS from latest data');
 
-  // Historical offsets, counted in trading days from `latestIdx`.
-  // Walk back a few extra rows if the target day has a data gap (a common
-  // Nasdaq case: QQEW carries a date that NDX/HYG/LQD skipped, so the
-  // exact latestIdx-1 lookup returns null and the "Previous close" card
-  // disappears entirely). We cap at 5 lookback days so a mislabelled
-  // "Previous close" stays within a business week of the true prior close.
-  const HIST_LOOKBACK_CAP = 5;
-  const history = {};
-  for (const { key, days, label } of HIST_OFFSETS) {
-    let rec = null;
-    for (let extra = 0; extra <= HIST_LOOKBACK_CAP; extra++) {
-      rec = batsAt(latestIdx - days - extra);
-      if (rec) break;
-    }
-    history[key] = rec ? { score: rec.blended, date: rec.date, label } : null;
-  }
+  // Historical offsets, counted in trading days back from the reading the
+  // gauge is showing. At load that reading is the latest CSV row, so the
+  // base is latestIdx; once the intraday refresh moves the gauge on to a
+  // new session, the base becomes latestIdx + 1 so "Previous close" is the
+  // latest CSV row (Friday's close on a Monday), not the row before it.
+  const history = buildHistory(batsAt, latestIdx);
 
   // Return batsAt + latestIdx too so the page can re-run the composite with
   // live-quote overrides (client-side intraday BATS). Slow inputs (NAAIM,
@@ -2131,6 +2121,39 @@ async function loadLiveData() {
   // `spx` is exposed so shouldShowBottomFormation can measure the trailing
   // 252d drawdown from ATH for its reveal-gate.
   return { current, history, batsAt, latestIdx, spx };
+}
+
+// The "Previous close / 1 week / 1 month / 3 months" strip, counted in
+// trading days back from `baseIdx` (the row the gauge's current reading
+// sits on; one past the last CSV row while a new session is live).
+// Walks back a few extra rows if the target day has a data gap (a common
+// Nasdaq case: QQEW carries a date that NDX/HYG/LQD skipped, so the exact
+// lookup returns null and the "Previous close" card disappears entirely).
+// Capped at 5 lookback days so a mislabelled "Previous close" stays within
+// a business week of the true prior close.
+function buildHistory(batsAt, baseIdx) {
+  const HIST_LOOKBACK_CAP = 5;
+  const history = {};
+  for (const { key, days, label } of HIST_OFFSETS) {
+    let rec = null;
+    for (let extra = 0; extra <= HIST_LOOKBACK_CAP; extra++) {
+      rec = batsAt(baseIdx - days - extra);
+      if (rec) break;
+    }
+    history[key] = rec ? { score: rec.blended, date: rec.date, label } : null;
+  }
+  return history;
+}
+
+// The New York calendar day of a quote's last regular-session print,
+// as YYYY-MM-DD, or null. Used to tell whether the live quotes belong to a
+// session the CSVs do not have yet.
+function etDayFromSeconds(sec) {
+  if (!Number.isFinite(sec) || sec <= 0) return null;
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' })
+      .format(new Date(sec * 1000));
+  } catch (e) { return null; }
 }
 
 function updateComponentsWithLatest(current) {
@@ -2649,9 +2672,12 @@ async function init() {
           const data = await r.json();
           const q = (data && data.quotes) || {};
           const overrides = {};
+          let sessionDay = null;   // newest regular-session day among the quotes
           for (const [slot, sym] of Object.entries(ticks)) {
             const price = q[sym] && q[sym].price;
             if (Number.isFinite(price) && price > 0) overrides[slot] = price;
+            const d = q[sym] && etDayFromSeconds(q[sym].regularMarketTime);
+            if (d && (!sessionDay || d > sessionDay)) sessionDay = d;
           }
           if (!Object.keys(overrides).length) return;
           const fresh = liveContext.batsAt(liveContext.latestIdx, overrides);
@@ -2664,6 +2690,18 @@ async function init() {
           const pivotLive  = computePivotTop(fresh);
           setSubGauge('upsideTrendGauge', upsideLive, 'upsideTrendValue', 'upsideTrendState', 'green', 'left');
           setSubGauge('pivotTopGauge',    pivotLive,  'pivotTopValue',    'pivotTopState',    'red',   'right');
+          // When the quotes come from a session the CSVs do not have yet
+          // (a Monday morning after Friday's nightly update, or any day
+          // before that evening's update), the gauge is one trading day
+          // past the last CSV row, so the history strip and the sub-gauge
+          // pills count back from one row further: "Previous close" becomes
+          // the latest CSV row instead of the row before it.
+          const newSession = !!(sessionDay && fresh.date && sessionDay > fresh.date);
+          const baseIdx = liveContext.latestIdx + (newSession ? 1 : 0);
+          renderHistoricalContext(buildHistory(liveContext.batsAt, baseIdx));
+          renderSubHistory('upsideTrendHist',     computeUpsideTrend,     liveContext.batsAt, baseIdx);
+          renderSubHistory('pivotTopHist',        computePivotTop,        liveContext.batsAt, baseIdx);
+          renderSubHistory('bottomFormationHist', computeBottomFormation, liveContext.batsAt, baseIdx);
           const dateNote = document.getElementById('gaugeDateNote');
           if (dateNote) {
             const now = new Date();
