@@ -56,7 +56,7 @@ def warn(msg: str) -> None:
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=10, rsi=10, ma200=10, ma50=5,
                pct_above_200ma=20, pct_above_50ma=5,
-               naaim=5, junk=10, spread=5, sector_osc=10, roc5=10,
+               junk=10, spread=5, sector_osc=10, roc5=10,
                sector_regime=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
@@ -123,16 +123,6 @@ def score_pct_above_200ma(pct):
     elif pct <= 65: s = 45 + (pct - 45) * (65 - 45) / 20
     elif pct <= 85: s = 65 + (pct - 65) * (80 - 65) / 20
     else:           s = 80 + (pct - 85) * (90 - 80) / 15
-    return clamp(s, 2, 98)
-
-def score_naaim(v):
-    if v is None: return None
-    if   v <=  10: s = 5
-    elif v <=  35: s = 5  + (v - 10) * (25 - 5)  / 25
-    elif v <=  60: s = 25 + (v - 35) * (50 - 25) / 25
-    elif v <=  85: s = 50 + (v - 60) * (75 - 50) / 25
-    elif v <= 100: s = 75 + (v - 85) * (90 - 75) / 15
-    else:          s = 95
     return clamp(s, 2, 98)
 
 def score_breadth(sp):  return clamp(50 + sp * 10, 5, 95) if sp is not None else None
@@ -288,15 +278,6 @@ def load_sector_regime():
         except: pass
     return out
 
-def load_naaim():
-    rows = _read_csv('naaim.csv')
-    if not rows: return None
-    out = {}
-    for row in rows[1:]:
-        try: out[row[0]] = float(row[1])
-        except: pass
-    return out
-
 def load_yields():
     """yields_history.csv: Date,Y2,Y10,Spread10Y2Y — column 3 is the spread in pp."""
     rows = _read_csv('yields_history.csv')
@@ -361,7 +342,7 @@ def forward_return(dates, prices, date, days):
 
 # --- Curated moments ---
 # Moments before 2007-10 are scored on a reduced component set: breadth
-# (RSP/QQEW), % above 200/50-day, NAAIM and junk-bond (HYG/LQD) data do not
+# (RSP/QQEW), % above 200/50-day and junk-bond (HYG/LQD) data do not
 # exist yet, so the blend below renormalises over whatever is available and
 # the JSON records `coverage` (% of component weight with data) and `missing`.
 MOMENTS = [
@@ -415,14 +396,13 @@ def main():
     pct_above = load_pct_above_200ma()
     pct_above_50 = load_pct_above_50ma()
     sector_regime = load_sector_regime()
-    naaim = load_naaim()
     yields = load_yields()
     sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
                     hyg=hyg, lqd=lqd, pct_above=pct_above, pct_above_50=pct_above_50,
                     sector_regime=sector_regime,
-                    naaim=naaim, yields=yields,
+                    yields=yields,
                     sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
     if missing:
@@ -439,7 +419,6 @@ def main():
     pct_above_dates = sorted(pct_above.keys())
     pct_above_50_dates = sorted(pct_above_50.keys())
     sector_regime_dates = sorted(sector_regime.keys())
-    naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
     sector_dates = sorted(sector_osc.keys())
 
@@ -455,7 +434,6 @@ def main():
         d_pct  = snap_le(pct_above_dates, target)
         d_pct50 = snap_le(pct_above_50_dates, target)
         d_secreg = snap_le(sector_regime_dates, target)
-        d_naaim = snap_le(naaim_dates, target)
         d_yields = snap_le(yields_dates, target)
         d_sector = snap_le(sector_dates, target)
 
@@ -471,7 +449,6 @@ def main():
         v_pct    = pct_above.get(d_pct)          if d_pct    else None
         v_pct50  = pct_above_50.get(d_pct50)     if d_pct50  else None
         v_secreg = sector_regime.get(d_secreg)   if d_secreg else None
-        v_naaim  = naaim.get(d_naaim)            if d_naaim  else None
         v_rsi    = rsi_at(spy_dates, spy, d_spy) if d_spy else None
         if v_rsi is None and d_spx:
             # Before the cap-weighted ETF existed (SPY 2003 / QQQ 1999), take the
@@ -512,7 +489,6 @@ def main():
             'ma50':            dict(raw=v_ma50,   score=score_ma50(v_ma50),                      weight=WEIGHTS['ma50']),
             'pct_above_200ma': dict(raw=v_pct,    score=score_pct_above_200ma(v_pct),            weight=WEIGHTS['pct_above_200ma']),
             'pct_above_50ma':  dict(raw=v_pct50,  score=score_pct_above_50ma(v_pct50),           weight=WEIGHTS['pct_above_50ma']),
-            'naaim':           dict(raw=v_naaim,  score=score_naaim(v_naaim),                    weight=WEIGHTS['naaim']),
             'junk':            dict(raw=junk,     score=score_junk(junk),                        weight=WEIGHTS['junk']),
             'spread':          dict(raw=v_spread, score=score_spread(v_spread),                  weight=WEIGHTS['spread']),
             'sector_osc':      dict(raw=v_sector, score=score_sector_osc(v_sector),              weight=WEIGHTS['sector_osc']),

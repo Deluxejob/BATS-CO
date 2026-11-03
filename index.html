@@ -476,7 +476,7 @@
           <div class="sub-gauge-hint">Higher = more top risk</div>
           <svg viewBox="0 0 200 360" class="sub-gauge-svg" id="pivotTopGauge" aria-label="Pivot Top sub-gauge"></svg>
           <div class="sub-gauge-state" id="pivotTopState">Loading…</div>
-          <div class="sub-gauge-desc">Blends 5 overheated readings.</div>
+          <div class="sub-gauge-desc">Blends 4 overheated readings.</div>
           <div class="sub-hist" id="pivotTopHist" aria-label="Pivot Top recent history"></div>
           <span class="sub-gauge-value visually-hidden" id="pivotTopValue">—</span>
         </div>
@@ -669,7 +669,6 @@
           </p>
           <ul>
             <li>RSI overbought <span class="sg-hint">(momentum stretched, fires above 60 — steep bonus past 70)</span></li>
-            <li>NAAIM extreme leverage <span class="sg-hint">(managers all-in, fires above 75)</span></li>
             <li>SPX overextended above 50 MA <span class="sg-hint">(price stretched, fires above +2%)</span></li>
             <li>VIX complacency <span class="sg-hint">(fear too low, fires below 15)</span></li>
             <li>Bollinger %B <span class="sg-hint">(price vs 20-day volatility bands — steep warning above the upper band)</span></li>
@@ -1079,11 +1078,11 @@
       return `${months[m - 1]} ${d}, ${y}`;
     };
     // Pre-2007 moments are scored on fewer components (the breadth, % above
-    // moving-average, NAAIM and junk-bond series didn't exist yet). Say so
+    // moving-average and junk-bond series didn't exist yet). Say so
     // on the card rather than presenting the number as a full BATS reading.
     const COMPONENT_NAMES = {
       breadth: 'breadth', pct_above_200ma: '% above 200-day', pct_above_50ma: '% above 50-day',
-      naaim: 'NAAIM', junk: 'junk bonds', vix: 'volatility', rsi: 'RSI', ma200: '200-day distance',
+      junk: 'junk bonds', vix: 'volatility', rsi: 'RSI', ma200: '200-day distance',
       ma50: '50-day distance', spread: 'yield curve', sector_osc: 'sector oscillator',
       roc5: '5-day change', sector_regime: 'sector regime',
     };

@@ -12,16 +12,24 @@ Live at **[bats.co](https://bats.co)**.
 
 ## Current components
 
-| Component | Weight | Direction | Data source |
+Weights are relative points (the blend divides by their total, 130), as set in `COMPONENTS` in `app.js` and mirrored in the Python builders.
+
+| Component | Points | Direction | Data source |
 |---|---|---|---|
-| VIX | 25% | Contrarian: high fear = buying opportunity | datasets/finance-vix |
-| Market Breadth (RSP/SPY spread) | 25% | Confirmatory: broad participation is bullish | Yahoo Finance `RSP`, `SPY` |
-| S&P vs 200-day MA | 10% | State: far below = buy zone; far above = strong trend | Computed from Yahoo `^GSPC` |
-| Junk Bond Demand (HYG/LQD spread) | 10% | Confirmatory: risk-on credit = bullish | Yahoo Finance `HYG`, `LQD` |
-| % of Stocks Above 200 MA | 10% | Breadth: broad participation = bullish; extreme washout = contrarian buy | ~100 large-cap S&P constituents via Yahoo Finance (daily) |
-| SPY 14-day RSI | 10% | Contrarian: extreme momentum reverts | Computed from Yahoo `SPY` closes |
-| NAAIM Manager Exposure | 5% | State: low exposure = pros defensive = buy zone | naaim.org (weekly) |
-| 10Y-2Y Yield Spread | 5% | Leading: inverted curve = recession warning; steep = healthy expansion | Treasury.gov daily par yields |
+| VIX | 25 | Contrarian: high fear = buying opportunity | Yahoo Finance `^VIX` (`^VXN` for the Nasdaq 100) |
+| Market Breadth (RSP/SPY 20-day spread) | 10 | Confirmatory: broad participation is bullish | Yahoo Finance `RSP`, `SPY` (`QQEW`, `QQQ`) |
+| SPY 14-day RSI | 10 | Contrarian: extreme momentum reverts | Computed from Yahoo `SPY` closes |
+| S&P vs 200-day MA | 10 | State: far below = buy zone; far above = strong trend | Computed from Yahoo `^GSPC` |
+| S&P vs 50-day MA | 5 | State: shorter-term version of the above | Computed from Yahoo `^GSPC` |
+| % of Stocks Above 200 MA | 20 | Breadth: broad participation = bullish; extreme washout = contrarian buy | ~100 large caps via Yahoo Finance (daily) |
+| % of Stocks Above 50 MA | 5 | Breadth: shorter-term participation | Same universe (daily) |
+| Junk Bond Demand (HYG/LQD spread) | 10 | Confirmatory: risk-on credit = bullish | Yahoo Finance `HYG`, `LQD` |
+| 10Y-2Y Yield Spread | 5 | Leading: inverted curve = recession warning; steep = healthy expansion | Treasury.gov daily par yields |
+| Sector Oscillator | 10 | Momentum of sector advances vs declines (McClellan-style) | Computed from the 11 SPDR sector ETFs |
+| 5-day Rate of Change | 10 | Short-term momentum of the index | Computed from Yahoo `^GSPC` |
+| Sector Rotation Regime | 10 | Cyclical vs defensive sector leadership | Computed from the 11 SPDR sector ETFs |
+
+Retired: AAII retail sentiment (2026-08, no free source) and NAAIM manager exposure (2026-11, NAAIM went subscription-only on 2026-08-01 and the public feed froze at 2026-07-29).
 
 ## Files
 

@@ -3,12 +3,11 @@
 Backtest the Pivot Top sub-gauge composite (see computePivotTop in app.js).
 
 Pivot Top is the "top warning" sub-gauge on the home page — a weighted
-average of five overheating signals:
+average of four overheating signals:
 
   Weight  Signal
   ------  ------
      40   SPY RSI overbought (piecewise: 0 at RSI 60, 50 at 70, 100 at 75+)
-     20   NAAIM extreme leverage (0 at 75, 100 at 100)
      25   SPX overextended vs 50-day MA (0 at +2%, 100 at +7%)
      15   VIX complacency (0 at 15, 100 at 10)
      25   Bollinger %B (piecewise, 0 at <0.5, 75 at %B=1.0, 98 at >1.1)
@@ -126,12 +125,6 @@ def pt_rsi(rsi: float | None) -> float | None:
     return min(100.0, 50 + (rsi - 70) * 10)  # 70->50, 75->100
 
 
-def pt_naaim(v: float | None) -> float | None:
-    if v is None:
-        return None
-    return max(0.0, min(100.0, (v - 75) * 4))       # 75->0, 100->100
-
-
 def pt_ma50(dist_pct: float | None) -> float | None:
     if dist_pct is None:
         return None
@@ -164,7 +157,6 @@ def pt_bbval(b: float | None) -> float | None:
 
 PT_WEIGHTS: list[tuple[str, int, callable]] = [
     ("rsi",   40, pt_rsi),
-    ("naaim", 20, pt_naaim),
     ("ma50",  25, pt_ma50),
     ("vix",   15, pt_vix),
     ("bb",    25, pt_bbval),
@@ -194,7 +186,6 @@ def main() -> int:
         vix = to_map(load_date_close(os.path.join(DATA_DIR, "vix.csv"), col=1))
     spx    = load_date_close(os.path.join(DATA_DIR, "spx.csv"))
     spy    = load_date_close(os.path.join(DATA_DIR, "spy.csv"))
-    naaim  = load_date_close(os.path.join(DATA_DIR, "naaim.csv"))
 
     spx_dates = [d for d, _ in spx]
     spx_close = [c for _, c in spx]
@@ -207,17 +198,6 @@ def main() -> int:
     rsi_series = compute_rsi_wilder(spy_close, 14)
     spy_idx   = {d: i for i, d in enumerate(spy_dates)}
 
-    # NAAIM is weekly — do most-recent-on-or-before lookup.
-    naaim_sorted = sorted(naaim, key=lambda x: x[0])
-    def naaim_at(target: str) -> float | None:
-        best = None
-        for d, v in naaim_sorted:
-            if d <= target:
-                best = v
-            else:
-                break
-        return best
-
     # Walk history — compute Pivot Top on every day where all inputs exist.
     scores: list[tuple[str, float]] = []
     for i, d in enumerate(spx_dates):
@@ -227,12 +207,11 @@ def main() -> int:
             continue
         v = vix.get(d)
         r = rsi_series[spy_idx[d]] if d in spy_idx else None
-        n = naaim_at(d)
-        if v is None or r is None or n is None:
+        if v is None or r is None:
             continue
         ma50_dist = (spx_close[i] / s50 - 1) * 100
         score = compute_pivot_top({
-            "rsi": r, "naaim": n, "ma50": ma50_dist, "vix": v, "bb": b,
+            "rsi": r, "ma50": ma50_dist, "vix": v, "bb": b,
         })
         if score is not None:
             scores.append((d, score))

@@ -36,7 +36,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install openpyxl for parsing NAAIM
+      - name: Install openpyxl (used by the advance/decline fetch)
         run: pip install --quiet openpyxl
 
       - name: Refresh % of stocks above 200 MA (daily — fetches ~100 tickers from Yahoo)
@@ -61,9 +61,6 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/update-credit-tiers.py
-
-      - name: Refresh NAAIM (weekly — tolerant of no-new-data)
-        run: python scripts/update-naaim.py
 
       - name: Refresh S&P 500 PE ratio (monthly — tolerant of no-new-data)
         run: python scripts/update-pe-ratio.py

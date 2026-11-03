@@ -227,51 +227,6 @@ function rsiAdvisory(rsi) {
   return                { tone: 'opportunity', text: 'Extremely oversold. Very strong contrarian buy signal historically (+25% avg forward 12mo, 100% positive in 11 historical instances). Rare but potent.' };
 }
 
-// ---- NAAIM Exposure Index — professional active-manager positioning ----
-//
-// The National Association of Active Investment Managers polls its members
-// each Wednesday: what's your current equity exposure? Responses range from
-// -200% (fully leveraged short) to +200% (fully leveraged long). The aggregate
-// mean is the "NAAIM Number." Published weekly since 2006.
-//
-// Direction of BATS mapping — same as market state:
-//   Managers heavily long (high NAAIM)  -> HIGH BATS (market in confident state)
-//   Managers defensive  (low NAAIM)    -> LOW BATS (oversold state, historically buy zone)
-//
-// Distribution 2006-2026 (1,043 weekly readings): min -3.6, 10th 32, median 72,
-// mean 67, 90th 94, max 121. Managers typically sit around 70% long — the
-// median reflects their structural bullish bias.
-//
-// Backtest 2006-2026:
-//   Very Oversold (NAAIM ≤ 10, managers defensive): +13.6% avg 12mo, 75% hit
-//   Oversold      (NAAIM 10-35):                    +13.3% avg 12mo, 83% hit
-//   Very Bullish  (NAAIM > 100, leveraged long):    +11.9% avg 12mo, 82% hit
-// NAAIM's Very Bullish extreme is NOT punished — institutions ride trends
-// well when they're aggressively long, so we score them monotonically.
-//
-// Weekly data — dashboard carries the most recent reading forward.
-function scoreNAAIM(v) {
-  if (v == null || isNaN(v)) return null;
-  let s;
-  if (v <= 10)       s = 5;
-  else if (v <= 35)  s = 5  + (v - 10) * (25 - 5)  / 25;
-  else if (v <= 60)  s = 25 + (v - 35) * (50 - 25) / 25;
-  else if (v <= 85)  s = 50 + (v - 60) * (75 - 50) / 25;
-  else if (v <= 100) s = 75 + (v - 85) * (90 - 75) / 15;
-  else               s = 95;
-  return Math.max(2, Math.min(98, s));
-}
-
-function naaimAdvisory(v) {
-  if (v == null || isNaN(v)) return null;
-  if (v <= 10)  return { tone: 'opportunity', text: 'Active managers deeply defensive — historically a bullish setup. Forward 12mo returns have averaged +13.6% from this rare zone (75% positive).' };
-  if (v <= 35)  return { tone: 'opportunity', text: 'Active managers unusually cautious. Historically a contrarian buy zone: +13.3% avg forward 12mo (83% positive).' };
-  if (v <= 55)  return { tone: 'info',        text: 'Managers moderately defensive — below their long-term average of ~70%.' };
-  if (v <= 80)  return { tone: 'info',        text: 'Manager exposure near its long-term average — neutral positioning.' };
-  if (v <= 100) return { tone: 'info',        text: 'Managers solidly long — comfortable but not maxed out.' };
-  return                { tone: 'info',        text: 'Managers using leverage on the long side — historically NOT a warning (institutions ride trends better than retail). Forward 12mo returns have averaged +12% from this zone.' };
-}
-
 // ---- % of Stocks Above 200-day Moving Average ----
 //
 // Classic breadth indicator: of the ~100 large-cap S&P constituents we track,
@@ -965,18 +920,6 @@ const COMPONENTS = [
     explainer: 'indicators/pct-above-200ma.html',
   },
   {
-    key: 'naaim',
-    name: 'NAAIM Manager Exposure',
-    desc: 'Weekly survey of active investment managers — how much equity exposure they hold. Low readings = defensive = historically buy zone.',
-    weight: 5,
-    status: 'live',
-    raw: 0,
-    value: '0 (loading)',
-    signal: scoreNAAIM(0),
-    advisory: naaimAdvisory(0),
-    explainer: 'indicators/naaim.html',
-  },
-  {
     key: 'junk_demand',
     name: 'Junk Bond Demand',
     desc: 'Credit-market risk appetite: HYG vs LQD 20-day return spread. Confirmatory: positive = investors chasing yield = bullish.',
@@ -1283,10 +1226,6 @@ function computePivotTop(current) {
     else if (current.rsiVal <= 70) r = (current.rsiVal - 60) * 5;   // 60→0, 70→50
     else                           r = Math.min(100, 50 + (current.rsiVal - 70) * 10);   // 70→50, 75→100
     contribs.push({ w: 40, s: r });
-  }
-  // NAAIM extreme leverage — 0 at NAAIM 75, 100 at NAAIM 100
-  if (current.naaimValue != null) {
-    contribs.push({ w: 20, s: Math.max(0, Math.min(100, (current.naaimValue - 75) * 4)) });
   }
   // SPX overextended above 50MA — 0 at +2%, 100 at +7%
   if (current.ma50Dist != null) {
@@ -1820,18 +1759,6 @@ function parsePctAbove200MALive(text) {
 // % Above 50 MA: same CSV shape as the 200-day file.
 function parsePctAbove50MALive(text) { return parsePctAbove200MALive(text); }
 
-// NAAIM: Date,NAAIM (weekly, since 2006). Two-column simple CSV.
-function parseNAAIMLive(text) {
-  const lines = text.trim().split(/\r?\n/);
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].split(',');
-    const v = parseFloat(parts[1]);
-    if (parts[0] && !isNaN(v)) rows.push({ date: parts[0], value: v });
-  }
-  return rows;
-}
-
 // Yields history: Date,Y2,Y10,Spread10Y2Y (daily since 1990-01-02)
 // The 4th column is 10Y-2Y in percentage points, pre-computed by the fetcher.
 function parseYieldsHistoryLive(text) {
@@ -1843,13 +1770,6 @@ function parseYieldsHistoryLive(text) {
     if (parts[0] && !isNaN(sp)) rows.push({ date: parts[0], spread: sp });
   }
   return rows;
-}
-
-function findNaaimOnOrBefore(naaimRows, targetDate) {
-  for (let i = naaimRows.length - 1; i >= 0; i--) {
-    if (naaimRows[i].date <= targetDate) return naaimRows[i];
-  }
-  return null;
 }
 
 // Find the most recent % Above 200 MA reading on or before `targetDate`.
@@ -1886,8 +1806,8 @@ function computeRsiSeriesLive(closes, period = 14) {
 
 async function loadLiveData() {
   // Market-specific data files (VIX/VXN, RSP/QQEW, SPY/QQQ, SPX/NDX)
-  // Universal data files (HYG, LQD, % Above 200 MA, NAAIM, yields_history — apply to both markets)
-  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, pctAboveText, pctAbove50Text, naaimText, yieldsText, sectorOscText, sectorRegimeText] = await Promise.all([
+  // Universal data files (HYG, LQD, % Above 200 MA, yields_history — apply to both markets)
+  const [volText, breadthEqualText, breadthCapText, hygText, lqdText, indexText, pctAboveText, pctAbove50Text, yieldsText, sectorOscText, sectorRegimeText] = await Promise.all([
     fetchCSVText(APP_DATA_BASE + MC.volCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthEqualCsv),
     fetchCSVText(APP_DATA_BASE + MC.breadthCapCsv),
@@ -1896,7 +1816,6 @@ async function loadLiveData() {
     fetchCSVText(APP_DATA_BASE + MC.indexCsv),
     fetchCSVText(APP_DATA_BASE + 'pct_above_200ma.csv'),
     fetchCSVText(APP_DATA_BASE + 'pct_above_50ma.csv'),
-    fetchCSVText(APP_DATA_BASE + 'naaim.csv'),
     fetchCSVText(APP_DATA_BASE + 'yields_history.csv'),
     fetchCSVText(APP_DATA_BASE + 'sector_osc.csv'),
     fetchCSVText(APP_DATA_BASE + 'sector_regime.csv'),
@@ -1925,7 +1844,6 @@ async function loadLiveData() {
   const pctAbove = parsePctAbove200MALive(pctAboveText);
   const pctAbove50 = parsePctAbove50MALive(pctAbove50Text);
   const sectorRegime = parseSectorRegimeLive(sectorRegimeText);
-  const naaim = parseNAAIMLive(naaimText);
   const rsi = computeRsiSeriesLive(spy.map(r => r.close));   // RSI of SPY (or QQQ)
   const sma200 = computeSmaSeries(spx.map(r => r.close), 200); // 200-day MA of index (SPX or NDX)
   const sma50  = computeSmaSeries(spx.map(r => r.close), 50);  // 50-day MA of same index
@@ -1965,12 +1883,11 @@ async function loadLiveData() {
   const wJunk      = (COMPONENTS.find(c => c.key === 'junk_demand')      || {}).weight || 0;
   const wPct       = (COMPONENTS.find(c => c.key === 'pct_above_200ma')  || {}).weight || 0;
   const wPct50     = (COMPONENTS.find(c => c.key === 'pct_above_50ma')   || {}).weight || 0;
-  const wNAAIM     = (COMPONENTS.find(c => c.key === 'naaim')            || {}).weight || 0;
   const wSpread    = (COMPONENTS.find(c => c.key === 'yield_spread')     || {}).weight || 0;
   const wSector    = (COMPONENTS.find(c => c.key === 'sector_osc')       || {}).weight || 0;
   const wROC5      = (COMPONENTS.find(c => c.key === 'roc5')             || {}).weight || 0;
   const wSecRegime = (COMPONENTS.find(c => c.key === 'sector_regime')    || {}).weight || 0;
-  const wTotal     = wVix + wBreadth + wRSI + wMA + wMA50 + wJunk + wPct + wPct50 + wNAAIM + wSpread + wSector + wROC5 + wSecRegime;
+  const wTotal     = wVix + wBreadth + wRSI + wMA + wMA50 + wJunk + wPct + wPct50 + wSpread + wSector + wROC5 + wSecRegime;
 
   function batsAt(rspRowIdx, overrides) {
     if (rspRowIdx < 20) return null;
@@ -1990,8 +1907,6 @@ async function loadLiveData() {
     if (!pct50Rec) return null;
     const secRegRec = findPctOnOrBefore(sectorRegime, d);   // same lookup shape (daily, on-or-before)
     if (!secRegRec) return null;
-    const naaimRec = findNaaimOnOrBefore(naaim, d);
-    if (!naaimRec) return null;
     const yieldsRec = findYieldsOnOrBefore(d);
     if (!yieldsRec) return null;
     const sectorRec = findSectorOscOnOrBefore(d);
@@ -2000,7 +1915,7 @@ async function loadLiveData() {
     // fast tickers (VIX / SPY / RSP / HYG / LQD / index), swap them into the
     // "latest close" slot before doing the math. Everything downstream then
     // computes an intraday BATS reading using stored 200/50-day baselines
-    // + today's spot. Slow inputs (NAAIM, %above200, yields) stay at their
+    // + today's spot. Slow inputs (%above200, yields) stay at their
     // daily-close values because they don't have a meaningful intraday tick.
     const ov = overrides || {};
     const spyClose = (typeof ov.spy === 'number' && ov.spy > 0) ? ov.spy : spy[si].close;
@@ -2054,7 +1969,6 @@ async function loadLiveData() {
     const ms50 = scoreMA50(ma50Dist);
     const ps = scorePctAbove200MA(pctRec.pct);
     const ps50 = scorePctAbove50MA(pct50Rec.pct);
-    const ns = scoreNAAIM(naaimRec.value);
     const yss = scoreYieldSpread(yieldSpread);
     const sos = scoreSectorOsc(sectorOscVal);
     const roc = scoreROC5(roc5Val);
@@ -2064,7 +1978,7 @@ async function loadLiveData() {
     const bbs   = scoreBollingerB(bbVal);
     const macds = scoreMACDHist(macdVal);
     const roc10 = scoreROC10(roc10Val);
-    if (vs == null || bs == null || rs == null || js == null || ms == null || ms50 == null || ps == null || ps50 == null || ns == null || yss == null || sos == null || roc == null || srs == null || wTotal <= 0) return null;
+    if (vs == null || bs == null || rs == null || js == null || ms == null || ms50 == null || ps == null || ps50 == null || yss == null || sos == null || roc == null || srs == null || wTotal <= 0) return null;
     return {
       date: d,
       vix: vixClose,
@@ -2079,8 +1993,6 @@ async function loadLiveData() {
       pctAbove50Val: pct50Rec.pct,
       pctAbove50Coverage: pct50Rec.coverage,
       pctAbove50Date: pct50Rec.date,
-      naaimValue: naaimRec.value,
-      naaimDate: naaimRec.date,
       yieldSpread,
       yieldsDate: yieldsRec.date,
       sectorOsc: sectorOscVal,
@@ -2091,9 +2003,9 @@ async function loadLiveData() {
       macdVal,         // raw MACD histogram (percent of price)
       sectorRegimeSpread: secRegRec.spread,
       sectorRegimeDate: secRegRec.date,
-      vs, bs, rs, js, ms, ms50, ps, ps50, ns, yss, sos, roc, srs,
+      vs, bs, rs, js, ms, ms50, ps, ps50, yss, sos, roc, srs,
       bbs, macds, roc10s: roc10,     // Upside-Trend-only scores
-      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ms50 * wMA50 + ps * wPct + ps50 * wPct50 + ns * wNAAIM + yss * wSpread + sos * wSector + roc * wROC5 + srs * wSecRegime) / wTotal,
+      blended: (vs * wVix + bs * wBreadth + rs * wRSI + js * wJunk + ms * wMA + ms50 * wMA50 + ps * wPct + ps50 * wPct50 + yss * wSpread + sos * wSector + roc * wROC5 + srs * wSecRegime) / wTotal,
     };
   }
 
@@ -2115,8 +2027,8 @@ async function loadLiveData() {
   const history = buildHistory(batsAt, latestIdx);
 
   // Return batsAt + latestIdx too so the page can re-run the composite with
-  // live-quote overrides (client-side intraday BATS). Slow inputs (NAAIM,
-  // yields, %above200) stay at their daily-close values inside batsAt; only
+  // live-quote overrides (client-side intraday BATS). Slow inputs (yields,
+  // %above200) stay at their daily-close values inside batsAt; only
   // the ticker-driven fast ones react to spot prices.
   // `spx` is exposed so shouldShowBottomFormation can measure the trailing
   // 252d drawdown from ATH for its reveal-gate.
@@ -2217,13 +2129,6 @@ function updateComponentsWithLatest(current) {
     ma50Comp.value = `${sign}${current.ma50Dist.toFixed(2)}%`;
     ma50Comp.signal = current.ms50;
     ma50Comp.advisory = ma50Advisory(current.ma50Dist);
-  }
-  const naaimComp = COMPONENTS.find(c => c.key === 'naaim');
-  if (naaimComp) {
-    naaimComp.raw = current.naaimValue;
-    naaimComp.value = `${current.naaimValue.toFixed(1)} (${current.naaimDate})`;
-    naaimComp.signal = current.ns;
-    naaimComp.advisory = naaimAdvisory(current.naaimValue);
   }
   const spreadComp = COMPONENTS.find(c => c.key === 'yield_spread');
   if (spreadComp) {
@@ -2659,7 +2564,7 @@ async function init() {
     // composite, and re-render the gauge + sub-gauges in place. Runs once
     // on load, then every 5 minutes while the page is visible during US
     // market hours (04:00-20:00 ET Mon-Fri, i.e. extended hours). Slow
-    // components (NAAIM, %above200, yields) stay at daily-close values;
+    // components (%above200, yields) stay at daily-close values;
     // only ticker-driven fast ones react to spot prices.
     if (liveContext) {
       const applyIntraday = async () => {

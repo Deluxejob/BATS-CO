@@ -58,7 +58,7 @@ def warn(msg: str) -> None:
 # --- Component weights (must match COMPONENTS in app.js) ---
 WEIGHTS = dict(vix=25, breadth=10, rsi=10, ma200=10, ma50=5,
                pct_above_200ma=20, pct_above_50ma=5,
-               naaim=5, junk=10, spread=5, sector_osc=10, roc5=10,
+               junk=10, spread=5, sector_osc=10, roc5=10,
                sector_regime=10)
 
 # --- Buckets (must match BUCKETS in app.js) ---
@@ -142,16 +142,6 @@ def score_ma50(d):
     elif d <=  3: s = 50 +  d      * (70 - 50) / 3
     elif d <=  6: s = 70 + (d - 3) * (88 - 70) / 3
     else:         s = 90
-    return clamp(s, 2, 98)
-
-def score_naaim(v):
-    if v is None: return None
-    if   v <=  10: s = 5
-    elif v <=  35: s = 5  + (v - 10) * (25 - 5)  / 25
-    elif v <=  60: s = 25 + (v - 35) * (50 - 25) / 25
-    elif v <=  85: s = 50 + (v - 60) * (75 - 50) / 25
-    elif v <= 100: s = 75 + (v - 85) * (90 - 75) / 15
-    else:          s = 95
     return clamp(s, 2, 98)
 
 def score_breadth(sp):  return clamp(50 + sp * 10, 5, 95) if sp is not None else None
@@ -261,15 +251,6 @@ def load_sector_regime():
         except: pass
     return out
 
-def load_naaim():
-    rows = _read_csv('naaim.csv')
-    if not rows: return None
-    out = {}
-    for row in rows[1:]:
-        try: out[row[0]] = float(row[1])
-        except: pass
-    return out
-
 def load_yields():
     rows = _read_csv('yields_history.csv')
     if not rows: return None
@@ -360,14 +341,13 @@ def main():
     pct_above = load_pct_above_200ma()
     pct_above_50 = load_pct_above_50ma()
     sector_regime = load_sector_regime()
-    naaim = load_naaim()
     yields = load_yields()
     sector_osc = load_sector_osc()
 
     required = dict(vix=vix, spx=spx, spy=spy, rsp=rsp,
                     hyg=hyg, lqd=lqd, pct_above=pct_above, pct_above_50=pct_above_50,
                     sector_regime=sector_regime,
-                    naaim=naaim, yields=yields,
+                    yields=yields,
                     sector_osc=sector_osc)
     missing = [k for k, v in required.items() if not v]
     if missing:
@@ -382,7 +362,6 @@ def main():
     pct_above_dates = sorted(pct_above.keys())
     pct_above_50_dates = sorted(pct_above_50.keys())
     sector_regime_dates = sorted(sector_regime.keys())
-    naaim_dates = sorted(naaim.keys())
     yields_dates = sorted(yields.keys())
     sector_dates = sorted(sector_osc.keys())
 
@@ -415,8 +394,6 @@ def main():
         v_pct50 = pct_above_50[pct_above_50_dates[i]] if i >= 0 else None
         i = snap_le_idx(sector_regime_dates, d)
         v_secreg = sector_regime[sector_regime_dates[i]] if i >= 0 else None
-        i = snap_le_idx(naaim_dates, d)
-        v_naaim = naaim[naaim_dates[i]] if i >= 0 else None
         i = snap_le_idx(yields_dates, d)
         v_spread = yields[yields_dates[i]] if i >= 0 else None
         i = snap_le_idx(sector_dates, d)
@@ -447,7 +424,6 @@ def main():
             ma50=score_ma50(v_ma50),
             pct_above_200ma=score_pct_above_200ma(v_pct),
             pct_above_50ma=score_pct_above_50ma(v_pct50),
-            naaim=score_naaim(v_naaim),
             junk=score_junk(junk),
             spread=score_spread(v_spread),
             sector_osc=score_sector_osc(v_sector),
