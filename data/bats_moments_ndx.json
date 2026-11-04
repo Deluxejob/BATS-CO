@@ -1,6 +1,6 @@
 {
   "source": "Computed from data/*.csv using the same scoring functions as app.js",
-  "generatedAt": 1793727793,
+  "generatedAt": 1793755657,
   "latestSpxDate": "2026-11-02",
   "moments": [
     {
@@ -9,11 +9,11 @@
       "event": "Dot-com bubble peak",
       "context": "S&P 500 closed at its bubble high of 1527. Nasdaq had topped two weeks earlier; the bust took 2.5 years.",
       "spxClose": 4691.61,
-      "batsScore": 66.3,
+      "batsScore": 67.3,
       "bucketLabel": "Bullish",
       "bucketColor": "var(--s5)",
       "action": "Hold, But Be Careful",
-      "coverage": 65,
+      "coverage": 66,
       "missing": [
         "breadth",
         "pct_above_200ma",
@@ -27,62 +27,62 @@
         "vix": {
           "raw": 23.31,
           "score": 33.1,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": null,
           "score": null,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 64.19,
           "score": 67.7,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": 56.0,
           "score": 95,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": 14.91,
           "score": 90,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": null,
           "score": null,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": null,
           "score": null,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": null,
           "score": null,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": -0.44,
           "score": 29.7,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": 6.39,
           "score": 62.8,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": 5.66,
           "score": 97.1,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": 11.86,
           "score": 98,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -98,11 +98,11 @@
       "event": "Dot-com bust bottom",
       "context": "SPX closed at 777, down 49% from the peak. VIX above 40 for weeks; the lowest close of the bear market.",
       "spxClose": 807.42,
-      "batsScore": 15.8,
+      "batsScore": 16.2,
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
-      "coverage": 65,
+      "coverage": 66,
       "missing": [
         "breadth",
         "pct_above_200ma",
@@ -114,62 +114,62 @@
         "vix": {
           "raw": 62.38,
           "score": 3.3,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": null,
           "score": null,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 35.5,
           "score": 31.9,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -33.83,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -11.75,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": null,
           "score": null,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": null,
           "score": null,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": null,
           "score": null,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 1.89,
           "score": 82.8,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -9.55,
           "score": 30.9,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -4.96,
           "score": 8.7,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -10.45,
           "score": 5.8,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -196,62 +196,62 @@
         "vix": {
           "raw": 19.42,
           "score": 45.8,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -2.17,
           "score": 28.3,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 75.06,
           "score": 81.7,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": 14.88,
           "score": 89.5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": 8.85,
           "score": 90,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 87.63,
           "score": 81.8,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 94.85,
           "score": 86.6,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": 2.38,
           "score": 73.8,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.52,
           "score": 55.4,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": 8.94,
           "score": 67.9,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": 2.61,
           "score": 71.8,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -1.53,
           "score": 43.0,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -267,7 +267,7 @@
       "event": "Post-Lehman panic — peak fear",
       "context": "VIX hit an all-time closing high (~80) during forced selling in the weeks after Lehman's bankruptcy. Deepest BATS reading of the GFC.",
       "spxClose": 1169.78,
-      "batsScore": 9.2,
+      "batsScore": 9.4,
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
@@ -278,62 +278,62 @@
         "vix": {
           "raw": 79.16,
           "score": 2,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -6.67,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 29.38,
           "score": 24.2,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -34.99,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -27.13,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 2.06,
           "score": 5,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 0.0,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -23.68,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 2.2,
           "score": 89.0,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -19.32,
           "score": 11.4,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -13.53,
           "score": 2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -12.25,
           "score": 2,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -349,7 +349,7 @@
       "event": "GFC panic acceleration",
       "context": "SPX closed at 800 after a week of collapse; \"worst since 1987.\"",
       "spxClose": 1085.57,
-      "batsScore": 16.8,
+      "batsScore": 17.3,
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
@@ -360,62 +360,62 @@
         "vix": {
           "raw": 71.2,
           "score": 2.4,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -1.39,
           "score": 36.1,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 35.5,
           "score": 31.9,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -37.73,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -20.87,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 2.06,
           "score": 5,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 2.02,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -11.1,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 2.11,
           "score": 87.2,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": 11.1,
           "score": 72.2,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -7.97,
           "score": 2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -20.18,
           "score": 2,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -431,7 +431,7 @@
       "event": "GFC bottom",
       "context": "S&P closed at 676. Financial crisis panic in full effect.",
       "spxClose": 1043.87,
-      "batsScore": 18.5,
+      "batsScore": 19.0,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -442,62 +442,62 @@
         "vix": {
           "raw": 48.76,
           "score": 4.6,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": 0.45,
           "score": 54.5,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 31.12,
           "score": 26.4,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -30.87,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -12.02,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 0.0,
           "score": 5,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 4.04,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -8.64,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 1.93,
           "score": 83.6,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": 2.12,
           "score": 54.2,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -3.05,
           "score": 24.6,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -11.75,
           "score": 2,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -513,7 +513,7 @@
       "event": "S&P US downgrade / debt ceiling",
       "context": "S&P downgraded US credit; -6.7% single-day crash.",
       "spxClose": 2060.29,
-      "batsScore": 13.0,
+      "batsScore": 13.3,
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
@@ -524,62 +524,62 @@
         "vix": {
           "raw": 44.74,
           "score": 5.2,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -4.81,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 22.91,
           "score": 15.5,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -9.84,
           "score": 17.9,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -10.68,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 13.0,
           "score": 5,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 0.99,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -8.26,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 2.13,
           "score": 87.6,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -6.97,
           "score": 36.1,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -12.48,
           "score": 2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -7.85,
           "score": 15.8,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -606,62 +606,62 @@
         "vix": {
           "raw": 31.87,
           "score": 18.4,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -1.3,
           "score": 37.0,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 31.94,
           "score": 27.4,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -10.89,
           "score": 15.3,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -9.71,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 23.53,
           "score": 16.4,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 14.71,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -3.18,
           "score": 18.2,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.99,
           "score": 64.8,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -18.93,
           "score": 12.1,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -4.93,
           "score": 8.9,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -11.04,
           "score": 3.6,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -677,7 +677,7 @@
       "event": "Powell put / trade-war bottom",
       "context": "Christmas Eve low; Fed pivoted, market rallied.",
       "spxClose": 5899.35,
-      "batsScore": 11.3,
+      "batsScore": 11.4,
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
@@ -688,62 +688,62 @@
         "vix": {
           "raw": 38.68,
           "score": 10.7,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -0.83,
           "score": 41.7,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 25.62,
           "score": 19.2,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -16.36,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -13.41,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 10.78,
           "score": 5,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 0.98,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -4.11,
           "score": 8.9,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.19,
           "score": 45.7,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -23.41,
           "score": 3.2,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -8.51,
           "score": 2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -12.98,
           "score": 2,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -759,7 +759,7 @@
       "event": "2s10s yield curve inversion",
       "context": "First 2s/10s inversion of the cycle; SPX dropped 3% intraday.",
       "spxClose": 7490.13,
-      "batsScore": 37.3,
+      "batsScore": 37.0,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
@@ -770,62 +770,62 @@
         "vix": {
           "raw": 26.38,
           "score": 26.1,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -0.83,
           "score": 41.7,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 41.51,
           "score": 39.4,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": 3.67,
           "score": 47.3,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -2.94,
           "score": 30.4,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 62.75,
           "score": 62.8,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 27.45,
           "score": 21.6,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -4.01,
           "score": 9.9,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.01,
           "score": 40.3,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -8.76,
           "score": 32.5,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -0.82,
           "score": 43.2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -3.96,
           "score": 33.9,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -841,7 +841,7 @@
       "event": "Pre-COVID all-time high",
       "context": "Peak before the COVID crash — SPX at 3386.",
       "spxClose": 9718.73,
-      "batsScore": 61.4,
+      "batsScore": 61.3,
       "bucketLabel": "Slightly Bullish",
       "bucketColor": "var(--s4)",
       "action": "Hold",
@@ -852,62 +852,62 @@
         "vix": {
           "raw": 18.58,
           "score": 49.8,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -1.64,
           "score": 33.6,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 76.44,
           "score": 83.6,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": 20.12,
           "score": 95,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": 8.12,
           "score": 90,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 83.33,
           "score": 78.7,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 70.59,
           "score": 69.2,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -1.01,
           "score": 39.9,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.14,
           "score": 44.2,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -5.58,
           "score": 38.8,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": 2.11,
           "score": 67.6,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": 1.23,
           "score": 55.9,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -923,7 +923,7 @@
       "event": "COVID crash bottom",
       "context": "Fed unlimited-QE announcement day; SPX bottomed at 2237.",
       "spxClose": 7006.92,
-      "batsScore": 17.1,
+      "batsScore": 17.6,
       "bucketLabel": "Very Oversold",
       "bucketColor": "var(--s0)",
       "action": "Strong Buy",
@@ -934,62 +934,62 @@
         "vix": {
           "raw": 58.36,
           "score": 3.7,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -3.56,
           "score": 14.4,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 35.43,
           "score": 31.8,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -14.4,
           "score": 6.5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -20.23,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 3.92,
           "score": 5,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 0.98,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -8.45,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.48,
           "score": 54.4,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -10.74,
           "score": 28.5,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -0.19,
           "score": 48.4,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -3.48,
           "score": 35.7,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -1005,7 +1005,7 @@
       "event": "Post-COVID all-time high",
       "context": "Peak before the 2022 bear market — SPX at 4796.",
       "spxClose": 16501.77,
-      "batsScore": 56.8,
+      "batsScore": 56.7,
       "bucketLabel": "Neutral",
       "bucketColor": "var(--s3)",
       "action": "No Real Trend",
@@ -1016,62 +1016,62 @@
         "vix": {
           "raw": 21.17,
           "score": 39.5,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -0.35,
           "score": 46.5,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 56.98,
           "score": 58.7,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": 11.1,
           "score": 74.4,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": 2.35,
           "score": 65.7,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 82.35,
           "score": 78.0,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 72.55,
           "score": 70.7,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": 3.47,
           "score": 84.7,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.85,
           "score": 62.0,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -7.86,
           "score": 34.3,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -0.4,
           "score": 46.7,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -2.74,
           "score": 38.5,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -1087,7 +1087,7 @@
       "event": "2022 first bear-market low",
       "context": "SPX 3675; first flush of the year. Not the ultimate low.",
       "spxClose": 11265.99,
-      "batsScore": 21.2,
+      "batsScore": 21.6,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -1098,62 +1098,62 @@
         "vix": {
           "raw": 36.66,
           "score": 12.5,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": 0.26,
           "score": 52.6,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 36.05,
           "score": 32.6,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -22.82,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -11.49,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 19.61,
           "score": 11.1,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 0.98,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -1.03,
           "score": 39.7,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.08,
           "score": 42.4,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -1.87,
           "score": 46.3,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -4.79,
           "score": 10.1,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -9.34,
           "score": 10.0,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -1169,7 +1169,7 @@
       "event": "2022 final bear-market bottom",
       "context": "SPX 3577 — the actual low of the 2022 cycle.",
       "spxClose": 10785.62,
-      "batsScore": 25.4,
+      "batsScore": 26.1,
       "bucketLabel": "Oversold",
       "bucketColor": "var(--s1)",
       "action": "Consider Buying",
@@ -1180,62 +1180,62 @@
         "vix": {
           "raw": 39.51,
           "score": 9.9,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": 0.91,
           "score": 59.1,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 32.37,
           "score": 28.0,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -18.32,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -12.07,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 15.69,
           "score": 5.9,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 11.76,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": 2.4,
           "score": 74.0,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": -0.37,
           "score": 31.4,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -6.23,
           "score": 37.5,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -6.81,
           "score": 2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": 4.21,
           "score": 67.0,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -1251,7 +1251,7 @@
       "event": "SVB banking crisis",
       "context": "SVB collapsed the prior weekend; regional-bank contagion fear.",
       "spxClose": 11923.17,
-      "batsScore": 36.7,
+      "batsScore": 37.0,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
@@ -1262,62 +1262,62 @@
         "vix": {
           "raw": 29.39,
           "score": 21.9,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -1.07,
           "score": 39.3,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 45.26,
           "score": 44.1,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": 0.16,
           "score": 40.3,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": 0.1,
           "score": 50.6,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 41.18,
           "score": 39.9,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 15.69,
           "score": 5.9,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -1.54,
           "score": 34.6,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": -0.48,
           "score": 28.8,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -6.3,
           "score": 37.4,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -3.08,
           "score": 24.3,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": 7.05,
           "score": 80.3,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -1333,7 +1333,7 @@
       "event": "Rate-panic bottom",
       "context": "10Y hit 5%; SPX flushed to 4117 before the year-end rally began.",
       "spxClose": 14180.42,
-      "batsScore": 32.2,
+      "batsScore": 32.4,
       "bucketLabel": "Slightly Bearish",
       "bucketColor": "var(--s2)",
       "action": "Be Careful",
@@ -1344,62 +1344,62 @@
         "vix": {
           "raw": 24.44,
           "score": 29.7,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -2.25,
           "score": 27.5,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 34.56,
           "score": 30.7,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": 1.82,
           "score": 43.6,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -5.3,
           "score": 18.5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 29.41,
           "score": 24.2,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 12.75,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": 0.52,
           "score": 55.2,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": -0.15,
           "score": 36.5,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -11.94,
           "score": 26.1,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -2.61,
           "score": 28.2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": 0.91,
           "score": 54.6,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -1415,7 +1415,7 @@
       "event": "Liberation Day tariff bottom",
       "context": "SPX 4983; day before Trump announced 90-day tariff pause.",
       "spxClose": 17090.4,
-      "batsScore": 14.2,
+      "batsScore": 14.4,
       "bucketLabel": "Extremely Oversold",
       "bucketColor": "var(--s-ext)",
       "action": "Aggressive Buy",
@@ -1426,62 +1426,62 @@
         "vix": {
           "raw": 39.56,
           "score": 9.9,
-          "weight": 25
+          "weight": 18
         },
         "breadth": {
           "raw": -0.2,
           "score": 48.0,
-          "weight": 10
+          "weight": 8
         },
         "rsi": {
           "raw": 23.02,
           "score": 15.7,
-          "weight": 10
+          "weight": 8
         },
         "ma200": {
           "raw": -15.7,
           "score": 5,
-          "weight": 10
+          "weight": 8
         },
         "ma50": {
           "raw": -16.36,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "pct_above_200ma": {
           "raw": 17.65,
           "score": 8.5,
-          "weight": 20
+          "weight": 14
         },
         "pct_above_50ma": {
           "raw": 7.84,
           "score": 5,
-          "weight": 5
+          "weight": 4
         },
         "junk": {
           "raw": -1.48,
           "score": 35.2,
-          "weight": 10
+          "weight": 8
         },
         "spread": {
           "raw": 0.55,
           "score": 56.0,
-          "weight": 5
+          "weight": 4
         },
         "sector_osc": {
           "raw": -25.69,
           "score": 2,
-          "weight": 10
+          "weight": 8
         },
         "roc5": {
           "raw": -12.07,
           "score": 2,
-          "weight": 10
+          "weight": 8
         },
         "sector_regime": {
           "raw": -11.79,
           "score": 2,
-          "weight": 10
+          "weight": 8
         }
       },
       "forward": {
@@ -1494,18 +1494,18 @@
   ],
   "methodology": {
     "weights": {
-      "vix": 25,
-      "breadth": 10,
-      "rsi": 10,
-      "ma200": 10,
-      "ma50": 5,
-      "pct_above_200ma": 20,
-      "pct_above_50ma": 5,
-      "junk": 10,
-      "spread": 5,
-      "sector_osc": 10,
-      "roc5": 10,
-      "sector_regime": 10
+      "vix": 18,
+      "breadth": 8,
+      "rsi": 8,
+      "ma200": 8,
+      "ma50": 4,
+      "pct_above_200ma": 14,
+      "pct_above_50ma": 4,
+      "junk": 8,
+      "spread": 4,
+      "sector_osc": 8,
+      "roc5": 8,
+      "sector_regime": 8
     },
     "buckets": [
       {

@@ -54,10 +54,10 @@ def warn(msg: str) -> None:
 
 
 # --- Component weights (must match COMPONENTS in app.js) ---
-WEIGHTS = dict(vix=25, breadth=10, rsi=10, ma200=10, ma50=5,
-               pct_above_200ma=20, pct_above_50ma=5,
-               junk=10, spread=5, sector_osc=10, roc5=10,
-               sector_regime=10)
+WEIGHTS = dict(vix=18, breadth=8, rsi=8, ma200=8, ma50=4,
+               pct_above_200ma=14, pct_above_50ma=4,
+               junk=8, spread=4, sector_osc=8, roc5=8,
+               sector_regime=8)
 
 # --- Buckets (must match BUCKETS in app.js) ---
 BUCKETS = [
