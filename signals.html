@@ -575,6 +575,29 @@
     .sc-line-spy { fill: none; stroke: #ffb658; stroke-width: 1.6; }
     .sc-axis { stroke: rgba(139, 149, 168, 0.35); stroke-width: 1; }
     /* end Small Cap Confirmation card */
+    /* Regime Spread Extremes card: S&P 500 on top, the cyclicals-minus-
+       defensives spread below with its -10 / +11 / +13 lines, legend dots,
+       and dimmed "yardstick" rows in the tables. Everything else reuses the
+       shared pill, gates, table, range-bar and chart styles above. */
+    .rs-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 0.3rem; vertical-align: middle; border: 1px solid rgba(255, 255, 255, 0.4); }
+    .rs-dot.rs-dot-ring { background: transparent !important; border: 2px solid #64d3ff; }
+    .rs-line-price  { fill: none; stroke: #e8ecf4; stroke-width: 1.3; opacity: 0.92; }
+    .rs-line-spread { fill: none; stroke: rgba(232, 236, 244, 0.55); stroke-width: 0.9; }
+    .rs-area-pos    { fill: rgba(34, 211, 154, 0.30); }
+    .rs-area-neg    { fill: rgba(255, 83, 116, 0.32); }
+    .rs-zero        { stroke: rgba(232, 236, 244, 0.6); stroke-width: 1; }
+    .rs-low-line    { stroke: rgba(255, 83, 116, 0.9); stroke-width: 1; stroke-dasharray: 4 4; }
+    .rs-high-line   { stroke: rgba(34, 211, 154, 0.9); stroke-width: 1; stroke-dasharray: 4 4; }
+    .rs-p2-line     { stroke: rgba(34, 211, 154, 0.5); stroke-width: 1; stroke-dasharray: 2 5; }
+    .rs-level-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+    .rs-axis        { stroke: rgba(139, 149, 168, 0.35); stroke-width: 1; }
+    .mv-table tr.rs-yard td { color: var(--text-faint); font-style: italic; }
+    .mv-table tr.rs-yard td.pos, .mv-table tr.rs-yard td.neg { opacity: 0.7; }
+    .iq-chart-caption .iq-sw-rslow  { background: transparent; border-top: 2px dashed rgba(255, 83, 116, 0.9); height: 0; width: 1.1em; vertical-align: 3px; }
+    .iq-chart-caption .iq-sw-rshigh { background: transparent; border-top: 2px dashed rgba(34, 211, 154, 0.9); height: 0; width: 1.1em; vertical-align: 3px; }
+    .iq-chart-caption .iq-sw-rspos  { background: rgba(34, 211, 154, 0.30); border: 1px solid rgba(34, 211, 154, 0.7); }
+    .iq-chart-caption .iq-sw-rsneg  { background: rgba(255, 83, 116, 0.32); border: 1px solid rgba(255, 83, 116, 0.7); }
+    /* end Regime Spread Extremes card */
   </style>
 </head>
 <body>
@@ -1547,6 +1570,185 @@
                style="margin-top: 0.9rem;"></div>
         </div>
         <!-- end Small Cap Confirmation card -->
+
+        <!-- SIGNAL: Regime Spread Extremes. The sector-rotation page's cyclicals-minus-defensives
+             3-month spread, read only at its extremes, in two parts: the first close at or below -10
+             (split by where the S&P 500 stood at the time) and the first close at or above +11, with
+             the push on to +13 and the rollover back through +5. Computed in the page from
+             data/sector_regime.csv, data/spx.csv and data/sp500tr.csv. -->
+        <div class="sig-card" id="sig-regime-extremes">
+          <div class="sig-head">
+            <h2 class="sig-title">Regime Spread Extremes</h2>
+            <span class="sig-tag">Cyclicals minus defensives &middot; 3-month spread &middot; -10 and +11 lines &middot; VIX as the tiebreaker &middot; daily</span>
+          </div>
+          <p class="sig-desc">
+            The <a href="sector-rotation.html#regimeMethodology">Regime Spread</a> is the average 3-month return of the
+            five cyclical sectors minus the four defensive ones. This card reads it only at its extremes, in two parts.
+            <strong>Low side:</strong> the first close at or below <strong>-10</strong> has usually been followed by a
+            bounce within a month, but whether it turned out to be a buying chance or an early warning depended on
+            how much fear was already in the market: the S&amp;P 500 10% or more below its high, or VIX at 30 or above. <strong>High side:</strong> the first close at or above
+            <strong>+11</strong> has never worked as a sell signal. It says the trend is intact and a pause is likely,
+            and a push on to +13 has been the strongest continuation reading in the record. Every touch since
+            <span data-rs-stat="startYear">1999</span> is counted, not only the ones that look good on a chart.
+          </p>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="rsPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="rsSub">Fetching the spread and S&amp;P 500 history&hellip;</div>
+            <div class="iq-action-asof" id="rsAsof"></div>
+          </div>
+
+          <div class="iq-gates u3-gates">
+            <div class="iq-gate" id="rsGateNowBox">
+              <div class="iq-gate-label">Regime Spread now</div>
+              <div class="iq-gate-value" id="rsGateNow">&mdash;</div>
+              <div class="iq-gate-cond">-10 = low-side line &middot; +11 = high-side line</div>
+              <div class="iq-gate-state iq-gate-off" id="rsGateNowState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="rsGateSetBox">
+              <div class="iq-gate-label">Market setting now</div>
+              <div class="iq-gate-value" id="rsGateSet">&mdash;</div>
+              <div class="iq-gate-cond">S&amp;P 500 vs its one-year high &middot; 10%+ below it, or VIX 30+, = capitulation setting</div>
+              <div class="iq-gate-state iq-gate-off" id="rsGateSetState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="rsGateLastBox">
+              <div class="iq-gate-label">Last -10 touch</div>
+              <div class="iq-gate-value" id="rsGateLast">&mdash;</div>
+              <div class="iq-gate-cond">first close at or below -10</div>
+              <div class="iq-gate-state iq-gate-off" id="rsGateLastState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">-10 touches since <span data-rs-stat="startYear">1999</span></div><div class="val" data-rs-stat="nLow">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Next month, any -10 touch</div><div class="val" data-rs-stat="low1m">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">12 months, capitulation type</div><div class="val" data-rs-stat="cap12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">12 months, early-warning type</div><div class="val" data-rs-stat="early12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">12 months after a +11 touch</div><div class="val" data-rs-stat="high12">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy -10 / sell +11 vs holding</div><div class="val" data-rs-stat="rule">&mdash;</div></div>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="S&amp;P 500 returns after the first close at or below -10, split by where the index stood at the time, each against the fair yardstick for that setting">
+              <thead><tr><th>Low side: first close at or below -10</th><th>Count</th><th>Next month</th><th>Higher</th><th>Next 3 months</th><th>Higher</th><th>Next 12 months</th><th>Higher</th></tr></thead>
+              <tbody id="rsLowBody"><tr><td colspan="8">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="mv-table-wrap">
+            <table class="mv-table" aria-label="S&amp;P 500 returns after the first close at or above +11, after the push on to +13, and after the rollover back through +5">
+              <thead><tr><th>High side: first close at or above +11</th><th>Count</th><th>Next month</th><th>Higher</th><th>Next 3 months</th><th>Higher</th><th>Next 12 months</th><th>Higher</th></tr></thead>
+              <tbody id="rsHighBody"><tr><td colspan="8">&mdash;</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-rs-range="1y" role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-rs-range="3y" role="tab">3Y</button>
+              <button type="button" class="iq-range-btn active" data-rs-range="5y" role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-rs-range="10y" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn" data-rs-range="all" role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="rsChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="S&amp;P 500 daily close on top with every -10 and +11 touch marked, and the Regime Spread below with its -10, +11 and +13 lines"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em>: the S&amp;P 500's daily close. Each dot is a touch of a line:
+            <span class="rs-dot" style="background:#22d39a"></span><strong>capitulation touch</strong>, -10 reached with the index already 10% or more below its high or VIX at 30 or more;
+            <span class="rs-dot" style="background:#ffb658"></span><strong>early-warning touch</strong>, -10 reached with the index still within 10% of its high and VIX under 30;
+            <span class="rs-dot" style="background:#64d3ff"></span><strong>+11 touch</strong>;
+            <span class="rs-dot rs-dot-ring"></span><strong>part II</strong>, the push on to +13 within three months of a +11 touch.
+            <em>Bottom panel</em>: the Regime Spread, <span class="iq-sw iq-sw-rspos"></span><strong>green</strong> above zero (cyclicals leading) and
+            <span class="iq-sw iq-sw-rsneg"></span><strong>red</strong> below (defensives leading), with the
+            <span class="iq-sw iq-sw-rslow"></span><strong>-10</strong> and <span class="iq-sw iq-sw-rshigh"></span><strong>+11</strong> lines
+            and a fainter +13 line. The sector-rotation page shows one year of this spread; here the range buttons go back to
+            <span data-rs-stat="startYear">1999</span>. The tables and statistics above always cover the full history.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>The low side is a one-month bounce, not a bottom call.</strong> After the first close at or below
+              -10, the S&amp;P 500 gained <span data-rs-stat="low1mAvg">&mdash;</span> on average over the next month and
+              was higher <span data-rs-stat="low1mUp">&mdash;</span> of the time, against
+              <span data-rs-stat="base1mAvg">&mdash;</span> and <span data-rs-stat="base1mUp">&mdash;</span> for any day.
+              A year later the edge was gone: <span data-rs-stat="low12Avg">&mdash;</span> on average, higher
+              <span data-rs-stat="low12Up">&mdash;</span> of the time, with a worst case of
+              <span data-rs-stat="low12Worst">&mdash;</span>.
+            </p>
+            <p>
+              <strong>Where the market stood when it happened decided the type.</strong> When -10 arrived with the
+              S&amp;P 500 already 10% or more below its one-year high, or with VIX at 30 or above (<span data-rs-stat="nCap">&mdash;</span> cases),
+              the next month averaged <span data-rs-stat="cap1mAvg">&mdash;</span> and the next year
+              <span data-rs-stat="cap12Avg">&mdash;</span>, higher <span data-rs-stat="cap12Up">&mdash;</span> of the
+              time, against <span data-rs-stat="yardDeep12Avg">&mdash;</span> for any day in that setting. When
+              -10 arrived with the index still within 10% of its high and VIX under 30 (<span data-rs-stat="nEarly">&mdash;</span> cases),
+              money was rotating into defensives before prices had fallen much, and the next year averaged
+              <span data-rs-stat="early12Avg">&mdash;</span>, higher only <span data-rs-stat="early12Up">&mdash;</span>
+              of the time, against <span data-rs-stat="yardNear12Avg">&mdash;</span> for ordinary days in that calmer setting.
+              <span data-rs-stat="earlyDeep">&mdash;</span> of those early-warning touches were followed by a drop of 15%
+              or more within the year.
+            </p>
+            <p>
+              <strong>Deeper is worse, not better.</strong> Unlike an oversold RSI, a reading past -13 has not meant a
+              stronger bounce: the <span data-rs-stat="nDeep">&mdash;</span> first touches of -13 were bear-market
+              readings, averaging <span data-rs-stat="deep12Avg">&mdash;</span> a year later, higher
+              <span data-rs-stat="deep12Up">&mdash;</span> of the time. Staying in the zone is bad too: counting every
+              day at or below -10, the next three months averaged <span data-rs-stat="zone3mAvg">&mdash;</span> and were
+              higher <span data-rs-stat="zone3mUp">&mdash;</span> of the time. Only the first touch bounces.
+            </p>
+            <p>
+              <strong>There is no sell level.</strong> After the first close at or above +11 the S&amp;P 500 averaged
+              <span data-rs-stat="high12Avg">&mdash;</span> over the next year, higher
+              <span data-rs-stat="high12Up">&mdash;</span> of the time. When the spread went on to +13 within three
+              months, the year that followed averaged <span data-rs-stat="p2_12Avg">&mdash;</span>, higher
+              <span data-rs-stat="p2_12Up">&mdash;</span> of the time, the strongest reading on the card. Even the
+              rollover, a peak above +11 followed by a fall back through +5, was followed by
+              <span data-rs-stat="roll12Avg">&mdash;</span> a year later. The one thing +11 does say is "expect a
+              pause": the median deepest dip in the month after it was <span data-rs-stat="dipMed">&mdash;</span>, and
+              <span data-rs-stat="dipBig">&mdash;</span> of those months saw a dip of 5% or more.
+            </p>
+            <p>
+              <strong>As a trading system it lost.</strong> Owning the S&amp;P 500 from each -10 touch until the next
+              +11 touch earned <span data-rs-stat="ruleCagr">&mdash;</span> a year since
+              <span data-rs-stat="ruleStart">&mdash;</span>, against <span data-rs-stat="holdCagr">&mdash;</span> for
+              holding the whole time, with a worst drop of <span data-rs-stat="ruleDD">&mdash;</span> against
+              <span data-rs-stat="holdDD">&mdash;</span>. It sold into the best runs and bought the first dips of 2007
+              and 2008.
+            </p>
+            <p>
+              <strong>What it is good for.</strong> Context for a sharp rotation. A -10 touch after the market has
+              already fallen hard has been a good time to expect a bounce; a -10 touch near the highs has been a coin
+              flip with real downside; +11 and beyond means the trend is intact. About a dozen cases sit behind each
+              type, so treat this as a pattern, not a law.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Regime Spread from the sector-rotation page's formula (average 3-month return of XLK, XLF, XLI, XLY and XLC
+            minus the average of XLV, XLP, XLU and XLRE; younger funds join when their history starts), daily from
+            <span data-rs-stat="start">&mdash;</span> to <span data-rs-stat="end">&mdash;</span>. A touch is the first
+            close at or beyond a line; it counts once per episode, re-arming only after the spread has come back halfway
+            to zero and never within 21 trading days of the last touch. The type is set on the day of the touch: capitulation
+            if the S&amp;P 500 closed 10% or more below its highest close of the previous year or VIX closed at 30 or
+            above, early-warning otherwise. Forward returns are S&amp;P 500 price
+            changes from the close of the touch. The system comparison uses the S&amp;P 500 total-return index, trades at
+            the close, earns nothing while in cash and ignores costs and taxes. Not investment advice.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/signals.html#sig-regime-extremes"
+               data-share-title="Regime Spread Extremes — BATS.CO"
+               data-share-text="The cyclicals-minus-defensives spread at its extremes: what the S&P 500 did after every -10 and +11 touch since 1999, split by whether fear was already in the market (10% off the high or VIX 30+) or not."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+        <!-- end Regime Spread Extremes card -->
       </div>
     </section>
   </main>
@@ -3380,6 +3582,338 @@
         });
       });
     })(); // end Small Cap Confirmation
+
+    // ---- Regime Spread Extremes ----
+    // The sector-rotation page's cyclicals-minus-defensives 3-month spread,
+    // read only at its extremes. Low side: the first close at or below -10,
+    // split by whether the S&P 500 was already 10% or more below its one-year
+    // high (capitulation type) or still near it (early-warning type). High
+    // side: the first close at or above +11, the push on to +13 within three
+    // months, and the rollover back through +5. Computed in the page from
+    // data/sector_regime.csv, data/spx.csv and data/sp500tr.csv.
+    (async function initRegimeExtremes() {
+      const card = document.getElementById('sig-regime-extremes');
+      if (!card) return;
+      const $ = id => document.getElementById(id);
+      const LOW = -10, HIGH = 11, PART2 = 13, ROLL = 5, DEEP = -13, OFF_LIMIT = -0.10, VIX_LIMIT = 30;
+      const GAP = 21, WINDOW = 63;
+      const H = [['1m', 21], ['3m', 63], ['12m', 252]];
+      const RANGE_DAYS = { '1y': 252, '3y': 756, '5y': 1260, '10y': 2520 };
+      const COLOR = { cap: '#22d39a', early: '#ffb658', high: '#64d3ff' };
+      const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const fmtDate = iso => { const p = iso.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0]; };
+      const fmtDay = iso => { const p = iso.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]); };
+      const pct = (x, d) => (x >= 0 ? '+' : '') + (x * 100).toFixed(d == null ? 1 : d) + '%';
+      const pts = x => (x >= 0 ? '+' : '') + x.toFixed(1);
+      const share = x => Math.round(x * 100) + '%';
+      const pill = $('rsPill'), sub = $('rsSub'), asof = $('rsAsof');
+
+      function fail(msg) { pill.textContent = 'UNAVAILABLE'; pill.className = 'iq-action-pill iq-action-stayout'; sub.textContent = msg; }
+
+      async function loadCsv(url) {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('http ' + r.status);
+        const out = [];
+        for (const ln of (await r.text()).trim().split(/\r?\n/).slice(1)) {
+          const c = ln.split(',');
+          const v = parseFloat(c[1]);
+          if (isFinite(v)) out.push({ d: c[0], t: Date.parse(c[0] + 'T12:00:00Z'), v });
+        }
+        return out;
+      }
+
+      let regime, spx, tr, vix;
+      try {
+        [regime, spx, tr, vix] = await Promise.all([loadCsv('data/sector_regime.csv'), loadCsv('data/spx.csv'), loadCsv('data/sp500tr.csv'), loadCsv('data/vix.csv')]);
+      } catch (e) { fail('Could not load the spread, S&P 500 and VIX files. Try refreshing.'); return; }
+
+      // S&P 500 distance from its highest close of the previous year, on the
+      // full S&P calendar so the first spread days already have a year behind them.
+      const spxMap = new Map(), offMap = new Map();
+      for (let i = 0; i < spx.length; i++) {
+        let hi = 0;
+        for (let j = Math.max(0, i - 251); j <= i; j++) if (spx[j].v > hi) hi = spx[j].v;
+        spxMap.set(spx[i].d, spx[i].v);
+        offMap.set(spx[i].d, hi > 0 ? spx[i].v / hi - 1 : 0);
+      }
+      const vixMap = new Map(vix.map(r => [r.d, r.v]));
+      let lastVix = null;
+      const rows = [];
+      for (const r of regime) {
+        if (!spxMap.has(r.d)) continue;
+        if (vixMap.has(r.d)) lastVix = vixMap.get(r.d);
+        rows.push({ d: r.d, t: r.t, sp: r.v, px: spxMap.get(r.d), off: offMap.get(r.d), vix: lastVix });
+      }
+      // fear present = the capitulation setting: index already 10%+ off its high, or VIX at 30+
+      const isCap = r => r.off <= OFF_LIMIT || (r.vix != null && r.vix >= VIX_LIMIT);
+      const fmtVix = v => (v == null ? '\u2014' : v.toFixed(1));
+      const N = rows.length;
+      if (N < 500) { fail('Not enough overlapping spread and S&P 500 history.'); return; }
+
+      // ---- touches: the first close at or beyond a line, once per episode ----
+      function crossEvents(T, side) {
+        const rearm = T / 2;
+        let armed = true, last = -1e9; const ev = [];
+        for (let i = 0; i < N; i++) {
+          const s = rows[i].sp;
+          const beyond = side < 0 ? s <= T : s >= T;
+          if (armed && beyond && i - last >= GAP) { ev.push(i); armed = false; last = i; }
+          else if (!armed && (side < 0 ? s > rearm : s < rearm)) armed = true;
+        }
+        return ev;
+      }
+      function part2Events(T1, T2) {
+        const ev = []; let last = -1e9;
+        for (const i of crossEvents(T1, +1)) {
+          for (let j = i + 1; j < Math.min(N, i + WINDOW); j++) {
+            if (rows[j].sp >= T2) { if (j - last >= GAP) { ev.push(j); last = j; } break; }
+          }
+        }
+        return ev;
+      }
+      function rolloverEvents(Tpeak, Texit) {
+        const ev = []; let last = -1e9, peaked = false;
+        for (let i = 0; i < N; i++) {
+          if (rows[i].sp >= Tpeak) peaked = true;
+          else if (peaked && rows[i].sp <= Texit) { if (i - last >= GAP) { ev.push(i); last = i; } peaked = false; }
+        }
+        return ev;
+      }
+      const fwd = (i, h) => (i + h < N ? rows[i + h].px / rows[i].px - 1 : null);
+      function stats(idx) {
+        const out = {};
+        for (const [k, h] of H) {
+          let n = 0, sum = 0, up = 0, worst = Infinity;
+          for (const i of idx) { const r = fwd(i, h); if (r == null) continue; n++; sum += r; if (r > 0) up++; if (r < worst) worst = r; }
+          out[k] = n ? { n, avg: sum / n, up: up / n, worst } : null;
+        }
+        return out;
+      }
+
+      const evLow = crossEvents(LOW, -1);
+      const evCap = evLow.filter(i => isCap(rows[i])), evEarly = evLow.filter(i => !isCap(rows[i]));
+      const evDeep = crossEvents(DEEP, -1);
+      const evHigh = crossEvents(HIGH, +1), evP2 = part2Events(HIGH, PART2), evRoll = rolloverEvents(HIGH, ROLL);
+      const all = [], nearIdx = [], deepIdx = [], zoneIdx = [];
+      for (let i = 0; i < N; i++) { all.push(i); (isCap(rows[i]) ? deepIdx : nearIdx).push(i); if (rows[i].sp <= LOW) zoneIdx.push(i); }
+      const S = { low: stats(evLow), cap: stats(evCap), early: stats(evEarly), deep: stats(evDeep), zone: stats(zoneIdx),
+                  high: stats(evHigh), p2: stats(evP2), roll: stats(evRoll), all: stats(all), near: stats(nearIdx), far: stats(deepIdx) };
+
+      // the pause after a +11 touch: the deepest dip within the next month
+      const dips = [];
+      for (const i of evHigh) { if (i + 21 >= N) continue; let lo = 0; for (let j = i + 1; j <= i + 21; j++) lo = Math.min(lo, rows[j].px / rows[i].px - 1); dips.push(lo); }
+      dips.sort((a, b) => a - b);
+      const dipMed = dips.length ? dips[Math.floor(dips.length / 2)] : 0, dipBig = dips.filter(x => x <= -0.05).length;
+      // early-warning touches followed by a drop of 15% or more within the year
+      let earlyDeep = 0, earlyDeepN = 0;
+      for (const i of evEarly) { if (i + 252 >= N) continue; earlyDeepN++; let lo = 0; for (let j = i + 1; j <= i + 252; j++) lo = Math.min(lo, rows[j].px / rows[i].px - 1); if (lo <= -0.15) earlyDeep++; }
+
+      // ---- the system: own the index from each -10 touch until the next +11 touch ----
+      const trMap = new Map(tr.map(r => [r.d, r.v]));
+      const i0 = rows.findIndex(r => trMap.has(r.d));
+      let state = null, eq = 1, bh = 1, days = 0, peak = 1, dd = 0, bpeak = 1, bdd = 0, startD = null;
+      if (i0 >= 0) {
+        for (let i = i0 + 1; i < N; i++) {
+          const a = trMap.get(rows[i - 1].d), b = trMap.get(rows[i].d);
+          if (state !== null && a && b) {
+            const r = b / a - 1; bh *= 1 + r; days++;
+            if (state === 'long') eq *= 1 + r;
+            peak = Math.max(peak, eq); dd = Math.min(dd, eq / peak - 1);
+            bpeak = Math.max(bpeak, bh); bdd = Math.min(bdd, bh / bpeak - 1);
+          }
+          const s = rows[i].sp;
+          if (s <= LOW && state !== 'long') { if (state === null) startD = rows[i].d; state = 'long'; }
+          else if (s >= HIGH && state !== 'cash') { if (state === null) startD = rows[i].d; state = 'cash'; }
+        }
+      }
+      const yrs = days / 252;
+      const ruleCagr = yrs > 0 ? Math.pow(eq, 1 / yrs) - 1 : 0, holdCagr = yrs > 0 ? Math.pow(bh, 1 / yrs) - 1 : 0;
+
+      // ---- tables ----
+      const cell = (v, bold) => '<td class="' + (v >= 0 ? 'pos' : 'neg') + (bold ? ' mv-edge' : '') + '">' + pct(v) + '</td>';
+      function row(label, st, opts) {
+        const o = opts || {};
+        let html = '<tr' + (o.yard ? ' class="rs-yard"' : '') + '><td>' + (o.dot ? '<span class="rs-dot' + (o.ring ? ' rs-dot-ring' : '') + '" style="background:' + o.dot + '"></span>' : '') + label + '</td>';
+        html += '<td>' + (st['1m'] ? st['1m'].n : 0) + '</td>';
+        for (const [k] of H) {
+          const v = st[k];
+          html += v ? cell(v.avg, k === '12m') + '<td>' + share(v.up) + '</td>' : '<td>&mdash;</td><td>&mdash;</td>';
+        }
+        return html + '</tr>';
+      }
+      $('rsLowBody').innerHTML =
+        row('Capitulation touch &middot; S&amp;P 500 already 10%+ below its high, or VIX 30+', S.cap, { dot: COLOR.cap }) +
+        row('Any day in that setting (the yardstick)', S.far, { yard: true }) +
+        row('Early-warning touch &middot; S&amp;P 500 within 10% of its high and VIX under 30', S.early, { dot: COLOR.early }) +
+        row('Any day in that setting (the yardstick)', S.near, { yard: true }) +
+        row('All -10 touches', S.low) +
+        row('Any day', S.all, { yard: true });
+      $('rsHighBody').innerHTML =
+        row('First close at or above +11', S.high, { dot: COLOR.high }) +
+        row('Part II: +11, then on to +13 within 3 months', S.p2, { dot: 'transparent', ring: true }) +
+        row('Rollover: peak above +11, then back down through +5', S.roll) +
+        row('Any day', S.all, { yard: true });
+
+      const pair = v => v ? pct(v.avg) + ' · ' + share(v.up) + ' up' : '—';
+      const today = rows[N - 1];
+      const FILL = {
+        startYear: rows[0].d.slice(0, 4), start: fmtDate(rows[0].d), end: fmtDate(today.d),
+        nLow: evLow.length, nCap: evCap.length, nEarly: evEarly.length, nDeep: evDeep.length,
+        low1m: pair(S.low['1m']), cap12: pair(S.cap['12m']), early12: pair(S.early['12m']), high12: pair(S.high['12m']),
+        rule: (ruleCagr * 100).toFixed(1) + '% vs ' + (holdCagr * 100).toFixed(1) + '% a year',
+        low1mAvg: S.low['1m'] ? pct(S.low['1m'].avg) : '—', low1mUp: S.low['1m'] ? share(S.low['1m'].up) : '—',
+        base1mAvg: pct(S.all['1m'].avg), base1mUp: share(S.all['1m'].up),
+        low12Avg: S.low['12m'] ? pct(S.low['12m'].avg) : '—', low12Up: S.low['12m'] ? share(S.low['12m'].up) : '—',
+        low12Worst: S.low['12m'] ? pct(S.low['12m'].worst) : '—',
+        cap1mAvg: S.cap['1m'] ? pct(S.cap['1m'].avg) : '—', cap12Avg: S.cap['12m'] ? pct(S.cap['12m'].avg) : '—',
+        cap12Up: S.cap['12m'] ? share(S.cap['12m'].up) : '—', yardDeep12Avg: pct(S.far['12m'].avg),
+        early12Avg: S.early['12m'] ? pct(S.early['12m'].avg) : '—', early12Up: S.early['12m'] ? share(S.early['12m'].up) : '—',
+        yardNear12Avg: pct(S.near['12m'].avg), earlyDeep: earlyDeep + ' of ' + earlyDeepN,
+        deep12Avg: S.deep['12m'] ? pct(S.deep['12m'].avg) : '—', deep12Up: S.deep['12m'] ? share(S.deep['12m'].up) : '—',
+        zone3mAvg: S.zone['3m'] ? pct(S.zone['3m'].avg) : '—', zone3mUp: S.zone['3m'] ? share(S.zone['3m'].up) : '—',
+        high12Avg: S.high['12m'] ? pct(S.high['12m'].avg) : '—', high12Up: S.high['12m'] ? share(S.high['12m'].up) : '—',
+        p2_12Avg: S.p2['12m'] ? pct(S.p2['12m'].avg) : '—', p2_12Up: S.p2['12m'] ? share(S.p2['12m'].up) : '—',
+        roll12Avg: S.roll['12m'] ? pct(S.roll['12m'].avg) : '—',
+        dipMed: pct(dipMed), dipBig: dipBig + ' of ' + dips.length,
+        ruleCagr: (ruleCagr * 100).toFixed(1) + '%', holdCagr: (holdCagr * 100).toFixed(1) + '%',
+        ruleDD: pct(dd), holdDD: pct(bdd), ruleStart: startD ? startD.slice(0, 4) : '—',
+      };
+      card.querySelectorAll('[data-rs-stat]').forEach(el => { const k = el.dataset.rsStat; if (k in FILL) el.textContent = FILL[k]; });
+
+      // ---- today's state ----
+      const lastLow = evLow.length ? evLow[evLow.length - 1] : -1;
+      const lastHigh = evHigh.length ? evHigh[evHigh.length - 1] : -1;
+      const lowLive = lastLow >= 0 && rows.slice(lastLow).every(r => r.sp <= LOW / 2);
+      const highLive = lastHigh >= 0 && rows.slice(lastHigh).every(r => r.sp >= HIGH / 2);
+      const typeOf = i => (isCap(rows[i]) ? 'cap' : 'early');
+      const TYPE_NAME = { cap: 'capitulation', early: 'early-warning' };
+      const settingNow = isCap(today) ? 'cap' : 'early';
+      const since = i => pct(today.px / rows[i].px - 1);
+      let pillText, pillCls, subHtml;
+      if (lowLive) {
+        const ty = typeOf(lastLow);
+        pillText = ty === 'cap' ? 'CAPITULATION TOUCH · BOUNCE WITHIN A MONTH, USUALLY' : 'EARLY-WARNING TOUCH · COIN FLIP WITH REAL DOWNSIDE';
+        pillCls = ty === 'cap' ? 'iq-action-buy' : 'iq-action-hold';
+        subHtml = 'The spread first closed at or below -10 on <strong>' + fmtDate(rows[lastLow].d) + '</strong> (' + pts(rows[lastLow].sp) +
+          ') with the S&amp;P 500 ' + pct(rows[lastLow].off) + ' from its one-year high and VIX at ' + fmtVix(rows[lastLow].vix) + ': the <strong>' + TYPE_NAME[ty] + ' type</strong>. ' +
+          'S&amp;P 500 since that close: <strong>' + since(lastLow) + '</strong>. It is now ' + pts(today.sp) + '.';
+      } else if (highLive) {
+        const strong = today.sp >= PART2;
+        pillText = strong ? 'STRONG CONTINUATION · SPREAD ABOVE +13' : 'RISK-ON EXTREME · TREND INTACT, PAUSE LIKELY';
+        pillCls = strong ? 'iq-action-buy' : 'iq-action-hold';
+        subHtml = 'The spread first closed at or above +11 on <strong>' + fmtDate(rows[lastHigh].d) + '</strong> (' + pts(rows[lastHigh].sp) +
+          ') and is now ' + pts(today.sp) + '. S&amp;P 500 since that close: <strong>' + since(lastHigh) + '</strong>. ' +
+          'Historically this has not been a sell: the year after a +11 touch averaged ' + FILL.high12Avg + ', with a pause of a few percent along the way.';
+      } else {
+        pillText = 'NO EXTREME · SPREAD ' + pts(today.sp);
+        pillCls = 'iq-action-stayout';
+        const gapLow = today.sp - LOW, gapHigh = HIGH - today.sp;
+        const nearer = gapLow <= gapHigh
+          ? gapLow.toFixed(1) + ' points above the -10 line. A touch from here would be the <strong>' + TYPE_NAME[settingNow] + ' type</strong>: the S&amp;P 500 is ' +
+            pct(today.off) + ' from its one-year high and VIX is ' + fmtVix(today.vix) + (settingNow === 'early' ? ' (10% below the high, or VIX at 30 or more, would make it the capitulation type)' : '') + '.'
+          : gapHigh.toFixed(1) + ' points below the +11 line, which would read as trend intact, not as a sell.';
+        subHtml = 'The spread is ' + pts(today.sp) + ', ' + nearer;
+      }
+      pill.textContent = pillText; pill.className = 'iq-action-pill ' + pillCls;
+      sub.innerHTML = subHtml;
+      asof.textContent = 'Data through ' + fmtDate(today.d) + ' · uses closing prices only';
+
+      const setGate = (valueId, stateId, boxId, value, stateText, on) => {
+        $(valueId).textContent = value;
+        const st = $(stateId); st.textContent = stateText; st.className = 'iq-gate-state ' + (on ? 'iq-gate-on' : 'iq-gate-off');
+        $(boxId).classList.toggle('iq-gate-firing', !!on);
+      };
+      setGate('rsGateNow', 'rsGateNowState', 'rsGateNowBox', pts(today.sp),
+        today.sp <= LOW ? 'at or below -10' : today.sp >= HIGH ? 'at or above +11' : 'between the lines', today.sp <= LOW || today.sp >= HIGH);
+      setGate('rsGateSet', 'rsGateSetState', 'rsGateSetBox', pct(today.off) + ' \u00b7 VIX ' + fmtVix(today.vix),
+        settingNow === 'cap' ? 'capitulation setting' : 'early-warning setting', settingNow === 'cap');
+      if (lastLow >= 0) {
+        const ty = typeOf(lastLow);
+        setGate('rsGateLast', 'rsGateLastState', 'rsGateLastBox', fmtDate(rows[lastLow].d),
+          TYPE_NAME[ty] + ' type · S&P ' + since(lastLow) + ' since', lowLive);
+      }
+
+      // ---- chart: S&P 500 (top) and the spread (bottom) ----
+      const svg = $('rsChartSvg');
+      function renderChart(range) {
+        if (!svg) return;
+        const first = range === 'all' ? 0 : Math.max(0, N - (RANGE_DAYS[range] || 1260));
+        const n = N - first; if (n < 2) return;
+        const W = 1200, PAD_L = 58, PAD_R = 62, PAD_T = 18, GAP_Y = 22, TOP_H = 270, BOT_H = 210;
+        const plotW = W - PAD_L - PAD_R, topY0 = PAD_T, topY1 = topY0 + TOP_H, botY0 = topY1 + GAP_Y, botY1 = botY0 + BOT_H;
+        const xFor = i => PAD_L + plotW * (i - first) / (n - 1);
+        const vis = rows.slice(first);
+        let pLo = Infinity, pHi = -Infinity, sLo = Math.min(LOW, DEEP) - 1, sHi = PART2 + 1;
+        for (const r of vis) { if (r.px < pLo) pLo = r.px; if (r.px > pHi) pHi = r.px; if (r.sp < sLo) sLo = r.sp; if (r.sp > sHi) sHi = r.sp; }
+        const pPad = (pHi - pLo) * 0.06 || 1; pLo -= pPad; pHi += pPad;
+        const sPad = (sHi - sLo) * 0.06; sLo -= sPad; sHi += sPad;
+        const spanYears = (rows[N - 1].t - rows[first].t) / (365.25 * 86400000);
+        const useLog = spanYears > 8;   // long ranges: log scale so 1999 is not a flat line
+        const pf = useLog ? Math.log : (v => v);
+        const yP = v => topY1 - (pf(v) - pf(pLo)) / (pf(pHi) - pf(pLo)) * TOP_H;
+        const yS = v => botY1 - (v - sLo) / (sHi - sLo) * BOT_H;
+        const parts = [];
+        const niceStep = range => { const raw = range / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))); return [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => range / s <= 5.5) || mag * 10; };
+        { const ticks = useLog
+            ? [500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 15000, 20000].filter(t => t >= pLo && t <= pHi)
+            : (() => { const step = niceStep(pHi - pLo), out = []; for (let t = Math.ceil(pLo / step) * step; t <= pHi; t += step) out.push(t); return out; })();
+          for (const t of ticks) {
+            const y = yP(t).toFixed(1);
+            parts.push('<line class="chart-grid" x1="' + PAD_L + '" x2="' + (PAD_L + plotW) + '" y1="' + y + '" y2="' + y + '"/><text class="chart-axis-label" x="' + (PAD_L - 6) + '" y="' + (+y + 3).toFixed(1) + '" text-anchor="end">' + Math.round(t) + '</text>');
+          } }
+        for (let t = Math.ceil(sLo / 5) * 5; t <= sHi; t += 5) {
+          if (t === 0) continue;
+          const y = yS(t).toFixed(1);
+          parts.push('<line class="chart-grid" x1="' + PAD_L + '" x2="' + (PAD_L + plotW) + '" y1="' + y + '" y2="' + y + '"/><text class="chart-axis-label" x="' + (PAD_L - 6) + '" y="' + (+y + 3).toFixed(1) + '" text-anchor="end">' + (t > 0 ? '+' : '') + t + '</text>');
+        }
+        // spread area: one shape, green above zero and red below, via two clips
+        const y0 = yS(0);
+        let line = '';
+        for (let k = 0; k < n; k++) line += (k ? 'L' : 'M') + xFor(first + k).toFixed(1) + ',' + yS(vis[k].sp).toFixed(1);
+        const area = line + ' L' + xFor(N - 1).toFixed(1) + ',' + y0.toFixed(1) + ' L' + xFor(first).toFixed(1) + ',' + y0.toFixed(1) + ' Z';
+        parts.push('<defs><clipPath id="rsClipPos"><rect x="' + PAD_L + '" y="' + botY0 + '" width="' + plotW + '" height="' + Math.max(0, y0 - botY0).toFixed(1) + '"/></clipPath>' +
+                   '<clipPath id="rsClipNeg"><rect x="' + PAD_L + '" y="' + y0.toFixed(1) + '" width="' + plotW + '" height="' + Math.max(0, botY1 - y0).toFixed(1) + '"/></clipPath></defs>');
+        parts.push('<path class="rs-area-pos" clip-path="url(#rsClipPos)" d="' + area + '"/><path class="rs-area-neg" clip-path="url(#rsClipNeg)" d="' + area + '"/>');
+        parts.push('<path class="rs-line-spread" d="' + line + '"/>');
+        parts.push('<line class="rs-zero" x1="' + PAD_L + '" x2="' + (PAD_L + plotW) + '" y1="' + y0.toFixed(1) + '" y2="' + y0.toFixed(1) + '"/><text class="chart-axis-label" x="' + (PAD_L - 6) + '" y="' + (y0 + 3).toFixed(1) + '" text-anchor="end">0</text>');
+        const level = (v, cls, color, label) => {
+          const y = yS(v).toFixed(1);
+          parts.push('<line class="' + cls + '" x1="' + PAD_L + '" x2="' + (PAD_L + plotW) + '" y1="' + y + '" y2="' + y + '"/>');
+          if (label) parts.push('<text class="rs-level-label" style="fill:' + color + '" x="' + (PAD_L + plotW + 4) + '" y="' + (+y + 3).toFixed(1) + '">' + (v > 0 ? '+' : '') + v + '</text>');
+        };
+        const tight = Math.abs(yS(HIGH) - yS(PART2)) < 11;   // tall spread axis: the +13 label would sit on +11
+        level(LOW, 'rs-low-line', '#ff5374', true); level(HIGH, 'rs-high-line', '#22d39a', true); level(PART2, 'rs-p2-line', 'rgba(34, 211, 154, 0.6)', !tight);
+        // price line + dots
+        let pd = '';
+        for (let k = 0; k < n; k++) pd += (k ? 'L' : 'M') + xFor(first + k).toFixed(1) + ',' + yP(vis[k].px).toFixed(1);
+        parts.push('<path class="rs-line-price" d="' + pd + '"/>');
+        for (const i of evHigh) if (i >= first) parts.push('<circle cx="' + xFor(i).toFixed(1) + '" cy="' + yP(rows[i].px).toFixed(1) + '" r="3.5" fill="' + COLOR.high + '" stroke="#fff" stroke-width="1"/>');
+        for (const i of evP2) if (i >= first) parts.push('<circle cx="' + xFor(i).toFixed(1) + '" cy="' + yP(rows[i].px).toFixed(1) + '" r="5" fill="none" stroke="' + COLOR.high + '" stroke-width="2"/>');
+        for (const i of evLow) if (i >= first) parts.push('<circle cx="' + xFor(i).toFixed(1) + '" cy="' + yP(rows[i].px).toFixed(1) + '" r="5" fill="' + COLOR[typeOf(i)] + '" stroke="#fff" stroke-width="1.5"/>');
+        parts.push('<text class="iq-eq-label" style="fill:#e8ecf4" x="' + (PAD_L + plotW + 4) + '" y="' + (yP(today.px) + 3).toFixed(1) + '">' + Math.round(today.px) + '</text>');
+        parts.push('<text class="iq-eq-label" style="fill:' + (today.sp > 0 ? '#22d39a' : '#ff5374') + '" x="' + (PAD_L + plotW + 4) + '" y="' + (yS(today.sp) + 3 + (Math.abs(today.sp - LOW) < 1.2 ? 11 : 0)).toFixed(1) + '">' + pts(today.sp) + '</text>');
+        // x axis
+        const spanDays = (rows[N - 1].t - rows[first].t) / 86400000;
+        const lab = d => MON[parseInt(d.slice(5, 7), 10) - 1] + ' ' + (spanDays > 1100 ? d.slice(0, 4) : d.slice(2, 4));
+        const ticks = spanDays > 7000 ? 5 : 7;
+        for (let k = 0; k <= ticks; k++) {
+          const i = first + Math.round(k / ticks * (n - 1));
+          parts.push('<text class="chart-axis-label" x="' + xFor(i).toFixed(1) + '" y="' + (botY1 + 14) + '" text-anchor="' + (k === 0 ? 'start' : k === ticks ? 'end' : 'middle') + '">' + (spanDays > 7000 ? rows[i].d.slice(0, 4) : lab(rows[i].d)) + '</text>');
+        }
+        parts.push('<line class="rs-axis" x1="' + PAD_L + '" x2="' + (PAD_L + plotW) + '" y1="' + botY1 + '" y2="' + botY1 + '"/>');
+        parts.push('<text class="chart-panel-label" x="' + (PAD_L + 6) + '" y="' + (topY0 + 13) + '">S&amp;P 500 · daily close · dots = touches of the -10 and +11 lines</text>');
+        parts.push('<text class="chart-panel-label" x="' + (PAD_L + 6) + '" y="' + (botY0 + 13) + '">Regime Spread · cyclicals minus defensives, 3-month</text>');
+        svg.innerHTML = parts.join('');
+      }
+      renderChart('5y');
+      card.querySelectorAll('[data-rs-range]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          card.querySelectorAll('[data-rs-range]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderChart(btn.dataset.rsRange);
+        });
+      });
+    })(); // end Regime Spread Extremes
   </script>
 </body>
 </html>
