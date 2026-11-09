@@ -1,15 +1,15 @@
 {
  "QQQ": {
   "aboveBias": false,
-  "bar": "2026-11-06T15:30:00-05:00",
+  "bar": "2026-11-09T15:30:00-05:00",
   "bars": 5064,
-  "belowBias": true,
-  "close": 658.71,
-  "ema12": 660.63,
-  "ema34": 673.76,
-  "ema5": 658.39,
-  "ema50": 680.99,
-  "fastCloudUp": false,
+  "belowBias": false,
+  "close": 678.76,
+  "ema12": 672.39,
+  "ema34": 674.93,
+  "ema5": 677.28,
+  "ema50": 680.04,
+  "fastCloudUp": true,
   "history": [
    {
     "at": "2026-10-08T10:30:00-04:00",
@@ -40,12 +40,18 @@
     "price": 715.64,
     "reason": "price fell below the 34/50 cloud",
     "state": "CASH"
+   },
+   {
+    "at": "2026-11-09T14:30:00-05:00",
+    "price": 681.43,
+    "reason": "price above the 34/50 cloud and the 5/12 cloud up",
+    "state": "LONG"
    }
   ],
-  "lastChecked": "2026-11-06T20:32:25+00:00",
-  "reason": "price fell below the 34/50 cloud",
-  "since": "2026-10-29T09:30:00-04:00",
-  "sincePrice": 715.64,
-  "state": "CASH"
+  "lastChecked": "2026-11-09T23:33:07+00:00",
+  "reason": "price above the 34/50 cloud and the 5/12 cloud up",
+  "since": "2026-11-09T14:30:00-05:00",
+  "sincePrice": 681.43,
+  "state": "LONG"
  }
 }
