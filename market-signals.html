@@ -780,6 +780,176 @@
                style="margin-top: 0.9rem;"></div>
         </div>
 
+        <!-- SIGNAL: Both Gates 2x (200-day trend AND NFCI credit regime → 2x leveraged index, else T-bills) -->
+        <div class="sig-card" id="sig-both-gates-2x">
+          <div class="sig-head">
+            <h2 class="sig-title">Both Gates 2x: Leveraged Trend + Credit</h2>
+            <span class="sig-tag">200-day trend AND NFCI easing &middot; 2x when both open &middot; daily check</span>
+          </div>
+          <p class="sig-desc">
+            A rules-only strategy that uses leverage <strong>only when two independent gates agree</strong>.
+            Hold a <strong>2x leveraged index fund</strong> (SSO for the S&amp;P 500, QLD for the Nasdaq-100)
+            whenever (a) the index closed <strong>above its 200-day moving average</strong> <em>and</em>
+            (b) credit conditions are easing &mdash; NFCI sits below its own 50-day average. If either gate
+            closes, move to <strong>T-bills</strong>. That is the whole rule. Leverage held all the time is a
+            disaster (a 2x S&amp;P fund held since 1990 lost 91% at its worst); the 200-day line alone cuts
+            drawdowns but not returns. Together they put the leverage only in the calm, trending stretches
+            and step aside before every major bear. Since 1990 the S&amp;P 500 version compounded
+            <strong><span data-bg-stat="cagrRule">&mdash;</span> a year vs <span data-bg-stat="cagrBench">&mdash;</span></strong>
+            for buy-and-hold, with a worst drawdown of <span data-bg-stat="ddRule">&mdash;</span> against
+            buy-and-hold's <span data-bg-stat="ddBench">&mdash;</span>. It is in the market about
+            <span data-bg-stat="inMarket">&mdash;</span> of the time, so the average exposure is roughly the
+            same as buy-and-hold &mdash; just placed when conditions favor it.
+          </p>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Index">
+            <div class="iq-range-group" aria-label="Index">
+              <span class="iq-range-group-label">Index</span>
+              <button type="button" class="iq-range-btn active" data-bg-index="SPX" role="tab" title="S&P 500 — trade with SSO (2x) and a T-bill fund">S&amp;P 500 &middot; SSO</button>
+              <button type="button" class="iq-range-btn" data-bg-index="NDX" role="tab" title="Nasdaq-100 — trade with QLD (2x) and a T-bill fund">Nasdaq-100 &middot; QLD</button>
+            </div>
+          </div>
+
+          <div class="iq-action-wrap">
+            <div class="iq-action-pill iq-action-stayout" id="bgActionPill">LOADING&hellip;</div>
+            <div class="iq-action-sub" id="bgActionSub">Fetching index closes and NFCI&hellip;</div>
+            <div class="iq-action-asof" id="bgActionAsof"></div>
+          </div>
+
+          <div class="iq-gates">
+            <div class="iq-gate" id="bgTrendGate">
+              <div class="iq-gate-label" id="bgTrendLabel">S&amp;P 500 vs 200-day MA</div>
+              <div class="iq-gate-value" id="bgTrend">&mdash;</div>
+              <div class="iq-gate-cond">close above the MA &rarr; open</div>
+              <div class="iq-gate-state iq-gate-off" id="bgTrendState">&mdash;</div>
+            </div>
+            <div class="iq-gate" id="bgNfciGate">
+              <div class="iq-gate-label">NFCI (credit)</div>
+              <div class="iq-gate-value" id="bgNfci">&mdash;</div>
+              <div class="iq-gate-cond">below its 50d SMA &rarr; open</div>
+              <div class="iq-gate-state iq-gate-off" id="bgNfciState">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="sig-stats iq-stats">
+            <div class="sig-stat"><div class="lbl">Rule CAGR</div><div class="val pos" data-bg-stat="cagrRule">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold CAGR</div><div class="val" data-bg-stat="cagrBench">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Rule cumulative</div><div class="val pos" data-bg-stat="cumRule">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold cumulative</div><div class="val" data-bg-stat="cumBench">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Alpha (annualized)</div><div class="val pos" data-bg-stat="alpha">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Sharpe</div><div class="val pos" data-bg-stat="sharpe">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Max drawdown</div><div class="val" data-bg-stat="ddRule">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Buy &amp; Hold max DD</div><div class="val neg" data-bg-stat="ddBench">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Worst year</div><div class="val" data-bg-stat="worstYear">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Time in market</div><div class="val" data-bg-stat="inMarket">&mdash;</div></div>
+            <div class="sig-stat"><div class="lbl">Switches / yr</div><div class="val" data-bg-stat="switches">&mdash;</div></div>
+          </div>
+
+          <div class="iq-range-bar" role="tablist" aria-label="Chart time range">
+            <div class="iq-range-group" aria-label="Famous bear markets">
+              <span class="iq-range-group-label">Crashes</span>
+              <button type="button" class="iq-range-btn" data-bg-from="2000-01-01" data-bg-to="2003-06-30" role="tab" title="Dot-com bust: both gates closed early, leverage was off for most of it">Dot-com</button>
+              <button type="button" class="iq-range-btn" data-bg-from="2007-06-01" data-bg-to="2009-12-31" role="tab" title="Financial crisis: trend gate closed in late 2007, NFCI spiked in 2008">2008 GFC</button>
+              <button type="button" class="iq-range-btn" data-bg-from="2020-01-01" data-bg-to="2020-12-31" role="tab" title="COVID: out in March, back in with 2x for the rebound">COVID</button>
+              <button type="button" class="iq-range-btn" data-bg-from="2021-11-01" data-bg-to="2023-06-30" role="tab" title="Fed-hike bear: in T-bills for most of 2022">2022 Fed</button>
+            </div>
+            <div class="iq-range-group" aria-label="Rolling time window">
+              <span class="iq-range-group-label">Range</span>
+              <button type="button" class="iq-range-btn" data-bg-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn" data-bg-years="3"  role="tab">3Y</button>
+              <button type="button" class="iq-range-btn" data-bg-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-bg-years="10" role="tab">10Y</button>
+              <button type="button" class="iq-range-btn active" data-bg-years="0"  role="tab">ALL</button>
+            </div>
+          </div>
+
+          <div class="sig-chart-wrap">
+            <svg viewBox="0 0 1200 560" class="sig-chart" id="bgChartSvg" preserveAspectRatio="xMidYMid meet" aria-label="Growth of $1,000 for the Both Gates 2x rule vs buy and hold, with the index and its 200-day average below"></svg>
+          </div>
+
+          <div class="iq-chart-caption">
+            <strong>How to read this chart.</strong>
+            <em>Top panel</em> is $1,000 invested at the start of the window, on a log scale:
+            <span class="iq-sw" style="background:#22d39a"></span><strong>green = the rule</strong> (2x fund when both gates are open, T-bills otherwise) and
+            <span class="iq-sw" style="border-top: 2px dashed #64d3ff; background: transparent; height: 0; width: 1.1em; vertical-align: 3px;"></span><strong>dashed blue = buy &amp; hold</strong> of the plain index.
+            <span class="iq-sw iq-sw-yellow"></span><strong>Yellow bands</strong> are the stretches spent in T-bills because at least one gate was closed.
+            <em>Bottom panel</em> is the index itself (blue) with its 200-day moving average (dashed amber) &mdash; the trend gate.
+            The credit gate (NFCI vs its 50-day average) is the same series drawn on the Two-Gate QQQ card above.
+          </div>
+
+          <div class="iq-callout">
+            <h4>What to expect if you follow this signal</h4>
+            <p>
+              <strong>A 2x fund doubles the daily move, not the yearly one.</strong> SSO and QLD reset their
+              leverage every day. In a steady trend that compounds in your favor; in a choppy sideways market
+              it bleeds a little each day. The rule only holds the fund while the index is above its 200-day
+              line with credit easing, which is historically the steadiest kind of market &mdash; that is the
+              reason the leverage works here and fails when held all the time.
+            </p>
+            <p>
+              <strong>Drawdowns are real.</strong> The worst stretch was the 2000&ndash;2003 bear, where the
+              S&amp;P 500 version lost <span data-bg-stat="ddRuleAbs">&mdash;</span> from its peak and the
+              Nasdaq-100 version lost <span data-bg-stat="ddRuleNdx">&mdash;</span>. Those losses happened in
+              the weeks before the gates closed. The rule also gives back ground in whipsaw years when the
+              index chops around its 200-day line and the credit gate flickers &mdash; several small losses in
+              a row are normal.
+            </p>
+            <p>
+              <strong>When it will feel worst:</strong> in a bull market that starts while NFCI is still
+              rising, the rule sits in T-bills watching the index rally (early 2023 was one). The edge comes
+              from being out of the 2000&ndash;2002, 2008, 2020 and 2022 declines and doubled up in the
+              recoveries that followed. Skipping the uncomfortable re-entries is how you lose it.
+            </p>
+            <p>
+              <strong>Both gates are already on this site.</strong> The credit gate is the NFCI test from the
+              Two-Gate QQQ card; the trend gate is the 200-day average on the ticker charts. This card simply
+              requires both and adds leverage. If the Chicago Fed stopped publishing NFCI, both cards would
+              need a new credit gate.
+            </p>
+          </div>
+
+          <div class="iq-callout iq-callout-timing">
+            <h4>When the signal fires &mdash; and how to trade it</h4>
+            <p>
+              <strong>The signal settles at market close, 4:00 PM ET.</strong> The trend gate needs the closing
+              price; NFCI is weekly, published by the Chicago Fed on Wednesday afternoons for the previous
+              Friday. During market hours the pill is rebuilt every 60 seconds from the live index price and
+              tagged <strong>INTRADAY</strong>; after the close it locks to today's value, and the nightly data
+              refresh switches it to the standard "As of" line.
+            </p>
+            <p>
+              <strong>Switches are rare</strong> &mdash; about <span data-bg-stat="switchesPlain">&mdash;</span> a
+              year on average. When the pill says BUY, buy the 2x fund (SSO or QLD) at the close or the next
+              open and sell the T-bill fund; when it says SELL, do the reverse. Market-on-close orders match
+              the backtest exactly; next-open fills drift a little each trade but average out.
+            </p>
+            <p>
+              <strong>Wednesday evening is the wildcard.</strong> A fresh NFCI reading can flip the credit gate
+              on macro news alone, so give the card a second look Wednesday nights.
+            </p>
+          </div>
+
+          <p class="sig-note">
+            Backtest 1990&ndash;2026 (<span data-bg-stat="years">&mdash;</span> yrs) on daily S&amp;P 500 and
+            Nasdaq-100 index closes + FRED NFCI weekly, each reading used only from its publish date (5 days
+            after the week it covers; without that delay the S&amp;P version shows 17.2% instead of
+            <span data-bg-stat="cagrRuleSpx">&mdash;</span>). The signal at each close sets the next day's
+            position. The 2x fund is simulated as twice the index's daily move less a 0.9% expense ratio and
+            the T-bill rate on the borrowed half; the real SSO and QLD funds have done slightly better than
+            this since their 2006 launch because the index closes exclude dividends. T-bills earn the 3-month
+            Treasury yield. Every 200-day-average length from 150 to 250 days and every NFCI average from 30
+            to 70 days gives a similar result. Reproduce with <code>scripts/backtest-both-gates.py</code>.
+            Systematic rule shown for reference only &mdash; not investment advice; leveraged funds can lose
+            money quickly; results ignore trading costs and taxes.
+          </p>
+
+          <div data-share-strip
+               data-share-url="https://bats.co/market-signals.html#sig-both-gates-2x"
+               data-share-title="Both Gates 2x: Leveraged Trend + Credit — BATS.CO"
+               data-share-text="A rules-only signal: hold a 2x S&P 500 fund (SSO) only when the index is above its 200-day average AND credit is easing (NFCI below its 50-day average); otherwise T-bills. Since 1990 that compounded about twice buy-and-hold's rate with half the worst drawdown, with a live pill you can act on before the close."
+               style="margin-top: 0.9rem;"></div>
+        </div>
+
         <!-- SIGNAL: Factor ETF Momentum Rotation (Top-1 by 6-mo return, monthly) -->
         <div class="sig-card" id="sig-factor-rotation">
           <div class="sig-head">
@@ -2167,6 +2337,371 @@
           });
         });
       }
+    })();
+
+    // ==========================================================
+    //  Both Gates 2x — leveraged trend + credit regime
+    //
+    //  Rule: hold a 2x index fund (SSO / QLD) when BOTH
+    //     close > SMA200(close)      -- trend gate
+    //   AND
+    //     NFCI < SMA50(NFCI)         -- credit gate (easing), NFCI
+    //                                   used from its publish date
+    //  Otherwise T-bills (3-month Treasury yield). The 2x fund is
+    //  simulated as 2x the index's daily move less a 0.9% expense
+    //  ratio and the T-bill rate on the borrowed half. The signal at
+    //  each close sets the next day's position. Same maths as
+    //  scripts/backtest-both-gates.py.
+    //
+    //  Two indexes share one card: S&P 500 (default) and Nasdaq-100.
+    //  The toggle re-renders the pill, gates, stats and chart.
+    // ==========================================================
+    (async function initBothGates2x() {
+      const pill = document.getElementById('bgActionPill');
+      if (!pill) return;
+      const sub  = document.getElementById('bgActionSub');
+      const asof = document.getElementById('bgActionAsof');
+      const card = document.getElementById('sig-both-gates-2x');
+
+      function fail(msg) {
+        pill.textContent = 'DATA UNAVAILABLE';
+        pill.className = 'iq-action-pill iq-action-stayout';
+        sub.textContent = msg;
+      }
+      async function loadCsv(path, valueCol) {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (!r.ok) throw new Error('fetch ' + path);
+        const txt = await r.text();
+        const out = [];
+        for (const ln of txt.trim().split(/\r?\n/).slice(1)) {
+          const p = ln.split(',');
+          if (!p[0]) continue;
+          const v = parseFloat(p[valueCol]);
+          if (Number.isFinite(v)) out.push({ date: p[0], v });
+        }
+        out.sort((a, b) => a.date < b.date ? -1 : 1);
+        return out;
+      }
+
+      let spx, ndx, nfci, y10, t10y3m;
+      try {
+        [spx, ndx, nfci, y10, t10y3m] = await Promise.all([
+          loadCsv('data/spx.csv', 1),
+          loadCsv('data/ndx.csv', 1),
+          loadCsv('data/nfci.csv', 1),
+          loadCsv('data/yields_history.csv', 2),   // col 2 = 10-year yield
+          loadCsv('data/t10y3m.csv', 1),           // 10y minus 3-month spread
+        ]);
+      } catch (e) {
+        fail('Could not fetch index or NFCI data. Try again in a moment.');
+        return;
+      }
+      if (spx.length < 300 || ndx.length < 300 || nfci.length < 60) { fail('Not enough history to run the rule yet.'); return; }
+
+      const MA_N = 200, SMA_N = 50, NFCI_PUB_LAG = 5, LEV = 2, FUND_ER = 0.009, START = '1990-01-02';
+      const addDays = (iso, n) => { const t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+      const nfciPub = nfci.map(r => ({ date: addDays(r.date, NFCI_PUB_LAG), v: r.v }));
+      // 3-month T-bill yield = 10-year yield minus the 10y-3m spread, by date.
+      const spreadBy = new Map(t10y3m.map(r => [r.date, r.v]));
+      const tbillBy = new Map();
+      for (const r of y10) { const s = spreadBy.get(r.date); if (s != null) tbillBy.set(r.date, Math.max(0, r.v - s) / 100); }
+
+      // Forward-fill a dated series onto a daily calendar (value known on or before each day).
+      function ffill(series, dates) {
+        const out = new Array(dates.length).fill(null);
+        let last = null, k = 0;
+        for (let i = 0; i < dates.length; i++) {
+          while (k < series.length && series[k].date <= dates[i]) { last = series[k].v; k++; }
+          out[i] = last;
+        }
+        return out;
+      }
+      function smaOf(vals, n) {
+        const out = new Array(vals.length).fill(null);
+        let s = 0, ok = 0;
+        for (let i = 0; i < vals.length; i++) {
+          const v = vals[i];
+          if (v == null) { s = 0; ok = 0; continue; }
+          s += v; ok++;
+          if (ok > n) { s -= vals[i - n]; ok = n; }
+          if (ok === n) out[i] = s / n;
+        }
+        return out;
+      }
+
+      // Build the full backtest for one index. Everything the card
+      // shows for that index comes from this object.
+      function build(px, meta) {
+        const rows = px.filter(r => r.date >= '1989-01-01');   // a year of warm-up before START
+        const dates = rows.map(r => r.date), close = rows.map(r => r.v);
+        const ma = smaOf(close, MA_N);
+        const nfciDaily = ffill(nfciPub, dates);
+        const nfSma = smaOf(nfciDaily, SMA_N);
+        const tbSeries = [...tbillBy.entries()].map(([date, v]) => ({ date, v })).sort((a, b) => a.date < b.date ? -1 : 1);
+        const tbill = ffill(tbSeries, dates).map(v => v == null ? 0.03 : v);
+        const trend = new Array(dates.length).fill(null), credit = new Array(dates.length).fill(null), inv = new Array(dates.length).fill(null);
+        for (let i = 0; i < dates.length; i++) {
+          if (ma[i] == null || nfciDaily[i] == null || nfSma[i] == null) continue;
+          trend[i] = close[i] > ma[i];
+          credit[i] = nfciDaily[i] < nfSma[i];
+          inv[i] = trend[i] && credit[i];
+        }
+        let startI = dates.findIndex(d => d >= START);
+        while (startI < dates.length && inv[startI] == null) startI++;
+        // Equity curves: the signal at close i-1 sets day i's position.
+        const eqRule = new Array(dates.length).fill(null), eqBh = new Array(dates.length).fill(null);
+        const ruleRets = [], bhRets = [], years = new Map();
+        let w = 1, b = 1, pk = 1, bpk = 1, dd = 0, bdd = 0, inDays = 0, switches = 0, worstDd = { dd: 0, from: null, to: null }, pkDate = dates[startI];
+        eqRule[startI] = 1; eqBh[startI] = 1;
+        for (let i = startI + 1; i < dates.length; i++) {
+          const r = close[i] / close[i - 1] - 1;
+          const tb = tbill[i] / 252;
+          const pos = inv[i - 1] ? 1 : 0;
+          const dr = pos ? LEV * r - (LEV - 1) * tb - FUND_ER / 252 : tb;
+          w *= 1 + dr; b *= 1 + r;
+          eqRule[i] = w; eqBh[i] = b;
+          ruleRets.push(dr); bhRets.push(r);
+          if (w > pk) { pk = w; pkDate = dates[i]; }
+          if (w / pk - 1 < dd) dd = w / pk - 1;
+          if (w / pk - 1 < worstDd.dd) worstDd = { dd: w / pk - 1, from: pkDate, to: dates[i] };
+          if (b > bpk) bpk = b;
+          if (b / bpk - 1 < bdd) bdd = b / bpk - 1;
+          if (pos) inDays++;
+          if (inv[i] !== inv[i - 1]) switches++;
+          const y = dates[i].slice(0, 4);
+          years.set(y, (years.get(y) || 1) * (1 + dr));
+        }
+        const n = ruleRets.length / 252;
+        const cagr = x => Math.pow(x, 1 / n) - 1;
+        const mean = ruleRets.reduce((s, x) => s + x, 0) / ruleRets.length;
+        const sd = Math.sqrt(ruleRets.reduce((s, x) => s + (x - mean) ** 2, 0) / ruleRets.length) * Math.sqrt(252);
+        const yearly = [...years.entries()].map(([y, g]) => ({ y, ret: g - 1 }));
+        const worstYear = yearly.reduce((a, c) => c.ret < a.ret ? c : a, yearly[0]);
+        return {
+          meta, dates, close, ma, nfciDaily, nfSma, tbill, trend, credit, inv, startI, eqRule, eqBh,
+          stats: {
+            cagrRule: cagr(w), cagrBench: cagr(b), cumRule: w - 1, cumBench: b - 1,
+            ddRule: dd, ddBench: bdd, worstYear, inMarket: inDays / ruleRets.length,
+            switches: switches / n, sharpe: sd > 0 ? (cagr(w) - 0.02) / sd : 0, years: n, worstDd,
+          },
+        };
+      }
+
+      const MODELS = {
+        SPX: build(spx, { sym: '^GSPC', name: 'S&P 500', fund: 'SSO', label: 'S&P 500 vs 200-day MA' }),
+        NDX: build(ndx, { sym: '^NDX', name: 'Nasdaq-100', fund: 'QLD', label: 'Nasdaq-100 vs 200-day MA' }),
+      };
+      let current = 'SPX';
+      let range = { years: 0 };
+      const live = { SPX: null, NDX: null };   // live-price overlay per index, when market is open
+
+      // ---- Stats grid + prose numbers ----
+      const pct = (v, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) + '%';
+      function renderStats(m) {
+        const s = m.stats, other = MODELS.NDX.stats;
+        const vals = {
+          cagrRule: pct(s.cagrRule), cagrBench: pct(s.cagrBench),
+          cumRule: pct(s.cumRule, 0), cumBench: pct(s.cumBench, 0),
+          alpha: pct(s.cagrRule - s.cagrBench, 2), sharpe: s.sharpe.toFixed(2),
+          ddRule: (s.ddRule * 100).toFixed(1) + '%', ddBench: (s.ddBench * 100).toFixed(1) + '%',
+          worstYear: pct(s.worstYear.ret, 0) + ' (' + s.worstYear.y + ')',
+          inMarket: Math.round(s.inMarket * 100) + '%', switches: '~' + s.switches.toFixed(1),
+          switchesPlain: s.switches.toFixed(1), years: s.years.toFixed(1),
+          ddRuleAbs: Math.abs(MODELS.SPX.stats.ddRule * 100).toFixed(0) + '%',
+          ddRuleNdx: Math.abs(other.ddRule * 100).toFixed(0) + '%',
+          cagrRuleSpx: (MODELS.SPX.stats.cagrRule * 100).toFixed(1) + '%',
+        };
+        card.querySelectorAll('[data-bg-stat]').forEach(el => {
+          const v = vals[el.dataset.bgStat];
+          if (v != null) el.textContent = v;
+        });
+        const alphaEl = card.querySelector('.sig-stat [data-bg-stat="alpha"]');
+        if (alphaEl) alphaEl.className = 'val ' + (s.cagrRule >= s.cagrBench ? 'pos' : 'neg');
+      }
+
+      // ---- Pill + gates ----
+      const trendEl = document.getElementById('bgTrend'), trendState = document.getElementById('bgTrendState'), trendGate = document.getElementById('bgTrendGate'), trendLabel = document.getElementById('bgTrendLabel');
+      const nfciEl = document.getElementById('bgNfci'), nfciState = document.getElementById('bgNfciState'), nfciGate = document.getElementById('bgNfciGate');
+      const fmtIdx = v => Math.round(v).toLocaleString('en-US');
+      function signalAt(m, i) {
+        if (i < 0 || m.inv[i] == null) return null;
+        return { date: m.dates[i], close: m.close[i], ma: m.ma[i], trend: m.trend[i], nfci: m.nfciDaily[i], sma: m.nfSma[i], credit: m.credit[i], invested: m.inv[i] };
+      }
+      function applySignal(m, today, yest, asofText) {
+        const fund = m.meta.fund;
+        let action, cls, subText;
+        if (today.invested && !yest.invested) {
+          action = 'BUY ' + fund + ' NOW'; cls = 'iq-action-buy';
+          subText = 'Both gates just opened — the rule says move from T-bills into ' + fund + " (2x " + m.meta.name + ") at today's close.";
+        } else if (today.invested && yest.invested) {
+          action = 'HOLD ' + fund; cls = 'iq-action-hold';
+          subText = 'Both gates are open — stay in ' + fund + '.';
+        } else if (!today.invested && yest.invested) {
+          action = 'SELL ' + fund + ' NOW'; cls = 'iq-action-sell';
+          subText = (today.trend ? 'The credit gate' : 'The trend gate') + ' just closed — the rule says sell ' + fund + " and sit in T-bills at today's close.";
+        } else {
+          action = 'STAY IN T-BILLS'; cls = 'iq-action-stayout';
+          const closed = !today.trend && !today.credit ? 'Both gates are closed' : (!today.trend ? 'The trend gate is closed' : 'The credit gate is closed');
+          subText = closed + ' — remain in T-bills. ' + (today.trend ? 'Waiting for NFCI to drop back under its 50-day average.' : 'Waiting for the ' + m.meta.name + ' to close back above its 200-day average' + (today.credit ? '.' : ' and for credit to ease.'));
+        }
+        pill.textContent = action; pill.className = 'iq-action-pill ' + cls;
+        sub.textContent = subText; asof.textContent = asofText;
+        trendLabel.textContent = m.meta.label;
+        trendEl.textContent = fmtIdx(today.close) + ' vs ' + fmtIdx(today.ma);
+        trendState.textContent = today.trend ? 'OPEN (' + pct(today.close / today.ma - 1) + ' above)' : 'closed (' + pct(today.close / today.ma - 1) + ' below)';
+        trendState.className = 'iq-gate-state ' + (today.trend ? 'iq-gate-on' : 'iq-gate-off');
+        trendGate.classList.toggle('iq-gate-firing', today.trend);
+        nfciEl.textContent = today.nfci.toFixed(3);
+        nfciState.textContent = today.credit ? 'OPEN (< ' + today.sma.toFixed(3) + ')' : 'closed (SMA50 ' + today.sma.toFixed(3) + ')';
+        nfciState.className = 'iq-gate-state ' + (today.credit ? 'iq-gate-on' : 'iq-gate-off');
+        nfciGate.classList.toggle('iq-gate-firing', today.credit);
+      }
+      const daysSince = d => Math.floor((Date.now() - new Date(d + 'T00:00:00Z').getTime()) / 86400000);
+      function renderPill(m) {
+        const n = m.dates.length;
+        const today = signalAt(m, n - 1), yest = signalAt(m, n - 2);
+        if (!today || !yest) { fail('Signal is warming up.'); return; }
+        if (live[current]) { applySignal(m, live[current].sig, today, live[current].label); return; }
+        let txt = 'As of ' + today.date + ' · NFCI thru ' + nfci[nfci.length - 1].date;
+        if (daysSince(nfci[nfci.length - 1].date) > 12) txt += ' (stale)';
+        if (daysSince(today.date) > 4) txt += ' · price stale';
+        applySignal(m, today, yest, txt);
+      }
+
+      // ---- Live intraday overlay: poll both indexes every 60 s ----
+      async function fetchLive() {
+        try {
+          const r = await fetch('/api/quote?syms=' + encodeURIComponent('^GSPC,^NDX'), { cache: 'no-store' });
+          if (!r.ok) return null;
+          const j = await r.json();
+          return (j && j.quotes) || null;
+        } catch (e) { return null; }
+      }
+      function liveSignal(m, price) {
+        const n = m.dates.length;
+        let s = price;
+        for (let k = n - MA_N + 1; k < n; k++) s += m.close[k];
+        const ma = s / MA_N;
+        const nf = m.nfciDaily[n - 1];
+        let t = nf;
+        for (let k = n - SMA_N + 1; k < n; k++) t += m.nfciDaily[k];
+        const sma = t / SMA_N;
+        const trend = price > ma, credit = nf < sma;
+        return { date: null, close: price, ma, trend, nfci: nf, sma, credit, invested: trend && credit };
+      }
+      async function tickLive() {
+        const q = await fetchLive(); if (!q) return;
+        const todayIso = new Date().toISOString().slice(0, 10);
+        for (const key of ['SPX', 'NDX']) {
+          const m = MODELS[key], quote = q[m.meta.sym];
+          live[key] = null;
+          if (!quote || !Number.isFinite(quote.price)) continue;
+          const st = quote.marketState || '';
+          if (m.dates[m.dates.length - 1] >= todayIso) continue;   // CSV already has today
+          if (!(st === 'REGULAR' || st === 'POST' || st === 'POSTPOST')) continue;
+          const label = st === 'REGULAR'
+            ? 'INTRADAY · ' + m.meta.name + ' ' + fmtIdx(quote.price) + ' · settles at 4:00 PM ET'
+            : "Today's close · " + m.meta.name + ' ' + fmtIdx(quote.price);
+          live[key] = { sig: liveSignal(m, quote.price), label };
+        }
+        renderPill(MODELS[current]);
+      }
+
+      // ---- Chart: equity (log) on top with T-bill bands, index + MA below ----
+      const chartSvg = document.getElementById('bgChartSvg');
+      const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      function renderChart(m) {
+        if (!chartSvg) return;
+        const n = m.dates.length;
+        let i0 = m.startI, i1 = n - 1;
+        if (range.from) {
+          i0 = Math.max(m.startI, m.dates.findIndex(d => d >= range.from));
+          const j = m.dates.findIndex(d => d > range.to); i1 = j < 0 ? n - 1 : Math.max(i0 + 1, j - 1);
+        } else if (range.years > 0) {
+          i0 = Math.max(m.startI, m.dates.findIndex(d => d >= addDays(m.dates[n - 1], -365 * range.years)));
+        }
+        if (i1 - i0 < 5) { i0 = m.startI; i1 = n - 1; }
+        const W = 1200, H = 560, PL = 70, PR = 24, T1 = 28, B1 = 320, T2 = 350, B2 = 520;
+        const x = i => PL + (i - i0) / (i1 - i0) * (W - PL - PR);
+        const r0 = m.eqRule[i0], b0 = m.eqBh[i0];
+        let lo = Infinity, hi = -Infinity, plo = Infinity, phi = -Infinity;
+        for (let i = i0; i <= i1; i++) {
+          const a = m.eqRule[i] / r0 * 1000, b = m.eqBh[i] / b0 * 1000;
+          lo = Math.min(lo, a, b); hi = Math.max(hi, a, b);
+          plo = Math.min(plo, m.close[i], m.ma[i] || m.close[i]); phi = Math.max(phi, m.close[i], m.ma[i] || m.close[i]);
+        }
+        const ly = v => B1 - (Math.log(v) - Math.log(lo)) / (Math.log(hi) - Math.log(lo)) * (B1 - T1);
+        const py = v => B2 - (Math.log(v) - Math.log(plo)) / (Math.log(phi) - Math.log(plo)) * (B2 - T2);
+        const parts = [];
+        // T-bill bands (signal from the previous close)
+        let bandStart = null;
+        for (let i = i0; i <= i1 + 1; i++) {
+          const out = i <= i1 && !m.inv[i - 1];
+          if (out && bandStart == null) bandStart = i;
+          if ((!out || i > i1) && bandStart != null) {
+            const xa = x(bandStart), xb = x(Math.min(i, i1));
+            parts.push('<rect class="iq-cash-band" x="' + xa.toFixed(1) + '" y="' + T1 + '" width="' + Math.max(1, xb - xa).toFixed(1) + '" height="' + (B2 - T1) + '"/>');
+            bandStart = null;
+          }
+        }
+        // Gridlines + labels, top panel ($ log)
+        const gridVals = [];
+        for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) for (const k of [1, 2, 5]) { const v = k * Math.pow(10, e); if (v >= lo && v <= hi) gridVals.push(v); }
+        for (const v of gridVals) {
+          parts.push('<line x1="' + PL + '" x2="' + (W - PR) + '" y1="' + ly(v).toFixed(1) + '" y2="' + ly(v).toFixed(1) + '" class="iq-ref-1000"/>');
+          parts.push('<text x="' + (PL - 8) + '" y="' + (ly(v) + 4).toFixed(1) + '" text-anchor="end" class="iq-eq-label">$' + (v >= 1000 ? Math.round(v).toLocaleString('en-US') : v) + '</text>');
+        }
+        // Year labels along the bottom: one per January, thinned so
+        // neighbours never sit closer than 30px.
+        let lastYear = m.dates[i0].slice(0, 4), lastX = -Infinity;
+        for (let i = i0 + 1; i <= i1; i++) {
+          const y = m.dates[i].slice(0, 4);
+          if (y === lastYear) continue;
+          lastYear = y;
+          if (x(i) - lastX < 30) continue;
+          lastX = x(i);
+          parts.push('<text x="' + x(i).toFixed(1) + '" y="' + (H - 18) + '" text-anchor="middle" class="iq-eq-label">' + y + '</text>');
+        }
+        const step = Math.max(1, Math.floor((i1 - i0) / 1100));
+        // norm > 0 rescales an equity curve to $1,000 at the window start.
+        const path = (arr, fn, norm) => {
+          let d = '';
+          const val = i => norm ? arr[i] / norm * 1000 : arr[i];
+          for (let i = i0; i <= i1; i += step) { if (arr[i] == null) continue; d += (d ? 'L' : 'M') + x(i).toFixed(1) + ' ' + fn(val(i)).toFixed(1); }
+          if (arr[i1] != null) d += 'L' + x(i1).toFixed(1) + ' ' + fn(val(i1)).toFixed(1);
+          return d;
+        };
+        parts.push('<path class="iq-line-eq-bh" d="' + path(m.eqBh, ly, b0) + '"/>');
+        parts.push('<path class="iq-line-eq-rule" d="' + path(m.eqRule, ly, r0) + '"/>');
+        parts.push('<path class="iq-line-qqq" d="' + path(m.close, py, 0) + '"/>');
+        parts.push('<path class="iq-line-nfci" style="stroke-dasharray:4 3" d="' + path(m.ma, py, 0) + '"/>');
+        // End labels + legends
+        const endR = m.eqRule[i1] / r0 * 1000, endB = m.eqBh[i1] / b0 * 1000;
+        parts.push('<text x="' + (W - PR - 4) + '" y="' + (ly(endR) - 6).toFixed(1) + '" text-anchor="end" class="iq-eq-label" style="fill:#22d39a">Rule $' + Math.round(endR).toLocaleString('en-US') + '</text>');
+        parts.push('<text x="' + (W - PR - 4) + '" y="' + (ly(endB) + 14).toFixed(1) + '" text-anchor="end" class="iq-eq-label" style="fill:#64d3ff">B&amp;H $' + Math.round(endB).toLocaleString('en-US') + '</text>');
+        parts.push('<text x="' + (PL + 6) + '" y="' + (T1 + 14) + '" class="chart-panel-label">$1,000 → rule (green) vs buy &amp; hold (dashed blue) · yellow = in T-bills</text>');
+        parts.push('<text x="' + (PL + 6) + '" y="' + (T2 + 14) + '" class="chart-panel-label">' + esc(m.meta.name) + ' (blue) vs 200-day MA (dashed amber)</text>');
+        chartSvg.innerHTML = parts.join('');
+      }
+
+      function renderAll() {
+        const m = MODELS[current];
+        renderStats(m); renderPill(m); renderChart(m);
+      }
+      card.querySelectorAll('[data-bg-index]').forEach(btn => btn.addEventListener('click', () => {
+        current = btn.dataset.bgIndex;
+        card.querySelectorAll('[data-bg-index]').forEach(b => b.classList.toggle('active', b === btn));
+        renderAll();
+      }));
+      card.querySelectorAll('[data-bg-years], [data-bg-from]').forEach(btn => btn.addEventListener('click', () => {
+        range = btn.dataset.bgFrom ? { from: btn.dataset.bgFrom, to: btn.dataset.bgTo } : { years: parseInt(btn.dataset.bgYears, 10) || 0 };
+        card.querySelectorAll('[data-bg-years], [data-bg-from]').forEach(b => b.classList.toggle('active', b === btn));
+        renderChart(MODELS[current]);
+      }));
+
+      renderAll();
+      tickLive();
+      setInterval(tickLive, 60000);
     })();
 
     // ==========================================================
