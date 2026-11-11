@@ -813,9 +813,9 @@
             whenever (a) the index closed <strong>above its 200-day moving average</strong> <em>and</em>
             (b) credit conditions are easing &mdash; NFCI sits below its own 50-day average. If either gate
             closes, move to <strong>T-bills</strong>. That is the whole rule. Leverage held all the time is a
-            disaster (a 2x S&amp;P fund held since 1990 lost 91% at its worst); the 200-day line alone cuts
+            disaster (a 2x <span data-bg-stat="name">S&amp;P 500</span> fund held since 1990 lost <span data-bg-stat="ddLevAlways">&mdash;</span> at its worst); the 200-day line alone cuts
             drawdowns but not returns. Together they put the leverage only in the calm, trending stretches
-            and step aside before every major bear. Since 1990 the S&amp;P 500 version compounded
+            and step aside before every major bear. Since 1990 the <span data-bg-stat="name">S&amp;P 500</span> version compounded
             <strong><span data-bg-stat="cagrRule">&mdash;</span> a year vs <span data-bg-stat="cagrBench">&mdash;</span></strong>
             for buy-and-hold, with a worst drawdown of <span data-bg-stat="ddRule">&mdash;</span> against
             buy-and-hold's <span data-bg-stat="ddBench">&mdash;</span>. It is in the market about
@@ -2473,6 +2473,7 @@
         const eqRule = new Array(dates.length).fill(null), eqBh = new Array(dates.length).fill(null);
         const ruleRets = [], bhRets = [], years = new Map();
         let w = 1, b = 1, pk = 1, bpk = 1, dd = 0, bdd = 0, inDays = 0, switches = 0, worstDd = { dd: 0, from: null, to: null }, pkDate = dates[startI];
+        let lv = 1, lpk = 1, ldd = 0;   // the same 2x fund held every day, no gates (for the prose)
         eqRule[startI] = 1; eqBh[startI] = 1;
         for (let i = startI + 1; i < dates.length; i++) {
           const r = close[i] / close[i - 1] - 1;
@@ -2480,6 +2481,9 @@
           const pos = inv[i - 1] ? 1 : 0;
           const dr = pos ? LEV * r - (LEV - 1) * tb - FUND_ER / 252 : tb;
           w *= 1 + dr; b *= 1 + r;
+          lv *= 1 + LEV * r - (LEV - 1) * tb - FUND_ER / 252;
+          if (lv > lpk) lpk = lv;
+          if (lv / lpk - 1 < ldd) ldd = lv / lpk - 1;
           eqRule[i] = w; eqBh[i] = b;
           ruleRets.push(dr); bhRets.push(r);
           if (w > pk) { pk = w; pkDate = dates[i]; }
@@ -2502,7 +2506,7 @@
           meta, dates, close, ma, nfciDaily, nfSma, tbill, trend, credit, inv, startI, eqRule, eqBh,
           stats: {
             cagrRule: cagr(w), cagrBench: cagr(b), cumRule: w - 1, cumBench: b - 1,
-            ddRule: dd, ddBench: bdd, worstYear, inMarket: inDays / ruleRets.length,
+            ddRule: dd, ddBench: bdd, ddLevAlways: ldd, worstYear, inMarket: inDays / ruleRets.length,
             switches: switches / n, sharpe: sd > 0 ? (cagr(w) - 0.02) / sd : 0, years: n, worstDd,
           },
         };
@@ -2531,6 +2535,8 @@
           ddRuleAbs: Math.abs(MODELS.SPX.stats.ddRule * 100).toFixed(0) + '%',
           ddRuleNdx: Math.abs(other.ddRule * 100).toFixed(0) + '%',
           cagrRuleSpx: (MODELS.SPX.stats.cagrRule * 100).toFixed(1) + '%',
+          name: m.meta.name,
+          ddLevAlways: Math.abs(s.ddLevAlways * 100).toFixed(0) + '%',
         };
         card.querySelectorAll('[data-bg-stat]').forEach(el => {
           const v = vals[el.dataset.bgStat];
