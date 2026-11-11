@@ -2266,7 +2266,7 @@
       padding-left: 0.2rem;
       white-space: nowrap;
     }
-    .tk-chart-svg.panning { cursor: grabbing; }
+    .tk-chart-svg.pressing { cursor: crosshair; }
     /* Trend-line drawing needs precise clicks — impractical on touch. Hide
        the drawing buttons and the mouse hint on mobile so they don't crowd
        out the chart; the Latest button stays since swiping needs it. */
@@ -3419,7 +3419,7 @@
                 </button>
                 <button type="button" data-draw="clear" data-role="clearBtn" hidden>CLEAR</button>
                 <button type="button" data-role="latestBtn" hidden title="Jump back to the most recent bars">Latest &rarr;</button>
-                <span class="tk-nav-hint" aria-hidden="true">drag to scroll &middot; wheel to zoom</span>
+                <span class="tk-nav-hint" aria-hidden="true">hold &amp; drag for details &middot; wheel to zoom &middot; shift+wheel to scroll</span>
               </div>
               <svg class="tk-chart-svg" data-role="chart" viewBox="0 0 900 320" preserveAspectRatio="none" aria-label="${sym} chart"></svg>
               <!-- Crosshair OHLC tooltip — floats over the SVG, positioned
@@ -4504,13 +4504,16 @@
             tooltip.style.top  = topPx + 'px';
           }
 
-          // Mouse: the crosshair follows a plain hover; pressing and
-          // dragging scrolls the chart through older bars (the drag used
-          // to summon the crosshair before the chart could scroll). The
-          // wheel zooms around the pointer; a sideways wheel or trackpad
-          // swipe scrolls. The 1D view keeps its fixed trading-day axis
-          // and ignores all of that. Trend-line endpoint drags (state.
-          // dragging) are handled by their own listeners and win here.
+          // Mouse: the OHLC popup only appears while the left button is
+          // held down and the pointer is dragged across the chart (a plain
+          // hover shows nothing, so the popup never gets in the way). This
+          // holds in draw mode too; the click that follows a drag is
+          // swallowed so the draw tool doesn't drop a point where the drag
+          // ended. The wheel zooms around the pointer; a sideways wheel or
+          // trackpad swipe scrolls through older bars. The 1D view keeps
+          // its fixed trading-day axis and ignores the wheel. Trend-line
+          // endpoint drags (state.dragging) are handled by their own
+          // listeners and win here.
           const canScroll = () => svg._crosshair && !svg._crosshair.xToTime && state.view;
           // Visible plot width in screen pixels → bars per pixel.
           const barsPerPx = () => {
@@ -4518,53 +4521,43 @@
             const plotPx = rect.width * ctx.plotW / ctx.W;
             return plotPx > 0 ? state.view.count / plotPx : 0;
           };
-          let pan = null;   // { x0, moved } while the button is held
+          let press = null;   // { x0, y0, moved } while the left button is held
           svg.addEventListener('mousemove', function (e) {
-            if (state.dragging) { hideCrosshair(); return; }
-            if (pan) {
-              const dx = e.clientX - pan.x0;
-              if (!pan.moved && Math.abs(dx) < 3) return;
-              pan.moved = true;
-              pan.x0 = e.clientX;
-              hideCrosshair();
-              panView(dx * barsPerPx());
-              return;
+            if (state.dragging || !press) { hideCrosshair(); return; }
+            if (!press.moved) {
+              if (Math.abs(e.clientX - press.x0) < 3 && Math.abs(e.clientY - press.y0) < 3) return;
+              press.moved = true;
+              svg.classList.add('pressing');
             }
             updateCrosshair(e.clientX, e.clientY);
           });
           svg.addEventListener('mousedown', function (e) {
-            if (state.dragging || !canScroll()) return;
+            if (state.dragging) return;
             if (e.button !== undefined && e.button !== 0) return;   // left button only
-            pan = { x0: e.clientX, moved: false };
-            svg.classList.add('panning');
+            e.preventDefault();   // no text selection while dragging
+            press = { x0: e.clientX, y0: e.clientY, moved: false };
           });
-          function endPan() {
-            if (!pan) return;
-            if (pan.moved) {
+          function endPress() {
+            if (!press) return;
+            if (press.moved) {
               // Swallow the click that follows a drag so the draw tool
               // doesn't drop a point where the drag ended.
               state.justDragged = true;
               setTimeout(function () { state.justDragged = false; }, 60);
             }
-            pan = null;
-            svg.classList.remove('panning');
+            press = null;
+            svg.classList.remove('pressing');
+            hideCrosshair();
           }
-          window.addEventListener('mouseup', endPan);
-          window.addEventListener('mousemove', function (e) {
-            // Keep scrolling while the button is held off the chart.
-            if (!pan || !pan.moved) return;
-            const dx = e.clientX - pan.x0;
-            if (!dx) return;
-            pan.x0 = e.clientX;
-            panView(dx * barsPerPx());
-          });
+          window.addEventListener('mouseup', endPress);
           svg.addEventListener('mouseleave', function () { hideCrosshair(); });
           svg.addEventListener('wheel', function (e) {
             if (!canScroll()) return;   // 1D: let the page scroll
             e.preventDefault();
             const ctx = svg._crosshair, rect = svg.getBoundingClientRect();
-            if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-              panView(-e.deltaX * barsPerPx());
+            // Sideways wheel / trackpad swipe, or shift + wheel, scrolls.
+            if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+              panView(-(e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * barsPerPx());
               return;
             }
             // Wheel notches are ~100 per click; trackpads send a stream of
@@ -4573,7 +4566,7 @@
             const vx = (e.clientX - rect.left) / rect.width * ctx.W;
             const at = Math.max(0, Math.min(1, (vx - ctx.mLeft) / ctx.plotW));
             zoomView(factor, at);
-            updateCrosshair(e.clientX, e.clientY);
+            if (press && press.moved) updateCrosshair(e.clientX, e.clientY);
           }, { passive: false });
 
           // Touch. On the scrollable views one finger slides the chart
