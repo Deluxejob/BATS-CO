@@ -487,6 +487,27 @@
     /* Marker on the strategy-default lookback so it reads as "this is the
        one the strategy actually uses" even when a comparison lookback is
        currently active. Star + subtle amber border. */
+    /* Both Gates 2x: the S&P / Nasdaq switch is the main control on that
+       card, so it is bigger than the chart-range buttons and uses the
+       site orange (#ffb658) so it cannot be missed. */
+    .bg-index-bar { margin: 0.9rem 0 0.4rem; }
+    .bg-index-bar .iq-range-group { gap: 0.5rem; }
+    .bg-index-bar .iq-range-group-label { color: #ffb658; font-size: 0.72rem; }
+    .bg-index-bar .iq-range-btn {
+      font-size: 0.95rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: 6px;
+      border: 2px solid rgba(255, 182, 88, 0.55);
+      color: #ffb658;
+      background: rgba(255, 182, 88, 0.06);
+    }
+    .bg-index-bar .iq-range-btn:hover { color: #ffd59a; border-color: #ffb658; background: rgba(255, 182, 88, 0.14); }
+    .bg-index-bar .iq-range-btn.active {
+      color: #0b1220;
+      background: #ffb658;
+      border-color: #ffb658;
+      box-shadow: 0 0 22px rgba(255, 182, 88, 0.35);
+    }
     .iq-range-btn.fr-lookback-default          { border-color: rgba(255, 182, 88, 0.35); }
     .iq-range-btn.fr-lookback-default.active   { border-color: rgba(255, 182, 88, 0.75); background: rgba(255, 182, 88, 0.10); color: #ffb658; }
     /* Sector Rotation (Smoother Ride) card. Reuses the Factor card's pill
@@ -802,9 +823,9 @@
             same as buy-and-hold &mdash; just placed when conditions favor it.
           </p>
 
-          <div class="iq-range-bar" role="tablist" aria-label="Index">
+          <div class="iq-range-bar bg-index-bar" role="tablist" aria-label="Index">
             <div class="iq-range-group" aria-label="Index">
-              <span class="iq-range-group-label">Index</span>
+              <span class="iq-range-group-label">Pick an index</span>
               <button type="button" class="iq-range-btn active" data-bg-index="SPX" role="tab" title="S&P 500 — trade with SSO (2x) and a T-bill fund">S&amp;P 500 &middot; SSO</button>
               <button type="button" class="iq-range-btn" data-bg-index="NDX" role="tab" title="Nasdaq-100 — trade with QLD (2x) and a T-bill fund">Nasdaq-100 &middot; QLD</button>
             </div>
