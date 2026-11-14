@@ -1,302 +1,183 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1794594279,
-  "latestPublishedAt": 1794593419,
+  "fetchedAt": 1794615159,
+  "latestPublishedAt": 1794613231,
   "items": [
     {
-      "title": "Stock Market Today: Nasdaq In Red As Nvidia Wipes Out $650 Billion; Applied Materials Sinks (Live Coverage)",
-      "link": "https://finance.yahoo.com/m/59c1380c-6194-35f8-be3b-4a6a3148bfa4/stock-market-today%3A-nasdaq-in.html",
+      "title": "What Would A Short Seller Say About Astera Labs?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/short-seller-astera-labs-234031198.html",
+      "publisher": "Trefis",
+      "publishedAt": 1794613231,
+      "id": "be43993c-b6b3-304b-a6cf-3c036fae5fee"
+    },
+    {
+      "title": "S&P 500, Dow, Nasdaq End Lower Amid Nvidia Turmoil, But Record Best Week Since August —  SPCX, NVDA, ARM, AZN In Focus",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-dow-nasdaq-end-233729977.html",
+      "publisher": "Stocktwits",
+      "publishedAt": 1794613049,
+      "id": "1dd48d14-432b-3ad6-8cd7-b997e7773851"
+    },
+    {
+      "title": "Dow Jones Futures: Market Rally Shaky As Nvidia Earnings, Anthropic IPO Loom; SpaceX Starship Flight 15 Booster Diverts.",
+      "link": "https://finance.yahoo.com/m/53e50dc8-f137-3f6c-bfd6-912334fef9f1/dow-jones-futures%3A-market.html",
       "publisher": "Investor's Business Daily",
-      "publishedAt": 1794593419,
+      "publishedAt": 1794611853,
+      "id": "53e50dc8-f137-3f6c-bfd6-912334fef9f1"
+    },
+    {
+      "title": "What Is Driving Intuitive Machines Stock?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/driving-intuitive-machines-stock-231312910.html",
+      "publisher": "Trefis",
+      "publishedAt": 1794611592,
+      "id": "1ceedb2c-f245-3f41-976c-3c46de84da56"
+    },
+    {
+      "title": "Stock Market Today, Nov. 13: CoreWeave Falls Over 6% on AI-Cloud Selling and Reported $4 Billion Loan Talks",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-13-230429414.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1794611069,
+      "id": "80bca0b4-4f1e-39e1-87d8-8d3bd5a83156"
+    },
+    {
+      "title": "Walmart, Target, and Nvidia Headline a Pivotal Week for Q3 Earnings",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/walmart-target-nvidia-headline-pivotal-230000146.html",
+      "publisher": "Zacks",
+      "publishedAt": 1794610800,
+      "id": "48f9f388-b6a1-3c79-a620-54294b156e3a"
+    },
+    {
+      "title": "Nvidia Has Real Problems—but Don’t Fall For Fear Mongering",
+      "link": "https://finance.yahoo.com/m/94310747-12d9-3105-8453-f21ac39be69a/nvidia-has-real-problems%E2%80%94but.html",
+      "publisher": "Barrons.com",
+      "publishedAt": 1794609600,
+      "id": "94310747-12d9-3105-8453-f21ac39be69a"
+    },
+    {
+      "title": "Stock Market Today, Nov. 13: Cerebras Surges Over 11% on Record Q3 Revenue and Raised 2026 Guidance",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-13-223028372.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1794609028,
+      "id": "a931a5d0-bdc0-3ee0-9770-194fda97ecfc"
+    },
+    {
+      "title": "Stock Market Today, Nov. 13: Nvidia Slides After HSBC Downgrades Stock to Hold on CEO Uncertainty",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-13-222002466.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1794608402,
+      "id": "6beb8573-c73d-315b-a877-9047976d72aa"
+    },
+    {
+      "title": "Stock Market Today, Nov. 13: AMD Sinks 8.75% on Sector AI-Chip Sell-Off After Early Gains Reverse",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-13-221355021.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1794608035,
+      "id": "b558ea93-06d3-3258-8898-4876df3a586d"
+    },
+    {
+      "title": "Stock Market Today, Nov. 13: Nu Holdings Surges on Record Q3 Earnings Beat Driven by Strong Revenue",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-13-221302620.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1794607982,
+      "id": "95168506-e41d-3eff-b2b8-6b6bdec067bc"
+    },
+    {
+      "title": "Why Analog Devices (ADI) Dipped More Than Broader Market Today",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/why-analog-devices-adi-dipped-220001409.html",
+      "publisher": "Zacks",
+      "publishedAt": 1794607201,
+      "id": "e0237ee8-7d46-354c-bd55-61c81e70efc9"
+    },
+    {
+      "title": "Update: US Equity Indexes Mixed as Nvidia Turmoil Hits Chipmakers, Producer Prices 'Elevated",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/us-equity-indexes-mixed-nvidia-215300435.html",
+      "publisher": "MT Newswires",
+      "publishedAt": 1794606780,
+      "id": "4f0c6589-72d9-3125-9460-00861a522aab"
+    },
+    {
+      "title": "Stock Market Today: Indexes Trim Losses, Manage To Score Weekly Gains Despite Strong Volatility",
+      "link": "https://finance.yahoo.com/m/59c1380c-6194-35f8-be3b-4a6a3148bfa4/stock-market-today%3A-indexes.html",
+      "publisher": "Investor's Business Daily",
+      "publishedAt": 1794606593,
       "id": "59c1380c-6194-35f8-be3b-4a6a3148bfa4"
     },
     {
-      "title": "What Does Ralph Lauren Stock's Winning Streak Really Prove?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/does-ralph-lauren-stocks-winning-180118397.html",
-      "publisher": "Trefis",
-      "publishedAt": 1794592878,
-      "id": "5ff1852a-3fca-3575-985e-dee9ae014dfd"
-    },
-    {
-      "title": "How Low Can First Solar Stock Go?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/low-first-solar-stock-175441142.html",
-      "publisher": "Trefis",
-      "publishedAt": 1794592481,
-      "id": "adfd76bc-fd8b-3c48-abc6-54070ce7590e"
-    },
-    {
-      "title": "Can Dell Stock Fall 40%?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/dell-stock-fall-40-174756451.html",
-      "publisher": "Trefis",
-      "publishedAt": 1794592076,
-      "id": "c55edc9b-9648-3701-839b-25513a29940b"
-    },
-    {
-      "title": "Stock market today: Nasdaq leads Dow, S&P 500 lower as chip stock sell-off accelerates",
-      "link": "https://finance.yahoo.com/markets/live/stock-market-today-friday-november-13-dow-sp-500-nasdaq-nvidia-ppi-141451558.html",
-      "publisher": "Yahoo Finance",
-      "publishedAt": 1794592060,
-      "id": "b0d7accb-15ad-4c9e-a0cc-a093f03804c2"
-    },
-    {
-      "title": "Stock Market Midday, Nov. 13: Nasdaq Plunges as Nvidia Turmoil Deepens and Treasury Yields Hit 5%",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-midday-nov-13-173501591.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1794591301,
-      "id": "1228149b-918f-3778-8c72-77341e5113af"
-    },
-    {
-      "title": "Josh Brown: Nvidia Has No “Jensen Premium” to Lose. It’s Been Cheap for 3 Years",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/josh-brown-nvidia-no-jensen-173128136.html",
-      "publisher": "TIKR",
-      "publishedAt": 1794591088,
-      "id": "b96c4cc6-83bf-3c34-b066-52ec6e390110"
-    },
-    {
-      "title": "AST SpaceMobile Sinks 6%, Rocket Lab Down 5% as Space Stocks Give Back a Stellar Week",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/ast-spacemobile-sinks-6-rocket-173053167.html",
-      "publisher": "TIKR",
-      "publishedAt": 1794591053,
-      "id": "58994329-2806-3cfa-b616-9830171813f7"
-    },
-    {
-      "title": "Update: Sliding Chipmakers Push US Equity Indexes Lower While Producer Prices Growth Below Forecast",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/sliding-chipmakers-push-us-equity-172710666.html",
+      "title": "Update: Wall Street Notches Weekly Gains Despite Nvidia Sell-Off",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/wall-street-notches-weekly-gains-214935845.html",
       "publisher": "MT Newswires",
-      "publishedAt": 1794590830,
-      "id": "4489a69e-d9a9-3850-88c1-42a0ce609482"
+      "publishedAt": 1794606575,
+      "id": "902caefb-1370-36f5-a092-5e7ce4675c55"
     },
     {
-      "title": "Nasdaq Follow-Through Day Shows Some Power. Now What?",
-      "link": "https://finance.yahoo.com/m/5d0c1944-df84-3056-922a-b0a58fd8a8ec/nasdaq-follow-through-day.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1794590601,
-      "id": "5d0c1944-df84-3056-922a-b0a58fd8a8ec"
-    },
-    {
-      "title": "QURE Stock Rallies 17.5% in a Month: What Should Investors Do Now?",
-      "link": "https://finance.yahoo.com/healthcare/articles/qure-stock-rallies-17-5-171600347.html",
+      "title": "Walmart (WMT) Gains As Market Dips: What You Should Know",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/walmart-wmt-gains-market-dips-214502776.html",
       "publisher": "Zacks",
-      "publishedAt": 1794590160,
-      "id": "1f104be2-fe2f-31a8-ae82-d8aedb5ee983"
+      "publishedAt": 1794606302,
+      "id": "337f6e5f-1e25-3708-aace-ce7dc288db98"
     },
     {
-      "title": "Here's Why You Should Retain NVST Stock in Your Portfolio for Now",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/heres-why-retain-nvst-stock-171400174.html",
+      "title": "Here's Why Synopsys (SNPS) Fell More Than Broader Market",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/heres-why-synopsys-snps-fell-214502259.html",
       "publisher": "Zacks",
-      "publishedAt": 1794590040,
-      "id": "7fee873a-bb4b-3dde-b537-b176a0d402a6"
+      "publishedAt": 1794606302,
+      "id": "53adf9b4-ea7e-3fae-b12a-37ab39c7a263"
     },
     {
-      "title": "Kevin Warsh’s Fed Will Vote on Rates Only 7 Times in 2027",
-      "link": "https://finance.yahoo.com/economy/policy/articles/kevin-warsh-fed-vote-rates-171358960.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1794590038,
-      "id": "c398c13f-52f4-3245-a475-43e4d23f9c98"
+      "title": "Broadcom Inc. (AVGO) Suffers a Larger Drop Than the General Market: Key Insights",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/broadcom-inc-avgo-suffers-larger-214501014.html",
+      "publisher": "Zacks",
+      "publishedAt": 1794606301,
+      "id": "68d9ac1c-63dc-39ef-a3c8-be0480739586"
+    },
+    {
+      "title": "Everpure Down 22%: What Would Its CEO Say?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/everpure-down-22-ceo-214353020.html",
+      "publisher": "Trefis",
+      "publishedAt": 1794606233,
+      "id": "865b4e30-7b0b-307c-ac8a-cc6f14230544"
     },
     {
       "title": "Nvidia, AMD, Microsoft, Cerebras, Cisco, Modine, and More Stocks That Explain Today’s Market",
       "link": "https://finance.yahoo.com/m/fa0293c5-bebc-3c34-924d-04a0b56c1b18/nvidia%2C-amd%2C-microsoft%2C.html",
       "publisher": "Barrons.com",
-      "publishedAt": 1794589740,
+      "publishedAt": 1794606000,
       "id": "fa0293c5-bebc-3c34-924d-04a0b56c1b18"
     },
     {
-      "title": "What Are PayPal Stock Bulls Not Worried About?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/paypal-stock-bulls-not-worried-170444599.html",
-      "publisher": "Trefis",
-      "publishedAt": 1794589484,
-      "id": "97bc35c8-4759-3a9d-8a17-a404091db9ff"
-    },
-    {
-      "title": "The S&P 500 Has a “Pure Value” Version. RPV Gives Its Cheapest Stocks the Biggest Weights",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-pure-value-version-170302428.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1794589382,
-      "id": "1d46524c-a369-3255-a634-e76bf0b3e34c"
-    },
-    {
-      "title": "SharkNinja's Growth Runway Extends Beyond Current Markets, Oppenheimer Says",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/sharkninja-apos-growth-runway-extends-170000485.html",
+      "title": "S&P 500 Posts Weekly Gain as Energy Sector Leads Broad Climb",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-posts-weekly-gain-213423034.html",
       "publisher": "MT Newswires",
-      "publishedAt": 1794589200,
-      "id": "4e690751-fb04-3ca9-8eed-894303371ebd"
+      "publishedAt": 1794605663,
+      "id": "ee3f0a3e-4628-3319-bf72-a5e7ac88754a"
     },
     {
-      "title": "AMCON's FY26 Earnings Rise Y/Y as Wholesale Business Thrives",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/amcons-fy26-earnings-rise-y-165900940.html",
-      "publisher": "Zacks",
-      "publishedAt": 1794589140,
-      "id": "0e314504-6197-3d0d-b071-c2bd16d03d2c"
+      "title": "S&P 500, Nasdaq end lower as Nvidia uncertainty weighs on tech shares",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/nasdaq-futures-dip-nvidia-tumult-103901600.html",
+      "publisher": "Reuters",
+      "publishedAt": 1794605644,
+      "id": "5395f155-f892-3c6e-9a5f-44fa73c41ab8"
     },
     {
-      "title": "EVI Industries Q1 Earnings Rise Y/Y on Strong Service Growth",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/evi-industries-q1-earnings-rise-165700857.html",
-      "publisher": "Zacks",
-      "publishedAt": 1794589020,
-      "id": "c5840b63-3e58-3af5-93a1-ba82abb90f41"
+      "title": "Stock market today: Dow rises, S&P 500 and Nasdaq slip to cap volatile week, Nvidia stock plunge deepens",
+      "link": "https://finance.yahoo.com/markets/live/stock-market-today-friday-november-13-dow-sp-500-nasdaq-nvidia-ppi-141451558.html",
+      "publisher": "Yahoo Finance",
+      "publishedAt": 1794605616,
+      "id": "b0d7accb-15ad-4c9e-a0cc-a093f03804c2"
     },
     {
-      "title": "8 Stocks Bill Ackman and Jim Cramer Are Bullish On",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/8-stocks-bill-ackman-jim-165553588.html",
+      "title": "Never bought Nvidia stock? Its slide could still hit your 401(k).",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/never-bought-nvidia-stock-slide-213201620.html",
+      "publisher": "CBS News",
+      "publishedAt": 1794605521,
+      "id": "6a842173-29f0-3a4b-9fa6-411bd804e914"
+    },
+    {
+      "title": "Why Stephens Upgraded Oracle (ORCL)",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/why-stephens-upgraded-oracle-orcl-213119416.html",
       "publisher": "Insider Monkey",
-      "publishedAt": 1794588953,
-      "id": "5407d80f-55ee-3812-ae4a-e3e00a509614"
-    },
-    {
-      "title": "What Is Going On With Intel Stock After Its Earnings Call?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/going-intel-stock-earnings-call-165315329.html",
-      "publisher": "Trefis",
-      "publishedAt": 1794588795,
-      "id": "6e91b8a3-a54d-3302-ba7b-6aebaf545f49"
-    },
-    {
-      "title": "Dow Could Fall for Fifth Friday in a Row",
-      "link": "https://finance.yahoo.com/m/024d1fc1-38a6-3f64-90d2-d3c428199ea0/dow-could-fall-for-fifth.html",
-      "publisher": "Barrons.com",
-      "publishedAt": 1794588727,
-      "id": "024d1fc1-38a6-3f64-90d2-d3c428199ea0"
-    },
-    {
-      "title": "Billionaire Jeffrey Gundlach Calls the Stock Market a ‘Hollow Tree’ as Weakness Spreads Beyond Big Tech",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/billionaire-jeffrey-gundlach-calls-stock-164906422.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1794588546,
-      "id": "52584a33-832b-33cc-99c5-fa9a04047e46"
-    },
-    {
-      "title": "Peer Discount Creates Compelling Opportunity at QXO (QXO)",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/peer-discount-creates-compelling-opportunity-164546949.html",
-      "publisher": "Insider Monkey",
-      "publishedAt": 1794588346,
-      "id": "03550812-edfd-30eb-88d7-323a78d7f00d"
-    },
-    {
-      "title": "What Will Decide Merck Stock Over The Next Six Months?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/decide-merck-stock-over-next-163520950.html",
-      "publisher": "Trefis",
-      "publishedAt": 1794587720,
-      "id": "b18ce45c-bb6f-3dcf-b7c7-282dad81f756"
-    },
-    {
-      "title": "What Makes Southwest Airlines (LUV) a Compelling Portfolio Holding?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/makes-southwest-airlines-luv-compelling-163144127.html",
-      "publisher": "Insider Monkey",
-      "publishedAt": 1794587504,
-      "id": "bbc74396-61c4-337d-9ffa-bacadc821c5f"
-    },
-    {
-      "title": "What’s Moving Markets Today?",
-      "link": "https://finance.yahoo.com/m/19ef711d-c55f-34c8-9df5-d44c5a50e7fd/what%E2%80%99s-moving-markets-today%3F.html",
-      "publisher": "The Wall Street Journal",
-      "publishedAt": 1794586956,
-      "id": "19ef711d-c55f-34c8-9df5-d44c5a50e7fd"
-    },
-    {
-      "title": "The Tech Stocks Taking a Beating Today",
-      "link": "https://finance.yahoo.com/m/328425cc-d4cf-37f3-9f95-4878d1f2289f/the-tech-stocks-taking-a.html",
-      "publisher": "The Wall Street Journal",
-      "publishedAt": 1794585679,
-      "id": "328425cc-d4cf-37f3-9f95-4878d1f2289f"
-    },
-    {
-      "title": "BC-Most Active Stocks",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/bc-most-active-stocks-153018603.html",
-      "publisher": "Associated Press",
-      "publishedAt": 1794583818,
-      "id": "068723f6-5ec3-31f8-b647-623a80287e1b"
-    },
-    {
-      "title": "Stock Market Rebounds Even As Nvidia CEO Jensen Huang Resigns, Treasury Yields Jump: Weekly Review",
-      "link": "https://finance.yahoo.com/m/d6fa2b1c-352e-380c-91aa-6d1636a3df58/stock-market-rebounds-even-as.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1794582368,
-      "id": "d6fa2b1c-352e-380c-91aa-6d1636a3df58"
-    },
-    {
-      "title": "Prediction: This Data Center Stock Will Keep Sliding in 2027",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/prediction-data-center-stock-keep-144002828.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1794580802,
-      "id": "9a92f4bc-6f7b-3535-907a-fe6698e2c57c"
-    },
-    {
-      "title": "December Fed Decision in Focus",
-      "link": "https://finance.yahoo.com/economy/policy/articles/december-fed-decision-focus-143900951.html",
-      "publisher": "Zacks",
-      "publishedAt": 1794580740,
-      "id": "258be289-1af3-3898-81d6-a2a9e650ff6f"
-    },
-    {
-      "title": "The Stock Market Is Trying to Wrap a Bumpy Week With a Friday Gain",
-      "link": "https://finance.yahoo.com/m/bd4a72dc-b7b4-39f8-baea-d1cafb80883e/the-stock-market-is-trying-to.html",
-      "publisher": "Barrons.com",
-      "publishedAt": 1794580533,
-      "id": "bd4a72dc-b7b4-39f8-baea-d1cafb80883e"
-    },
-    {
-      "title": "LHV Group's own share acquisition transactions",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/lhv-groups-own-share-acquisition-143000459.html",
-      "publisher": "GlobeNewswire",
-      "publishedAt": 1794580200,
-      "id": "096946ef-79b7-335f-877d-f6804fc912db"
-    },
-    {
-      "title": "PPI +6.5% YoY: Highest in Nearly 4 Years",
-      "link": "https://finance.yahoo.com/economy/articles/ppi-6-5-yoy-highest-142200557.html",
-      "publisher": "Zacks",
-      "publishedAt": 1794579720,
-      "id": "715ded28-639f-3e72-ae65-3f5169969d95"
-    },
-    {
-      "title": "Onfolio Provides Corporate Update: Stockholders' Equity Above Nasdaq Minimum, No Convertible Notes Outstanding",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/onfolio-provides-corporate-stockholders-equity-141500977.html",
-      "publisher": "GlobeNewswire",
-      "publishedAt": 1794579300,
-      "id": "08ae1478-6f07-3d89-bae1-7d8796d2ac51"
-    },
-    {
-      "title": "Exchange-Traded Funds, Equity Futures Higher Pre-Bell Friday as Producer Inflation Trails Forecasts",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/exchange-traded-funds-equity-futures-141316665.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1794579196,
-      "id": "a52acca5-6d10-3306-99e6-8cfd3e324631"
-    },
-    {
-      "title": "Update: US Equity Futures Slightly Higher Pre-Bell as Traders Assess Nvidia CEO Jensen Huang's Exit",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/us-equity-futures-slightly-higher-134910590.html",
-      "publisher": "MT Newswires",
-      "publishedAt": 1794577750,
-      "id": "fdee4364-3949-365f-bd50-4d3ff1717076"
-    },
-    {
-      "title": "Stock Market Today: S&P 500, Nasdaq Plunge as Nvidia Extends Declines, Tech Stocks Sink; Major Indexes Remain on Track to Post Weekly Gains",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-futures-tick-133734502.html",
-      "publisher": "Investopedia",
-      "publishedAt": 1794577054,
-      "id": "5ed44e5e-9eb5-3175-9ca4-b5093d904b0e"
-    },
-    {
-      "title": "Dow Jones Futures Rise, Yields Up Again; Nvidia Steadies After Tumbling On CEO Huang's Exit",
-      "link": "https://finance.yahoo.com/m/4a3dff17-3e8e-33ca-823f-8ac12eff6a4a/dow-jones-futures-rise%2C.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1794575207,
-      "id": "4a3dff17-3e8e-33ca-823f-8ac12eff6a4a"
-    },
-    {
-      "title": "Nvidia Stock In Peril After Jensen Huang Resignation; Earnings Now In Focus",
-      "link": "https://finance.yahoo.com/m/71bff37b-6e6e-3883-9ffd-7d4c86c9b1db/nvidia-stock-in-peril-after.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1794574855,
-      "id": "71bff37b-6e6e-3883-9ffd-7d4c86c9b1db"
-    },
-    {
-      "title": "Looking For Stocks To Buy In The IBD 50? You May Be Disappointed.",
-      "link": "https://finance.yahoo.com/m/6b542b66-ffdb-3b8c-be99-d687bd411ff5/looking-for-stocks-to-buy-in.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1794574815,
-      "id": "6b542b66-ffdb-3b8c-be99-d687bd411ff5"
+      "publishedAt": 1794605479,
+      "id": "73edad69-37a4-351f-8167-d85680007ab8"
     }
   ]
 }
