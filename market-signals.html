@@ -675,9 +675,9 @@
             </div>
             <div class="iq-range-group" aria-label="Rolling time window">
               <span class="iq-range-group-label">Range</span>
-              <button type="button" class="iq-range-btn" data-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn active" data-years="1"  role="tab">1Y</button>
               <button type="button" class="iq-range-btn" data-years="3"  role="tab">3Y</button>
-              <button type="button" class="iq-range-btn active" data-years="5"  role="tab">5Y</button>
+              <button type="button" class="iq-range-btn" data-years="5"  role="tab">5Y</button>
               <button type="button" class="iq-range-btn" data-years="10" role="tab">10Y</button>
               <button type="button" class="iq-range-btn" data-years="0"  role="tab">ALL</button>
             </div>
@@ -876,11 +876,11 @@
             </div>
             <div class="iq-range-group" aria-label="Rolling time window">
               <span class="iq-range-group-label">Range</span>
-              <button type="button" class="iq-range-btn" data-bg-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn active" data-bg-years="1"  role="tab">1Y</button>
               <button type="button" class="iq-range-btn" data-bg-years="3"  role="tab">3Y</button>
               <button type="button" class="iq-range-btn" data-bg-years="5"  role="tab">5Y</button>
               <button type="button" class="iq-range-btn" data-bg-years="10" role="tab">10Y</button>
-              <button type="button" class="iq-range-btn active" data-bg-years="0"  role="tab">ALL</button>
+              <button type="button" class="iq-range-btn" data-bg-years="0"  role="tab">ALL</button>
             </div>
           </div>
 
@@ -1047,11 +1047,11 @@
             </div>
             <div class="iq-range-group" aria-label="Rolling time window">
               <span class="iq-range-group-label">Range</span>
-              <button type="button" class="iq-range-btn" data-fr-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn active" data-fr-years="1"  role="tab">1Y</button>
               <button type="button" class="iq-range-btn" data-fr-years="3"  role="tab">3Y</button>
               <button type="button" class="iq-range-btn" data-fr-years="5"  role="tab">5Y</button>
               <button type="button" class="iq-range-btn" data-fr-years="10" role="tab">10Y</button>
-              <button type="button" class="iq-range-btn active" data-fr-years="0" role="tab">ALL</button>
+              <button type="button" class="iq-range-btn" data-fr-years="0" role="tab">ALL</button>
             </div>
           </div>
 
@@ -1207,11 +1207,11 @@
             </div>
             <div class="iq-range-group" aria-label="Rolling time window">
               <span class="iq-range-group-label">Range</span>
-              <button type="button" class="iq-range-btn" data-ic-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn active" data-ic-years="1"  role="tab">1Y</button>
               <button type="button" class="iq-range-btn" data-ic-years="3"  role="tab">3Y</button>
               <button type="button" class="iq-range-btn" data-ic-years="5"  role="tab">5Y</button>
               <button type="button" class="iq-range-btn" data-ic-years="10" role="tab">10Y</button>
-              <button type="button" class="iq-range-btn active" data-ic-years="0" role="tab">ALL</button>
+              <button type="button" class="iq-range-btn" data-ic-years="0" role="tab">ALL</button>
             </div>
           </div>
 
@@ -1364,11 +1364,11 @@
             </div>
             <div class="iq-range-group" aria-label="Rolling time window">
               <span class="iq-range-group-label">Range</span>
-              <button type="button" class="iq-range-btn" data-sr-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn active" data-sr-years="1"  role="tab">1Y</button>
               <button type="button" class="iq-range-btn" data-sr-years="3"  role="tab">3Y</button>
               <button type="button" class="iq-range-btn" data-sr-years="5"  role="tab">5Y</button>
               <button type="button" class="iq-range-btn" data-sr-years="10" role="tab">10Y</button>
-              <button type="button" class="iq-range-btn active" data-sr-years="0" role="tab">ALL</button>
+              <button type="button" class="iq-range-btn" data-sr-years="0" role="tab">ALL</button>
             </div>
           </div>
 
@@ -1528,11 +1528,11 @@
             </div>
             <div class="iq-range-group" aria-label="Rolling time window">
               <span class="iq-range-group-label">Range</span>
-              <button type="button" class="iq-range-btn" data-aat-years="1"  role="tab">1Y</button>
+              <button type="button" class="iq-range-btn active" data-aat-years="1"  role="tab">1Y</button>
               <button type="button" class="iq-range-btn" data-aat-years="3"  role="tab">3Y</button>
               <button type="button" class="iq-range-btn" data-aat-years="5"  role="tab">5Y</button>
               <button type="button" class="iq-range-btn" data-aat-years="10" role="tab">10Y</button>
-              <button type="button" class="iq-range-btn active" data-aat-years="0" role="tab">ALL</button>
+              <button type="button" class="iq-range-btn" data-aat-years="0" role="tab">ALL</button>
             </div>
           </div>
 
@@ -2342,12 +2342,11 @@
         chartSvg.innerHTML = parts.join('');
         } // end renderChart
 
-        // Default view is 5 years — recent enough that individual
-        // SELL / BUY marks are readable, long enough to include COVID
-        // and the 2022 bear. Users can widen to ALL for the full arc,
-        // or click a "Crash" preset to jump straight to a bear market
-        // where the rule's regime filter did (or didn't) shine.
-        renderChart(5);
+        // Default view is 1 year, the same as every other strategy chart.
+        // Users can widen to ALL for the full arc, or click a "Crash"
+        // preset to jump straight to a bear market where the rule's
+        // regime filter did (or didn't) shine.
+        renderChart(1);
         // Scoped to this card — the cards below share the button class.
         document.querySelectorAll('#sig-two-gate-qqq .iq-range-btn').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -2521,7 +2520,7 @@
         NDX: build(ndx, { sym: '^NDX', name: 'Nasdaq-100', fund: 'QLD', label: 'Nasdaq-100 vs 200-day MA' }),
       };
       let current = 'SPX';
-      let range = { years: 0 };
+      let range = { years: 1 };
       const live = { SPX: null, NDX: null };   // live-price overlay per index, when market is open
 
       // ---- Stats grid + prose numbers ----
@@ -2959,7 +2958,7 @@
       // drawFactorChart (reads). Range toggle updates frCurrentRange
       // and just calls drawFactorChart against the last-computed data.
       let frLatestData = null;
-      let frCurrentRange = {years: 0};
+      let frCurrentRange = {years: 1};
 
       function drawFactorChart(rangeSpec) {
         if (!chartSvg || !frLatestData) return;
@@ -3445,7 +3444,7 @@
       }
 
       // Initial render at ALL history, then wire the buttons.
-      renderChart({years: 0});
+      renderChart({years: 1});
       document.querySelectorAll('[data-ic-years], [data-ic-from]').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('[data-ic-years], [data-ic-from]').forEach(b => b.classList.remove('active'));
@@ -3710,7 +3709,7 @@
         chartSvg.innerHTML = parts.join('');
       }
 
-      renderChart({years: 0});
+      renderChart({years: 1});
       card.querySelectorAll('[data-sr-years], [data-sr-from]').forEach(btn => {
         btn.addEventListener('click', () => {
           card.querySelectorAll('[data-sr-years], [data-sr-from]').forEach(b => b.classList.remove('active'));
@@ -3959,7 +3958,7 @@
         chartSvg.innerHTML = parts.join('');
       }
 
-      renderChart({years: 0});
+      renderChart({years: 1});
       card.querySelectorAll('[data-aat-years], [data-aat-from]').forEach(btn => {
         btn.addEventListener('click', () => {
           card.querySelectorAll('[data-aat-years], [data-aat-from]').forEach(b => b.classList.remove('active'));
