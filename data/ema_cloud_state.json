@@ -1,15 +1,15 @@
 {
  "QQQ": {
   "aboveBias": false,
-  "bar": "2026-11-23T15:30:00-05:00",
+  "bar": "2026-11-24T15:30:00-05:00",
   "bars": 5083,
-  "belowBias": false,
-  "close": 650.87,
-  "ema12": 644.77,
-  "ema34": 648.69,
-  "ema5": 649.72,
-  "ema50": 653.49,
-  "fastCloudUp": true,
+  "belowBias": true,
+  "close": 638.09,
+  "ema12": 639.48,
+  "ema34": 644.73,
+  "ema5": 638.0,
+  "ema50": 649.44,
+  "fastCloudUp": false,
   "history": [
    {
     "at": "2026-10-08T10:30:00-04:00",
@@ -66,7 +66,7 @@
     "state": "CASH"
    }
   ],
-  "lastChecked": "2026-11-24T01:52:56+00:00",
+  "lastChecked": "2026-11-24T23:37:00+00:00",
   "reason": "the 5/12 cloud turned down",
   "since": "2026-11-13T09:30:00-05:00",
   "sincePrice": 675.22,
