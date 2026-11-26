@@ -1,288 +1,134 @@
 {
   "source": "Yahoo Finance / query1.finance.yahoo.com search endpoint",
   "query": "S&P 500",
-  "fetchedAt": 1795670377,
-  "latestPublishedAt": 1795665992,
+  "fetchedAt": 1795698136,
+  "latestPublishedAt": 1795695300,
   "items": [
+    {
+      "title": "Elon Musk warns AI’s 2027 cash shortage will be ‘nuts’ as industry could need billions more. Protect your retirement",
+      "link": "https://finance.yahoo.com/technology/ai/articles/elon-musk-warns-ai-2027-121500797.html",
+      "publisher": "Moneywise",
+      "publishedAt": 1795695300,
+      "id": "f33ce55c-98d8-3fc2-9577-cca84d88d4fd"
+    },
+    {
+      "title": "The Stock Market Is Still on Track for Its Best Thanksgiving Week Since 2008",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-still-track-best-120231927.html",
+      "publisher": "24/7 Wall St.",
+      "publishedAt": 1795694551,
+      "id": "cd0be069-aa5b-3c16-a9da-36e1f94f668f"
+    },
+    {
+      "title": "Warren Buffett Told Savers to \"Rejoice When Markets Decline.\" After the 2000-2002 Bear Market, the S&P 500 Doubled in 5 Years.",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/warren-buffett-told-savers-rejoice-114902826.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1795693742,
+      "id": "e5b21620-1725-3fe9-b666-ea102f2aff1a"
+    },
+    {
+      "title": "If You Ran Revvity, What Would You Fix?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/ran-revvity-fix-113614777.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795692974,
+      "id": "47b55274-c31a-3c60-81c0-0e38a9e2bbb1"
+    },
+    {
+      "title": "How Hard Was It To Hold Motorola Solutions Stock?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/hard-hold-motorola-solutions-stock-113408767.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795692848,
+      "id": "f3f8ae2e-d157-3788-ac02-df0596f41a07"
+    },
+    {
+      "title": "DeFi Revenue Surges But Valuations Drop, Drawing Parallels With Nasdaq’s Post-Dot-Com Recovery",
+      "link": "https://finance.yahoo.com/markets/crypto/articles/defi-revenue-surges-valuations-drop-113216344.html",
+      "publisher": "CCN",
+      "publishedAt": 1795692736,
+      "id": "7bc4b1db-05fe-332f-90a9-d7253bf98970"
+    },
+    {
+      "title": "Could Flex Stock's Winning Streak Be Luck?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/could-flex-stocks-winning-streak-112750380.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795692470,
+      "id": "160f88ef-4f18-3231-bd51-10a8b8fae75c"
+    },
+    {
+      "title": "Crypto Market Faces 3 Critical Risks Heading Into December 2026",
+      "link": "https://finance.yahoo.com/markets/crypto/articles/crypto-market-faces-3-critical-112632457.html",
+      "publisher": "BeInCrypto",
+      "publishedAt": 1795692392,
+      "id": "90a36dec-87f0-3fd6-8197-db99531e62e1"
+    },
+    {
+      "title": "Have AT&T's Dividends Been Worth It?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/ts-dividends-worth-112544134.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795692344,
+      "id": "7dc7e92f-91e7-3f33-a2ea-13eede93ad6e"
+    },
+    {
+      "title": "Own Palo Alto Stock? Watch Its Deferred Revenue",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/own-palo-alto-stock-watch-111519279.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795691719,
+      "id": "3855f2bb-cba2-3839-ba18-b71dda3391d7"
+    },
+    {
+      "title": "What's Left Of $1 Million In VOO And BND?",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/whats-left-1-million-voo-110857728.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795691337,
+      "id": "0fb9a144-70b0-3aab-b25d-69a3a5054b58"
+    },
+    {
+      "title": "$1 Million In BND Five Years Ago: Barely Back",
+      "link": "https://finance.yahoo.com/markets/options/articles/1-million-bnd-five-years-110445732.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795691085,
+      "id": "44be9967-77e9-35d4-93e4-4862f035709c"
+    },
+    {
+      "title": "Holding GLD For Stock Falls? Gold Missed This One",
+      "link": "https://finance.yahoo.com/markets/commodities/articles/holding-gld-stock-falls-gold-110239781.html",
+      "publisher": "Trefis",
+      "publishedAt": 1795690959,
+      "id": "2efe41eb-2db3-3cf9-9e33-af7c2ba31c3d"
+    },
+    {
+      "title": "President Trump Just Hit Stock Market Investors With Bad News at a Bad Time",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/president-trump-just-hit-stock-103202222.html",
+      "publisher": "Motley Fool",
+      "publishedAt": 1795689122,
+      "id": "4869c82c-8416-3bed-a97c-7bff770dc43e"
+    },
     {
       "title": "Dow Jones Futures Rise After Nasdaq Slashes Losses In Wild Market Ride",
       "link": "https://finance.yahoo.com/m/158e82fc-b889-34b6-8704-99a49e9a83ae/dow-jones-futures-rise-after.html",
       "publisher": "Investor's Business Daily",
-      "publishedAt": 1795665992,
+      "publishedAt": 1795686944,
       "id": "158e82fc-b889-34b6-8704-99a49e9a83ae"
     },
     {
-      "title": "Dow, S&P 500, Nasdaq Futures Edge Higher As Tech Rebounds After Selloff: DIS, VRTX, DE, CHTR In Focus",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/dow-p-500-nasdaq-futures-031436542.html",
-      "publisher": "Stocktwits",
-      "publishedAt": 1795662876,
-      "id": "45203c55-bacb-3a27-bcc8-6bbbdd1b2a9e"
-    },
-    {
-      "title": "Michael Burry Says His Portfolio Was Discussed 'About the Time the Market Reversed Off Its Lows': He Is 'Temporarily Almost Entirely Long'",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/michael-burry-says-portfolio-discussed-025825540.html",
-      "publisher": "Benzinga",
-      "publishedAt": 1795661905,
-      "id": "aaba8434-1095-378b-827f-8a9573141524"
-    },
-    {
-      "title": "Goldman Sachs lays out three signals stock investors should watch",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/goldman-sachs-lays-three-signals-013700432.html",
-      "publisher": "TheStreet",
-      "publishedAt": 1795657020,
-      "id": "4e7bde0d-fdd7-3f8b-a4f6-4a763febe868"
-    },
-    {
-      "title": "Tech Stocks Stall Into Thanksgiving: Will the AI Rebound Return?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/tech-stocks-stall-thanksgiving-ai-011953375.html",
-      "publisher": "BeInCrypto",
-      "publishedAt": 1795655993,
-      "id": "8b804086-b42e-3fa0-9c1c-a56c5b70f367"
-    },
-    {
-      "title": "Review & Preview: A Thanksgiving Reprieve",
-      "link": "https://finance.yahoo.com/m/2ce69a58-c424-3671-adc7-fd0cf5ff19a5/review-%26-preview%3A-a.html",
-      "publisher": "Barrons.com",
-      "publishedAt": 1795654500,
-      "id": "2ce69a58-c424-3671-adc7-fd0cf5ff19a5"
-    },
-    {
-      "title": "Vertex Pharmaceuticals Has Turned $10,000 Into $61,660 Over 10 Years. Here's What Could Come Next",
-      "link": "https://finance.yahoo.com/healthcare/articles/vertex-pharmaceuticals-turned-10-000-003200726.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1795653120,
-      "id": "8f9c3801-1b4c-30f1-a4de-603a4bcf6366"
-    },
-    {
-      "title": "U.S. stock futures turn higher as tech rebound holds after wild swings on Wall St",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/u-stock-futures-steady-whipsaw-001343016.html",
-      "publisher": "Investing.com",
-      "publishedAt": 1795652023,
-      "id": "c24e3759-bdf9-3a63-8a63-5f31cfa19bd8"
-    },
-    {
-      "title": "S&P 500, Nasdaq End Lower But Dow Rebounds As Traders Rotate Out Of AI — NVDA, SPCX, PANW  In Focus",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/p-500-nasdaq-end-lower-000950299.html",
-      "publisher": "Stocktwits",
-      "publishedAt": 1795651790,
-      "id": "dec61a07-2f40-388a-9d4f-5ac87a5d937b"
-    },
-    {
-      "title": "How Much More Could You Lose In IonQ Stock?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/much-more-could-lose-ionq-235538709.html",
-      "publisher": "Trefis",
-      "publishedAt": 1795650938,
-      "id": "e1dcdaa8-9ea0-3560-b2b8-8a5bae56dead"
-    },
-    {
-      "title": "How Low Can Cipher Digital Stock Go?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/low-cipher-digital-stock-234828166.html",
-      "publisher": "Trefis",
-      "publishedAt": 1795650508,
-      "id": "78f52cf2-2ddb-37aa-8481-6bae6df597d6"
-    },
-    {
-      "title": "Here’s How Many Coca-Cola Shares It Takes to Earn $1,300 Every Quarter in Dividends",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/many-coca-cola-shares-takes-234802485.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1795650482,
-      "id": "aba01d7a-ed0f-3cbb-bd63-b85daa7d72f5"
-    },
-    {
-      "title": "Why GDS Holdings Stock Topped the Market Today",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/why-gds-holdings-stock-topped-234752921.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1795650472,
-      "id": "2ba54dcc-3f43-3c0d-a385-e53e600c3c31"
-    },
-    {
-      "title": "Is Micron Cheap Only If Its Record Margin Lasts?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/micron-cheap-only-record-margin-234307884.html",
-      "publisher": "Trefis",
-      "publishedAt": 1795650187,
-      "id": "6c2e86c4-83fa-3378-81ba-a21822384c74"
-    },
-    {
-      "title": "Is XRP a Good Investment for Building Wealth by 2035?",
-      "link": "https://finance.yahoo.com/markets/crypto/articles/xrp-good-investment-building-wealth-234250300.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1795650170,
-      "id": "59def4af-4c94-37b9-b61f-3660147098cc"
-    },
-    {
-      "title": "What Sent Moderna Stock Higher?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/sent-moderna-stock-higher-233621042.html",
-      "publisher": "Trefis",
-      "publishedAt": 1795649781,
-      "id": "f020c463-0fa9-387f-bcf5-510f60a0c38a"
-    },
-    {
-      "title": "'Big Short' Investor Michael Burry Just Closed His Bet Against the Nasdaq. Here's What Investors Should Do Now",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/big-short-investor-michael-burry-232028325.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1795648828,
-      "id": "39f45d43-5dcb-3fad-a085-b33ebf3218fd"
-    },
-    {
-      "title": "What Sent Coinbase Stock Lower?",
-      "link": "https://finance.yahoo.com/markets/crypto/articles/sent-coinbase-stock-lower-231317214.html",
-      "publisher": "Trefis",
-      "publishedAt": 1795648397,
-      "id": "7d484d91-2197-332b-9514-f25f3aec3086"
-    },
-    {
-      "title": "2 Bargain Stocks to Buy With $1,000 in November",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/2-bargain-stocks-buy-1-224701867.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1795646821,
-      "id": "1d5e5ffd-af93-3574-9f29-3b9197515a63"
-    },
-    {
-      "title": "5 Best Healthcare Stocks To Buy for 2027",
-      "link": "https://finance.yahoo.com/healthcare/articles/5-best-healthcare-stocks-buy-224526274.html",
-      "publisher": "Insider Monkey",
-      "publishedAt": 1795646726,
-      "id": "aa1efeee-4b94-3c2f-83b0-0cc4107ca0ca"
-    },
-    {
-      "title": "BC-Select Stock Indices",
-      "link": "https://finance.yahoo.com/markets/world-indices/articles/bc-select-stock-indices-223013659.html",
-      "publisher": "Associated Press",
-      "publishedAt": 1795645813,
-      "id": "1348853f-1c93-3558-997f-3213b4c1fcbb"
-    },
-    {
-      "title": "AI stock rout deepens but damage is limited by afternoon bounce",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/ai-stock-rout-deepens-damage-222733772.html",
-      "publisher": "Reuters",
-      "publishedAt": 1795645653,
-      "id": "cc0a700c-1482-3a42-b9e0-1026d5006454"
-    },
-    {
-      "title": "U.S. Stocks Mixed as Nvidia, AI Rout Continues",
-      "link": "https://finance.yahoo.com/m/cfc82c4a-65b9-3492-a0f9-67525676f149/u.s.-stocks-mixed-as-nvidia%2C.html",
+      "title": "U.S. Stock Futures Higher as AI Trade Steadies for Thanksgiving Break",
+      "link": "https://finance.yahoo.com/m/16c5a266-745e-3322-9153-abf0b0db0a8f/u.s.-stock-futures-higher-as.html",
       "publisher": "The Wall Street Journal",
-      "publishedAt": 1795645260,
-      "id": "cfc82c4a-65b9-3492-a0f9-67525676f149"
+      "publishedAt": 1795686420,
+      "id": "16c5a266-745e-3322-9153-abf0b0db0a8f"
     },
     {
-      "title": "Nasdaq, S&P 500 end down, but well off lows as investors buy bargains",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/nasdaq-futures-slide-over-2-100822079.html",
-      "publisher": "Reuters",
-      "publishedAt": 1795645170,
-      "id": "98d5b9c4-c2b2-3210-86db-df8b9b9bcd5f"
-    },
-    {
-      "title": "The Average Stock Shrugged Off the Tech Slide. History Is Split",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/average-stock-shrugged-off-tech-221815698.html",
-      "publisher": "Trefis",
-      "publishedAt": 1795645095,
-      "id": "4397a4b3-6845-371a-961e-83c86c269ff2"
-    },
-    {
-      "title": "Stock Market Today, Nov. 25: Dow Erases 1,100-Point Loss as Wall Street Stages Dramatic Late-Day Comeback",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-25-221745503.html",
+      "title": "How Far Could the Dow Jones Industrial Average, S&P 500, and Nasdaq Composite Plunge? Nearly 156 Years of History Offers an Answer.",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/far-could-dow-jones-industrial-092602869.html",
       "publisher": "Motley Fool",
-      "publishedAt": 1795645065,
-      "id": "d40512dd-61e5-3cb1-b2bb-0e9ced7a172f"
+      "publishedAt": 1795685162,
+      "id": "f02a4def-bfbb-36a1-8641-2d9d68fa9f45"
     },
     {
-      "title": "Looking for Bargains? These S&P 500 Companies Are Aggressively Buying Back Stock.",
-      "link": "https://finance.yahoo.com/m/4e6a065b-848e-36f7-ab73-17a73dde122f/looking-for-bargains%3F-these.html",
-      "publisher": "Barrons.com",
-      "publishedAt": 1795644960,
-      "id": "4e6a065b-848e-36f7-ab73-17a73dde122f"
-    },
-    {
-      "title": "Copart, Inc. (CPRT) Gains As Market Dips: What You Should Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/copart-inc-cprt-gains-market-221501215.html",
-      "publisher": "Zacks",
-      "publishedAt": 1795644901,
-      "id": "39732d79-a0c5-3800-85f0-dff00998ea17"
-    },
-    {
-      "title": "How Much of Your Portfolio Should Be in Bitcoin After a 50% Drop?",
-      "link": "https://finance.yahoo.com/markets/crypto/articles/much-portfolio-bitcoin-50-drop-221448060.html",
-      "publisher": "24/7 Wall St.",
-      "publishedAt": 1795644888,
-      "id": "f2b35bb7-f041-3196-9dda-1608ef96f8f4"
-    },
-    {
-      "title": "World stocks tumble as Trump tariffs rattle markets, AI rally fades",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stocks-retreat-ai-rebound-stumbles-015155560.html",
-      "publisher": "Reuters",
-      "publishedAt": 1795644749,
-      "id": "2feefa1f-6559-33f9-b085-be56ffb5e6a8"
-    },
-    {
-      "title": "Stock Market Today, Nov. 25: Nvidia Slides 3.9% as the Market Considers Hot PCE Inflation Data and New Tariff Proposals",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-25-220645995.html",
+      "title": "The Nasdaq Fell Below Correction Territory: 2 Beaten-Down Nasdaq Stocks to Buy and Hold",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/nasdaq-fell-below-correction-territory-085002074.html",
       "publisher": "Motley Fool",
-      "publishedAt": 1795644405,
-      "id": "db41ed5f-6df1-3f65-af30-68f2d5c16a63"
-    },
-    {
-      "title": "Stock Market Today, Nov. 25: SpaceX Gets Historic FCC Approval for 1 Million Satellites. Is This Its Next Growth Engine?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-nov-25-220552486.html",
-      "publisher": "Motley Fool",
-      "publishedAt": 1795644352,
-      "id": "364b6f29-3f73-3f24-a897-08c43575b82e"
-    },
-    {
-      "title": "What Triggered The Move In Cameco Stock?",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/triggered-move-cameco-stock-215455879.html",
-      "publisher": "Trefis",
-      "publishedAt": 1795643695,
-      "id": "cb62435b-dcfc-3f6d-bd1b-53f3b27f0ac7"
-    },
-    {
-      "title": "Stocks turn volatile as Jensen Huang rebound rally fades",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/stock-futures-plummet-jensen-huang-141049035.html",
-      "publisher": "CBS News",
-      "publishedAt": 1795643503,
-      "id": "7d5bf3ee-0d91-343c-a15f-8e07c37a7243"
-    },
-    {
-      "title": "Stock Market Today: Dow Swings Into A Win; Anthropic Almost Retakes Its IPO Price",
-      "link": "https://finance.yahoo.com/m/90407e46-3b17-34e8-8c82-527bf00b63e4/stock-market-today%3A-dow.html",
-      "publisher": "Investor's Business Daily",
-      "publishedAt": 1795643474,
-      "id": "90407e46-3b17-34e8-8c82-527bf00b63e4"
-    },
-    {
-      "title": "NetApp (NTAP) Increases Despite Market Slip: Here's What You Need to Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/netapp-ntap-increases-despite-market-215002062.html",
-      "publisher": "Zacks",
-      "publishedAt": 1795643402,
-      "id": "23eb0e0c-2617-3f16-ab34-4acac076b15e"
-    },
-    {
-      "title": "AZZ (AZZ) Increases Despite Market Slip: Here's What You Need to Know",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/azz-azz-increases-despite-market-215002496.html",
-      "publisher": "Zacks",
-      "publishedAt": 1795643402,
-      "id": "e0ec7d19-6071-35af-9e1a-dd0dbd4c15f0"
-    },
-    {
-      "title": "US stocks end mostly down as bargain-hunting tempers hit to AI shares",
-      "link": "https://finance.yahoo.com/markets/world-indices/articles/tech-firms-back-crosshairs-huang-024219799.html",
-      "publisher": "AFP",
-      "publishedAt": 1795643359,
-      "id": "739d6575-7d3f-3389-8885-6a7b10f36c17"
-    },
-    {
-      "title": "Billionaire Carl Icahn wipes $23B from his own fortune in just 5 years as he’s battered by bad bets",
-      "link": "https://finance.yahoo.com/markets/stocks/articles/billionaire-carl-icahn-wipes-23b-214911842.html",
-      "publisher": "NY Post",
-      "publishedAt": 1795643351,
-      "id": "ef6f7e99-746c-3f0b-a417-006b2c21b99a"
-    },
-    {
-      "title": "Don’t Let the Bounce Fool You: The Stock Market’s Pain Could Get Way Worse",
-      "link": "https://finance.yahoo.com/m/b54c241d-2605-3a93-b6b8-e6cacd2e7588/don%E2%80%99t-let-the-bounce-fool.html",
-      "publisher": "Barrons.com",
-      "publishedAt": 1795643340,
-      "id": "b54c241d-2605-3a93-b6b8-e6cacd2e7588"
+      "publishedAt": 1795683002,
+      "id": "92934841-2dcd-36cc-a176-7ea187ba5c52"
     },
     {
       "title": "Mixing Bonds Into VTI Cost Over $1.2 Million",
