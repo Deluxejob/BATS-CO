@@ -4,6 +4,7 @@
   "private": true,
   "description": "Public-market sentiment site — vanilla static + Vercel serverless functions in api/.",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.0"
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@vercel/analytics": "^2.0.1"
   }
 }
